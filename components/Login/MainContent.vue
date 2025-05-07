@@ -9,10 +9,10 @@
           <v-col cols="12">
             <div class="text-center">
               <v-avatar color="" size="150" style="border: 1px black solid;">
-                <img src="../../public/image/S2.png" alt="" width="200">
+                <!-- <img src="" alt="" width="200"> -->
               </v-avatar>
             </div>
-            <h3 class="text-center">ເຂົ້າສູ່ລະບົບ ຮ້ານຂາຍຢາສິງຄຳ</h3>
+            <h3 class="text-center">ຍິນດີຕອ້ນຮັບເຂົ້ສາສູ່ລະບົບ</h3>
           </v-col>
 
           <v-col cols="12">

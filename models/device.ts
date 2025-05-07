@@ -66,7 +66,7 @@ export interface User {
 }
 
 export enum Fullname {
-  Admin32Lottery = "admin@32lottery",
+  Admin32Lottery = "admin@sone",
 }
 
 export interface Pagination {

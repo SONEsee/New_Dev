@@ -16,7 +16,7 @@
                   color="grey lighten-2"
                 >
                   <img
-                    :src="`https://32lottery-api.phouservice.com/${datarespons.image_profile}`"
+                    :src="`https://tery-api.phouservice.com/${datarespons.image_profile}`"
                     alt="Profile Picture"
                   />
                 </v-avatar>

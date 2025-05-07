@@ -6,7 +6,12 @@
           <v-col cols="12" md="4">
             <v-row>
               <v-col cols="12" md="6">
-                <v-btn color="#4CAF50" flat class="rounded-lg" style="font-size: small;">
+                <v-btn
+                  color="#4CAF50"
+                  flat
+                  class="rounded-lg"
+                  style="font-size: small"
+                >
                   ສະແດງຍອດຂາຍ
                 </v-btn>
               </v-col>
@@ -55,9 +60,9 @@
                   :alt="item.product_name"
                 ></v-img>
               </v-container>
-              <p style="font-size: small;">ຊື່ສິນຄ້າ: {{ item.product_name }}</p>
-              <p style="font-size: small;">ປະເພດ: {{ item.Category.Name }}</p>
-              <p style="font-size: small;">ລາຄາ: {{ item.price }} LAK</p>
+              <p style="font-size: small">ຊື່ສິນຄ້າ: {{ item.product_name }}</p>
+              <p style="font-size: small">ປະເພດ: {{ item.Category.Name }}</p>
+              <p style="font-size: small">ລາຄາ: {{ item.price }} LAK</p>
               <v-btn @click="selectItem(item)" color="green">ເລືອກ</v-btn>
             </v-card>
           </v-col>
@@ -106,17 +111,26 @@
                   @input="calculateChange"
                   variant="outlined"
                 ></v-text-field>
+                <v-container fluid>
+                  <!-- <p>Selected Button: {{ radios }}</p> -->
+                  <v-radio-group inline v-model="radios">
+                    <v-radio label="ເງິນສົດ" value="ເງິນສົດ"></v-radio>
+                    <v-radio label="ເງິນໂອນ" value="ເງິນໂອນ"></v-radio>
+                  </v-radio-group>
+                </v-container>
                 <p :style="{ color: changeColor }">
                   {{ changeMessage }}
                 </p>
                 <v-btn
                   @click="generateBill"
+                  density="compact"
                   color="primary"
                   small
                   style="font-size: small"
-                  >ອອກໃບບິນ</v-btn
+                  >ຂາຍ</v-btn
                 >
                 <v-btn
+                  density="compact"
                   @click="resetPayment"
                   color="secondary"
                   class="ml-2"
@@ -137,10 +151,14 @@
 import { ref, computed, onMounted } from "vue";
 import Swal from "sweetalert2";
 import { useProductStore } from "@/stores/product";
-
+import { UseSaleStore } from "~/stores/sale";
+import { CallSwal } from "~/composables/global";
+const radios = ref("ເງິນສົດ");
 const product = useProductStore();
-const URL = "http://127.0.0.1:8080";
 
+const URL = "http://127.0.0.1:8080";
+const user = localStorage.getItem("user");
+const username = user ? JSON.parse(user).username : "";
 const selectedItems = ref<any[]>([]);
 const selectedType = ref("");
 const searchBarcode = ref("");
@@ -182,7 +200,7 @@ const calculateTotalPrice = () => {
     (sum, item) => sum + item.price * item.quantity,
     0
   );
-  vat.value = totalPrice.value * 0.1; // VAT 10%
+  vat.value = totalPrice.value * 0.1;
   totalPriceWithVat.value = totalPrice.value + vat.value;
   calculateChange();
 };
@@ -265,13 +283,12 @@ const selectByBarcode = () => {
     });
   }
 };
-
-const generateBill = () => {
+const generateBill = async () => {
   if (selectedItems.value.length === 0) {
-    Swal.fire({
+    await CallSwal({
       icon: "error",
       title: "ບໍ່ມີສິນຄ້າ",
-      text: "ກະລຸນາເລືອກສິນຄ້າກ່ອນອອກໃບບິນ",
+      text: "ກະລຸນາເລືອກສິນຄ້າກ່ອນ",
     });
     return;
   }
@@ -280,18 +297,63 @@ const generateBill = () => {
     typeof paymentAmount.value === "string"
       ? parseFloat(paymentAmount.value) || 0
       : paymentAmount.value;
-  if (payment < totalPriceWithVat.value) {
-    Swal.fire({
+
+  if (payment < totalPriceWithVat.value || payment === 0) {
+    await CallSwal({
       icon: "error",
       title: "ເງິນບໍ່ພຽງພໍ",
-      text: `ຈຳນວນເງິນທີ່ຍັງບໍ່ຄົບ: ${Math.abs(change.value)} ${currencyCode}`,
+      text:
+        payment === 0
+          ? "ກະລຸນາປ່ຽນເງິນທີ່ຊຳລະ"
+          : `ຈຳນວນເງິນທີ່ຍັງບໍ່ຄົບ: ${Math.abs(change.value)} ${currencyCode}`,
     });
+    return;
+  }
+
+  const saleConfirmation = await CallSwal({
+    icon: "question",
+    title: "ຢືນຢັນການຂາຍ",
+    text: "ທ່ານຕ້ອງການຢືນຢັນການຂາຍນີ້ບໍ່?",
+    showCancelButton: true,
+    confirmButtonText: "ຢືນຢັນ",
+    cancelButtonText: "ຍົກເລີກ",
+  });
+  if (saleConfirmation.isConfirmed) {
+    const saleData = {
+      items: selectedItems.value.map((item) => ({
+        product_id: String(item.id),
+        quantity: item.quantity,
+      })),
+      payment_amount: payment,
+      payment_method: radios.value,
+      customer_name: username,
+      cashier_name: "N/A",
+    };
+    UseSaleStore().form_create_sale = saleData;
+    if (!saleConfirmation.isConfirmed) {
+      return;
+    }
+    await UseSaleStore().CreateSale();
+  } else {
+    return;
+  }
+
+  const billConfirmation = await CallSwal({
+    icon: "question",
+    title: "ຕ້ອງການບິນບໍ່?",
+    text: "ທ່ານຕ້ອງການສະແດງ ແລະ ພິມບິນຂາຍບໍ່?",
+    showCancelButton: true,
+    confirmButtonText: "ຕ້ອງການ",
+    cancelButtonText: "ບໍ່ຕ້ອງການ",
+  });
+
+  if (!billConfirmation.isConfirmed) {
     return;
   }
 
   let billContent = `
     <style>
-      .bill-container { font-family: Arial, sans-serif; text-align: left; }
+      .bill-container { font-family: 'NotoSansLao', sans-serif; text-align: left; }
       .bill-header { text-align: center; margin-bottom: 20px; }
       .bill-items { width: 100%; border-collapse: collapse; }
       .bill-items th, .bill-items td { border: 1px solid #ddd; padding: 8px; }
@@ -310,28 +372,32 @@ const generateBill = () => {
         </thead>
         <tbody>
   `;
+
   selectedItems.value.forEach((item) => {
     billContent += `
-      <tr>
+      <tr style="font-family: 'NotoSansLao', sans-serif;;">
         <td>${item.product_name}</td>
         <td>${item.quantity}</td>
-        <td>${item.price * item.quantity} ${currencyCode}</td>
+        <td>${(
+          item.price * item.quantity
+        ).toLocaleString()} ${currencyCode}</td>
       </tr>
     `;
   });
+
   billContent += `
         </tbody>
       </table>
-      <div class="bill-footer">
-        <p>VAT: ${vat.value} ${currencyCode}</p>
-        <p>ລາຄາລວມ: ${totalPriceWithVat.value} ${currencyCode}</p>
-        <p>ຈຳນວນເງິນທີ່ຊຳລະ: ${payment} ${currencyCode}</p>
-        <p>ເງິນທອນ: ${change.value} ${currencyCode}</p>
+      <div class="bill-footer" style="font-family: 'NotoSansLao', sans-serif;">
+        <p>VAT: ${vat.value.toLocaleString()} ${currencyCode}</p>
+        <p>ລາຄາລວມ: ${totalPriceWithVat.value.toLocaleString()} ${currencyCode}</p>
+        <p>ຈຳນວນເງິນທີ່ຊຳລະ: ${payment.toLocaleString()} ${currencyCode}</p>
+        <p>ເງິນທອນ: ${change.value.toLocaleString()} ${currencyCode}</p>
       </div>
     </div>
   `;
 
-  Swal.fire({
+  const printConfirmation = await CallSwal({
     title: "ບິນຂາຍ",
     html: billContent,
     showCancelButton: true,
@@ -341,11 +407,27 @@ const generateBill = () => {
     padding: "3em",
     background: "#fff",
     backdrop: "rgba(0,0,123,0.4) left top no-repeat",
-  }).then((result) => {
-    if (result.isConfirmed) {
-      window.print();
-    }
   });
+
+  if (printConfirmation.isConfirmed) {
+    const printWindow = window.open("", "", "width=800,height=600");
+    if (printWindow) {
+      printWindow.document.write(
+        ' <html><head><title>ບິນຂາຍ</title><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao&display=swap" rel="stylesheet"></head><body style=\'font-family: "Noto Sans Lao", sans-serif;\'>'
+      );
+      printWindow.document.write(billContent);
+      printWindow.document.write("</body></html>");
+      printWindow.document.close();
+      printWindow.print();
+      printWindow.close();
+    } else {
+      await CallSwal({
+        icon: "error",
+        title: "ບໍ່ສາມາດເປີດບິນພິມໄດ້",
+        text: "ກະລຸນາກວດສອບວ່າ popup blocker ໄດ້ຖືກປິດແລ້ວ ແລະ ລອງໃຫມ່",
+      });
+    }
+  }
 };
 
 const resetPayment = () => {

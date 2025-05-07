@@ -46,7 +46,7 @@ export default defineNuxtConfig({
   css: ["~/assets/css/style.scss", "~/assets/css/global.css"],
 
   build: {
-    transpile: ["vuetify"],
+    transpile: ["vuetify",'vue3-apexcharts'],
   },
 
   modules: [
