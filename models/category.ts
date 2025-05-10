@@ -3,12 +3,15 @@ export interface CategoryRespons {
 }
 
 export interface Category {
-    DeletedAt: null;
-    ID:        number;
-    Name:      string;
-    CreatedAt: Date;
-    UpdatedAt: Date;
-    Products:  null;
-    loading:   boolean;
-    error:     string;
+     id:               number;
+    Div_Id:           string;
+    Div_NameL:        string;
+    Div_NameE:        string;
+    Record_Status:    string;
+    Maker_DT_Stamp:   Date;
+    Checker_DT_Stamp: Date | null;
+    Auth_Status:      string;
+    Once_Auth:        string;
+    Maker_Id:         number | null;
+    Checker_Id:       null;
 }
