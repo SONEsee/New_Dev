@@ -75,6 +75,7 @@ const submitForm = async () => {
               <v-row>
                 <v-col cols="12" class="d-flex flex-wrap justify-center">
                   <v-avatar
+                  style="border: 1px solid black"
                     size="220"
                     class="mx-auto"
                     :image="
@@ -100,9 +101,10 @@ const submitForm = async () => {
                   </v-btn>
 
                   <input
+                  
                     type="file"
                     ref="file"
-                    style="display: none"
+                    style="display: none "
                     accept="image/jpg,image/png,image/jpeg"
                     @change="onFileChange"
                   />

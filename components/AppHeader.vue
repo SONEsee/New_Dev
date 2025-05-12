@@ -312,31 +312,37 @@ const UserRuleModuleMenus = ref([
     to: "#" 
   },
   { 
-    title: "UserRight - ເກັບຂໍ້ມູນຜູ້ເຂົ້າໃຊ້ລະ", 
+    title: "- ເກັບຂໍ້ມູນຜູ້ເຂົ້າໃຊ້ລະບົບ", 
     value: "user-right", 
     icon: "mdi-account-check", 
     to: "/user" 
   },
   { 
-    title: "GroupUsers - ເກັບຂໍ້ມູນການກຳນົດກຸ່ມຜູ້ເຂົ້າໃຊ້ງານລະບົບ", 
+    title: "- ເກັບຂໍ້ມູນການກຳນົດກຸ່ມຜູ້ເຂົ້າໃຊ້ງານລະບົບ", 
     value: "group-users", 
     icon: "mdi-account-group", 
     to: "#" 
   },
   { 
-    title: "Divisions - ເກັບຂໍ້ມູນພະແນກ", 
+    title: "ກຳນົດສິດເຂົ້າໃຊ້ງານ", 
+    value: "group-users", 
+    icon: "mdi-account-key", 
+    to: "/user/role" 
+  },
+  { 
+    title: " - ເກັບຂໍ້ມູນພະແນກ", 
     value: "divisions", 
     icon: "mdi-domain", 
     to: "/devision" 
   },
   { 
-    title: "Employees - ເກັບຂໍ້ມູນພະນັກງານ", 
+    title: "- ເກັບຂໍ້ມູນພະນັກງານ", 
     value: "employees", 
     icon: "mdi-badge-account", 
     to: "#" 
   },
   { 
-    title: "Report-UserRule - ລາຍງານກ່ຽວການເຂົ້າໃຊ້ລະບົບ", 
+    title: "- ລາຍງານກ່ຽວການເຂົ້າໃຊ້ລະບົບ", 
     value: "report-user-rule", 
     icon: "mdi-chart-box", 
     to: "#" 
