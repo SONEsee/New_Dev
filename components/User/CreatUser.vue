@@ -6,8 +6,6 @@ import { CallSwal } from "#build/imports";
 
 const userStore = UserStore();
 
-
-
 const devision = UseCategoryStore();
 
 const globalStore = UseGlobalStore();
@@ -21,10 +19,6 @@ const userItems = computed(() => devision.categories || []);
 onMounted(() => {
   devision.GetListData();
 });
-
-
-
-
 
 const openFile = () => {
   file.value.click();
@@ -41,11 +35,8 @@ const onFileChange = (event: Event) => {
     userStore.create_user_form.profile_image = value;
   }
 };
-onMounted(() => {
-  
-  
-});
-const submitForm =  async () => {
+onMounted(() => {});
+const submitForm = async () => {
   if (!userStore) {
     const notification = await CallSwal({
       icon: "warning",
@@ -56,16 +47,15 @@ const submitForm =  async () => {
   }
 
   const isValid = await form.value.validate();
+  console.log(`isValid`, isValid);
   if (isValid) {
     await userStore.CreatUser();
   }
-  console.log(`userStore`, userStore);
- 
+  
 };
 </script>
 
 <template>
-  
   <section class="pa-6">
     <v-form ref="form" @submit.prevent="submitForm">
       <v-row>
@@ -146,7 +136,6 @@ const submitForm =  async () => {
                     item-title="Div_NameL"
                     variant="outlined"
                     hide-details="auto"
-                    
                     class="pb-6"
                     no-filter
                   ></v-autocomplete>
@@ -176,7 +165,7 @@ const submitForm =  async () => {
 
                   <label>ສະຖານະການໃຊ້ງານ / Status</label>
                   <v-autocomplete
-                   v-model="userStore.create_user_form.User_Status"
+                    v-model="userStore.create_user_form.User_Status"
                     :rules="[(v: string) => !!v || 'ກະລຸນາເລືອກສະຖານະການໃຊ້ງານ']"
                     placeholder="ກະລຸນາເລືອກສະຖານະການໃຊ້ງານ"
                     density="compact"
@@ -191,7 +180,7 @@ const submitForm =  async () => {
 
                   <label>ລະຫັດຜ່ານ / Password</label>
                   <v-text-field
-                  v-model="userStore.create_user_form.User_Password"
+                    v-model="userStore.create_user_form.User_Password"
                     hide-details="auto"
                     :rules="[(v: string) => !!v || 'ກະລຸນາປ້ອນລະຫັດຜ່ານ']"
                     placeholder="ກະລຸນາປ້ອນລະຫັດຜ່ານ"
@@ -217,5 +206,3 @@ const submitForm =  async () => {
     </v-form>
   </section>
 </template>
-
-
