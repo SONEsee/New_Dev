@@ -1,7 +1,7 @@
 <template>
-  <v-app-bar :elevation="2" color="primary">
+  <v-app-bar :elevation="2" color="#c58c20">
     <template v-slot:prepend>
-      <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
+      <v-app-bar-nav-icon @click="drawer = !drawer" style="color: blue; background-color: blanchedalmond;"></v-app-bar-nav-icon>
     </template>
 
     <v-app-bar-title>ລະບົບຈັດການບັນຊີ</v-app-bar-title>
@@ -12,13 +12,13 @@
             <span class="text-h5" v-if="user.initials">
               <v-icon
                 icon="mdi-account-circle-outline"
-                color="#FFFFFF"
+                color="#c58c20"
               ></v-icon>
             </span>
             <span class="text-h5" v-else>
               <v-icon
                 icon="mdi-account-circle-outline"
-                color="#FFFFFF"
+                color="#fdfdf5"
               ></v-icon>
             </span>
           </v-avatar>
@@ -41,7 +41,7 @@
             </p>
             <v-divider class="my-3"></v-divider>
             <v-btn variant="text" rounded> Edit Account </v-btn>
-            <v-divider class="my-3"></v-divider>
+            <<v-divider class="my-3" color="#c58c20"></v-divider>
             <v-btn variant="text" rounded @click="onLogout"> Disconnect </v-btn>
           </div>
         </v-card-text>
@@ -49,8 +49,8 @@
     </v-menu>
   </v-app-bar>
 
-  <v-navigation-drawer v-model="drawer" permanent :rail="rail" order="1">
-    <v-list nav density="comfortable">
+  <v-navigation-drawer v-model="drawer" permanent :rail="rail" order="1" :style="{ background: '#fdfdf5', borderColor: '#c58c20' }">
+    <v-list nav density="comfortable" style="color: #c58c20;">
      
 
       <v-list-group value="dashboard">
@@ -67,7 +67,7 @@
 
       <!-- GL-Module -->
       <v-list-group>
-        <template v-slot:activator="{ props }">
+        <template v-slot:activator="{ props }" style="color:#c58c20;" >
           <v-list-item
             v-bind="props"
             color="primary"
@@ -88,7 +88,7 @@
         ></v-list-item>
       </v-list-group>
 
-      <!-- Asset-Module -->
+      
       <v-list-group>
         <template v-slot:activator="{ props }">
           <v-list-item
@@ -111,7 +111,7 @@
         ></v-list-item>
       </v-list-group>
 
-      <!-- Loan-Module -->
+      
       <v-list-group>
         <template v-slot:activator="{ props }">
           <v-list-item
@@ -124,10 +124,11 @@
         </template>
       </v-list-group>
 
-      <!-- Collector-Model -->
+     
       <v-list-group>
         <template v-slot:activator="{ props }">
           <v-list-item
+         
             v-bind="props"
             color="primary"
             rounded="xl"
@@ -137,7 +138,7 @@
         </template>
       </v-list-group>
 
-      <!-- Bron-Model -->
+      
       <v-list-group>
         <template v-slot:activator="{ props }">
           <v-list-item
@@ -314,7 +315,7 @@ const UserRuleModuleMenus = ref([
     title: "UserRight - ເກັບຂໍ້ມູນຜູ້ເຂົ້າໃຊ້ລະ", 
     value: "user-right", 
     icon: "mdi-account-check", 
-    to: "#" 
+    to: "/user" 
   },
   { 
     title: "GroupUsers - ເກັບຂໍ້ມູນການກຳນົດກຸ່ມຜູ້ເຂົ້າໃຊ້ງານລະບົບ", 
@@ -326,7 +327,7 @@ const UserRuleModuleMenus = ref([
     title: "Divisions - ເກັບຂໍ້ມູນພະແນກ", 
     value: "divisions", 
     icon: "mdi-domain", 
-    to: "#" 
+    to: "/devision" 
   },
   { 
     title: "Employees - ເກັບຂໍ້ມູນພະນັກງານ", 
@@ -376,9 +377,23 @@ const MainModuleMenus = ref([
   },
 ]);
 
-// Function for logout action (placeholder)
+
 const onLogout = () => {
-  // Handle logout logic here
+
   console.log("Logging out...");
 };
 </script>
+<style>
+
+.v-list-item--active {
+  border-color: #c58c20 !important;
+}
+.v-list-item {
+  color: #c58c20 !important;
+}
+
+
+.v-icon {
+  color: #c58c20;
+}
+</style>
