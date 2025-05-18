@@ -1,119 +1,187 @@
 <script setup lang="ts">
-import { computed, ref, onMounted } from "vue";
-import { useRoute } from "vue-router";
-import { UseCategoryStore } from "~/stores/category";
+import { validate } from "numeral";
+import { computed, ref, onMounted, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 
-const store = UseCategoryStore();
+const store = DevisionStore();
 const route = useRoute();
-const loading = ref(false);
-const form = ref<any>(null);
-
-// Computed property ສຳລັບຂໍ້ມູນໝວດໝູ່
-const categoryData = computed(() => {
-  return store.response_detail_query_data.length > 0
-    ? store.response_detail_query_data[0]
-    : null;
-});
+const router = useRouter();
+const id = route.query.id as string;
 
 
-const updatedName = ref("");
-
-
-onMounted(async () => {
-  const id = route.query.id?.toString() ?? null;
+onMounted(() => {
   if (id) {
-    loading.value = true;
-    await store.GetDetailCategory(id);
-    if (categoryData.value) {
-      updatedName.value = categoryData.value.Name; 
-      store.form_update_data.ID = categoryData.value.ID; 
-    }
-    loading.value = false;
+    store.GetDataDetail(id);
+  } else {
+   
+    router.push('/devisions');
   }
 });
 
-// ຟັງຊັນ submit ສຳລັບການອັບເດດ
-const submit = async () => {
-  const { valid } = await form.value.validate();
-  if (valid) {
-    loading.value = true;
-    store.form_update_data.Name = updatedName.value; 
-    await store.UpdateCategory(route.query.id?.toString() ?? null);
-    loading.value = false;
+
+const response_data = computed(() => {
+  return store.respons_detail_query_data;
+});
+
+
+watch(response_data, (newVal) => {
+  if (newVal) {
+    store.form_update_data.div_id = newVal.div_id || '';
+    store.form_update_data.division_name_la = newVal.division_name_la || '';
+    store.form_update_data.division_name_en = newVal.division_name_en || '';
+    store.form_update_data.record_Status = newVal.record_Status || '';
+    store.form_update_data.Maker_Id = newVal.Maker_Id || '';
+    store.form_update_data.Checker_Id = newVal.Checker_Id || '';
+    store.form_update_data.Auth_Status = newVal.Auth_Status || '';
+    store.form_update_data.Once_Auth = newVal.Once_Auth || '';
+  }
+}, { immediate: true });
+
+const form = ref<any>(null);
+const valid = ref(false);
+const loading = computed(() => store.isloading);
+
+const onSubmit = async () => {
+  try {
+    
+    if (!form.value) {
+      console.error("Form reference is null");
+      return;
+    }
+    
+    const isValid = await form.value.validate();
+    if (isValid.valid) {
+      console.log("Form is valid, submitting data...");
+      
+      if (response_data.value) {
+        store.form_update_data.div_id = response_data.value.div_id;
+        store.form_update_data.division_name_la = response_data.value.division_name_la;
+        store.form_update_data.division_name_en = response_data.value.division_name_en;
+        store.form_update_data.record_Status = response_data.value.record_Status;
+        store.form_update_data.Maker_Id = response_data.value.Maker_Id;
+        store.form_update_data.Checker_Id = response_data.value.Checker_Id;
+        store.form_update_data.Auth_Status = response_data.value.Auth_Status;
+        store.form_update_data.Once_Auth = response_data.value.Once_Auth;
+      }
+      
+      
+      await store.UpdateDevision(id);
+    }
+  } catch (error) {
+    console.error("Error during submission:", error);
   }
 };
+
+const onCancel = () => {
+  
+  router.push('/devisions');
+};
+
+const title = ref("ອັບເດດຂໍ້ມູນພະແນກ / Update Division");
 </script>
 
 <template>
-  <section class="bg-gray-50 min-h-screen py-8 px-4">
-    <v-container>
-      <v-card class="mx-auto rounded-lg shadow-lg" max-width="800" elevation="3">
-        <v-card-title class="font-weight-bold pa-6 bg-primary text-white">
-          <v-icon icon="mdi-view-list" class="mr-2" />
-          ລາຍລະອຽດໝວດໝູ່
-        </v-card-title>
-
-        <v-card-text class="pa-6">
-          <!-- Loading State -->
-          <div v-if="loading" class="d-flex justify-center align-center py-8">
-            <v-progress-circular indeterminate color="primary" size="64" />
-          </div>
-
-          <!-- Form ສຳລັບການແກ້ໄຂ -->
-          <template v-else-if="categoryData">
-            <v-form ref="form" @submit.prevent="submit">
-              <v-row>
-                <v-col cols="12" sm="6">
-                  <v-text-field
-                    v-model="updatedName"
-                    label="ຊື່ໝວດໝູ່"
-                    variant="outlined"
-                    item="hi"
-                    density="comfortable"
-                    prepend-inner-icon="mdi-format-title"
-                    :rules="[v => !!v.trim() || 'ກະລຸນາປ້ອນຊື່ໝວດໝູ່']"
-                    class="mb-4"
-                  />
-                </v-col>
-
-                <v-col cols="12" sm="6">
-                  <v-text-field
-                    v-model="categoryData.ID"
-                    label="ລະຫັດ"
-                    readonly
-                    variant="outlined"
-                    density="comfortable"
-                    prepend-inner-icon="mdi-identifier"
-                    class="mb-4"
-                  />
-                </v-col>
-              </v-row>
-              <v-btn
-                type="submit"
-                color="primary"
-                :loading="loading"
-                class="mt-4"
-              >
-                ບັນທຶກການແກ້ໄຂ
-              </v-btn>
-            </v-form>
-          </template>
-
-          <!-- No Data State -->
-          <div v-else class="text-center py-8">
-            <v-icon size="64" color="grey" class="mb-4">
-              mdi-folder-off-outline
-            </v-icon>
-            <div class="text-h6 text-grey">ບໍ່ພົບຂໍ້ມູນໝວດໝູ່</div>
-          </div>
-        </v-card-text>
-      </v-card>
-    </v-container>
-  </section>
+  <v-container>
+    <GlobalTextTitleLine :title="title" />
+    <v-form ref="form" @submit.prevent="onSubmit">
+      <v-col cols="12">
+        <v-row>
+          <v-col cols="12" md="6">
+            <template v-if="response_data">
+              <v-text-field
+                :rules="[(v: string) => !!v || 'ກະລຸນາປ້ອນລະຫັດພະແນກ']"
+                v-model="response_data.div_id"
+                label="ລະຫັດພະແນກ / Division ID"
+                density="compact"
+                variant="outlined"
+                hide-details="auto"
+                readonly
+                class="pb-6"
+              ></v-text-field>
+            </template>
+          </v-col>
+          <v-col cols="12" md="6">
+            <template v-if="response_data">
+              <v-text-field
+                :rules="[(v: string) => !!v || 'ກະລຸນາປ້ອນຊື່ພະແນກພາສາລາວ']"
+                v-model="response_data.division_name_la"
+                label="ຊື່ພະແນກພາສາລາວ / Division Name (Lao)"
+                density="compact"
+                variant="outlined"
+                hide-details="auto"
+                class="pb-6"
+              ></v-text-field>
+            </template>
+          </v-col>
+          <v-col cols="12" md="6">
+            <template v-if="response_data">
+              <v-text-field
+                :rules="[(v: string) => !!v || 'ກະລຸນາປ້ອນຊື່ພະແນກພາສາອັງກິດ']"
+                v-model="response_data.division_name_en"
+                label="ຊື່ພະແນກພາສາອັງກິດ / Division Name (English)"
+                density="compact"
+                variant="outlined"
+                hide-details="auto"
+                class="pb-6"
+              ></v-text-field>
+            </template>
+          </v-col>
+          <v-col cols="12" md="6">
+            <template v-if="response_data">
+              <v-text-field
+                v-model="response_data.Maker_Id"
+                label="ລະຫັດຜູ້ບັນທຶກ / Maker ID"
+                density="compact"
+                variant="outlined"
+                hide-details="auto"
+                class="pb-6"
+                readonly
+              ></v-text-field>
+            </template>
+          </v-col>
+          <v-col cols="12" md="6">
+            <template v-if="response_data">
+              <v-autocomplete
+                v-model="response_data.Once_Auth"
+                label="ສະຖານະອະນຸມັດ / Once Auth"
+                :items="[
+                  { title: 'ອະນຸມັດ (A)', value: 'A' },
+                  { title: 'ກຳລັງດຳເນີນການ (P)', value: 'P' },
+                  { title: 'ບໍ່ອະນຸມັດ (N)', value: 'N' },
+                  { title: 'ອະນຸມັດ (Y)', value: 'Y' }
+                ]"
+                variant="outlined"
+                density="compact"
+                item-title="title"
+                item-value="value"
+                :rules="[(v) => !!v || 'ກະລຸນາເລືອກສະຖານະການອະນຸມັດ']"
+              ></v-autocomplete>
+            </template>
+          </v-col>
+          <v-col cols="12" md="6">
+            <template v-if="response_data">
+              <v-autocomplete
+                v-model="response_data.record_Status"
+                label="ສະຖານະ / Status"
+                :items="[
+                  { title: 'ເປີດໃຊ້ງານ (A)', value: 'A' },
+                  { title: 'ປິດໃຊ້ງານ (C)', value: 'C' },
+                  { title: 'ເປີດໃຊ້ງານ (O)', value: 'O' }
+                ]"
+                variant="outlined"
+                density="compact"
+                item-title="title"
+                item-value="value"
+                :rules="[(v) => !!v || 'ກະລຸນາເລືອກສະຖານະການໃຊ້ງານ']"
+              ></v-autocomplete>
+            </template>
+          </v-col>
+        </v-row>
+      </v-col>
+      <div class="d-flex justify-center align-center">
+        <v-btn type="submit" color="primary" text="ບັນທຶກ"/>
+        <v-btn type="button" color="error" text="ຍົກເລີກ" class="ml-6" @click="onCancel" />
+      </div>
+    </v-form>
+  </v-container>
 </template>
-
-<style scoped>
-.shadow-lg {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-</style>
