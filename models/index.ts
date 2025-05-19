@@ -12,6 +12,9 @@ import * as IdentitiesModel from "./identities";
 import * as DeviceDetailModels from "./devicedetail";
 import * as ProductModel from "./product";
 import * as CategoryModel from "./category";
+import *as RoleModel from "./role";
+import * as MenuModel from "./menu";
+import * as ModuleModel from "./module";
 
 export {
   UserModel,
@@ -28,4 +31,7 @@ export {
   DeviceDetailModels,
   ProductModel,
   CategoryModel,
+  RoleModel,
+  MenuModel,
+  ModuleModel
 };

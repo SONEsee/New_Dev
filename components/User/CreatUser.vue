@@ -3,9 +3,9 @@ import axios from "@/helpers/axios";
 import notfounfimages from "@/assets/img/404.png";
 const notfoundref = ref(notfounfimages);
 import { CallSwal } from "#build/imports";
-
+const roleStore = RoleStore();
 const userStore = UserStore();
-
+const role = computed(() => roleStore.respons_data_role || []);
 const devision = UseCategoryStore();
 
 const globalStore = UseGlobalStore();
@@ -18,6 +18,7 @@ const file = ref();
 const userItems = computed(() => devision.categories || []);
 onMounted(() => {
   devision.GetListData();
+  roleStore.GetRole();
 });
 
 const openFile = () => {
@@ -25,33 +26,50 @@ const openFile = () => {
 };
 
 const onFileChange = (event: Event) => {
-  console.log(`event`, event);
   //@ts-ignore
   const files = event.target.files;
   let file = files[0];
-  console.log(`file`, file);
   if (file) {
     const value = file as File;
     userStore.create_user_form.profile_image = value;
   }
 };
-onMounted(() => {});
+
+// ຮັບປະກັນວ່າມີ user_id ກ່ອນສົ່ງຟອມ
 const submitForm = async () => {
-  if (!userStore) {
-    const notification = await CallSwal({
+  // ກວດສອບວ່າມີທຸກຂໍ້ມູນທີ່ຈຳເປັນກ່ອນສົ່ງຟອມ
+  if (
+    !userStore.create_user_form.user_id ||
+    !userStore.create_user_form.user_name ||
+    !userStore.create_user_form.user_mobile ||
+    !userStore.create_user_form.user_password ||
+    !userStore.create_user_form.Div_Id ||
+    !userStore.create_user_form.Role_ID ||
+    !userStore.create_user_form.Auth_Status
+  ) {
+    await CallSwal({
       icon: "warning",
-      title: "ປອ້ນຂໍ້ມູນ",
+      title: "ປ້ອນຂໍ້ມູນ",
       text: "ກະລຸນາປ້ອນຂໍ້ມູນໃຫ້ຄົບຖ້ວນ",
     });
     return;
   }
 
   const isValid = await form.value.validate();
-  console.log(`isValid`, isValid);
   if (isValid) {
+    console.log("ສົ່ງຂໍ້ມູນໄປຫາ Store");
+    // ແປງຄ່າ Auth_Status ຈາກ "ເປີດ"/"ປິດ" ເປັນ "A"/"I"
+    if (userStore.create_user_form.Auth_Status === "ເປີດ") {
+      userStore.create_user_form.Auth_Status = "A";
+    } else if (userStore.create_user_form.Auth_Status === "ປິດ") {
+      userStore.create_user_form.Auth_Status = "I";
+    }
+
+    // ຕັ້ງຄ່າ user_status ຈາກຄ່າ Auth_Status
+    userStore.create_user_form.user_status = userStore.create_user_form.Auth_Status === "A";
+
     await userStore.CreatUser();
   }
-  
 };
 </script>
 
@@ -64,7 +82,7 @@ const submitForm = async () => {
         </v-col>
 
         <v-col cols="12" class="d-flex flex-wrap justify-end">
-          <v-btn color="primary" flat type="submit" :loading="loading"
+          <v-btn color="primary" flat type="submit" :loading="userStore.loading"
             >ບັນທຶກ</v-btn
           >
         </v-col>
@@ -115,11 +133,22 @@ const submitForm = async () => {
             <v-col cols="8">
               <v-row>
                 <v-col cols="12" md="6">
+                  <label>ລະຫັດຜູ້ໃຊ້ / User ID</label>
+                  <v-text-field
+                    v-model="userStore.create_user_form.user_id"
+                    :rules="[(v) => !!v || 'ກະລຸນາປ້ອນລະຫັດຜູ້ໃຊ້']"
+                    placeholder="ກະລຸນາປ້ອນລະຫັດຜູ້ໃຊ້"
+                    density="compact"
+                    variant="outlined"
+                    hide-details="auto"
+                    class="pb-6"
+                  ></v-text-field>
+                  
                   <label>ຊື່ຜູ້ໃຊ້ງານ / Username</label>
                   <v-text-field
                     @click:append-inner="visible = !visible"
-                    :rules="[(v: string) => !!v || 'ກະລຸນາປ້ອນຊື່ຜູ້ໃຊ້ງານ']"
-                    v-model="userStore.create_user_form.User_Name"
+                    :rules="[(v) => !!v || 'ກະລຸນາປ້ອນຊື່ຜູ້ໃຊ້ງານ']"
+                    v-model="userStore.create_user_form.user_name"
                     placeholder="ກະລຸນາປ້ອນຊື່ຜູ້ໃຊ້ງານ"
                     density="compact"
                     variant="outlined"
@@ -130,12 +159,12 @@ const submitForm = async () => {
                   <label>ພະແນກ / Department</label>
                   <v-autocomplete
                     v-model="userStore.create_user_form.Div_Id"
-                    :rules="[(v: string) => !!v || 'ກະລຸນາເລືອກພະແນກ']"
+                    :rules="[(v) => !!v || 'ກະລຸນາເລືອກພະແນກ']"
                     placeholder="ກະລຸນາເລືອກພະແນກ"
                     density="compact"
                     :items="userItems"
-                    item-value="Div_Id"
-                    item-title="Div_NameL"
+                    item-value="div_id"
+                    item-title="division_name_la"
                     variant="outlined"
                     hide-details="auto"
                     class="pb-6"
@@ -143,9 +172,9 @@ const submitForm = async () => {
                   ></v-autocomplete>
                   <label>ເບີໂທລະສັບ / Phone</label>
                   <v-text-field
-                    v-model="userStore.create_user_form.User_Mobile"
+                    v-model="userStore.create_user_form.user_mobile"
                     hide-details="auto"
-                    :rules="[(v: string) => !!v || 'ກະລຸນາປ້ອນເບີໂທລະສັບ']"
+                    :rules="[(v) => !!v || 'ກະລຸນາປ້ອນເບີໂທລະສັບ']"
                     placeholder="ກະລຸນາປ້ອນເບີໂທລະສັບ"
                     density="compact"
                     variant="outlined"
@@ -156,24 +185,35 @@ const submitForm = async () => {
                 <v-col cols="6">
                   <label>ອີເມວ / Email</label>
                   <v-text-field
-                    v-model="userStore.create_user_form.User_Email"
-                    :rules="[(v: string) => !!v || 'ກະລຸນາປ້ອນຊື່ຫຼິນ']"
-                    placeholder="ກະລຸນາປ້ອນຊື່ຫຼິນ"
+                    v-model="userStore.create_user_form.user_email"
+                    placeholder="ກະລຸນາປ້ອນອີເມວ"
                     density="compact"
                     variant="outlined"
                     hide-details="auto"
                     class="pb-6"
                   ></v-text-field>
-
+                  
                   <label>ສະຖານະການໃຊ້ງານ / Status</label>
                   <v-autocomplete
-                    v-model="userStore.create_user_form.User_Status"
-                    :rules="[(v: string) => !!v || 'ກະລຸນາເລືອກສະຖານະການໃຊ້ງານ']"
+                    v-model="userStore.create_user_form.Auth_Status"
+                    :rules="[(v) => !!v || 'ກະລຸນາເລືອກສະຖານະການໃຊ້ງານ']"
                     placeholder="ກະລຸນາເລືອກສະຖານະການໃຊ້ງານ"
                     density="compact"
                     :items="['ປິດ', 'ເປີດ']"
-                    item-value="id"
-                    item-title="vill_name"
+                    variant="outlined"
+                    hide-details="auto"
+                    class="pb-6"
+                    no-filter
+                  ></v-autocomplete>
+                  <label>ສິດການເຂົ້ານຳໃຊ້ / Role</label>
+                  <v-autocomplete
+                    v-model="userStore.create_user_form.Role_ID"
+                    :rules="[(v) => !!v || 'ກະລຸນາເລືອກສິດເຂົ້ານຳໃຊ້']"
+                    placeholder="ກະລຸນາເລືອກສິດເຂົ້ານຳໃຊ້"
+                    density="compact"
+                    :items="role"
+                    item-value="role_id"
+                    item-title="role_name_la"
                     variant="outlined"
                     hide-details="auto"
                     class="pb-6"
@@ -182,25 +222,18 @@ const submitForm = async () => {
 
                   <label>ລະຫັດຜ່ານ / Password</label>
                   <v-text-field
-                    v-model="userStore.create_user_form.User_Password"
+                    v-model="userStore.create_user_form.user_password"
                     hide-details="auto"
-                    :rules="[(v: string) => !!v || 'ກະລຸນາປ້ອນລະຫັດຜ່ານ']"
+                    :rules="[(v) => !!v || 'ກະລຸນາປ້ອນລະຫັດຜ່ານ']"
                     placeholder="ກະລຸນາປ້ອນລະຫັດຜ່ານ"
                     density="compact"
                     variant="outlined"
                     class="pb-6"
+                    :type="visible ? 'text' : 'password'"
+                    :append-inner-icon="visible ? 'mdi-eye-off' : 'mdi-eye'"
                   ></v-text-field>
                 </v-col>
               </v-row>
-            </v-col>
-          </v-row>
-        </v-col>
-
-        <v-col cols="12">
-          <v-row>
-            <v-col cols="6"></v-col>
-            <v-col cols="6">
-              <v-row> </v-row>
             </v-col>
           </v-row>
         </v-col>

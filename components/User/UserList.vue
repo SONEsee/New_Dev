@@ -1,4 +1,7 @@
 <script lang="ts" setup>
+import { useRoute } from 'vue-router';
+const route = useRoute();
+const user_id = route.query.user_id as string;
 const agencyStore = UserStore();
 const response_data = computed(() => {
    return agencyStore.userList || []; 
@@ -6,6 +9,7 @@ const response_data = computed(() => {
 console.log(response_data.value);
 onMounted(() => {
   agencyStore.GetUser();
+  agencyStore.DeleteUser(user_id);
 });
 // const response_data = computed(() => {
 //   return agencyStore.response_query_data;
@@ -27,32 +31,35 @@ const headers = ref([
   { title: "ລຳດັບ", key: "no", sortable: false },
   { title: "ຮູບພາບ", key: "image", sortable: false },
 
-  { title: "ຊື່ຜູ້ໃຊ້ງານ", key: "User_Name", sortable: false },
-  { title: "ອີເມວ", key: "User_Email", sortable: false },
-  { title: "ເບີ້ໂທ", key: "User_Mobile", sortable: false },
+  { title: "ຊື່ຜູ້ໃຊ້ງານ", key: "user_name", sortable: false },
+  { title: "ອີເມວ", key: "user_email", sortable: false },
+  { title: "ເບີ້ໂທ", key: "user_mobile", sortable: false },
   { title: "ສະຖານະ", key: "User_Status", sortable: false },
   { title: "Actions", key: "actions", sortable: false },
 ]);
 
-// const onDeleteUser = async (id: string) => {
-//   const res = await agencyStore.OndeleteAgency(id);
-//   if (res instanceof Error) {
-//     return DefaultSwalError(res.message);
-//   }
+const onDeleteUser = async (user_id: string) => {
+  // ຢືນຢັນກ່ອນລຶບຂໍ້ມູນ
+  const confirmation = await CallSwal({
+    icon: "warning",
+    title: "ຄຳເຕືອນ",
+    text: "ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການລຶບຂໍ້ມູນຜູ້ໃຊ້ນີ້?",
+    showCancelButton: true,
+    confirmButtonText: "ຕົກລົງ",
+    cancelButtonText: "ຍົກເລີກ",
+  });
 
-//   const notification = await CallSwal({
-//     icon: "success",
-//     title: "ສຳເລັດ",
-//     text: "ບັນທຶກຂໍ້ມູນສຳເລັດ",
-//   });
-
-//   if (notification.isConfirmed) {
-//     await agencyStore.GetListData();
-//   } else {
-//     await agencyStore.GetListData();
-//   }
-// };
-
+  // ຖ້າຜູ້ໃຊ້ຢືນຢັນການລຶບ
+  if (confirmation.isConfirmed) {
+    // ເອີ້ນໃຊ້ຟັງຊັນລຶບຂໍ້ມູນ
+    const result = await agencyStore.DeleteUser(user_id);
+    
+    // ຖ້າລຶບສຳເລັດ, ໂຫລດຂໍ້ມູນໃໝ່
+    if (result) {
+      await agencyStore.GetUser(); // ໂຫລດລາຍການຜູ້ໃຊ້ໃໝ່ຫຼັງຈາກລຶບສຳເລັດ
+    }
+  }
+};
 // const onsetinput = async (input: string | null) => {
 //   if (request !== null) {
 //     request.q = input ?? null;
@@ -116,7 +123,7 @@ const headers = ref([
 
             <template v-slot:item.image="{ item }">
               <div class="pa-2">
-                <GlobalMenuSpanImage :image="item.image_profile" />
+                <GlobalMenuSpanImage :image="item.profile_image" />
               </div>
             </template>
 
@@ -136,7 +143,7 @@ const headers = ref([
                 color="primary"
                 icon="mdi-pencil"
                 variant="text"
-                @click="goPath(`/user/edit`)"
+                @click="goPath(`/user/edit?user_id=${item.user_id}`)"
                 size="small"
               ></v-btn>
 
@@ -151,17 +158,17 @@ const headers = ref([
                 color="primary"
                 icon="mdi-eye"
                 variant="text"
-                @click="goPath(`/user/detail`)"
+                @click="goPath(`/user/detail?user_id=${item.user_id}`)"
                 size="small"
               ></v-btn>
 
-              <!-- <v-btn
+              <v-btn
                 color="error"
                 icon="mdi-delete"
                 variant="text"
                 size="small"
-                @click="onDeleteUser(item.id)"
-              ></v-btn> -->
+                @click="onDeleteUser(item.user_id)"
+              ></v-btn>
             </template>
 
             <!-- <template v-slot:bottom>

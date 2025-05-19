@@ -15,7 +15,7 @@ const rules = {
 };
 
 const onSubmit = async () => {
-  if (!categoryStore.form_create_data.Div_Id) {
+  if (!categoryStore.form_create_data.div_id) {
     const notification = await CallSwal({
       icon: "warning",
       title: "ປອ້ນຂໍ້ມູນ",
@@ -47,7 +47,7 @@ const onSubmit = async () => {
               <v-text-field
                 class="mt-4"
                 density="compact"
-                v-model="categoryStore.form_create_data.Div_Id"
+                v-model="categoryStore.form_create_data.div_id"
                 :rules="[(v) => !!v || 'ກະລຸນາປອ້ນ ID!']"
                 label="ເພິ່ມ ID"
                 variant="outlined"
@@ -57,7 +57,7 @@ const onSubmit = async () => {
               <v-text-field
                 class="mt-4"
                 density="compact"
-                v-model="categoryStore.form_create_data.Div_NameL"
+                v-model="categoryStore.form_create_data.division_name_la"
                 :rules="[(v) => !!v || 'ກະລຸນາປ້ອນຊື່ພາສາລາວ!']"
                 label="ເພີ່ມຊື່ພາສາລາວ"
                 variant="outlined"
@@ -67,7 +67,7 @@ const onSubmit = async () => {
               <v-text-field
                 class="mt-4"
                 density="compact"
-                v-model="categoryStore.form_create_data.Div_NameE"
+                v-model="categoryStore.form_create_data.division_name_en"
                 :rules="[(v) => !!v || 'ກະລຸນາປ້ອນຊື່ພາສາອັງກິດ!']"
                 label="ຊື່ພາສາອັງກິດ"
                 variant="outlined"
@@ -83,7 +83,7 @@ const onSubmit = async () => {
                 item-value="value"
                 class="mt-4"
                 density="compact"
-                v-model="categoryStore.form_create_data.Record_Status"
+                v-model="categoryStore.form_create_data.record_Status"
                 :rules="[(v) => !!v || 'ສະຖານະໃຊ້ງານ!']"
                 label="ເລືອກສະຖານະໃຊ້ງານ"
                 variant="outlined"
@@ -124,29 +124,29 @@ const onSubmit = async () => {
           </v-row>
         </v-col>
         <v-col cols="12">
-          <v-row> <v-col cols="12"md="6"></v-col>
+          <v-row>
+            <v-col cols="12" md="6"></v-col>
             <v-col cols="12" md="6">
               <v-row>
-               
                 <v-col cols="12" md="6">
                   <v-btn
                     style="width: 80%"
                     type="submit"
                     color="primary"
                     class="mt-4"
-                    density="compact"
-                  >
-                    ບັນທຶກ
-                  </v-btn>
+                   
+                    text="ບັນທຶກ"
+                  />
+                   
+                 
                 </v-col>
                 <v-col cols="12" md="6">
                   <v-btn
-                  
                     style="width: 80%"
                     @click="goPath('/devision')"
                     color="error"
                     class="mt-4"
-                    density="compact"
+                    
                   >
                     ຍົກເລີກ
                   </v-btn>

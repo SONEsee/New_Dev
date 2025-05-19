@@ -18,7 +18,7 @@
           <v-col cols="12">
             <label>ຊື່ຜູ້ໃຊ້ງານ / Username</label>
             <v-text-field
-              v-model="User_Name"
+              v-model="user_name"
               density="comfortable"
               variant="outlined"
               hide-details="auto"
@@ -29,7 +29,7 @@
           <v-col cols="12">
             <label>ລະຫັດຜ່ານ / Password</label>
             <v-text-field
-              v-model="User_Password"
+              v-model="user_password"
               :type="visible ? 'text' : 'password'"
               :append-inner-icon="visible ? 'mdi-eye-off' : 'mdi-eye'"
               @click:append-inner="visible = !visible"
@@ -66,8 +66,8 @@ import { ref } from "vue";
 import { useRouter } from "vue-router";
 import Swal from "sweetalert2";
 
-const User_Name = ref(null);
-const User_Password = ref(null);
+const user_name = ref(null);
+const user_password = ref(null);
 const visible = ref(false);
 const loading = ref(false);
 const form = ref();
@@ -92,8 +92,8 @@ const handleLogin = async () => {
       loading.value = true;
       
       const loginPayload = {
-        User_Name: User_Name.value,
-        User_Password: User_Password.value
+        user_name: user_name.value,
+        user_password: user_password.value
       };
       
       console.log("Attempting login with payload:", loginPayload);

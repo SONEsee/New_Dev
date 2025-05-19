@@ -6,17 +6,19 @@ import { CallSwal } from "~/composables/global";
 import { DefaultSwalError } from "~/composables/global";
 const Headers = [
   { title: "ລຳດັບ", value: "index" },
-  { title: "ລະຫັດພະແນກ", value: "Div_Id" },
-  { title: "ຊື່ພາສາລາວ", value: "Div_NameL" },
-  { title: "ຊື່ພາສາອັງກິດ", value: "Div_NameE" },
-  { title: "ສະຖານະການໃຊ້ງານ", value: "Record_Status" },
+  { title: "ລະຫັດພະແນກ", value: "div_id" },
+  { title: "ຊື່ພາສາລາວ", value: "division_name_la" },
+  { title: "ຊື່ພາສາອັງກິດ", value: "division_name_en" },
+  { title: "ສະຖານະການໃຊ້ງານ", value: "record_Status" },
   { title: "ສະຖານະການອານຸມັດ", value: "Auth_Status" },
   { title: "ຈັດການ", value: "Actions" },
 ];
 
 const categories = UseCategoryStore();
 const response_data = computed(() => categories.categories);
-console.log(response_data.value);
+console.log(response_data.value,
+"response_data");
+
 
 onMounted(() => {
   categories.GetListData();
@@ -33,6 +35,7 @@ const onDeleteType = async (Div_Id: string) => {
       showConfirmButton: false,
       timer: 1500,
     });
+    goPath("/devision");
     
     
   }
@@ -40,6 +43,7 @@ const onDeleteType = async (Div_Id: string) => {
 </script>
 
 <template>
+ 
   <v-col cols="12">
     <div class="d-flex justify-end">
       <v-btn color="primary" @click="goPath('/devision/create')"
@@ -53,8 +57,8 @@ const onDeleteType = async (Div_Id: string) => {
       {{ index + 1 }}
     </template>
 
-    <template v-slot:item.Record_Status="{ item }">
-      <div v-if="item.Record_Status === 'O'">
+    <template v-slot:item.record_Status="{ item }">
+      <div v-if="item.record_Status === 'O'">
         <v-chip color="green"><p>ເປີດໃຊ້ງານ</p> </v-chip>
       </div>
       <div v-else="item.Record_Status === 'C'">
@@ -69,9 +73,7 @@ const onDeleteType = async (Div_Id: string) => {
         <v-chip color="yellow"><p>ຍັງບໍ່ທັນອານຸມັດ</p> </v-chip>
       </div>
     </template>
-    <!-- <template v-slot:item.UpdatedAt="{ item }">
-      {{ new Date(item.UpdatedAt).toLocaleDateString() }}
-    </template> -->
+    
 
     <template v-slot:item.Actions="{ item }">
       <v-btn
@@ -79,21 +81,21 @@ const onDeleteType = async (Div_Id: string) => {
         flat
         class="text-primary"
         icon="mdi-eye-outline"
-        @click="goPath(`/category/detail?id=${item.ID}`)"
+        @click="goPath(`/devision/detail?id=${item.div_id}`)"
       />
       <v-btn
         small
         flat
         class="text-info"
         icon="mdi-pen"
-        @click="goPath(`/category/update?id=${item.ID}`)"
+        @click="goPath(`/devision/update?id=${item.div_id}`)"
       />
       <v-btn
         small
         flat
         class="text-error"
         icon="mdi-delete-outline"
-        @click="onDeleteType(item.Div_Id)"
+        @click="onDeleteType(item.div_id)"
       />
     </template>
   </v-data-table>
