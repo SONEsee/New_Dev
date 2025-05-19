@@ -1,19 +1,25 @@
 <script setup lang="ts">
+
 const title = "ສ້າງຂໍ້ມູນຟັງຊັ້ນ";
 const moduleStore = ModulesStore();
 const valid = ref(false);
 const form = ref();
-const DeviceDistributins = ()=>{
-    valid.value = !valid.value;
-}
-const Create = async ()=>{
-    const valid = await form.value.validate();
-    if(valid){
-        console.log("success")
-    }
-}
+
+const DeviceDistributins = () => {
+  valid.value = !valid.value;
+};
+
+
+const Create = async () => {
+  const valid = await form.value.validate();
+  if (valid) {
+    await moduleStore.createModule();
+  }
+};
+
 </script>
 <template>
+ 
   <v-container>
     <GlobalTextTitleLine :title="title" />
     <v-form ref="form" @submit.privent="Create">
@@ -21,7 +27,7 @@ const Create = async ()=>{
         <v-row>
           <v-col cols="12" md="6">
             <v-text-field
-            @click:append-inner="DeviceDistributins"
+              @click:append-inner="DeviceDistributins"
               v-model="moduleStore.create_form_module.module_name_la"
               density="compact"
               variant="outlined"
@@ -58,10 +64,10 @@ const Create = async ()=>{
           </v-col>
           <v-col cols="12" md="6">
             <v-text-field
-              v-model="moduleStore.create_form_module.module_icon"
+              v-model="moduleStore.create_form_module.module_Id"
               density="compact"
               variant="outlined"
-              label="ໄອຄອນຟັງຊັ້ນ (ເຊັ່ນ mdi-home)"
+              label="ລະຫັດຟັງຊັ້ນ "
             >
             </v-text-field>
           </v-col>
@@ -83,7 +89,7 @@ const Create = async ()=>{
         </v-row>
         <v-col cols="12" class="d-flex justify-center">
           <v-btn
-          type="submit"
+            type="submit"
             color="primary"
             class="d-flex justify-center mr-2"
             text="ບັນທຶກ"

@@ -234,7 +234,7 @@ async UpdateUser(user_id: string) {
     formData.append("user_email", this.update_user_form.user_email || "");
     formData.append("user_mobile", this.update_user_form.user_mobile);
     
-    // ສົ່ງລະຫັດຜ່ານສະເພາະເມື່ອຜູ້ໃຊ້ປ່ຽນ
+   
     if (this.update_user_form.user_password && this.update_user_form.user_password.trim() !== '') {
       formData.append("user_password", this.update_user_form.user_password);
     }
@@ -304,13 +304,13 @@ async UpdateUser(user_id: string) {
 async DeleteUser(user_id: string) {
   this.loading = true;
   try {
-    // ກວດສອບວ່າມີ user_id ຫຼື ບໍ່
+   
     if (!user_id) {
      
       return null;
     }
 
-    // ສົ່ງຄຳຂໍລຶບຂໍ້ມູນໄປຫາ API
+    //
     const response = await axios.delete(`/api/users/${user_id}`, {
       headers: {
         "Content-Type": "application/json",
@@ -318,7 +318,7 @@ async DeleteUser(user_id: string) {
       },
     });
 
-    // ກວດສອບຜົນການຕອບກັບ
+    
     if (response.status === 204 || response.status === 200 || response.status === 301) {
       await CallSwal({
         title: "ສຳເລັດ",

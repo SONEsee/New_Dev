@@ -12,6 +12,10 @@ const res = computed(() => {
 onMounted(() => {
   moduleStore.getModule();
 });
+const onDeleteType = async (module_Id: string) => {
+  await moduleStore.deleteModule(module_Id);
+  moduleStore.getModule();
+};
 const title = "ຂໍ້ມູນຟັງຊັ້ນຫຼັກຂອງລະບົບ";
 const header = [
   { title: "ຊື່ເມນູພາສາລາວ", value: "module_name_la" },
@@ -54,15 +58,15 @@ const header = [
           flat
           class="text-info"
           icon="mdi-pen"
-          @click="goPath(`/devision/update?id=${item.module_order}`)"
+          @click="goPath(`/module/edit?id=${item.module_Id}`)"
         />
-        <!-- <v-btn
+        <v-btn
           small
           flat
           class="text-error"
           icon="mdi-delete-outline"
-          @click="onDeleteType(item.module_order)"
-        /> -->
+          @click="onDeleteType(item.module_Id)"
+        />
       </template>
     </v-data-table>
   </v-container>
