@@ -139,63 +139,9 @@ const getUserIdFromLocalStorage = () => {
 };
 
 
-<<<<<<< HEAD
-// UserRule-Model submenu items
-const UserRuleModuleMenus = ref([
-  { 
-    title: "ModuleInfo", 
-    value: "module-info", 
-    icon: "mdi-view-module", 
-    to: "#" 
-  },
-  { 
-    title: "FunctionInfo", 
-    value: "function-info", 
-    icon: "mdi-function", 
-    to: "#" 
-  },
-  { 
-    title: "- ເກັບຂໍ້ມູນຜູ້ເຂົ້າໃຊ້ລະບົບ", 
-    value: "user-right", 
-    icon: "mdi-account-check", 
-    to: "/user" 
-  },
-  { 
-    title: "- ເກັບຂໍ້ມູນການກຳນົດກຸ່ມຜູ້ເຂົ້າໃຊ້ງານລະບົບ", 
-    value: "group-users", 
-    icon: "mdi-account-group", 
-    to: "#" 
-  },
-  { 
-    title: "ກຳນົດສິດເຂົ້າໃຊ້ງານ", 
-    value: "group-users", 
-    icon: "mdi-account-key", 
-    to: "/user/role" 
-  },
-  { 
-    title: " - ເກັບຂໍ້ມູນພະແນກ", 
-    value: "divisions", 
-    icon: "mdi-domain", 
-    to: "/devision" 
-  },
-  { 
-    title: "- ເກັບຂໍ້ມູນພະນັກງານ", 
-    value: "employees", 
-    icon: "mdi-badge-account", 
-    to: "#" 
-  },
-  { 
-    title: "- ລາຍງານກ່ຽວການເຂົ້າໃຊ້ລະບົບ", 
-    value: "report-user-rule", 
-    icon: "mdi-chart-box", 
-    to: "#" 
-  },
-]);
-=======
 const responeMenuData = computed(() => {
   return menuStore.respone_menu_data;
 });
->>>>>>> 1c385718f856bf8f56174dd42e7a449de17c38a6
 
 const isLoading = computed(() => {
   return menuStore.isloading;

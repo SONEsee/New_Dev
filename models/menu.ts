@@ -15,6 +15,8 @@ export interface MainMenu {
     menu_icon:    string;
     menu_order:   string;
     is_active:    string;
+    module_Id: string;
+    created_by?: string;
     sub_menus:    SubMenu[];
 }
 

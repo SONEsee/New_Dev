@@ -58,14 +58,14 @@ const submitForm = async () => {
   const isValid = await form.value.validate();
   if (isValid) {
     console.log("ສົ່ງຂໍ້ມູນໄປຫາ Store");
-    // ແປງຄ່າ Auth_Status ຈາກ "ເປີດ"/"ປິດ" ເປັນ "A"/"I"
+   
     if (userStore.create_user_form.Auth_Status === "ເປີດ") {
       userStore.create_user_form.Auth_Status = "A";
     } else if (userStore.create_user_form.Auth_Status === "ປິດ") {
       userStore.create_user_form.Auth_Status = "I";
     }
 
-    // ຕັ້ງຄ່າ user_status ຈາກຄ່າ Auth_Status
+
     userStore.create_user_form.user_status = userStore.create_user_form.Auth_Status === "A";
 
     await userStore.CreatUser();

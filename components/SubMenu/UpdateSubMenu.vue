@@ -1,56 +1,90 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import { useMenuStore } from '@/stores/menu'
 
-import { useMenuStore } from "@/stores/menu"; // adjust path as needed
 
-const title = "ສ້າງຂໍ້ມູນເມນູຫຼັກ";
+const route = useRoute()
+const menuStore = useMenuStore()
+const moduleStore = ModulesStore()
 
-const valid = ref(false);
-const form = ref();
+const form = ref()
+const loading = computed(() => menuStore.isloading)
 
-const moduleStore = ModulesStore();
-const menuStore = useMenuStore();
+const title = "ອັບເດດຂໍ້ມູນເມນູຫຼັກ"
 
-onMounted(() => {
-  moduleStore.getModule();
-});
 
-const module = computed(() => {
-  return moduleStore.response_data_module || [];
-});
+const id = computed(() => {
+  const queryId = route.query.id
+  return Array.isArray(queryId) ? queryId[0] : queryId || ""
+})
 
-const request = computed(() => {
-  return menuStore.create_form_mainmenu;
-});
 
-const Districtions = () => {
-  valid.value = !valid.value;
-};
+const modules = computed(() => {
+  return moduleStore.response_data_module || []
+})
 
-const submitMainmenu = async () => {
-  try {
-    const { valid: isValid } = await form.value.validate();
-    if (isValid) {
-      await menuStore.CreateMainMenu();
+
+const toggleField = () => {
+
+}
+
+
+onMounted(async () => {
+
+  await moduleStore.getModule()
+
+ 
+  if (id.value) {
+    try {
+      await menuStore.DetailMainMenu(id.value)
       
+     
+      if (menuStore.response_main_detail_data) {
+        const details = menuStore.response_main_detail_data
+        menuStore.update_form_mainmenu = {
+          menu_name_la: details.menu_name_la || "",
+          menu_name_en: details.menu_name_en || "",
+          menu_icon: details.menu_icon || "",
+          menu_order: details.menu_order || "",
+          is_active: details.is_active || "",
+          menu_id: details.menu_id || "",
+          sub_menus: details.module_Id || "",
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch menu details:', error)
+    }
+  }
+})
+
+
+const updateSubmit = async () => {
+  try {
+   
+    const { valid } = await form.value.validate()
+    
+    if (valid && id.value) {
+      
+      await menuStore.UpdateMainMenu(id.value)
     }
   } catch (error) {
-    console.error("Menu creation failed:", error);
+    console.error('Menu update failed:', error)
   }
-};
+}
 </script>
 
 <template>
   <v-container>
     <GlobalTextTitleLine :title="title" />
     <v-col cols="12">
-      <v-form ref="form" @submit.prevent="submitMainmenu">
+      <v-form ref="form" @submit.prevent="updateSubmit">
         <v-row>
           <v-col cols="12" md="4">
             <v-text-field
-              @click:append-inner="Districtions"
+              @click:append-inner="toggleField"
               density="compact"
-              v-model="request.menu_name_la"
+              v-model="menuStore.update_form_mainmenu.menu_name_la"
               label="ຊື່ເມນູພາສາລາວ"
               variant="outlined"
               :rules="[(v) => !!v || 'ກະລຸນາປ້ອນຊື່ເມນູພາສາລາວ']"
@@ -58,18 +92,19 @@ const submitMainmenu = async () => {
             />
             <v-text-field
               density="compact"
-              v-model="request.menu_id"
+              v-model="menuStore.update_form_mainmenu.menu_id"
               label="ID ເມນູ"
               variant="outlined"
               :rules="[(v) => !!v || 'ກະລຸນາປ້ອນ ID ເມນູ']"
               required
+              type="number"
             />
             <v-autocomplete
-              :items="module"
+              :items="modules"
               item-title="module_name_la"
               item-value="module_Id"
               density="compact"
-              v-model="request.module_Id"
+              v-model="menuStore.update_form_mainmenu.sub_menus"
               :rules="[(v) => !!v || 'ກະລຸນາເລືອກເມນູສາຂາ']"
               label="ເລືອກເມນູສາຂາ"
               variant="outlined"
@@ -79,7 +114,7 @@ const submitMainmenu = async () => {
           <v-col cols="12" md="4">
             <v-text-field
               density="compact"
-              v-model="request.menu_name_en"
+              v-model="menuStore.update_form_mainmenu.menu_name_en"
               label="ຊື່ເມນູພາສາອັງກິດ"
               variant="outlined"
               :rules="[(v) => !!v || 'ກະລຸນາປ້ອນຊື່ເມນູພາສາອັງກິດ']"
@@ -87,7 +122,7 @@ const submitMainmenu = async () => {
             />
             <v-text-field
               density="compact"
-              v-model="request.menu_order"
+              v-model="menuStore.update_form_mainmenu.menu_order"
               label="ລຳດັບເມນູ"
               type="number"
               variant="outlined"
@@ -98,7 +133,7 @@ const submitMainmenu = async () => {
           <v-col cols="12" md="4">
             <v-text-field
               density="compact"
-              v-model="request.menu_icon"
+              v-model="menuStore.update_form_mainmenu.menu_icon"
               label="ໄອຄອນ"
               variant="outlined"
               :rules="[(v) => !!v || 'ກະລຸນາປ້ອນໄອຄອນ']"
@@ -106,13 +141,13 @@ const submitMainmenu = async () => {
             />
             <v-autocomplete
               :items="[
-                { title: 'ເປິດ', value: 'Y' },
-                { title: 'ປິດ', value: 'N' },
+                { title: 'ເປີດໃຊ້ງານ', value: 'Y' },
+                { title: 'ປິດໃຊ້ງານ', value: 'N' },
               ]"
               item-title="title"
               item-value="value"
               density="compact"
-              v-model="request.is_active"
+              v-model="menuStore.update_form_mainmenu.is_active"
               :rules="[(v) => !!v || 'ກະລຸນາເລືອກສະຖານະໃຊ້ງານ']"
               label="ເລືອກສະຖານະໃຊ້ງານ"
               variant="outlined"
@@ -120,9 +155,13 @@ const submitMainmenu = async () => {
             />
           </v-col>
           <v-col cols="12" class="d-flex justify-center">
-            <v-btn type="submit" color="primary" class="mr-2"> ບັນທຶກ </v-btn>
-            <v-btn color="error" @click="$router.push('/menu')">
-              ຍົກເລີກ
+            <v-btn 
+              type="submit" 
+              color="primary" 
+              :loading="loading"
+              class="mr-2"
+            >
+              ບັນທຶກ
             </v-btn>
           </v-col>
         </v-row>

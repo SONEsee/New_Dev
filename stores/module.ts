@@ -79,16 +79,11 @@ export const ModulesStore = defineStore("module", {
           }
         );
         if (res.status === 201) {
-          this.response_data_module?.push(res.data);
-          this.create_form_module = {
-            module_name_la: "",
-            module_name_en: "",
-            module_icon: "",
-            module_order: "",
-            is_active: "",
-            created_by: "",
-            module_Id: "",
-          };
+          CallSwal({
+            icon: "success",
+            title: "ສຳເລັດ",
+            text: "ສໍາເລັດ",
+          });
         }
       } catch (error) {
         console.error("Error creating module:", error);
