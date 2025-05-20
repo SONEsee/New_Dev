@@ -18,7 +18,7 @@ const header = [
 ]
 </script>
 <template>
-   <v-container>
+
     <GlobalTextTitleLine :title="title" />
     
     <v-col cols="12">
@@ -28,7 +28,7 @@ const header = [
         </v-btn>
     
 </div>
-        <v-data-table :items="res" :headers="header" class="text-no-wrap elevation-1">
+        <v-data-table  :items="res" :headers="header" class="text-no-wrap elevation-1" flat >
             <template v-slot:item.created_date="{ item }">
                 {{ dayjs(item.created_date).format("DD/MM/YYYY") }}
             </template>
@@ -39,11 +39,11 @@ const header = [
             </template>
             <template v-slot:item.action="{ item }">
                 <v-btn small flat class="text-primary" icon="mdi-eye-outline" @click="goPath(`/menu/detail?id=${item.menu_id}`)" />
-                <v-btn small flat class="text-info" icon="mdi-pen" @click="goPath(`/menu/edit?id=${item.menu_Id}`)" />
-                <v-btn small flat class="text-danger" icon="mdi-delete" @click="onDeleteType(item.menu_Id)" />
+                <v-btn small flat class="text-info" icon="mdi-pen" @click="goPath(`/menu/edit?id=${item.menu_id}`)" />
+                <v-btn small flat class="text-danger" icon="mdi-delete" @click="onDeleteType(item.menu_id)" />
             </template>
 
         </v-data-table>
     </v-col>
-   </v-container>
+  
 </template>
