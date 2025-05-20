@@ -21,7 +21,7 @@ export const useMenuStore = defineStore("menu", {
         menu_icon: "",
         menu_order: "",
         is_active: "",
-        sub_menus: "",
+        module_Id: "",
       },
       create_form_submenu: {
         sub_menu_id: "",
@@ -170,7 +170,7 @@ export const useMenuStore = defineStore("menu", {
             menu_icon: this.update_form_mainmenu.menu_icon,
             menu_order: this.update_form_mainmenu.menu_order,
             is_active: this.update_form_mainmenu.is_active,
-            sub_menus: this.update_form_mainmenu.sub_menus,
+            module_Id: this.update_form_mainmenu.module_Id,
           };
           const res = await axios.put<MenuModel.MainMenu>(
             `api/main-menus/${id}/`,

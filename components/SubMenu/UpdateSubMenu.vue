@@ -49,7 +49,7 @@ onMounted(async () => {
           menu_order: details.menu_order || "",
           is_active: details.is_active || "",
           menu_id: details.menu_id || "",
-          sub_menus: details.module_Id || "",
+          module_Id: details.module_Id || "",
         }
       }
     } catch (error) {
@@ -104,7 +104,7 @@ const updateSubmit = async () => {
               item-title="module_name_la"
               item-value="module_Id"
               density="compact"
-              v-model="menuStore.update_form_mainmenu.sub_menus"
+              v-model="menuStore.update_form_mainmenu.module_Id"
               :rules="[(v) => !!v || 'ກະລຸນາເລືອກເມນູສາຂາ']"
               label="ເລືອກເມນູສາຂາ"
               variant="outlined"
