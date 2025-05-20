@@ -58,14 +58,14 @@ const submitForm = async () => {
   const isValid = await form.value.validate();
   if (isValid) {
     console.log("ສົ່ງຂໍ້ມູນໄປຫາ Store");
-    // ແປງຄ່າ Auth_Status ຈາກ "ເປີດ"/"ປິດ" ເປັນ "A"/"I"
+   
     if (userStore.create_user_form.Auth_Status === "ເປີດ") {
       userStore.create_user_form.Auth_Status = "A";
     } else if (userStore.create_user_form.Auth_Status === "ປິດ") {
       userStore.create_user_form.Auth_Status = "I";
     }
 
-    // ຕັ້ງຄ່າ user_status ຈາກຄ່າ Auth_Status
+
     userStore.create_user_form.user_status = userStore.create_user_form.Auth_Status === "A";
 
     await userStore.CreatUser();
@@ -93,6 +93,7 @@ const submitForm = async () => {
               <v-row>
                 <v-col cols="12" class="d-flex flex-wrap justify-center">
                   <v-avatar
+                  style="border: 1px solid black"
                     size="220"
                     class="mx-auto"
                     :image="
@@ -118,9 +119,10 @@ const submitForm = async () => {
                   </v-btn>
 
                   <input
+                  
                     type="file"
                     ref="file"
-                    style="display: none"
+                    style="display: none "
                     accept="image/jpg,image/png,image/jpeg"
                     @change="onFileChange"
                   />
