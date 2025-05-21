@@ -27,15 +27,15 @@ const toggleField = () => {
 };
 
 onMounted(async () => {
-  // Fetch modules for module selection
+ 
   await moduleStore.getModule()
 
-  // Fetch menu details if ID exists
+ 
   if (id.value) {
     try {
       await menuStore.DetailMainMenu(id.value)
       
-      // Carefully populate ALL fields
+    
       if (menuStore.response_main_detail_data) {
         const details = menuStore.response_main_detail_data
         menuStore.update_form_mainmenu = {
