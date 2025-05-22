@@ -1,108 +1,172 @@
 <script setup lang="ts">
+import { ref, onMounted, computed } from 'vue';
+import { useRouter } from 'vue-router';
+
+// ສ້າງ Store ພຽງຄັ້ງດຽວ
+const menuStore = useMenuStore();
+const router = useRouter();
+
+// ໂຕແປອ້າງອີງຟອມ
 const valid = ref(false);
 const form = ref();
-const moduleStore = ModulesStore();
-const module = computed(()=>{
-    return moduleStore.response_data_module;
+const title = "ສ້າງຂໍ້ມູນເມນູຍ່ອຍ";
+const errorMessage = ref('');
 
-})
-onMounted(()=>{
-    moduleStore.getModule();
-})
-const Districtions = () => {
-  valid.value = !valid.value;
-};
-const submitMainmenu = async () => {
-  valid.value = await form.value.validate();
-  if (valid) {
-    await menuStore.CreateMainMenu();
-  }
-  console.log(valid.value);
-};
-const title = "ສ້າງຂໍ້ມູນເມນູຫຼັກ";
-const menuStore = useMenuStore();
-const request = computed(() => {
-  return menuStore.create_form_mainmenu;
+// ຂໍ້ມູນເມນູຫຼັກ
+const menuItems = computed(() => {
+  return menuStore.respone_main_menu_data || [];
 });
+
+// ຈັດການຟອມ
+const request = computed({
+  get: () => menuStore.create_form_submenu,
+  set: (value) => {
+    menuStore.create_form_submenu = value;
+  }
+});
+
+onMounted(() => {
+  // ດຶງຂໍ້ມູນເມນູຫຼັກເພື່ອໃຊ້ໃນ Dropdown
+  menuStore.GetMainMenu();
+});
+
+const submitSubMenu = async () => {
+  try {
+    const { valid: isValid } = await form.value.validate();
+    
+    if (isValid) {
+      errorMessage.value = '';
+      
+      
+      await menuStore.CreateSubMenu();
+      
+      
+      router.push('/submenu');
+    }
+  } catch (error) {
+    errorMessage.value = 'ເກີດຂໍ້ຜິດພາດທີ່ບໍ່ຮູ້ຈັກ';
+    console.error(error);
+  }
+};
+
+
+const cancelSubmit = () => {
+  router.push('/submenu');
+};
 </script>
+
 <template>
   <v-container>
     <GlobalTextTitleLine :title="title" />
-    <v-col cols="12">
-      <v-form ref="form" @submit.prevent="submitMainmenu">
-        <v-row>
-          <v-col cols="12" md="4">
-            <v-text-field
-              @click:append-inner="Districtions"
-              density="compact"
-              v-model="request.menu_name_la"
-              label="ຊື່ເມນູພາສາລາວ"
-              variant="outlined"
-              required
-            />
-            <v-text-field
-              density="compact"
-              v-model="request.memu_id"
-              label="ID ເມນູ"
-              variant="outlined"
-              required
-            />
-            <v-autocomplete
-              :items="module ? module : []"
-              item-title="module_name_la"
-              item-value="module_Id"
-              density="compact"
-              v-model="request.module_Id"
-              :rules="[(v) => !!v || 'ສະຖານະໃຊ້ງານ!']"
-              label="ເລືອກເມນູສາຂາ"
-              variant="outlined"
-              required
-            />
-          </v-col>
-          <v-col cols="12" md="4">
-            <v-text-field
-              density="compact"
-              v-model="request.menu_name_en"
-              label="ຊື່ເມນູພາສາອັງກິດ"
-              variant="outlined"
-              required
-            />
-            <v-text-field
-              density="compact"
-              v-model="request.menu_order"
-              label="ລຳດັບເມນູ"
-              variant="outlined"
-              required
-            />
-          </v-col>
-          <v-col cols="12" md="4">
-            <v-text-field
-              density="compact"
-              v-model="request.menu_icon"
-              label="ໄອຄອນ"
-              variant="outlined"
-              required
-            />
-            <v-autocomplete
-              :items="[
-                { title: 'ເປິດ', value: 'Y' },
-                { title: 'ປິດ', value: 'N' },
-              ]"
-              item-title="title"
-              item-value="value"
-              density="compact"
-              v-model="request.is_active"
-              :rules="[(v) => !!v || 'ສະຖານະໃຊ້ງານ!']"
-              label="ເລືອກສະຖານະໃຊ້ງານ"
-              variant="outlined"
-              required
-            />
-         
-          </v-col>
-        </v-row>
-        <v-btn text="ບັນທຶກ" color="primary" type="submit"></v-btn>
-        <p color="res">ເຈົ້າຍັງສ້ງບໍ່ທັນແລ້ວເດີ້</p>
-      </v-form>
-    </v-col>
+
+   
+    <v-alert 
+      v-if="errorMessage" 
+      type="error" 
+      class="mb-4"
+    >
+      {{ errorMessage }}
+    </v-alert>
+
+    <v-form ref="form" @submit.prevent="submitSubMenu">
+      <v-row>
+        <v-col cols="12" md="4">
+          <v-text-field
+            density="compact"
+            v-model="request.sub_menu_name_la"
+            label="ຊື່ເມນູຍ່ອຍພາສາລາວ"
+            variant="outlined"
+            :rules="[v => !!v || 'ຊື່ເມນູຕ້ອງບໍ່ຫວ່າງ']"
+            required
+          />
+          <v-text-field
+            density="compact"
+            v-model="request.sub_menu_id"
+            label="ID ເມນູຍ່ອຍ"
+            variant="outlined"
+            :rules="[v => !!v || 'ID ເມນູຕ້ອງບໍ່ຫວ່າງ']"
+            required
+          />
+          <v-autocomplete
+            :items="menuItems"
+            item-title="menu_name_la"
+            item-value="menu_id"
+            density="compact"
+            v-model="request.menu_id"
+            :rules="[(v) => !!v || 'ກະລຸນາເລືອກເມນູຫຼັກ']"
+            label="ເລືອກເມນູຫຼັກ"
+            variant="outlined"
+            required
+          />
+        </v-col>
+        <v-col cols="12" md="4">
+          <v-text-field
+            density="compact"
+            v-model="request.sub_menu_name_en"
+            label="ຊື່ເມນູຍ່ອຍພາສາອັງກິດ"
+            variant="outlined"
+            :rules="[v => !!v || 'ຊື່ເມນູຕ້ອງບໍ່ຫວ່າງ']"
+            required
+          />
+          <v-text-field
+            density="compact"
+            v-model="request.sub_menu_order"
+            label="ລຳດັບເມນູຍ່ອຍ"
+            variant="outlined"
+            :rules="[v => !!v || 'ລຳດັບເມນູຕ້ອງບໍ່ຫວ່າງ']"
+            required
+          />
+          <v-text-field
+            density="compact"
+            v-model="request.sub_menu_urls"
+            label="URL ເມນູຍ່ອຍ"
+            variant="outlined"
+            :rules="[v => !!v || 'URL ຕ້ອງບໍ່ຫວ່າງ']"
+            required
+          />
+        </v-col>
+        <v-col cols="12" md="4">
+          <v-text-field
+            density="compact"
+            v-model="request.sub_menu_icon"
+            label="ໄອຄອນ"
+            variant="outlined"
+            :rules="[v => !!v || 'ໄອຄອນຕ້ອງບໍ່ຫວ່າງ']"
+            required
+          />
+          <v-autocomplete
+            :items="[
+              { title: 'ເປີດໃຊ້ງານ', value: 'true' },
+              { title: 'ປິດໃຊ້ງານ', value: 'false' },
+            ]"
+            item-title="title"
+            item-value="value"
+            density="compact"
+            v-model="request.is_active"
+            :rules="[(v) => !!v || 'ກະລຸນາເລືອກສະຖານະ']"
+            label="ເລືອກສະຖານະໃຊ້ງານ"
+            variant="outlined"
+            required
+          />
+        </v-col>
+      </v-row>
+      
+     
+      <v-col cols="12" class="d-flex justify-center">
+        <v-btn 
+          type="submit" 
+          color="primary" 
+          class="mr-2"
+        >
+          ບັນທຶກ
+        </v-btn>
+        <v-btn 
+          color="error" 
+          @click="cancelSubmit"
+        >
+          ຍົກເລີກ
+        </v-btn>
+      </v-col>
+    </v-form>
   </v-container>
 </template>

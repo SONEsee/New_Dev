@@ -12,14 +12,14 @@ const res = computed(() => {
 onMounted(() => {
   subMenuStore.GetMenuSubMenu();
 });
-// const onDeleteType = async (module_Id: string) => {
-//   await moduleStore.deleteModule(module_Id);
-//   moduleStore.getModule();
-// };
+const onDeleteType = async (sub_menu_id: string) => {
+  await subMenuStore.DeleteSubMenu(sub_menu_id);
+  subMenuStore.GetMenuSubMenu();
+};
 const title = "ຂໍ້ມູນຟັງຊັ້ນຫຼັກຂອງລະບົບ";
 const header = [
-  { title: "ຊື່ເມນູພາສາລາວ", value: "module_name_la" },
-  { title: "ຊື່ເມນູພາສາອັງກິດ", value: "module_name_en" },
+  { title: "ຊື່ເມນູພາສາລາວ", value: "sub_menu_name_la" },
+  { title: "ຊື່ເມນູພາສາອັງກິດ", value: "sub_menu_name_en" },
   { title: "ສະຖານະການໃຊ້ງານ", value: "is_active" },
   { title: "ມື້ສ້າງຂໍ້ມູນ", value: "created_date" },
   { title: "ຈັດການ", value: "action" },
@@ -30,7 +30,7 @@ const header = [
     <GlobalTextTitleLine :title="title" />
     <v-col cols="12">
       <div class="d-flex justify-end">
-        <v-btn color="primary" @click="goPath('/module/create')"
+        <v-btn color="primary" @click="goPath('/submenu/create')"
           ><v-icon icon="mdi-plus"></v-icon> ເພີ່ມປະເພດ</v-btn
         >
       </div>
@@ -51,22 +51,22 @@ const header = [
           flat
           class="text-primary"
           icon="mdi-eye-outline"
-          @click="goPath(`/module/detail?id=${item.module_Id}`)"
+          @click="goPath(`/submenu/detail?id=${item.sub_menu_id}`)"
         />
         <v-btn
           small
           flat
           class="text-info"
           icon="mdi-pen"
-          @click="goPath(`/module/edit?id=${item.module_Id}`)"
+          @click="goPath(`/submenu/edit?id=${item.sub_menu_id}`)"
         />
-        <!-- <v-btn
+        <v-btn
           small
           flat
           class="text-error"
           icon="mdi-delete-outline"
-          @click="onDeleteType(item.module_Id)"
-        /> -->
+          @click="onDeleteType(item.sub_menu_id)"
+        />
       </template>
     </v-data-table>
   </v-container>

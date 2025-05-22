@@ -28,6 +28,8 @@ export interface SubMenu {
     sub_menu_order:   string;
     sub_menu_urls:    string;
     is_active:        string;
+    menu_id:      string;
+    created_by?: string;
     functions:        Function[];
 }
 
@@ -35,6 +37,14 @@ export interface Function {
     function_id:    string;
     description_la: string;
     description_en: string;
+    eod_function:   null;
+    function_order: number;
+    is_active:      string;
+    created_by:     string;
+    created_date:   Date;
+    modified_by:    string;
+    modified_date:  null;
+    sub_menu_id:    string;
     permissions:    Permissions;
 }
 
