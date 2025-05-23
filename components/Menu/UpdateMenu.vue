@@ -39,11 +39,7 @@ onMounted(async () => {
       if (menuStore.response_main_detail_data) {
         const details = menuStore.response_main_detail_data
         menuStore.update_form_mainmenu = {
-<<<<<<< HEAD
-          menu_id: details.menu_id || "", // Ensure this matches what backend expects
-=======
           menu_id: details.menu_id || "",
->>>>>>> c70c30f320fe05c3d98df39bf6ce47060b65696f
           menu_name_la: details.menu_name_la || "",
           menu_name_en: details.menu_name_en || "",
           menu_icon: details.menu_icon || "",

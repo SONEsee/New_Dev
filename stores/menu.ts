@@ -193,11 +193,7 @@ export const useMenuStore = defineStore("menu", {
             menu_icon: this.update_form_mainmenu.menu_icon,
             menu_order: this.update_form_mainmenu.menu_order,
             is_active: this.update_form_mainmenu.is_active,
-<<<<<<< HEAD
-            module_Id: this.update_form_mainmenu.module_Id,
-=======
             sub_menus: this.update_form_mainmenu.module_Id,
->>>>>>> c70c30f320fe05c3d98df39bf6ce47060b65696f
           };
           const res = await axios.put<MenuModel.MainMenu>(
             `api/main-menus/${id}/`,

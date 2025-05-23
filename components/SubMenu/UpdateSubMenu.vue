@@ -65,25 +65,6 @@ const updateSubMenu = async () => {
       errorMessage.value = '';
       
      
-<<<<<<< HEAD
-      if (menuStore.response_main_detail_data) {
-        const details = menuStore.response_main_detail_data
-        menuStore.update_form_mainmenu = {
-          menu_name_la: details.menu_name_la || "",
-          menu_name_en: details.menu_name_en || "",
-          menu_icon: details.menu_icon || "",
-          menu_order: details.menu_order || "",
-          is_active: details.is_active || "",
-          menu_id: details.menu_id || "",
-          module_Id: details.module_Id || "",
-        }
-      }
-    } catch (error) {
-      console.error('Failed to fetch menu details:', error)
-    }
-  }
-})
-=======
       const dataToUpdate = {
         sub_menu_id: request.value.sub_menu_id,
         sub_menu_name_la: request.value.sub_menu_name_la,
@@ -94,7 +75,6 @@ const updateSubMenu = async () => {
         menu_id: request.value.menu_id,
         sub_menu_urls: request.value.sub_menu_urls
       };
->>>>>>> c70c30f320fe05c3d98df39bf6ce47060b65696f
 
       // ເອີ້ນໃຊ້ຟັງຊັ່ນອັບເດດຈາກ Store
       const result = await menuStore.UpdateSubMenu(id.value, dataToUpdate);
@@ -119,98 +99,6 @@ const cancelUpdate = () => {
 <template>
   <v-container>
     <GlobalTextTitleLine :title="title" />
-<<<<<<< HEAD
-    <v-col cols="12">
-      <v-form ref="form" @submit.prevent="updateSubmit">
-        <v-row>
-          <v-col cols="12" md="4">
-            <v-text-field
-              @click:append-inner="toggleField"
-              density="compact"
-              v-model="menuStore.update_form_mainmenu.menu_name_la"
-              label="ຊື່ເມນູພາສາລາວ"
-              variant="outlined"
-              :rules="[(v) => !!v || 'ກະລຸນາປ້ອນຊື່ເມນູພາສາລາວ']"
-              required
-            />
-            <v-text-field
-              density="compact"
-              v-model="menuStore.update_form_mainmenu.menu_id"
-              label="ID ເມນູ"
-              variant="outlined"
-              :rules="[(v) => !!v || 'ກະລຸນາປ້ອນ ID ເມນູ']"
-              required
-              type="number"
-            />
-            <v-autocomplete
-              :items="modules"
-              item-title="module_name_la"
-              item-value="module_Id"
-              density="compact"
-              v-model="menuStore.update_form_mainmenu.module_Id"
-              :rules="[(v) => !!v || 'ກະລຸນາເລືອກເມນູສາຂາ']"
-              label="ເລືອກເມນູສາຂາ"
-              variant="outlined"
-              required
-            />
-          </v-col>
-          <v-col cols="12" md="4">
-            <v-text-field
-              density="compact"
-              v-model="menuStore.update_form_mainmenu.menu_name_en"
-              label="ຊື່ເມນູພາສາອັງກິດ"
-              variant="outlined"
-              :rules="[(v) => !!v || 'ກະລຸນາປ້ອນຊື່ເມນູພາສາອັງກິດ']"
-              required
-            />
-            <v-text-field
-              density="compact"
-              v-model="menuStore.update_form_mainmenu.menu_order"
-              label="ລຳດັບເມນູ"
-              type="number"
-              variant="outlined"
-              :rules="[(v) => !!v || 'ກະລຸນາປ້ອນລຳດັບເມນູ']"
-              required
-            />
-          </v-col>
-          <v-col cols="12" md="4">
-            <v-text-field
-              density="compact"
-              v-model="menuStore.update_form_mainmenu.menu_icon"
-              label="ໄອຄອນ"
-              variant="outlined"
-              :rules="[(v) => !!v || 'ກະລຸນາປ້ອນໄອຄອນ']"
-              required
-            />
-            <v-autocomplete
-              :items="[
-                { title: 'ເປີດໃຊ້ງານ', value: 'Y' },
-                { title: 'ປິດໃຊ້ງານ', value: 'N' },
-              ]"
-              item-title="title"
-              item-value="value"
-              density="compact"
-              v-model="menuStore.update_form_mainmenu.is_active"
-              :rules="[(v) => !!v || 'ກະລຸນາເລືອກສະຖານະໃຊ້ງານ']"
-              label="ເລືອກສະຖານະໃຊ້ງານ"
-              variant="outlined"
-              required
-            />
-          </v-col>
-          <v-col cols="12" class="d-flex justify-center">
-            <v-btn 
-              type="submit" 
-              color="primary" 
-              :loading="loading"
-              class="mr-2"
-            >
-              ບັນທຶກ
-            </v-btn>
-          </v-col>
-        </v-row>
-      </v-form>
-    </v-col>
-=======
 
     
     <v-alert 
@@ -321,6 +209,5 @@ const cancelUpdate = () => {
         </v-btn>
       </v-col>
     </v-form>
->>>>>>> c70c30f320fe05c3d98df39bf6ce47060b65696f
   </v-container>
 </template>
