@@ -14,7 +14,7 @@
     "@pinia/nuxt": "^0.9.0",
     "@vuepic/vue-datepicker": "^10.0.0",
     "@vueuse/nuxt": "^12.2.0",
-    "apexcharts": "^4.3.0",
+    "apexcharts": "^4.7.0",
     "axios": "^1.7.9",
     "jsbarcode": "^3.11.6",
     "numeral": "^2.0.6",

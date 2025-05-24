@@ -5,28 +5,42 @@ import { CallSwal } from "~/composables/global";
 import { defineStore } from "pinia";
 import { UseGlobalStore } from "./global";
 
-
 interface Category {
-  DeletedAt: null;
-  ID: string;
-  Name: string;
-  CreatedAt: string; 
-  UpdatedAt: string;
-  Products: null;
+  div_id: string;
+  division_name_la: string;
+  division_name_en: string;
+  record_Status: string;
+  Maker_DT_Stamp: string;
+  Checker_DT_Stamp: null | string;
+  Auth_Status: string;
+  Once_Auth: string;
+  Maker_Id: null;
+  Checker_Id: null;
 }
 interface CategoryResponse {
   category: Category;
 }
 
-
 interface CategoryState {
   form_create_data: {
-    Name: string;
-    ID: number | null;
+    div_id: string;
+    division_name_la: string;
+    division_name_en: string;
+    record_Status: string;
+    Maker_Id: string;
+    Checker_Id: string;
+    Auth_Status: string;
+    Once_Auth: string;
   };
   form_update_data: {
-    Name: string;
-    ID: number;
+    div_id: string;
+    division_name_la: string;
+    division_name_en: string;
+    record_Status: string;
+    Maker_Id: string;
+    Checker_Id: string;
+    Auth_Status: string;
+    Once_Auth: string;
   };
   categories: Category[];
   response_detail_query_data: Category[];
@@ -36,12 +50,24 @@ interface CategoryState {
 export const UseCategoryStore = defineStore("category", {
   state: (): CategoryState => ({
     form_create_data: {
-      Name: "",
-      ID: null,
+      div_id: "",
+      division_name_la: "",
+      division_name_en: "",
+      record_Status: "",
+      Maker_Id: "",
+      Checker_Id: "",
+      Auth_Status: "",
+      Once_Auth: "",
     },
     form_update_data: {
-      Name: "",
-      ID: 0,
+      div_id: "",
+      division_name_la: "",
+      division_name_en: "",
+      record_Status: "",
+      Maker_Id: "",
+      Checker_Id: "",
+      Auth_Status: "",
+      Once_Auth: "",
     },
     response_detail_query_data: [],
     categories: [],
@@ -52,9 +78,17 @@ export const UseCategoryStore = defineStore("category", {
     async GetListData() {
       this.loading = true;
       try {
-        const { data, status } = await axios.get<{ categories: Category[] }>(`/categories`);
+        const { data, status } = await axios.get<Category[]>(
+          `/api/divisions/`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
         if (status === 200) {
-          this.categories = data.categories;
+          this.categories = data;
         }
       } catch (error) {
         console.error("Error fetching categories:", error);
@@ -69,11 +103,49 @@ export const UseCategoryStore = defineStore("category", {
         this.loading = false;
       }
     },
+    async GetDataDetail(id: string | null) {
+      this.loading = true;
+      try {
+        if (!id) {
+          await CallSwal({
+            title: "ຜິດພາດ",
+            text: "ກະລຸນາລະບຸ ID ຂອງປະເພດ",
+            icon: "error",
+            showConfirmButton: false,
+            timer: 1500,
+          });
+          return;
+        }
+
+        const { data, status } = await axios.get<
+          CategoryModel.Category[]
+        >(`/api/divisions/${id}`, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+        if (status === 200) {
+          this.response_detail_query_data = data;
+        }
+      } catch (error) {
+        console.error("Error fetching category details:", error);
+        await CallSwal({
+          title: "ຜິດພາດ",
+          text: "ເກີດຂໍ້ຜິດພາດໃນການເອົາເນື້ອໃນ",
+          icon: "error",
+          showConfirmButton: false,
+          timer: 1500,
+        });
+      } finally {
+        this.loading = false;
+      }
+    },
 
     async CreateCategory() {
       this.loading = true;
       try {
-        if (!this.form_create_data.Name?.trim()) {
+        if (!this.form_create_data) {
           await CallSwal({
             title: "ຜິດພາດ",
             text: "ກະລຸນາປ້ອນຊື່ປະເພດ",
@@ -84,8 +156,12 @@ export const UseCategoryStore = defineStore("category", {
           return;
         }
 
-        const { data, status } = await axios.post<Category>(`/categories`, this.form_create_data);
-        if (status === 200) {
+        const { data, status } = await axios.post<Category>(
+          `/api/divisions/`,
+          this.form_create_data
+          
+        );
+        if (status === 201) {
           this.categories.push(data);
           await CallSwal({
             title: "ສຳເລັດ",
@@ -94,40 +170,13 @@ export const UseCategoryStore = defineStore("category", {
             showConfirmButton: false,
             timer: 1500,
           });
-          goPath("/category");
+          goPath("/devision");
         }
       } catch (error) {
         console.error("Error creating category:", error);
         await CallSwal({
           title: "ຜິດພາດ",
           text: "ເກີດຂໍ້ຜິດພາດໃນການສ້າງປະເພດ",
-          icon: "error",
-          showConfirmButton: false,
-          timer: 1500,
-        });
-      } finally {
-        this.loading = false;
-      }
-    },
-
-    async GetDetailCategory(id: string | null) {
-      this.loading = true;
-      try {
-        if (!id) {
-          console.log("No ID provided");
-          return;
-        }
-        const res = await axios.get<CategoryResponse>(`/categories/${id}`);
-        console.log("API Response:", res.data);
-
-        if (res.status === 200) {
-          this.response_detail_query_data = [res.data.category]; // ເອົາ category ພາຍໃນອອກມາເກັບ
-        }
-      } catch (error) {
-        console.error("Error fetching category details:", error);
-        await CallSwal({
-          title: "ຜິດພາດ",
-          text: "ເກີດຂໍ້ຜິດພາດໃນການດຶງຂໍ້ມູນ",
           icon: "error",
           showConfirmButton: false,
           timer: 1500,
@@ -151,7 +200,7 @@ export const UseCategoryStore = defineStore("category", {
           return;
         }
 
-        if (!this.form_update_data.Name.trim()) {
+        if (!this.form_update_data.div_id.trim()) {
           await CallSwal({
             title: "ຜິດພາດ",
             text: "ກະລຸນາປ້ອນຊື່ປະເພດ",
@@ -169,7 +218,7 @@ export const UseCategoryStore = defineStore("category", {
 
         if (status === 200) {
           const index = this.categories.findIndex(
-            (cat) => cat.ID === this.form_update_data.ID
+            (cat) => cat.div_id === this.form_update_data.div_id
           );
           if (index !== -1) {
             this.categories[index] = data;
@@ -198,10 +247,15 @@ export const UseCategoryStore = defineStore("category", {
         this.loading = false;
       }
     },
-    async DeleteCategory(id: string | null ) {
+    async DeleteCategory(Div_Id: string | null) {
       const globalStore = UseGlobalStore();
       try {
-        const notification=await CallSwal({
+        if (!Div_Id) {
+          console.error("No Div_Id provided for deletion");
+          return null;
+        }
+
+        const notification = await CallSwal({
           icon: "warning",
           title: "ຄຳເຕືອນ",
           text: `ທ່ານກຳລັງລົບຂໍ້ມູນປະເພດທ່ານແນ່ໃຈແລ້ວບໍ່?`,
@@ -209,21 +263,37 @@ export const UseCategoryStore = defineStore("category", {
           confirmButtonText: "ຕົກລົງ",
           cancelButtonText: "ຍົກເລີກ",
         });
-        if(notification.isConfirmed){
+
+        if (notification.isConfirmed) {
           this.loading = true;
-          const res = await axios.delete(`/categories/${id}`);
-          if (res.status === 200) {
-            globalStore.loading_overlay = false;
-            const res =  await axios.delete(`/categories/${id}`);
+          globalStore.loading_overlay = true;
+
+          try {
+            const res = await axios.delete(`/api/divisions/${Div_Id}`);
             if (res.status === 200) {
-              return id;
+              // ລຶບລາຍການຈາກ array ໂດຍບໍ່ຕ້ອງໂຫຼດຂໍ້ມູນໃໝ່
+              this.categories = this.categories.filter(
+                (item) => item.div_id !== Div_Id
+              );
+              return Div_Id;
             }
-            
+          } finally {
+            globalStore.loading_overlay = false;
+            this.loading = false;
+          }
         }
-      }
+        return null;
       } catch (error) {
-        
+        console.error("Error deleting category:", error);
+        await CallSwal({
+          title: "ຜິດພາດ",
+          text: "ເກີດຂໍ້ຜິດພາດໃນການລຶບຂໍ້ມູນ",
+          icon: "error",
+          showConfirmButton: false,
+          timer: 1500,
+        });
+        return null;
       }
-    }
+    },
   },
 });
