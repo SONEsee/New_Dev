@@ -1,3 +1,4 @@
+
 import * as UserModel from "./users";
 import * as UsermeModel from "./usersme";
 import * as ExpenseCreateModel from "./expensecreate";
@@ -15,7 +16,11 @@ import * as CategoryModel from "./category";
 import *as RoleModel from "./role";
 import * as MenuModel from "./menu";
 import * as ModuleModel from "./module";
-
+import * as RoleDetailModel from "./roledetail";
+import * as CurrencyModel from "./currency";
+import * as ExcRateModel from "./excrate";
+import * as HolidayModel from "./holiday";
+import * as FinCycleModel from "./fincycle";
 export {
   UserModel,
   UsermeModel,
@@ -33,5 +38,10 @@ export {
   CategoryModel,
   RoleModel,
   MenuModel,
-  ModuleModel
+  ModuleModel,
+  RoleDetailModel,
+  CurrencyModel,
+  ExcRateModel,
+  HolidayModel,
+  FinCycleModel
 };
