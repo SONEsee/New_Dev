@@ -33,8 +33,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import axios from '@/helpers/axios'
-import { GLMasterResponse } from '~/models/glmaster'
+import axios from '@/helpers/axios'  
+import { GLMasterResponse } from '@/models'
 
 const route = useRoute()
 const id = route.query.id as string

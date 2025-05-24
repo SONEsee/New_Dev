@@ -1,10 +1,14 @@
 <template>
-  <v-app-bar :elevation="2" color="#c58c20">
+  <v-app-bar :elevation="2" color="#c58c20" class="d-flex justify-start">
     <template v-slot:prepend>
       <v-app-bar-nav-icon @click="drawer = !drawer" style="color: blue; background-color: blanchedalmond;"></v-app-bar-nav-icon>
     </template>
+    <template >
+      test
+    </template>
 
-    <v-app-bar-title></v-app-bar-title>
+    <v-app-bar-title>ລະບົບບັນຊີ ບໍລິສັດລັດ ບໍລິຫານໜີ້ ແລະ ຊັບສິນ ຈຳກັດຜູ້ດຽວ
+(SAMC'S Accounting System)</v-app-bar-title>
    
     <v-menu min-width="200px" rounded>
       <template v-slot:activator="{ props }">
@@ -48,76 +52,110 @@
     </v-menu>
   </v-app-bar>
 
-  <v-navigation-drawer v-model="drawer" permanent :rail="rail" order="1" :style="{ background: '#fdfdf5', borderColor: '#c58c20' }">
-    <v-list nav density="comfortable" style="color: #c58c20;">
-      <!-- Loading State -->
-      <template v-if="isLoading">
-        <v-list-item prepend-icon="mdi-loading mdi-spin" title="ກຳລັງໂຫຼດຂໍ້ມູນເມນູ..." disabled></v-list-item>
-      </template>
-      
-      <!-- Error State -->
-      <template v-else-if="error">
-        <v-list-item prepend-icon="mdi-alert-circle" title="ມີຂໍ້ຜິດພາດໃນການໂຫຼດຂໍ້ມູນ" disabled></v-list-item>
-        <v-list-item 
-          prepend-icon="mdi-refresh" 
-          title="ລອງໃໝ່" 
-          @click="retryLoadMenu"
-          class="mt-2"
-        ></v-list-item>
-      </template>
-      
-      <!-- Menu Data -->
-      <template v-else-if="responeMenuData && responeMenuData.length > 0">
-        <v-list-group 
-          v-for="(module, moduleIndex) in responeMenuData" 
-          :key="`module-${module.module_Id}`" 
-          :value="module.module_Id"
-        >
-          <template v-slot:activator="{ props }">
-            <v-list-item
-              v-bind="props"
-              color="primary"
-              rounded="xl"
-              :prepend-icon="convertIcon(module.module_icon)"
-              :title="module.module_name_la"
-            ></v-list-item>
-          </template>
-          
-          <v-list-group 
-            v-for="(mainMenu, mainMenuIndex) in module.main_menus" 
-            :key="`main-${module.module_Id}-${mainMenu.menu_id}`" 
-            :value="mainMenu.menu_id" 
-            sub-group
-          >
-            <template v-slot:activator="{ props }">
-              <v-list-item
-                v-bind="props"
-                color="primary"
-                rounded="xl"
-                :prepend-icon="convertIcon(mainMenu.menu_icon)"
-                :title="mainMenu.menu_name_la"
-              ></v-list-item>
+  <v-navigation-drawer v-model="drawer" permanent :rail="rail" order="1" :style="{ background: '#fdfdf5', borderColor: '#c58c20' }" class="d-flex justify-start">
+    <v-card class="mx-auto" style="background: #fdfdf5; box-shadow: none;">
+      <v-list nav density="comfortable" style="color: #c58c20;">
+        
+        <!-- Loading State -->
+        <template v-if="isLoading">
+          <v-list-subheader style="color: #c58c20;">ກຳລັງໂຫຼດ...</v-list-subheader>
+          <v-list-item 
+            prepend-icon="mdi-loading mdi-spin" 
+            title="ກຳລັງໂຫຼດຂໍ້ມູນເມນູ..." 
+            disabled
+            variant="plain"
+          ></v-list-item>
+        </template>
+        
+        <!-- Error State -->
+        <template v-else-if="error">
+          <v-list-subheader style="color: #c58c20;">ຂໍ້ຜິດພາດ</v-list-subheader>
+          <v-list-item 
+            prepend-icon="mdi-alert-circle" 
+            title="ມີຂໍ້ຜິດພາດໃນການໂຫຼດຂໍ້ມູນ" 
+            disabled
+            variant="plain"
+          ></v-list-item>
+          <v-list-item 
+            prepend-icon="mdi-refresh" 
+            title="ລອງໃໝ່" 
+            @click="retryLoadMenu"
+            variant="tonal"
+            color="primary"
+          ></v-list-item>
+        </template>
+        
+        <!-- Menu Data -->
+        <template v-else-if="responeMenuData && responeMenuData.length > 0">
+          <!-- Modules -->
+          <template v-for="(module, moduleIndex) in responeMenuData" :key="`module-${module.module_Id}`">
+            <v-list-subheader style="color: #c58c20; font-weight: bold;">
+              <v-icon :icon="convertIcon(module.module_icon)" class="mr-2"></v-icon>
+              {{ module.module_name_la }}
+            </v-list-subheader>
+            
+            <!-- Main Menus -->
+            <template v-for="(mainMenu, mainMenuIndex) in module.main_menus" :key="`main-${module.module_Id}-${mainMenu.menu_id}`">
+              <!-- Main Menu Item with Sub Menus (Dropdown) -->
+              <template v-if="mainMenu.sub_menus && mainMenu.sub_menus.length > 0">
+                <v-list-group :value="mainMenu.menu_id">
+                  <template v-slot:activator="{ props }">
+                    <v-list-item
+                      v-bind="props"
+                      :prepend-icon="convertIcon(mainMenu.menu_icon)"
+                      :title="mainMenu.menu_name_la"
+                      variant="tonal"
+                      color="primary"
+                      style="margin-bottom: 2px;"
+                    ></v-list-item>
+                  </template>
+                  
+                  <!-- Sub Menus -->
+                  <v-list-item
+                    v-for="(subMenu, subMenuIndex) in mainMenu.sub_menus"
+                    :key="`sub-${module.module_Id}-${mainMenu.menu_id}-${subMenu.sub_menu_id}`"
+                    :value="subMenu.sub_menu_id"
+                    :title="subMenu.sub_menu_name_la"
+                    :prepend-icon="convertIcon(subMenu.sub_menu_icon)"
+                    :to="cleanUrl(subMenu.sub_menu_urls)"
+                    :active="route.path === cleanUrl(subMenu.sub_menu_urls)"
+                    variant="plain"
+                    color="primary"
+                    style="padding-left: 32px; margin-bottom: 2px;"
+                  ></v-list-item>
+                </v-list-group>
+              </template>
+              
+              <!-- Main Menu without sub menus (direct clickable) -->
+              <template v-else>
+                <v-list-item
+                  :prepend-icon="convertIcon(mainMenu.menu_icon)"
+                  :title="mainMenu.menu_name_la"
+                  :to="mainMenu.menu_url ? cleanUrl(mainMenu.menu_url) : '#'"
+                  variant="tonal"
+                  color="primary"
+                  style="margin-bottom: 2px;"
+                ></v-list-item>
+              </template>
             </template>
             
-            <v-list-item
-              v-for="(subMenu, subMenuIndex) in mainMenu.sub_menus"
-              :key="`sub-${module.module_Id}-${mainMenu.menu_id}-${subMenu.sub_menu_id}`"
-              :value="subMenu.sub_menu_id"
-              :title="subMenu.sub_menu_name_la"
-              :prepend-icon="convertIcon(subMenu.sub_menu_icon)"
-              :to="cleanUrl(subMenu.sub_menu_urls)"
-              :active="route.path === cleanUrl(subMenu.sub_menu_urls)"
-              rounded="xl"
-            ></v-list-item>
-          </v-list-group>
-        </v-list-group>
-      </template>
-      
-      <!-- Empty State -->
-      <template v-else>
-        <v-list-item prepend-icon="mdi-menu-off" title="ບໍ່ມີຂໍ້ມູນເມນູ" disabled></v-list-item>
-      </template>
-    </v-list>
+            <!-- Divider between modules -->
+            <v-divider v-if="moduleIndex < responeMenuData.length - 1" class="my-3" color="#c58c20" opacity="0.3"></v-divider>
+          </template>
+        </template>
+        
+        <!-- Empty State -->
+        <template v-else>
+          <v-list-subheader style="color: #c58c20;">ເມນູ</v-list-subheader>
+          <v-list-item 
+            prepend-icon="mdi-menu-off" 
+            title="ບໍ່ມີຂໍ້ມູນເມນູ" 
+            disabled
+            variant="plain"
+          ></v-list-item>
+        </template>
+      </v-list>
+    </v-card>
   </v-navigation-drawer>
 </template>
 
@@ -139,7 +177,7 @@ const user = ref({
   email: "admin@example.com",
 });
 
-// ຟັງຊັ່ນສຳລັບດຶງ user ID ຈາກ localStorage
+// ຟັງຊັ່ນດຶງ user ID ຈາກ localStorage
 const getUserIdFromLocalStorage = () => {
   if (typeof window === 'undefined') return null;
   
@@ -251,7 +289,6 @@ const retryLoadMenu = async () => {
   }
 };
 
-// Lifecycle hook
 onMounted(async () => {
   const user_id = getUserIdFromLocalStorage();
   const user_code = route.query.id as string | undefined;
@@ -265,7 +302,6 @@ onMounted(async () => {
   }
 });
 
-
 const onLogout = () => {
   try {
     if (typeof window !== 'undefined') {
@@ -275,7 +311,7 @@ const onLogout = () => {
     router.push('/login');
   } catch (err) {
     console.error("Error during logout:", err);
-   
+    
     if (typeof window !== 'undefined') {
       window.location.href = '/login';
     }
@@ -285,13 +321,21 @@ const onLogout = () => {
 
 <style>
 .v-list-item--active {
+  flex: auto;
   border-color: #c58c20 !important;
+  background-color: rgba(197, 140, 32, 0.1) !important;
 }
 .v-list-item {
   color: #c58c20 !important;
+  flex: auto;
 }
 .v-icon {
   color: #c58c20;
+}
+
+.v-list-subheader {
+  color: #c58c20 !important;
+  font-weight: bold !important;
 }
 
 /* Loading animation */
@@ -302,5 +346,33 @@ const onLogout = () => {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+/* Hover effects */
+.v-list-item:hover {
+  background-color: rgba(197, 140, 32, 0.08) !important;
+}
+
+.v-list-item[variant="tonal"]:hover {
+  background-color: rgba(197, 140, 32, 0.15) !important;
+}
+
+/* List group styling */
+.v-list-group {
+  --v-list-group-background-color: transparent;
+}
+
+.v-list-group__items {
+  --v-list-item-base-color: #c58c20;
+}
+
+.v-list-group__items .v-list-item {
+  border-left: 2px solid rgba(197, 140, 32, 0.3);
+  margin-left: 8px;
+}
+
+.v-list-group__items .v-list-item--active {
+  border-left-color: #c58c20 !important;
+  background-color: rgba(197, 140, 32, 0.1) !important;
 }
 </style>

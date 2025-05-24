@@ -4,9 +4,9 @@ definePageMeta({
 });
 </script>
 
-<template>
+<template style="background-color: #f0f2f5">
   <section
-    style="min-height: 100vh"
+    style="min-height: 90vh"
     class="d-flex flex-wrap align-center justify-center"
   >
     <LoginMainContent />
