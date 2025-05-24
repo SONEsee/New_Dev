@@ -4,7 +4,8 @@
       <v-app-bar-nav-icon @click="drawer = !drawer" style="color: blue; background-color: blanchedalmond;"></v-app-bar-nav-icon>
     </template>
 
-    <v-app-bar-title></v-app-bar-title>
+    <v-app-bar-title>ລະບົບບັນຊີ ບໍລິສັດລັດ ບໍລິຫານໜີ້ ແລະ ຊັບສິນ ຈຳກັດຜູ້ດຽວ
+(SAMC’S Accounting System)</v-app-bar-title>
    
     <v-menu min-width="200px" rounded>
       <template v-slot:activator="{ props }">
