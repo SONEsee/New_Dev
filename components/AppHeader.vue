@@ -4,7 +4,7 @@
       <v-app-bar-nav-icon @click="drawer = !drawer" style="color: blue; background-color: blanchedalmond;"></v-app-bar-nav-icon>
     </template>
 
-    <v-app-bar-title>ລະບົບຈັດການບັນຊີ</v-app-bar-title>
+    <v-app-bar-title></v-app-bar-title>
    
     <v-menu min-width="200px" rounded>
       <template v-slot:activator="{ props }">
@@ -50,10 +50,27 @@
 
   <v-navigation-drawer v-model="drawer" permanent :rail="rail" order="1" :style="{ background: '#fdfdf5', borderColor: '#c58c20' }">
     <v-list nav density="comfortable" style="color: #c58c20;">
-      <template v-if="responeMenuData && responeMenuData.length > 0">
+      <!-- Loading State -->
+      <template v-if="isLoading">
+        <v-list-item prepend-icon="mdi-loading mdi-spin" title="ກຳລັງໂຫຼດຂໍ້ມູນເມນູ..." disabled></v-list-item>
+      </template>
+      
+      <!-- Error State -->
+      <template v-else-if="error">
+        <v-list-item prepend-icon="mdi-alert-circle" title="ມີຂໍ້ຜິດພາດໃນການໂຫຼດຂໍ້ມູນ" disabled></v-list-item>
+        <v-list-item 
+          prepend-icon="mdi-refresh" 
+          title="ລອງໃໝ່" 
+          @click="retryLoadMenu"
+          class="mt-2"
+        ></v-list-item>
+      </template>
+      
+      <!-- Menu Data -->
+      <template v-else-if="responeMenuData && responeMenuData.length > 0">
         <v-list-group 
           v-for="(module, moduleIndex) in responeMenuData" 
-          :key="`module-${moduleIndex}`" 
+          :key="`module-${module.module_Id}`" 
           :value="module.module_Id"
         >
           <template v-slot:activator="{ props }">
@@ -61,14 +78,14 @@
               v-bind="props"
               color="primary"
               rounded="xl"
-              :prepend-icon="getModuleIcon(module.module_icon)"
+              :prepend-icon="convertIcon(module.module_icon)"
               :title="module.module_name_la"
             ></v-list-item>
           </template>
           
           <v-list-group 
             v-for="(mainMenu, mainMenuIndex) in module.main_menus" 
-            :key="`main-${moduleIndex}-${mainMenuIndex}`" 
+            :key="`main-${module.module_Id}-${mainMenu.menu_id}`" 
             :value="mainMenu.menu_id" 
             sub-group
           >
@@ -77,30 +94,29 @@
                 v-bind="props"
                 color="primary"
                 rounded="xl"
-                :prepend-icon="getMenuIcon(mainMenu.menu_icon)"
+                :prepend-icon="convertIcon(mainMenu.menu_icon)"
                 :title="mainMenu.menu_name_la"
               ></v-list-item>
             </template>
             
             <v-list-item
               v-for="(subMenu, subMenuIndex) in mainMenu.sub_menus"
-              :key="`sub-${moduleIndex}-${mainMenuIndex}-${subMenuIndex}`"
+              :key="`sub-${module.module_Id}-${mainMenu.menu_id}-${subMenu.sub_menu_id}`"
               :value="subMenu.sub_menu_id"
               :title="subMenu.sub_menu_name_la"
-              :prepend-icon="getSubMenuIcon(subMenu.sub_menu_icon)"
-              :to="subMenu.sub_menu_urls"
-              :active="route.path === subMenu.sub_menu_urls"
+              :prepend-icon="convertIcon(subMenu.sub_menu_icon)"
+              :to="cleanUrl(subMenu.sub_menu_urls)"
+              :active="route.path === cleanUrl(subMenu.sub_menu_urls)"
               rounded="xl"
             ></v-list-item>
           </v-list-group>
         </v-list-group>
       </template>
       
-      <div v-else>
-        <v-list-item prepend-icon="mdi-refresh" title="ກຳລັງໂຫຼດຂໍ້ມູນເມນູ..." disabled></v-list-item>
-        <v-list-item v-if="isLoading" prepend-icon="mdi-loading" title="ກຳລັງໂຫຼດ..."></v-list-item>
-        <v-list-item v-if="error" prepend-icon="mdi-alert" title="ມີຂໍ້ຜິດພາດໃນການໂຫຼດຂໍ້ມູນ"></v-list-item>
-      </div>
+      <!-- Empty State -->
+      <template v-else>
+        <v-list-item prepend-icon="mdi-menu-off" title="ບໍ່ມີຂໍ້ມູນເມນູ" disabled></v-list-item>
+      </template>
     </v-list>
   </v-navigation-drawer>
 </template>
@@ -117,19 +133,20 @@ const drawer = ref(true);
 const rail = ref(false);
 const error = ref(false);
 
-
 const user = ref({
   fullName: "Admin User",
   initials: "AU",
   email: "admin@example.com",
 });
 
-
+// ຟັງຊັ່ນສຳລັບດຶງ user ID ຈາກ localStorage
 const getUserIdFromLocalStorage = () => {
-  const userStr = localStorage.getItem("user");
-  if (!userStr) return null;
+  if (typeof window === 'undefined') return null;
   
   try {
+    const userStr = localStorage.getItem("user");
+    if (!userStr) return null;
+    
     const userData = JSON.parse(userStr);
     return userData.user_id || null;
   } catch (error) {
@@ -138,86 +155,40 @@ const getUserIdFromLocalStorage = () => {
   }
 };
 
-
-const responeMenuData = computed(() => {
-  return menuStore.respone_menu_data;
-});
-
-const isLoading = computed(() => {
-  return menuStore.isloading;
-});
-
-
-onMounted(async () => {
-  try {
-    error.value = false;
-    const user_id = getUserIdFromLocalStorage();
-    const user_code = route.query.id as string | undefined;
-    
-   
-    const userIdToUse = user_code || user_id;
-    
-    if (userIdToUse) {
-      console.log("ກຳລັງດຶງຂໍ້ມູນເມນູສຳລັບຜູ້ໃຊ້:", userIdToUse);
-      await menuStore.Getmenu(userIdToUse);
-      
-     
-      if (!responeMenuData.value || (Array.isArray(responeMenuData.value) && responeMenuData.value.length === 0)) {
-        console.log("ບໍ່ພົບຂໍ້ມູນເມນູ, ກຳລັງລອງຄືນໃໝ່...");
-        setTimeout(async () => {
-          await menuStore.Getmenu(userIdToUse);
-        }, 1000);
-      }
-    } else {
-      console.error("ບໍ່ພົບລະຫັດຜູ້ໃຊ້");
-      error.value = true;
-    }
-  } catch (err) {
-    console.error("ເກີດຂໍ້ຜິດພາດໃນການດຶງຂໍ້ມູນເມນູ:", err);
-    error.value = true;
-  }
-});
-
-
-const getModuleIcon = (icon) => {
-  const iconMap = {
-    'fa-book': 'mdi-book',
+// ຟັງຊັ່ນສຳລັບແປງ FontAwesome icons ເປັນ Material Design icons
+const convertIcon = (icon: string): string => {
+  if (!icon) return 'mdi-circle-small';
+  
+  // ຖ້າເປັນ MDI icon ແລ້ວ ໃໃຫ້ return ກັບໄປເລີຍ
+  if (icon.startsWith('mdi-')) return icon;
+  
+  // Icon mapping ທີ່ສົມບູນ
+  const iconMap: Record<string, string> = {
+    // Module icons
+    'mdi-home': 'mdi-home',
     'fa-users-cog': 'mdi-account-cog',
     'fa-chart-bar': 'mdi-chart-bar',
     'fa-cogs': 'mdi-cog-transfer',
-  };
-  
-  return iconMap[icon] || 'mdi-view-dashboard';
-};
-
-const getMenuIcon = (icon) => {
-  const iconMap = {
-    'fa-user-lock': 'mdi-account-lock',
+    
+    // Menu icons
+    'mdi-user': 'mdi-account',
     'fa-edit': 'mdi-pencil',
-    'fa-user-shield': 'mdi-shield-account',
     'fa-file-alt': 'mdi-file-document',
     'fa-database': 'mdi-database',
-  };
-  
-  return iconMap[icon] || 'mdi-menu';
-};
-
-const getSubMenuIcon = (icon) => {
-  const iconMap = {
+    
+    // Sub-menu icons
     'fa-sign-in-alt': 'mdi-login',
     'fa-key': 'mdi-key',
-    'fa-edit': 'mdi-pencil',
     'fa-upload': 'mdi-upload',
     'fa-check-circle': 'mdi-check-circle',
     'fa-user-shield': 'mdi-shield-account',
     'fa-users': 'mdi-account-group',
     'fa-puzzle-piece': 'mdi-puzzle',
-    'fa-cogs': 'mdi-cog-transfer',
     'fa-building': 'mdi-domain',
     'fa-id-badge': 'mdi-badge-account',
     'fa-bars': 'mdi-menu',
     'fa-list': 'mdi-format-list-bulleted',
-    'fa-file-invoice': 'mdi-file-document',
+    'fa-file-invoice': 'mdi-file-document-outline',
     'fa-book': 'mdi-book',
     'fa-bookmark': 'mdi-bookmark',
     'fa-money-bill': 'mdi-cash-multiple',
@@ -226,16 +197,88 @@ const getSubMenuIcon = (icon) => {
   return iconMap[icon] || 'mdi-circle-small';
 };
 
+// ຟັງຊັ່ນສຳລັບທຳຄວາມສະອາດ URL
+const cleanUrl = (url: string): string => {
+  if (!url) return '/';
+  
+  // ແກ້ໄຂ URL ທີ່ມີການຊໍ້າກັນ ຫຼື ຜິດພາດ
+  if (url.includes('/module/user-rule/functions/module/user-rule/functions')) {
+    return '/module/user-rule/functions';
+  }
+  
+  // ລຶບ \r\n ຫຼື whitespace ທີ່ບໍ່ຕ້ອງການ
+  return url.replace(/[\r\n\s]+/g, '').trim();
+};
+
+// Computed properties
+const responeMenuData = computed(() => {
+  return menuStore.respone_menu_data;
+});
+
+const isLoading = computed(() => {
+  return menuStore.isloading;
+});
+
+// ຟັງຊັ່ນສຳລັບໂຫຼດເມນູ
+const loadMenu = async (userId: string) => {
+  try {
+    error.value = false;
+    console.log("ກຳລັງດຶງຂໍ້ມູນເມນູສຳລັບຜູ້ໃຊ້:", userId);
+    await menuStore.Getmenu(userId);
+    
+    // ກວດສອບວ່າມີຂໍ້ມູນຫຼືບໍ່
+    if (!responeMenuData.value || (Array.isArray(responeMenuData.value) && responeMenuData.value.length === 0)) {
+      console.warn("ບໍ່ພົບຂໍ້ມູນເມນູ");
+      error.value = true;
+    }
+  } catch (err) {
+    console.error("ເກີດຂໍ້ຜິດພາດໃນການດຶງຂໍ້ມູນເມນູ:", err);
+    error.value = true;
+  }
+};
+
+// ຟັງຊັ່ນສຳລັບລອງໂຫຼດເມນູໃໝ່
+const retryLoadMenu = async () => {
+  const user_id = getUserIdFromLocalStorage();
+  const user_code = route.query.id as string | undefined;
+  const userIdToUse = user_code || user_id;
+  
+  if (userIdToUse) {
+    await loadMenu(userIdToUse);
+  } else {
+    console.error("ບໍ່ພົບລະຫັດຜູ້ໃຊ້");
+    error.value = true;
+  }
+};
+
+// Lifecycle hook
+onMounted(async () => {
+  const user_id = getUserIdFromLocalStorage();
+  const user_code = route.query.id as string | undefined;
+  const userIdToUse = user_code || user_id;
+  
+  if (userIdToUse) {
+    await loadMenu(userIdToUse);
+  } else {
+    console.error("ບໍ່ພົບລະຫັດຜູ້ໃຊ້");
+    error.value = true;
+  }
+});
+
 
 const onLogout = () => {
   try {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+    }
     router.push('/login');
   } catch (err) {
     console.error("Error during logout:", err);
-  
-    window.location.href = '/login';
+   
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login';
+    }
   }
 };
 </script>
@@ -249,5 +292,15 @@ const onLogout = () => {
 }
 .v-icon {
   color: #c58c20;
+}
+
+/* Loading animation */
+.mdi-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 </style>
