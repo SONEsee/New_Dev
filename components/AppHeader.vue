@@ -1,12 +1,12 @@
 <template>
   <v-app-bar :elevation="2" color="#c58c20" class="d-flex align-center">
-    <!-- ປຸ່ມເມນູຢູ່ຊ້າຍສຸດ -->
+    
     <v-app-bar-nav-icon 
       @click="drawer = !drawer" 
       style="color: blue; background-color: blanchedalmond; flex-shrink: 0;"
     ></v-app-bar-nav-icon>
     
-    <!-- ຊື່ລະບົບຢູ່ກາງ -->
+  
     <v-app-bar-title class="text-center flex-grow-1">
       ລະບົບບັນຊີ ບໍລິສັດລັດ ບໍລິຫານໜີ້ ແລະ ຊັບສິນ ຈຳກັດຜູ້ດຽວ
       (SAMC'S Accounting System)
