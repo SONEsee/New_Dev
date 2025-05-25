@@ -69,7 +69,7 @@
    
       <v-list nav density="comfortable" style="color: #c58c20; padding: 0;">
         
-        <!-- Loading State -->
+        
         <template v-if="isLoading">
           <v-list-subheader style="color: #c58c20; padding-left: 0px;" v-show="!rail">ກຳລັງໂຫຼດ...</v-list-subheader>
           <v-list-item 
@@ -81,7 +81,7 @@
           ></v-list-item>
         </template>
         
-        <!-- Error State -->
+        
         <template v-else-if="error">
           <v-list-subheader style="color: #c58c20; padding-left: 0px;" v-show="!rail">ຂໍ້ຜິດພາດ</v-list-subheader>
           <v-list-item 
@@ -105,7 +105,7 @@
         <template v-else-if="responeMenuData && responeMenuData.length > 0">
           <!-- Modules -->
           <template v-for="(module, moduleIndex) in responeMenuData" :key="`module-${module.module_Id}`">
-            <v-list-subheader style="color: #c58c20; font-weight: bold; padding-left: 0px;" v-show="!rail">
+            <v-list-subheader style="color:#000; font-weight: bold; padding-left: 0px; background-color: #c58c20; " v-show="!rail " class="text-white">
               <v-icon :icon="convertIcon(module.module_icon)" class="mr-2"></v-icon>
               {{ module.module_name_la }}
             </v-list-subheader>
@@ -356,7 +356,7 @@ const onLogout = () => {
 }
 
 .v-list-subheader {
-  color: #c58c20 !important;
+  
   font-weight: bold !important;
 }
 
