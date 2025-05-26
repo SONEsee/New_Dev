@@ -34,14 +34,16 @@ const headers = [
   { title: "ລະຫັດຟັງຊັ້ນ", value: "function_id" },
   { title: "ຄຳອະທິບາຍ (ລາວ)", value: "description_la" },
   { title: "ຄຳອະທິບາຍ (ອັງກິດ)", value: "description_en" },
-  { title: "ລຳດັບ", value: "function_order" },
+  // { title: "ລຳດັບ", value: "function_order" },
   { title: "ສະຖານະ", value: "is_active" },
 
   { title: "ຈັດການ", value: "actions" },
 ];
 onMounted(async () => {
   try {
-    await Promise.all([menuStore.GetFuntionMenu(), menuStore.GetMenuSubMenu()]);
+    await Promise.all([
+      menuStore.GetFuntionMenu(),
+     menuStore.GetMenuSubMenu()]);
   } catch (error) {
     console.error("Failed to load initial data:", error);
   }
