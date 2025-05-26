@@ -102,9 +102,9 @@
         ></v-list-item>
       </template>
 
-      <!-- Menu Data -->
+      
       <template v-else-if="responeMenuData && responeMenuData.length > 0">
-        <!-- Modules -->
+        
         <template
           v-for="(module, moduleIndex) in responeMenuData"
           :key="`module-${module.module_Id}`"
@@ -131,7 +131,7 @@
             v-for="(mainMenu, mainMenuIndex) in module.main_menus"
             :key="`main-${module.module_Id}-${mainMenu.menu_id}`"
           >
-            <!-- Main Menu Item with Sub Menus (Dropdown) -->
+            
             <template
               v-if="mainMenu.sub_menus && mainMenu.sub_menus.length > 0"
             >
@@ -148,7 +148,7 @@
                   ></v-list-item>
                 </template>
 
-                <!-- Sub Menus - ຊື່ນເມື່ອ rail mode ເປັນ true -->
+             
                 <template v-if="!rail">
                   <v-list-item
                     v-for="(subMenu, subMenuIndex) in mainMenu.sub_menus"
@@ -225,7 +225,7 @@ const user = ref({
   email: "admin@example.com",
 });
 
-// ຟັງຊັ່ນດຶງ user ID ຈາກ localStorage
+
 const getUserIdFromLocalStorage = () => {
   if (typeof window === "undefined") return null;
 
@@ -241,28 +241,28 @@ const getUserIdFromLocalStorage = () => {
   }
 };
 
-// ຟັງຊັ່ນສຳລັບແປງ FontAwesome icons ເປັນ Material Design icons
+
 const convertIcon = (icon: string): string => {
   if (!icon) return "mdi-circle-small";
 
-  // ຖ້າເປັນ MDI icon ແລ້ວ ໃໃຫ້ return ກັບໄປເລີຍ
+  
   if (icon.startsWith("mdi-")) return icon;
 
-  // Icon mapping ທີ່ສົມບູນ
+
   const iconMap: Record<string, string> = {
-    // Module icons
+    
     "mdi-home": "mdi-home",
     "fa-users-cog": "mdi-account-cog",
     "fa-chart-bar": "mdi-chart-bar",
     "fa-cogs": "mdi-cog-transfer",
 
-    // Menu icons
+
     "mdi-user": "mdi-account",
     "fa-edit": "mdi-pencil",
     "fa-file-alt": "mdi-file-document",
     "fa-database": "mdi-database",
 
-    // Sub-menu icons
+  
     "fa-sign-in-alt": "mdi-login",
     "fa-key": "mdi-key",
     "fa-upload": "mdi-upload",
@@ -283,20 +283,20 @@ const convertIcon = (icon: string): string => {
   return iconMap[icon] || "mdi-circle-small";
 };
 
-// ຟັງຊັ່ນສຳລັບທຳຄວາມສະອາດ URL
+
 const cleanUrl = (url: string): string => {
   if (!url) return "/";
 
-  // ແກ້ໄຂ URL ທີ່ມີການຊໍ້າກັນ ຫຼື ຜິດພາດ
+ 
   if (url.includes("/module/user-rule/functions/module/user-rule/functions")) {
     return "/module/user-rule/functions";
   }
 
-  // ລຶບ \r\n ຫຼື whitespace ທີ່ບໍ່ຕ້ອງການ
+  
   return url.replace(/[\r\n\s]+/g, "").trim();
 };
 
-// Computed properties
+
 const responeMenuData = computed(() => {
   return menuStore.respone_menu_data;
 });
@@ -305,14 +305,14 @@ const isLoading = computed(() => {
   return menuStore.isloading;
 });
 
-// ຟັງຊັ່ນສຳລັບໂຫຼດເມນູ
+
 const loadMenu = async (userId: string) => {
   try {
     error.value = false;
     console.log("ກຳລັງດຶງຂໍ້ມູນເມນູສຳລັບຜູ້ໃຊ້:", userId);
     await menuStore.Getmenu(userId);
 
-    // ກວດສອບວ່າມີຂໍ້ມູນຫຼືບໍ່
+  
     if (
       !responeMenuData.value ||
       (Array.isArray(responeMenuData.value) &&
@@ -327,7 +327,7 @@ const loadMenu = async (userId: string) => {
   }
 };
 
-// ຟັງຊັ່ນສຳລັບລອງໂຫຼດເມນູໃໝ່
+
 const retryLoadMenu = async () => {
   const user_id = getUserIdFromLocalStorage();
   const user_code = route.query.id as string | undefined;
@@ -389,7 +389,7 @@ const onLogout = () => {
   font-weight: bold !important;
 }
 
-/* Loading animation */
+
 .mdi-spin {
   animation: spin 1s linear infinite;
 }
@@ -403,7 +403,7 @@ const onLogout = () => {
   }
 }
 
-/* Hover effects */
+
 .v-list-item:hover {
   background-color: rgba(197, 140, 32, 0.08) !important;
 }
@@ -412,7 +412,7 @@ const onLogout = () => {
   background-color: rgba(197, 140, 32, 0.15) !important;
 }
 
-/* List group styling */
+
 .v-list-group {
   --v-list-group-background-color: transparent;
 }
@@ -445,7 +445,7 @@ const onLogout = () => {
   margin-left: 0 !important;
 }
 
-/* ສຳລັບ sub-menu ໃຫ້ມີການເລື່ອນເຂົ້າໄປເລັກນ້ອຍ */
+
 .sub-menu-item {
   border-left: 2px solid rgba(197, 140, 32, 0.3) !important;
   margin-left: 0px !important;

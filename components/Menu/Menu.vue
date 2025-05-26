@@ -76,10 +76,11 @@ const viewMenuDetails = (menuId: string) => {
 const editMenu = (menuId: string) => {
   router.push(`/menu/edit?id=${menuId}`);
 };
+
 </script>
 
-<template>
-  <v-container>
+<template class="">
+  
     <GlobalTextTitleLine :title="title" />
 
     <v-col cols="12">
@@ -102,10 +103,19 @@ const editMenu = (menuId: string) => {
             item-value="module_Id"
             item-title="module_name_la"
             variant="outlined"
-            clearable
             placeholder="ເລືອກພະແນກເພື່ອກັ່ນຕອງຂໍ້ມູນ"
-            return-object
-          ></v-autocomplete>
+           
+          >
+          
+
+              <!-- <template v-slot:item="{ props, item }">
+                <v-list-item
+                  v-bind="props"
+                  :subtitle="item.raw.module_Id"
+                  :title="item.raw.module_name_la"
+                ></v-list-item>
+              </template> -->
+        </v-autocomplete>
         </v-col>
 
         <v-col cols="12" md="3">
@@ -128,11 +138,12 @@ const editMenu = (menuId: string) => {
       </v-row>
 
       <v-data-table
+      
         :items="menuItems"
         :headers="headers"
         :loading="loading"
         :items-per-page="itemsPerPage"
-        class="elevation-1"
+        class="elevation-1 text-no-wrap"
       >
         <template v-slot:item.created_date="{ item }">
           {{ dayjs(item.created_date).format("DD/MM/YYYY") }}
@@ -193,5 +204,5 @@ const editMenu = (menuId: string) => {
         </template>
       </v-data-table>
     </v-col>
-  </v-container>
+ 
 </template>
