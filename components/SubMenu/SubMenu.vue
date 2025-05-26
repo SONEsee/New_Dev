@@ -1,6 +1,21 @@
 <script setup lang="ts">
 import dayjs from "#build/dayjs.imports.mjs";
-
+const selecteMainMenu = ref<any | null>(null);
+const searchSubMenu = async ()=>{
+  try {
+    subMenuStore.query_submenu_filter.data.menu_id=
+    selecteMainMenu.value.menu_id || null;
+    await subMenuStore.GetMenuSubMenu();
+  } catch (error) {
+    console.error("Failed to search submenu:", error);
+    
+  }
+};
+const clearFilters = ()=>{
+selecteMainMenu.value = null;
+subMenuStore.query_submenu_filter.data.menu_id = null;
+subMenuStore.GetMenuSubMenu();
+}
 const subMenuStore = useMenuStore();
 const res = computed(() => {
   const data = subMenuStore.response_sub_menu_data  || null;
@@ -9,8 +24,18 @@ const res = computed(() => {
   if (Array.isArray(data)) return data;
   return [data];
 });
-onMounted(() => {
-  subMenuStore.GetMenuSubMenu();
+const menuItems = computed(() => {
+  return subMenuStore.respone_main_menu_data || [];
+});
+onMounted(async () => {
+  try {
+    await Promise.all([
+      subMenuStore.GetMenuSubMenu(),
+      subMenuStore.GetMainMenu()
+    ]);
+  } catch (error) {
+    console.error("Failed to load initial data:", error);
+  }
 });
 const onDeleteType = async (sub_menu_id: string) => {
   await subMenuStore.DeleteSubMenu(sub_menu_id);
@@ -29,11 +54,49 @@ const header = [
   <v-container>
     <GlobalTextTitleLine :title="title" />
     <v-col cols="12">
-      <div class="d-flex justify-end">
+      <v-row>
+        <v-col cols="12" md="3">
+           <div class="d-flex ">
         <v-btn color="primary" @click="goPath('/submenu/create')"
           ><v-icon icon="mdi-plus"></v-icon> ເພີ່ມປະເພດ</v-btn
         >
       </div>
+        </v-col>
+        <v-col cols="12" md="3"></v-col>
+        <v-col cols="12" md="3">
+          <v-autocomplete
+            v-model="selecteMainMenu"
+            density="compact"
+            label="ເລືອກພະແນກ"
+            :items="menuItems"
+            item-value="menu_id"
+            item-title="menu_name_la"
+            variant="outlined"
+            clearable
+            placeholder="ເລືອກພະແນກເພື່ອກັ່ນຕອງຂໍ້ມູນ"
+            return-object
+          ></v-autocomplete>
+        </v-col>
+        <v-col cols="12" md="3">
+          <div class="d-flex gap-2">
+            <v-btn
+              color="primary"
+              variant="flat"
+              @click="searchSubMenu"
+              :loading="subMenuStore.isloading"
+            >
+              <v-icon class="mr-2">mdi-magnify</v-icon>
+              ຄົ້ນຫາ
+            </v-btn>
+            <v-btn color="secondary" variant="outlined" @click="clearFilters">
+              <v-icon class="mr-2">mdi-filter-remove</v-icon>
+              ລຶບຕົວກັ່ນ
+            </v-btn>
+          </div>
+        </v-col>
+      </v-row>
+     
+
     </v-col>
 
     <v-data-table :headers="header" :items="res || []" class="elevation-1">

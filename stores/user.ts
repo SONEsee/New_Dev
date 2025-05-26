@@ -20,8 +20,7 @@ export const UserStore = defineStore("user", {
         Auth_Status: "",
         pwd_changed_on: "",
       },
-      update_user_form:
-      {
+      update_user_form: {
         user_id: "",
         user_name: "",
         user_email: "",
@@ -37,18 +36,29 @@ export const UserStore = defineStore("user", {
         pwd_changed_on: "",
       },
       userList: [] as UserModel.Items[],
-      request_userid_detail:{
+      request_userid_detail: {
         user_id: null as string | null,
       },
       respone_data_detail: null as UserModel.Items | null,
+      reqest_get_user: {
+        query: {
+          div_id: null as string | null,
+          role_id: null as string | null,
+        },
+        loading: false,
+      },
       loading: false,
     };
   },
   actions: {
     async GetUser() {
       this.loading = true;
+      this.reqest_get_user.loading = true;
       try {
         const response = await axios.get(`/api/users/`, {
+          params: {
+            ...this.reqest_get_user.query,
+          },
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -117,7 +127,7 @@ export const UserStore = defineStore("user", {
         formData.append("user_email", this.create_user_form.user_email || "");
         formData.append("user_mobile", this.create_user_form.user_mobile);
         formData.append("user_password", this.create_user_form.user_password);
-        formData.append("Div_Id", this.create_user_form.div_id);
+        formData.append("div_id", this.create_user_form.div_id);
         formData.append("Role_ID", this.create_user_form.Role_ID);
 
         let authStatus = this.create_user_form.Auth_Status;
@@ -134,10 +144,8 @@ export const UserStore = defineStore("user", {
           formData.append("profile_image", this.create_user_form.profile_image);
         }
 
-        
         const req = await axios.post(`/api/users/`, formData, {
           headers: {
-            
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         });
@@ -150,11 +158,10 @@ export const UserStore = defineStore("user", {
             showConfirmButton: false,
             timer: 1500,
           });
-goPath("/user");
+          goPath("/user");
           this.resetCreateForm();
           await this.GetUser();
           return req.data;
-          
         }
       } catch (error: any) {
         console.error("Error creating user:", error);
@@ -188,7 +195,6 @@ goPath("/user");
         this.loading = false;
       }
     },
-    
 
     resetCreateForm() {
       this.create_user_form = {
@@ -207,245 +213,243 @@ goPath("/user");
         pwd_changed_on: "",
       };
     },
-  async GetdatadetailUser(user_id: string) {
- 
-  try {
-    
-    const res = await axios.get<UserModel.Items>(`api/users/${user_id}/`, {
-
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    });
-    if (res.status === 200) {
-      this.respone_data_detail = res.data ;
-    }
-  } catch (error) {
-    console.error("Error fetching user details:", error);
-  }
-},
-async UpdateUser(user_id: string) {
-  this.loading = true;
-  try {
-    const formData = new FormData();  
-    formData.append("user_id", this.update_user_form.user_id);
-    formData.append("user_name", this.update_user_form.user_name);
-    formData.append("user_email", this.update_user_form.user_email || "");
-    formData.append("user_mobile", this.update_user_form.user_mobile);
-    
-   
-    if (this.update_user_form.user_password && this.update_user_form.user_password.trim() !== '') {
-      formData.append("user_password", this.update_user_form.user_password);
-    }
-    
-    formData.append("Div_Id", this.update_user_form.div_id);
-    formData.append("Role_ID", this.update_user_form.Role_ID);
-    
-    let authStatus = this.update_user_form.Auth_Status;
-    if (authStatus === "ເປີດ") {
-      authStatus = "A";
-    } else if (authStatus === "ປິດ") {
-      authStatus = "I";
-    }
-    formData.append("Auth_Status", authStatus);
-    formData.append("user_status", authStatus === "A" ? "true" : "false");
-    
-    if (this.update_user_form.profile_image) {
-      formData.append("profile_image", this.update_user_form.profile_image);
-    }
-    
-    const req = await axios.put(`/api/users/${user_id}/`, formData, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    });
-    
-    if (req.status === 200 || req.status === 204) {
-      await CallSwal({
-        title: "ສຳເລັດ",
-        text: "ແກ້ໄຂຂໍ້ມູນຜູ້ໃຊ້ສຳເລັດ",
-        icon: "success",
-        showConfirmButton: false,
-        timer: 1500,
-      });
-      goPath("/user");
-      await this.GetUser();
-      return req.data;
-    }
-  } catch (error: any) {
-    console.error("Error updating user:", error);
-    
-    let errorMessage = "ເກີດຂໍ້ຜິດພາດໃນການແກ້ໄຂຂໍ້ມູນຜູ້ໃຊ້";
-    if (error.response?.data) {
-      if (error.response.data.message) {
-        errorMessage = error.response.data.message;
-      } else if (typeof error.response.data === "object") {
-        const firstErrorKey = Object.keys(error.response.data)[0];
-        if (firstErrorKey) {
-          errorMessage = `${firstErrorKey}: ${error.response.data[firstErrorKey]}`;
+    async GetdatadetailUser(user_id: string) {
+      try {
+        const res = await axios.get<UserModel.Items>(`api/users/${user_id}/`, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+        if (res.status === 200) {
+          this.respone_data_detail = res.data;
         }
+      } catch (error) {
+        console.error("Error fetching user details:", error);
       }
-    }
-    
-    await CallSwal({
-      title: "ຜິດພາດ",
-      text: errorMessage,
-      icon: "error",
-      showConfirmButton: false,
-      timer: 1500,
-    });
-    
-    return null;
-  } finally {
-    this.loading = false;
-  }
-},
-async UpdateMyUser(user_id: string) {
-  this.loading = true;
-  try {
-    const formData = new FormData();  
-    formData.append("user_id", this.update_user_form.user_id);
-    formData.append("user_name", this.update_user_form.user_name);
-    formData.append("user_email", this.update_user_form.user_email || "");
-    formData.append("user_mobile", this.update_user_form.user_mobile);
-    
-   
-    if (this.update_user_form.user_password && this.update_user_form.user_password.trim() !== '') {
-      formData.append("user_password", this.update_user_form.user_password);
-    }
-    
-    formData.append("Div_Id", this.update_user_form.div_id);
-    formData.append("Role_ID", this.update_user_form.Role_ID);
-    
-    let authStatus = this.update_user_form.Auth_Status;
-    if (authStatus === "ເປີດ") {
-      authStatus = "A";
-    } else if (authStatus === "ປິດ") {
-      authStatus = "I";
-    }
-    formData.append("Auth_Status", authStatus);
-    formData.append("user_status", authStatus === "A" ? "true" : "false");
-    
-    if (this.update_user_form.profile_image) {
-      formData.append("profile_image", this.update_user_form.profile_image);
-    }
-    
-    const req = await axios.put(`/api/users/${user_id}/`, formData, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    });
-    
-    if (req.status === 200 || req.status === 204) {
-      await CallSwal({
-        title: "ສຳເລັດ",
-        text: "ແກ້ໄຂຂໍ້ມູນຜູ້ໃຊ້ສຳເລັດ",
-        icon: "success",
-        showConfirmButton: false,
-        timer: 1500,
-      });
-      goPath("/myuser");
-      await this.GetUser();
-      return req.data;
-    }
-  } catch (error: any) {
-    console.error("Error updating user:", error);
-    
-    let errorMessage = "ເກີດຂໍ້ຜິດພາດໃນການແກ້ໄຂຂໍ້ມູນຜູ້ໃຊ້";
-    if (error.response?.data) {
-      if (error.response.data.message) {
-        errorMessage = error.response.data.message;
-      } else if (typeof error.response.data === "object") {
-        const firstErrorKey = Object.keys(error.response.data)[0];
-        if (firstErrorKey) {
-          errorMessage = `${firstErrorKey}: ${error.response.data[firstErrorKey]}`;
+    },
+    async UpdateUser(user_id: string) {
+      this.loading = true;
+      try {
+        const formData = new FormData();
+        formData.append("user_id", this.update_user_form.user_id);
+        formData.append("user_name", this.update_user_form.user_name);
+        formData.append("user_email", this.update_user_form.user_email || "");
+        formData.append("user_mobile", this.update_user_form.user_mobile);
+
+        if (
+          this.update_user_form.user_password &&
+          this.update_user_form.user_password.trim() !== ""
+        ) {
+          formData.append("user_password", this.update_user_form.user_password);
         }
+
+        formData.append("Div_Id", this.update_user_form.div_id);
+        formData.append("Role_ID", this.update_user_form.Role_ID);
+
+        let authStatus = this.update_user_form.Auth_Status;
+        if (authStatus === "ເປີດ") {
+          authStatus = "A";
+        } else if (authStatus === "ປິດ") {
+          authStatus = "I";
+        }
+        formData.append("Auth_Status", authStatus);
+        formData.append("user_status", authStatus === "A" ? "true" : "false");
+
+        if (this.update_user_form.profile_image) {
+          formData.append("profile_image", this.update_user_form.profile_image);
+        }
+
+        const req = await axios.put(`/api/users/${user_id}/`, formData, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+
+        if (req.status === 200 || req.status === 204) {
+          await CallSwal({
+            title: "ສຳເລັດ",
+            text: "ແກ້ໄຂຂໍ້ມູນຜູ້ໃຊ້ສຳເລັດ",
+            icon: "success",
+            showConfirmButton: false,
+            timer: 1500,
+          });
+          goPath("/user");
+          await this.GetUser();
+          return req.data;
+        }
+      } catch (error: any) {
+        console.error("Error updating user:", error);
+
+        let errorMessage = "ເກີດຂໍ້ຜິດພາດໃນການແກ້ໄຂຂໍ້ມູນຜູ້ໃຊ້";
+        if (error.response?.data) {
+          if (error.response.data.message) {
+            errorMessage = error.response.data.message;
+          } else if (typeof error.response.data === "object") {
+            const firstErrorKey = Object.keys(error.response.data)[0];
+            if (firstErrorKey) {
+              errorMessage = `${firstErrorKey}: ${error.response.data[firstErrorKey]}`;
+            }
+          }
+        }
+
+        await CallSwal({
+          title: "ຜິດພາດ",
+          text: errorMessage,
+          icon: "error",
+          showConfirmButton: false,
+          timer: 1500,
+        });
+
+        return null;
+      } finally {
+        this.loading = false;
       }
-    }
-    
-    await CallSwal({
-      title: "ຜິດພາດ",
-      text: errorMessage,
-      icon: "error",
-      showConfirmButton: false,
-      timer: 1500,
-    });
-    
-    return null;
-  } finally {
-    this.loading = false;
-  }
-},
-async DeleteUser(user_id: string) {
-  this.loading = true;
-  try {
-   
-    if (!user_id) {
-     
-      return null;
-    }
+    },
+    async UpdateMyUser(user_id: string) {
+      this.loading = true;
+      try {
+        const formData = new FormData();
+        formData.append("user_id", this.update_user_form.user_id);
+        formData.append("user_name", this.update_user_form.user_name);
+        formData.append("user_email", this.update_user_form.user_email || "");
+        formData.append("user_mobile", this.update_user_form.user_mobile);
 
-    //
-    const response = await axios.delete(`/api/users/${user_id}`, {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    });
+        if (
+          this.update_user_form.user_password &&
+          this.update_user_form.user_password.trim() !== ""
+        ) {
+          formData.append("user_password", this.update_user_form.user_password);
+        }
 
-    
-    if (response.status === 204 || response.status === 200 || response.status === 301) {
-      await CallSwal({
-        title: "ສຳເລັດ",
-        text: "ລຶບຂໍ້ມູນຜູ້ໃຊ້ສຳເລັດ",
-        icon: "success",
-        showConfirmButton: false,
-        timer: 1500,
-      });
-      return response.data;
-    } else {
-      await CallSwal({
-        title: "ສຳເລັດ",
-        text: "ລຶບຂໍ້ມູນຜູ້ໃຊ້ສຳເລັດ",
-        icon: "success",
-        showConfirmButton: false,
-        timer: 1500,
-        
-      });
-      goPath("/user");
-    }
-  } catch (error: any) {
-    console.error("Error deleting user:", error);
-    
-  
-    let errorMessage = "ເກີດຂໍ້ຜິດພາດໃນການລຶບຂໍ້ມູນ";
-    
-    if (error.response) {
-    
-      if (error.response.status === 404) {
-        errorMessage = "ບໍ່ພົບຂໍ້ມູນຜູ້ໃຊ້";
-      } else if (error.response.status === 403) {
-        errorMessage = "ທ່ານບໍ່ມີສິດໃນການລຶບຂໍ້ມູນນີ້";
-      } else if (error.response.data && error.response.data.message) {
-        errorMessage = error.response.data.message;
+        formData.append("Div_Id", this.update_user_form.div_id);
+        formData.append("Role_ID", this.update_user_form.Role_ID);
+
+        let authStatus = this.update_user_form.Auth_Status;
+        if (authStatus === "ເປີດ") {
+          authStatus = "A";
+        } else if (authStatus === "ປິດ") {
+          authStatus = "I";
+        }
+        formData.append("Auth_Status", authStatus);
+        formData.append("user_status", authStatus === "A" ? "true" : "false");
+
+        if (this.update_user_form.profile_image) {
+          formData.append("profile_image", this.update_user_form.profile_image);
+        }
+
+        const req = await axios.put(`/api/users/${user_id}/`, formData, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+
+        if (req.status === 200 || req.status === 204) {
+          await CallSwal({
+            title: "ສຳເລັດ",
+            text: "ແກ້ໄຂຂໍ້ມູນຜູ້ໃຊ້ສຳເລັດ",
+            icon: "success",
+            showConfirmButton: false,
+            timer: 1500,
+          });
+          goPath("/myuser");
+          await this.GetUser();
+          return req.data;
+        }
+      } catch (error: any) {
+        console.error("Error updating user:", error);
+
+        let errorMessage = "ເກີດຂໍ້ຜິດພາດໃນການແກ້ໄຂຂໍ້ມູນຜູ້ໃຊ້";
+        if (error.response?.data) {
+          if (error.response.data.message) {
+            errorMessage = error.response.data.message;
+          } else if (typeof error.response.data === "object") {
+            const firstErrorKey = Object.keys(error.response.data)[0];
+            if (firstErrorKey) {
+              errorMessage = `${firstErrorKey}: ${error.response.data[firstErrorKey]}`;
+            }
+          }
+        }
+
+        await CallSwal({
+          title: "ຜິດພາດ",
+          text: errorMessage,
+          icon: "error",
+          showConfirmButton: false,
+          timer: 1500,
+        });
+
+        return null;
+      } finally {
+        this.loading = false;
       }
-    } else if (error.message) {
-      errorMessage = error.message;
-    }
-    
-    await CallSwal({
-      title: "ຜິດພາດ",
-      text: errorMessage,
-      icon: "error",
-      showConfirmButton: false,
-      timer: 1500,
-    });
-    return null;
-  } finally {
-    this.loading = false;
-  }
-}
+    },
+    async DeleteUser(user_id: string) {
+      this.loading = true;
+      try {
+        if (!user_id) {
+          return null;
+        }
 
+        //
+        const response = await axios.delete(`/api/users/${user_id}`, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+
+        if (
+          response.status === 204 ||
+          response.status === 200 ||
+          response.status === 301
+        ) {
+          await CallSwal({
+            title: "ສຳເລັດ",
+            text: "ລຶບຂໍ້ມູນຜູ້ໃຊ້ສຳເລັດ",
+            icon: "success",
+            showConfirmButton: false,
+            timer: 1500,
+          });
+          return response.data;
+        } else {
+          await CallSwal({
+            title: "ສຳເລັດ",
+            text: "ລຶບຂໍ້ມູນຜູ້ໃຊ້ສຳເລັດ",
+            icon: "success",
+            showConfirmButton: false,
+            timer: 1500,
+          });
+          goPath("/user");
+        }
+      } catch (error: any) {
+        console.error("Error deleting user:", error);
+
+        let errorMessage = "ເກີດຂໍ້ຜິດພາດໃນການລຶບຂໍ້ມູນ";
+
+        if (error.response) {
+          if (error.response.status === 404) {
+            errorMessage = "ບໍ່ພົບຂໍ້ມູນຜູ້ໃຊ້";
+          } else if (error.response.status === 403) {
+            errorMessage = "ທ່ານບໍ່ມີສິດໃນການລຶບຂໍ້ມູນນີ້";
+          } else if (error.response.data && error.response.data.message) {
+            errorMessage = error.response.data.message;
+          }
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+
+        await CallSwal({
+          title: "ຜິດພາດ",
+          text: errorMessage,
+          icon: "error",
+          showConfirmButton: false,
+          timer: 1500,
+        });
+        return null;
+      } finally {
+        this.loading = false;
+      }
+    },
   },
 });

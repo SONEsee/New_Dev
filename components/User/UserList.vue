@@ -1,22 +1,45 @@
 <script lang="ts" setup>
-import { useRoute } from 'vue-router';
+import { useRoute } from "vue-router";
+interface Userparam {
+  div_id: string;
+  role_id: string;
+}
+const selectedDivision = ref<any | null>(null);
+const selectedRole = ref<any | null>(null);
+const roleStore = RoleStore();
+const devision = UseCategoryStore();
+const role = computed(() => roleStore.respons_data_role || []);
+const userItems = computed(() => devision.categories || []);
+
 const route = useRoute();
 const user_id = route.query.user_id as string;
 const agencyStore = UserStore();
 const response_data = computed(() => {
-   return agencyStore.userList || []; 
-});
-console.log(response_data.value);
-onMounted(() => {
-  agencyStore.GetUser();
-  agencyStore.DeleteUser(user_id);
+  return agencyStore.userList || [];
 });
 
+// ເພີ່ມຟັງຊັນສຳລັບການຄົ້ນຫາ
+const searchUsers = () => {
+  // ອັບເດດ filter ໃນ store
+  agencyStore.reqest_get_user.query.div_id = selectedDivision.value?.div_id || null;
+  agencyStore.reqest_get_user.query.role_id = selectedRole.value?.role_id || null;
+  
+  // ເອີ້ນ GetUser ທີ່ຈະໃຊ້ filter ທີ່ອັບເດດແລ້ວ
+  agencyStore.GetUser();
+};
+
+onMounted(() => {
+  agencyStore.GetUser();
+  if (user_id) {
+    agencyStore.DeleteUser(user_id);
+  }
+  devision.GetListData();
+  roleStore.GetRole();
+});
 
 const headers = ref([
   { title: "ລຳດັບ", key: "no", sortable: false },
   { title: "ຮູບພາບ", key: "image", sortable: false },
-
   { title: "ຊື່ຜູ້ໃຊ້ງານ", key: "user_name", sortable: false },
   { title: "ອີເມວ", key: "user_email", sortable: false },
   { title: "ເບີ້ໂທ", key: "user_mobile", sortable: false },
@@ -25,7 +48,6 @@ const headers = ref([
 ]);
 
 const onDeleteUser = async (user_id: string) => {
- 
   const confirmation = await CallSwal({
     icon: "warning",
     title: "ຄຳເຕືອນ",
@@ -35,26 +57,33 @@ const onDeleteUser = async (user_id: string) => {
     cancelButtonText: "ຍົກເລີກ",
   });
 
-  
   if (confirmation.isConfirmed) {
-    
     const result = await agencyStore.DeleteUser(user_id);
-    
-    
     if (result) {
       await agencyStore.GetUser();
     }
   }
 };
 
+// ຟັງຊັນລຶບ filter
+const clearFilters = () => {
+  selectedDivision.value = null;
+  selectedRole.value = null;
+  
+  // ລຶບ filter ໃນ store ແລະໂຫລດຂໍ້ມູນໃໝ່
+  agencyStore.reqest_get_user.query.div_id = null;
+  agencyStore.reqest_get_user.query.role_id = null;
+  agencyStore.GetUser();
+};
 </script>
+
 <template>
   <div class="pa-6">
     <v-card elevation="0" tile width="100%" min-height="95vh" class="pa-6">
       <v-row>
         <v-col cols="12">
           <GlobalTextTitleLine
-            :title="`ໜ້າຈັດການຂໍ້ມູນຜູ້ໃຊ້ງານ / Mamage User (${formatnumber(
+            :title="`ໜ້າຈັດການຂໍ້ມູນຜູ້ໃຊ້ງານ / Manage User (${formatnumber(
               response_data?.length ?? 0
             )})`"
           />
@@ -64,24 +93,74 @@ const onDeleteUser = async (user_id: string) => {
           cols="12"
           class="d-flex flex-wrap justify-space-between align-center"
         >
-          <div class="d-flex flex-wrap">
-            
-
-            <div class="ml-4 pt-6">
-            
-            </div>
-          </div>
-
-          <div class="d-flex flex-wrap align-center">
-            <v-btn
-              color="primary"
-              elevation="0"
-              @click="goPath('/user/create')"
-            >
-              <v-icon class="mr-2"> mdi-plus</v-icon>
-              ເພີ່ມຂໍ້ມູນຜູ້ໃຊ້ງານ
-            </v-btn>
-          </div>
+          <v-row>
+            <v-col cols="12" md="9">
+              <v-row>
+                <v-col cols="12" md="3">
+                  <v-autocomplete
+                    v-model="selectedDivision"
+                    density="compact"
+                    label="ເລືອກພະແນກ"
+                    :items="userItems"
+                    item-value="div_id"
+                    item-title="division_name_la"
+                    variant="outlined"
+                    clearable
+                    placeholder="ເລືອກພະແນກເພື່ອກັ່ນຕອງຂໍ້ມູນ"
+                    return-object
+                  ></v-autocomplete>
+                </v-col>
+                <v-col cols="12" md="3">
+                  <v-autocomplete
+                    v-model="selectedRole"
+                    density="compact"
+                    label="ເລືອກໜ້າທີ່"
+                    :items="role"
+                    item-value="role_id"
+                    item-title="role_name_la"
+                    variant="outlined"
+                    clearable
+                    placeholder="ເລືອກໜ້າທີ່ເພື່ອກັ່ນຕອງຂໍ້ມູນ"
+                    return-object
+                  ></v-autocomplete>
+                </v-col>
+                <v-col cols="12" md="3">
+                  <div class="d-flex gap-2">
+                    <v-btn
+                      color="primary"
+                      variant="flat"
+                      @click="searchUsers"
+                      :loading="agencyStore.loading"
+                    >
+                      <v-icon class="mr-2">mdi-magnify</v-icon>
+                      ຄົ້ນຫາ
+                    </v-btn>
+                    <v-btn
+                      color="secondary"
+                      variant="outlined"
+                      @click="clearFilters"
+                    >
+                      <v-icon class="mr-2">mdi-filter-remove</v-icon>
+                      ລຶບຕົວກັ່ນ
+                    </v-btn>
+                  </div>
+                </v-col>
+                <v-col cols="12" md="3"></v-col>
+              </v-row>
+            </v-col>
+            <v-col cols="12" md="3">
+              <div class="d-flex flex-wrap align-center justify-end">
+                <v-btn
+                  color="primary"
+                  elevation="0"
+                  @click="goPath('/user/create')"
+                >
+                  <v-icon class="mr-2">mdi-plus</v-icon>
+                  ເພີ່ມຂໍ້ມູນຜູ້ໃຊ້ງານ
+                </v-btn>
+              </div>
+            </v-col>
+          </v-row>
         </v-col>
 
         <v-col cols="12">
@@ -96,10 +175,7 @@ const onDeleteUser = async (user_id: string) => {
               </div>
             </template>
 
-           
-
             <template v-slot:item.actions="{ item }">
-             
               <v-btn
                 color="primary"
                 icon="mdi-pencil"
@@ -124,7 +200,6 @@ const onDeleteUser = async (user_id: string) => {
                 @click="onDeleteUser(item.user_id)"
               ></v-btn>
             </template>
-
           </v-data-table>
         </v-col>
       </v-row>
