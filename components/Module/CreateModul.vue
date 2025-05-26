@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 
-const title = "ສ້າງຂໍ້ມູນຟັງຊັ້ນ"
+const title = "ສ້າງຂໍ້ມູນໂມດູນ"
 const moduleStore = ModulesStore()
 const valid = ref(false)
 const form = ref()
