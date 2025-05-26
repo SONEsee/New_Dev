@@ -40,12 +40,15 @@ const onDeleteType = async (Div_Id: string) => {
     
   }
 };
+const title = "ຂໍ້ມູນພະແນກ";
 </script>
 
 <template>
  
   <v-col cols="12">
-    <div class="d-flex justify-end">
+    
+<global-text-title-line :title="title" />
+    <div class="d-flex  mt-2">
       <v-btn color="primary" @click="goPath('/devision/create')"
         ><v-icon icon="mdi-plus"></v-icon> ເພີ່ມປະເພດ</v-btn
       >

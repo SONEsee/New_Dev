@@ -16,20 +16,22 @@ const onDeleteType = async (module_Id: string) => {
   await moduleStore.deleteModule(module_Id);
   moduleStore.getModule();
 };
-const title = "ຂໍ້ມູນຟັງຊັ້ນຫຼັກຂອງລະບົບ";
+const title = "ຂໍ້ມູນໂມດູນຂອງລະບົບ";
 const header = [
-  { title: "ຊື່ເມນູພາສາລາວ", value: "module_name_la" },
-  { title: "ຊື່ເມນູພາສາອັງກິດ", value: "module_name_en" },
+  { title: "ລຳດັບໂມດູນ", value: "module_order" },
+  { title: "ຊື່ໂມດູນພາສາລາວ", value: "module_name_la" },
+  { title: "ຊື່ໂມດູນພາສາອັງກິດ", value: "module_name_en" },
   { title: "ສະຖານະການໃຊ້ງານ", value: "is_active" },
   { title: "ມື້ສ້າງຂໍ້ມູນ", value: "created_date" },
   { title: "ຈັດການ", value: "action" },
 ];
 </script>
 <template>
-  <v-container>
+  <div class="pa-5 mt-2">
+  
     <GlobalTextTitleLine :title="title" />
     <v-col cols="12">
-      <div class="d-flex justify-end">
+      <div class="d-flex ">
         <v-btn color="primary" @click="goPath('/module/create')"
           ><v-icon icon="mdi-plus"></v-icon> ເພີ່ມປະເພດ</v-btn
         >
@@ -69,5 +71,5 @@ const header = [
         />
       </template>
     </v-data-table>
-  </v-container>
+  </div>
 </template>

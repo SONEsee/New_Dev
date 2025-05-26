@@ -65,18 +65,23 @@ export const useMenuStore = defineStore("menu", {
       respons_function_menu_detail_data: null as MenuModel.Function | null,
       isloading: false,
       query_menu_filter: {
-        data:{
+        data: {
           module_Id: null as string | null,
         },
         isloading: false,
-        
       },
-      query_submenu_filter:{
-        data:{
+      query_submenu_filter: {
+        data: {
           menu_id: null as string | null,
         },
         isloading: false,
-      }
+      },
+      query_function_filter: {
+        data: {
+          sub_menu_id: null as string | null,
+        },
+        isloading: false,
+      },
     };
   },
   actions: {
@@ -88,11 +93,9 @@ export const useMenuStore = defineStore("menu", {
 
       this.isloading = true;
       try {
-        
         const res = await axios.get<MenuModel.MainMenu[]>(
           `/api/users/${users_code}/sidebar/`,
           {
-          
             headers: {
               "Content-Type": "application/json",
               Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -114,9 +117,9 @@ export const useMenuStore = defineStore("menu", {
       this.query_menu_filter.isloading = true;
       try {
         const res = await axios.get<MenuModel.MainMenu>(`/api/main-menus/`, {
-          params:{
-              ...this.query_menu_filter.data
-            },
+          params: {
+            ...this.query_menu_filter.data,
+          },
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -292,8 +295,8 @@ export const useMenuStore = defineStore("menu", {
       this.query_submenu_filter.isloading = true;
       try {
         const res = await axios.get<MenuModel.SubMenu>(`api/sub-menus`, {
-          params:{
-            ...this.query_submenu_filter.data
+          params: {
+            ...this.query_submenu_filter.data,
           },
           headers: {
             "Content-Type": "application/json",
@@ -470,8 +473,12 @@ export const useMenuStore = defineStore("menu", {
     },
     async GetFuntionMenu() {
       this.isloading = true;
+      this.query_function_filter.isloading = true;
       try {
         const res = await axios.get<MenuModel.Function>(`api/functions/`, {
+          params: {
+            ...this.query_function_filter.data,
+          },
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${localStorage.getItem("token")}`,

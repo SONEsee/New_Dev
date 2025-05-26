@@ -18,13 +18,13 @@ const response_data = computed(() => {
   return agencyStore.userList || [];
 });
 
-// ເພີ່ມຟັງຊັນສຳລັບການຄົ້ນຫາ
+
 const searchUsers = () => {
-  // ອັບເດດ filter ໃນ store
+ 
   agencyStore.reqest_get_user.query.div_id = selectedDivision.value?.div_id || null;
   agencyStore.reqest_get_user.query.role_id = selectedRole.value?.role_id || null;
   
-  // ເອີ້ນ GetUser ທີ່ຈະໃຊ້ filter ທີ່ອັບເດດແລ້ວ
+
   agencyStore.GetUser();
 };
 
@@ -38,8 +38,9 @@ onMounted(() => {
 });
 
 const headers = ref([
-  { title: "ລຳດັບ", key: "no", sortable: false },
-  { title: "ຮູບພາບ", key: "image", sortable: false },
+  // { title: "ລຳດັບ", key: "no", sortable: false },
+  { title: "ລຳດັບຜູ້ໃຊ້ງານ", key: "user_id", sortable: false },
+  // { title: "ຮູບພາບ", key: "image", sortable: false },
   { title: "ຊື່ຜູ້ໃຊ້ງານ", key: "user_name", sortable: false },
   { title: "ອີເມວ", key: "user_email", sortable: false },
   { title: "ເບີ້ໂທ", key: "user_mobile", sortable: false },
@@ -94,8 +95,20 @@ const clearFilters = () => {
           class="d-flex flex-wrap justify-space-between align-center"
         >
           <v-row>
+             <v-col cols="12" md="3">
+              <div class="d-flex flex-wrap align-center ">
+                <v-btn
+                  color="primary"
+                  elevation="0"
+                  @click="goPath('/user/create')"
+                >
+                  <v-icon class="mr-2">mdi-plus</v-icon>
+                  ເພີ່ມຂໍ້ມູນຜູ້ໃຊ້ງານ
+                </v-btn>
+              </div>
+            </v-col>
             <v-col cols="12" md="9">
-              <v-row>
+              <v-row><v-col cols="12" md="3"></v-col>
                 <v-col cols="12" md="3">
                   <v-autocomplete
                     v-model="selectedDivision"
@@ -110,6 +123,7 @@ const clearFilters = () => {
                     return-object
                   ></v-autocomplete>
                 </v-col>
+                
                 <v-col cols="12" md="3">
                   <v-autocomplete
                     v-model="selectedRole"
@@ -145,21 +159,10 @@ const clearFilters = () => {
                     </v-btn>
                   </div>
                 </v-col>
-                <v-col cols="12" md="3"></v-col>
+                
               </v-row>
             </v-col>
-            <v-col cols="12" md="3">
-              <div class="d-flex flex-wrap align-center justify-end">
-                <v-btn
-                  color="primary"
-                  elevation="0"
-                  @click="goPath('/user/create')"
-                >
-                  <v-icon class="mr-2">mdi-plus</v-icon>
-                  ເພີ່ມຂໍ້ມູນຜູ້ໃຊ້ງານ
-                </v-btn>
-              </div>
-            </v-col>
+           
           </v-row>
         </v-col>
 
@@ -169,11 +172,11 @@ const clearFilters = () => {
               {{ index + 1 }}
             </template>
 
-            <template v-slot:item.image="{ item }">
+            <!-- <template v-slot:item.image="{ item }">
               <div class="pa-2">
                 <GlobalMenuSpanImage :image="item.profile_image" />
               </div>
-            </template>
+            </template> -->
 
             <template v-slot:item.actions="{ item }">
               <v-btn

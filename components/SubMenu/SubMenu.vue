@@ -11,6 +11,7 @@ const searchSubMenu = async ()=>{
     
   }
 };
+
 const clearFilters = ()=>{
 selecteMainMenu.value = null;
 subMenuStore.query_submenu_filter.data.menu_id = null;
@@ -41,9 +42,10 @@ const onDeleteType = async (sub_menu_id: string) => {
   await subMenuStore.DeleteSubMenu(sub_menu_id);
   subMenuStore.GetMenuSubMenu();
 };
-const title = "ຂໍ້ມູນຟັງຊັ້ນຫຼັກຂອງລະບົບ";
+const title = "ຂໍ້ມູນເມນູຍ່ອຍ";
 const header = [
-  { title: "ຊື່ເມນູພາສາລາວ", value: "sub_menu_name_la" },
+  { title: "ລຳດັບເມນູຍອ່ຍ", value: "sub_menu_order" },
+  { title: "ຊື່ເມນູພາາລາວ", value: "sub_menu_name_la" },
   { title: "ຊື່ເມນູພາສາອັງກິດ", value: "sub_menu_name_en" },
   { title: "ສະຖານະການໃຊ້ງານ", value: "is_active" },
   { title: "ມື້ສ້າງຂໍ້ມູນ", value: "created_date" },
@@ -62,18 +64,19 @@ const header = [
         >
       </div>
         </v-col>
+        
         <v-col cols="12" md="3"></v-col>
         <v-col cols="12" md="3">
           <v-autocomplete
             v-model="selecteMainMenu"
             density="compact"
-            label="ເລືອກພະແນກ"
+            label="ເລືອກເມນູຫຼັກ"
             :items="menuItems"
             item-value="menu_id"
             item-title="menu_name_la"
             variant="outlined"
             clearable
-            placeholder="ເລືອກພະແນກເພື່ອກັ່ນຕອງຂໍ້ມູນ"
+            placeholder="ເລືອກເມນູຫຼັກເພື່ອກັ່ນຕອງຂໍ້ມູນ"
             return-object
           ></v-autocomplete>
         </v-col>

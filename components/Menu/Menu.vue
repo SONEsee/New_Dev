@@ -14,6 +14,7 @@ const searchMenu = async () => {
     console.error("Failed to search menu:", error);
   }
 };
+
 const clearFilters = () => {
   selectedModule.value = null;
   menuStore.query_menu_filter.data.module_Id = null;
@@ -36,6 +37,7 @@ const menuItems = computed(() => {
 });
 
 const headers = [
+  { title: "ລຳດັບເມນູ", key: "menu_order", sortable: true },
   { title: "ຊື່ເມນູພາສາລາວ", key: "menu_name_la", sortable: true },
   { title: "ຊື່ເມນູພາສາອັງກິດ", key: "menu_name_en", sortable: true },
   { title: "ໄອຄອນ", key: "menu_icon", sortable: false },
@@ -95,7 +97,7 @@ const editMenu = (menuId: string) => {
           <v-autocomplete
             v-model="selectedModule"
             density="compact"
-            label="ເລືອກພະແນກ"
+            label="ເລືອກໂມດູນ"
             :items="module"
             item-value="module_Id"
             item-title="module_name_la"
