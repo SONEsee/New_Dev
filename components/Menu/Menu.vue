@@ -92,8 +92,8 @@ const editMenu = (menuId: string) => {
             </v-btn>
           </div></v-col
         >
-        <v-col cols="12" md="3"></v-col>
-        <v-col cols="12" md="3">
+        <v-col cols="12" md="2"></v-col>
+        <v-col cols="12" md="4" class="text-no-wrap">
           <v-autocomplete
             v-model="selectedModule"
             density="compact"
@@ -103,9 +103,21 @@ const editMenu = (menuId: string) => {
             item-title="module_name_la"
             variant="outlined"
             clearable
-            placeholder="ເລືອກພະແນກເພື່ອກັ່ນຕອງຂໍ້ມູນ"
+            placeholder="ເລືອກໂມດູນ"
             return-object
-          ></v-autocomplete>
+          >
+            <template v-slot:selection="{ item }">
+              {{ item.raw.module_name_la }}-{{ item.raw.module_Id }}
+            </template>
+
+            <template v-slot:item="{ props, item }">
+              <v-list-item
+                v-bind="props"
+                :subtitle="`ID: ${item.raw.module_Id}`"
+                :title="item.raw.module_name_la"
+              />
+            </template>
+          </v-autocomplete>
         </v-col>
 
         <v-col cols="12" md="3">

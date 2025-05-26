@@ -65,20 +65,32 @@ const header = [
       </div>
         </v-col>
         
-        <v-col cols="12" md="3"></v-col>
-        <v-col cols="12" md="3">
+        
+        <v-col cols="12" md="6" class="text-no-wrap">
           <v-autocomplete
             v-model="selecteMainMenu"
             density="compact"
             label="ເລືອກເມນູຫຼັກ"
             :items="menuItems"
             item-value="menu_id"
-            item-title="menu_name_la"
+            item-title="sub_menu_name_la"
             variant="outlined"
             clearable
-            placeholder="ເລືອກເມນູຫຼັກເພື່ອກັ່ນຕອງຂໍ້ມູນ"
+            placeholder="ເລືອກເມນູຫຼັກ"
             return-object
-          ></v-autocomplete>
+          >
+            <template v-slot:selection="{ item }">
+              {{ item.raw.menu_name_la}}-{{ item.raw.menu_id }}
+            </template>
+
+            <template v-slot:item="{ props, item }">
+              <v-list-item
+                v-bind="props"
+                :subtitle="`ID: ${item.raw.menu_id}`"
+                :title="item.raw.menu_name_la"
+              />
+            </template>
+          </v-autocomplete>
         </v-col>
         <v-col cols="12" md="3">
           <div class="d-flex gap-2">

@@ -39,19 +39,11 @@ const headers = [
 
   { title: "ຈັດການ", value: "actions" },
 ];
-onMounted(async () => {
-  try {
-    await Promise.all([
-      menuStore.GetFuntionMenu(),
-     menuStore.GetMenuSubMenu()]);
-  } catch (error) {
-    console.error("Failed to load initial data:", error);
-  }
+
+onMounted(() => {
+menuStore.GetFuntionMenu(),
+menuStore.GetMenuSubMenu()
 });
-// onMounted(() => {
-//   menuStore.GetFuntionMenu();
-//   // subMenuStore.GetMenuSubMenu();
-// });
 
 const deleteFunction = async (item: any) => {
   try {
@@ -80,8 +72,8 @@ const deleteFunction = async (item: any) => {
             </v-btn>
           </div></v-col
         >
-        <v-col cols="12" md="3"></v-col>
-        <v-col cols="12" md="3">
+       <v-col cols="12" md="1"></v-col>
+        <v-col cols="12" md="5" class="text-no-wrap">
           <v-autocomplete
             v-model="selecteSubMenu"
             density="compact"
@@ -90,10 +82,22 @@ const deleteFunction = async (item: any) => {
             item-value="sub_menu_id"
             item-title="sub_menu_name_la"
             variant="outlined"
-            auto
-            placeholder="ເລືອກພະແນກເພື່ອກັ່ນຕອງຂໍ້ມູນ"
-            
-          ></v-autocomplete>
+            clearable
+            placeholder="ເລືອກເມນູຍ່ອຍ"
+            return-object
+          >
+            <template v-slot:selection="{ item }">
+              {{ item.raw.sub_menu_name_la }}-{{ item.raw.sub_menu_id }}
+            </template>
+
+            <template v-slot:item="{ props, item }">
+              <v-list-item
+                v-bind="props"
+                :subtitle="`ID: ${item.raw.sub_menu_id}`"
+                :title="item.raw.sub_menu_name_la"
+              />
+            </template>
+          </v-autocomplete>
         </v-col>
 
         <v-col cols="12" md="3">
