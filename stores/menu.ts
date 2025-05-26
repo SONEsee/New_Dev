@@ -64,6 +64,24 @@ export const useMenuStore = defineStore("menu", {
       respons_function_menu_data: null as MenuModel.Function | null,
       respons_function_menu_detail_data: null as MenuModel.Function | null,
       isloading: false,
+      query_menu_filter: {
+        data: {
+          module_Id: null as string | null,
+        },
+        isloading: false,
+      },
+      query_submenu_filter: {
+        data: {
+          menu_id: null as string | null,
+        },
+        isloading: false,
+      },
+      query_function_filter: {
+        data: {
+          sub_menu_id: null as string | null,
+        },
+        isloading: false,
+      },
     };
   },
   actions: {
@@ -96,8 +114,12 @@ export const useMenuStore = defineStore("menu", {
     },
     async GetMainMenu() {
       this.isloading = true;
+      this.query_menu_filter.isloading = true;
       try {
         const res = await axios.get<MenuModel.MainMenu>(`/api/main-menus/`, {
+          params: {
+            ...this.query_menu_filter.data,
+          },
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -270,8 +292,12 @@ export const useMenuStore = defineStore("menu", {
     },
     async GetMenuSubMenu() {
       this.isloading = true;
+      this.query_submenu_filter.isloading = true;
       try {
         const res = await axios.get<MenuModel.SubMenu>(`api/sub-menus`, {
+          params: {
+            ...this.query_submenu_filter.data,
+          },
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -447,8 +473,12 @@ export const useMenuStore = defineStore("menu", {
     },
     async GetFuntionMenu() {
       this.isloading = true;
+      this.query_function_filter.isloading = true;
       try {
         const res = await axios.get<MenuModel.Function>(`api/functions/`, {
+          params: {
+            ...this.query_function_filter.data,
+          },
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -521,7 +551,6 @@ export const useMenuStore = defineStore("menu", {
         );
         if (res.status === 200) {
           this.respons_function_menu_detail_data = res.data;
-          
         }
       } catch (error) {
         console.error("Error fetching function menu details:", error);
@@ -529,105 +558,109 @@ export const useMenuStore = defineStore("menu", {
         this.isloading = false;
       }
     },
-async UpdateFunctionMenu(id: string) {
-  this.isloading = true;
-  try {
-    const notification = await CallSwal({
-      title: "ຄຳເຕືອນ",
-      text: "ທ່ານຕ້ອງການແກ້ໄຂຂໍ້ມູນເມນູຫຼືບໍ່?",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "ຕົກລົງ",
-      cancelButtonText: "ບໍ່ແກ້ໄຂ",
-
-    });
-    if(notification.isConfirmed){
-    let req = {
-      function_id: this.update_form_function.function_id,
-      description_la: this.update_form_function.description_la,
-      description_en: this.update_form_function.description_en,
-      eod_function: null,
-      function_order: this.update_form_function.function_order,
-      is_active: this.update_form_function.is_active,
-      created_by: "",
-      sub_menu_id: this.update_form_function.sub_menu_id,
-    };
-    const res = await axios.put<MenuModel.Function>(`api/functions/${id}/`,req,{
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    });if(res.status ===200){
-      this.create_form_function = {
-        function_id: "",
-        description_la: "",
-        description_en: "",
-        eod_function: null,
-        function_order: 0,
-        is_active: "",
-        created_by: "",
-        sub_menu_id: "",
-      };
-      CallSwal({
-        title: "ສຳເລັດ",
-        text: "ສຳເລັດການແກ້ໄຂເມນູ",
-        icon: "success",
-        showCancelButton: false,
-      });
-      setTimeout(() => {
-        goPath("/funtion");
-      }, 1500);
-    }
-      }
-  } catch (error) {
-    console.error("Error updating function menu:", error);
-    
-  }finally {
-    this.isloading = false;
-  }
-},
-async DeleteFunctionMenu(id: string) {
-  this.isloading = true;
-  try {
-    if (!id) {
-      CallSwal({
-        title: "ບໍ່ສຳເລັດ",
-        text: "ບໍ່ມີ ID ທີ່ທ່ານຕອ້ງການລົບ",
-        icon: "error",
-      });
-      return;
-    }
-    const notification = await CallSwal({
-      title: "ທ່ານຕອ້ງການລົບເມນູບໍ່?",
-      text: "ທ່ານຕອ້ງການລົບເມນູບໍ່?",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "ຕົກລົງ",
-      cancelButtonText: "ບໍ່ລົບ",
-    });
-    if (notification.isConfirmed) {
-      const res = await axios.delete<MenuModel.MainMenu>(
-        `/api/functions/${id}/`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
-      if (res.status === 204) {
-        CallSwal({
-          title: "ສຳເລັດ",
-          text: "ສຳເລັດການລົບຂໍ້ມູນ.",
-          icon: "success",
-          showCancelButton: false,
+    async UpdateFunctionMenu(id: string) {
+      this.isloading = true;
+      try {
+        const notification = await CallSwal({
+          title: "ຄຳເຕືອນ",
+          text: "ທ່ານຕ້ອງການແກ້ໄຂຂໍ້ມູນເມນູຫຼືບໍ່?",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonText: "ຕົກລົງ",
+          cancelButtonText: "ບໍ່ແກ້ໄຂ",
         });
-        goPath("/funtion");
+        if (notification.isConfirmed) {
+          let req = {
+            function_id: this.update_form_function.function_id,
+            description_la: this.update_form_function.description_la,
+            description_en: this.update_form_function.description_en,
+            eod_function: null,
+            function_order: this.update_form_function.function_order,
+            is_active: this.update_form_function.is_active,
+            created_by: "",
+            sub_menu_id: this.update_form_function.sub_menu_id,
+          };
+          const res = await axios.put<MenuModel.Function>(
+            `api/functions/${id}/`,
+            req,
+            {
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+              },
+            }
+          );
+          if (res.status === 200) {
+            this.create_form_function = {
+              function_id: "",
+              description_la: "",
+              description_en: "",
+              eod_function: null,
+              function_order: 0,
+              is_active: "",
+              created_by: "",
+              sub_menu_id: "",
+            };
+            CallSwal({
+              title: "ສຳເລັດ",
+              text: "ສຳເລັດການແກ້ໄຂເມນູ",
+              icon: "success",
+              showCancelButton: false,
+            });
+            setTimeout(() => {
+              goPath("/funtion");
+            }, 1500);
+          }
+        }
+      } catch (error) {
+        console.error("Error updating function menu:", error);
+      } finally {
+        this.isloading = false;
       }
-    }
-  } catch (error) {}finally {
-    this.isloading = false;
-  }
-}
-},
+    },
+    async DeleteFunctionMenu(id: string) {
+      this.isloading = true;
+      try {
+        if (!id) {
+          CallSwal({
+            title: "ບໍ່ສຳເລັດ",
+            text: "ບໍ່ມີ ID ທີ່ທ່ານຕອ້ງການລົບ",
+            icon: "error",
+          });
+          return;
+        }
+        const notification = await CallSwal({
+          title: "ທ່ານຕອ້ງການລົບເມນູບໍ່?",
+          text: "ທ່ານຕອ້ງການລົບເມນູບໍ່?",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonText: "ຕົກລົງ",
+          cancelButtonText: "ບໍ່ລົບ",
+        });
+        if (notification.isConfirmed) {
+          const res = await axios.delete<MenuModel.MainMenu>(
+            `/api/functions/${id}/`,
+            {
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+              },
+            }
+          );
+          if (res.status === 204) {
+            CallSwal({
+              title: "ສຳເລັດ",
+              text: "ສຳເລັດການລົບຂໍ້ມູນ.",
+              icon: "success",
+              showCancelButton: false,
+            });
+            goPath("/funtion");
+          }
+        }
+      } catch (error) {
+      } finally {
+        this.isloading = false;
+      }
+    },
+  },
 });

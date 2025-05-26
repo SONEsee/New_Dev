@@ -3,7 +3,30 @@ import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import dayjs from "dayjs";
 import { useMenuStore } from "@/stores/menu";
+const moduleStore = ModulesStore();
+const selectedModule = ref<any | null>(null);
+const searchMenu = async () => {
+  try {
+    menuStore.query_menu_filter.data.module_Id =
+      selectedModule.value?.module_Id || null;
+    await menuStore.GetMainMenu();
+  } catch (error) {
+    console.error("Failed to search menu:", error);
+  }
+};
 
+const clearFilters = () => {
+  selectedModule.value = null;
+  menuStore.query_menu_filter.data.module_Id = null;
+  menuStore.GetMainMenu();
+};
+onMounted(() => {
+  menuStore.GetMainMenu();
+});
+
+const module = computed(() => {
+  return moduleStore.response_data_module || [];
+});
 const title = "ຂໍ້ມູນເມນູຫຼັກ";
 
 const router = useRouter();
@@ -14,6 +37,7 @@ const menuItems = computed(() => {
 });
 
 const headers = [
+  { title: "ລຳດັບເມນູ", key: "menu_order", sortable: true },
   { title: "ຊື່ເມນູພາສາລາວ", key: "menu_name_la", sortable: true },
   { title: "ຊື່ເມນູພາສາອັງກິດ", key: "menu_name_en", sortable: true },
   { title: "ໄອຄອນ", key: "menu_icon", sortable: false },
@@ -28,6 +52,7 @@ const loading = computed(() => menuStore.isloading);
 
 onMounted(() => {
   menuStore.GetMainMenu();
+  moduleStore.getModule();
 });
 
 const goToCreateMenu = () => {
@@ -58,12 +83,49 @@ const editMenu = (menuId: string) => {
     <GlobalTextTitleLine :title="title" />
 
     <v-col cols="12">
-      <div class="d-flex justify-end mb-2">
-        <v-btn color="primary" @click="goToCreateMenu">
-          <v-icon icon="mdi-plus" start></v-icon>
-          ເພີ່ມຂໍ້ມູນເມນູ
-        </v-btn>
-      </div>
+      <v-row>
+        <v-col cols="12" md="3"
+          ><div class="d-flex mb-2">
+            <v-btn color="primary" @click="goToCreateMenu">
+              <v-icon icon="mdi-plus" start></v-icon>
+              ເພີ່ມຂໍ້ມູນເມນູ
+            </v-btn>
+          </div></v-col
+        >
+        <v-col cols="12" md="3"></v-col>
+        <v-col cols="12" md="3">
+          <v-autocomplete
+            v-model="selectedModule"
+            density="compact"
+            label="ເລືອກໂມດູນ"
+            :items="module"
+            item-value="module_Id"
+            item-title="module_name_la"
+            variant="outlined"
+            clearable
+            placeholder="ເລືອກພະແນກເພື່ອກັ່ນຕອງຂໍ້ມູນ"
+            return-object
+          ></v-autocomplete>
+        </v-col>
+
+        <v-col cols="12" md="3">
+          <div class="d-flex gap-2">
+            <v-btn
+              color="primary"
+              variant="flat"
+              @click="searchMenu"
+              :loading="menuStore.isloading"
+            >
+              <v-icon class="mr-2">mdi-magnify</v-icon>
+              ຄົ້ນຫາ
+            </v-btn>
+            <v-btn color="secondary" variant="outlined" @click="clearFilters">
+              <v-icon class="mr-2">mdi-filter-remove</v-icon>
+              ລຶບຕົວກັ່ນ
+            </v-btn>
+          </div>
+        </v-col>
+      </v-row>
 
       <v-data-table
         :items="menuItems"
