@@ -56,7 +56,7 @@ export const useMenuStore = defineStore("menu", {
         sub_menu_id: "",
       },
       user_id: "",
-      respone_menu_data: null as MenuModel.MainMenu | null,
+      respone_menu_data: null as MenuModel.MainMenu[] | null,
       respone_main_menu_data: null as MenuModel.MainMenu | null,
       response_main_detail_data: null as MenuModel.MainMenu | null,
       response_sub_menu_data: null as MenuModel.SubMenu | null,
@@ -75,7 +75,7 @@ export const useMenuStore = defineStore("menu", {
 
       this.isloading = true;
       try {
-        const res = await axios.get<MenuModel.MainMenu>(
+        const res = await axios.get<MenuModel.MainMenu[]>(
           `/api/users/${users_code}/sidebar/`,
           {
             headers: {

@@ -7,15 +7,61 @@ const roleStore = RoleStore();
 const userStore = UserStore();
 const role = computed(() => roleStore.respons_data_role || []);
 const devision = UseCategoryStore();
+import { useRoute } from "vue-router";
+
+const getUserIdFromLocalStorage = () => {
+  if (typeof window === 'undefined') return null;
+  
+  try {
+    const userStr = localStorage.getItem("user");
+    if (!userStr) return null;
+    
+    const userData = JSON.parse(userStr);
+    return userData.user_id || null;
+  } catch (error) {
+    console.error("Error parsing user data from localStorage:", error);
+    return null;
+  }
+};
+
+const route = useRoute();
+const user_id = route.query.user_id as string;
+
+onMounted(async () => {
+  const user_id = getUserIdFromLocalStorage();
+  const user_code = route.query.id as string | undefined;
+  const userIdToUse = user_code || user_id;
+  console.log("user_id", user_id);
+  
+  if (userIdToUse) {
+    await userStore.GetdatadetailUser(user_id)
+  } else {
+    console.error("ບໍ່ພົບລະຫັດຜູ້ໃຊ້");
+  }
+});
+
+const request = computed({
+  get() {
+    return userStore.respone_data_detail;
+  },
+  set(value) {
+    userStore.respone_data_detail = value;
+  },
+});
+
+const res = computed(() => {
+  return userStore.respone_data_detail;
+});
 
 const globalStore = UseGlobalStore();
-const title = ref("ສ້າງຂໍ້ມູນຜູ້ໃຊ້ງານໃໝ່");
+const title = ref("ແກ້ໄຂຂໍ້ມູນຕົນເອງ");
 const visible = ref(false);
 const loading = ref(false);
 const form = ref();
 const file = ref();
 
 const userItems = computed(() => devision.categories || []);
+
 onMounted(() => {
   devision.GetListData();
   roleStore.GetRole();
@@ -31,44 +77,56 @@ const onFileChange = (event: Event) => {
   let file = files[0];
   if (file) {
     const value = file as File;
-    userStore.create_user_form.profile_image = value;
+    userStore.update_user_form.profile_image = value;
   }
 };
 
-// ຮັບປະກັນວ່າມີ user_id ກ່ອນສົ່ງຟອມ
-const submitForm = async () => {
-  // ກວດສອບວ່າມີທຸກຂໍ້ມູນທີ່ຈຳເປັນກ່ອນສົ່ງຟອມ
-  if (
-    !userStore.create_user_form.user_id ||
-    !userStore.create_user_form.user_name ||
-    !userStore.create_user_form.user_mobile ||
-    !userStore.create_user_form.user_password ||
-    !userStore.create_user_form.div_id ||
-    !userStore.create_user_form.Role_ID ||
-    !userStore.create_user_form.Auth_Status
-  ) {
-    await CallSwal({
-      icon: "warning",
-      title: "ປ້ອນຂໍ້ມູນ",
-      text: "ກະລຸນາປ້ອນຂໍ້ມູນໃຫ້ຄົບຖ້ວນ",
-    });
-    return;
-  }
+watch(
+  () => userStore.respone_data_detail,
+  (newVal) => {
+    if (newVal) {
+      userStore.update_user_form.user_id = newVal.user_id || '';
+      userStore.update_user_form.user_name = newVal.user_name || '';
+      userStore.update_user_form.user_email = newVal.user_email || '';
+      userStore.update_user_form.user_mobile = newVal.user_mobile || '';
+      userStore.update_user_form.div_id = newVal.division || '';
+      userStore.update_user_form.Role_ID = newVal.role?.role_id || '';
+      userStore.update_user_form.Auth_Status = newVal.Auth_Status === 'A' ? 'ເປີດ' : 'ປິດ';
+    }
+  },
+  { immediate: true }
+);
 
+// ແກ້ໄຂການສົ່ງ user_id ໃນ submitForm
+const submitForm = async () => {
   const isValid = await form.value.validate();
   if (isValid) {
-    console.log("ສົ່ງຂໍ້ມູນໄປຫາ Store");
-   
-    if (userStore.create_user_form.Auth_Status === "ເປີດ") {
-      userStore.create_user_form.Auth_Status = "A";
-    } else if (userStore.create_user_form.Auth_Status === "ປິດ") {
-      userStore.create_user_form.Auth_Status = "I";
+    const notification = await CallSwal({
+      icon: "warning",
+      title: "ຄຳເຕືອນ",
+      text: `ທ່ານກຳລັງແກ້ໄຂຂໍ້ມູນທ່ານແນ່ໃຈແລ້ວບໍ່?`,
+      showCancelButton: true,
+      confirmButtonText: "ຕົກລົງ",
+      cancelButtonText: "ຍົກເລີກ",
+    });
+    
+    if(notification.isConfirmed) {
+      // ດຶງ user_id ຈາກ localStorage ຫຼື ຈາກຟອມ
+      const currentUserId = getUserIdFromLocalStorage() || userStore.update_user_form.user_id;
+      
+      console.log("Sending user_id for update:", currentUserId);
+      
+      if (currentUserId) {
+        await userStore.UpdateMyUser(currentUserId);
+      } else {
+        console.error("ບໍ່ພົບ user_id ສຳລັບການອັບເດດ");
+        await CallSwal({
+          icon: "error",
+          title: "ຜິດພາດ",
+          text: "ບໍ່ພົບຂໍ້ມູນຜູ້ໃຊ້ ກະລຸນາເຂົ້າສູ່ລະບົບໃໝ່",
+        });
+      }
     }
-
-
-    userStore.create_user_form.user_status = userStore.create_user_form.Auth_Status === "A";
-
-    await userStore.CreatUser();
   }
 };
 </script>
@@ -82,9 +140,7 @@ const submitForm = async () => {
         </v-col>
 
         <v-col cols="12" class="d-flex flex-wrap justify-end">
-          <v-btn color="primary" flat type="submit" :loading="userStore.loading"
-            >ບັນທຶກ</v-btn
-          >
+          <v-btn color="primary" flat type="submit" :loading="userStore.loading">ບັນທຶກ</v-btn>
         </v-col>
 
         <v-col cols="12" class="pt-12">
@@ -93,13 +149,12 @@ const submitForm = async () => {
               <v-row>
                 <v-col cols="12" class="d-flex flex-wrap justify-center">
                   <v-avatar
-                  style="border: 1px solid black"
                     size="220"
                     class="mx-auto"
                     :image="
-                      userStore.create_user_form.profile_image === null
+                      userStore.update_user_form.profile_image === null
                         ? notfoundref
-                        : GetImageUrl(userStore.create_user_form.profile_image)
+                        : GetImageUrl(userStore.update_user_form.profile_image)
                     "
                   >
                   </v-avatar>
@@ -119,10 +174,9 @@ const submitForm = async () => {
                   </v-btn>
 
                   <input
-                  
                     type="file"
                     ref="file"
-                    style="display: none "
+                    style="display: none"
                     accept="image/jpg,image/png,image/jpeg"
                     @change="onFileChange"
                   />
@@ -135,20 +189,20 @@ const submitForm = async () => {
                 <v-col cols="12" md="6">
                   <label>ລະຫັດຜູ້ໃຊ້ / User ID</label>
                   <v-text-field
-                    v-model="userStore.create_user_form.user_id"
+                    v-model="userStore.update_user_form.user_id"
                     :rules="[(v) => !!v || 'ກະລຸນາປ້ອນລະຫັດຜູ້ໃຊ້']"
                     placeholder="ກະລຸນາປ້ອນລະຫັດຜູ້ໃຊ້"
                     density="compact"
                     variant="outlined"
                     hide-details="auto"
                     class="pb-6"
+                    disabled
                   ></v-text-field>
                   
                   <label>ຊື່ຜູ້ໃຊ້ງານ / Username</label>
                   <v-text-field
-                    @click:append-inner="visible = !visible"
+                    v-model="userStore.update_user_form.user_name"
                     :rules="[(v) => !!v || 'ກະລຸນາປ້ອນຊື່ຜູ້ໃຊ້ງານ']"
-                    v-model="userStore.create_user_form.user_name"
                     placeholder="ກະລຸນາປ້ອນຊື່ຜູ້ໃຊ້ງານ"
                     density="compact"
                     variant="outlined"
@@ -156,9 +210,9 @@ const submitForm = async () => {
                     class="pb-6"
                   ></v-text-field>
 
-                  <label>ພະແນກ / Department</label>
+                  <!-- <label>ພະແນກ / Department</label>
                   <v-autocomplete
-                    v-model="userStore.create_user_form.div_id"
+                    v-model="userStore.update_user_form.div_id"
                     :rules="[(v) => !!v || 'ກະລຸນາເລືອກພະແນກ']"
                     placeholder="ກະລຸນາເລືອກພະແນກ"
                     density="compact"
@@ -169,10 +223,11 @@ const submitForm = async () => {
                     hide-details="auto"
                     class="pb-6"
                     no-filter
-                  ></v-autocomplete>
+                  ></v-autocomplete> -->
+                  
                   <label>ເບີໂທລະສັບ / Phone</label>
                   <v-text-field
-                    v-model="userStore.create_user_form.user_mobile"
+                    v-model="userStore.update_user_form.user_mobile"
                     hide-details="auto"
                     :rules="[(v) => !!v || 'ກະລຸນາປ້ອນເບີໂທລະສັບ']"
                     placeholder="ກະລຸນາປ້ອນເບີໂທລະສັບ"
@@ -185,7 +240,7 @@ const submitForm = async () => {
                 <v-col cols="6">
                   <label>ອີເມວ / Email</label>
                   <v-text-field
-                    v-model="userStore.create_user_form.user_email"
+                    v-model="userStore.update_user_form.user_email"
                     placeholder="ກະລຸນາປ້ອນອີເມວ"
                     density="compact"
                     variant="outlined"
@@ -193,9 +248,9 @@ const submitForm = async () => {
                     class="pb-6"
                   ></v-text-field>
                   
-                  <label>ສະຖານະການໃຊ້ງານ / Status</label>
+                  <!-- <label>ສະຖານະການໃຊ້ງານ / Status</label>
                   <v-autocomplete
-                    v-model="userStore.create_user_form.Auth_Status"
+                    v-model="userStore.update_user_form.Auth_Status"
                     :rules="[(v) => !!v || 'ກະລຸນາເລືອກສະຖານະການໃຊ້ງານ']"
                     placeholder="ກະລຸນາເລືອກສະຖານະການໃຊ້ງານ"
                     density="compact"
@@ -204,10 +259,11 @@ const submitForm = async () => {
                     hide-details="auto"
                     class="pb-6"
                     no-filter
-                  ></v-autocomplete>
-                  <label>ສິດການເຂົ້ານຳໃຊ້ / Role</label>
+                  ></v-autocomplete> -->
+                  
+                  <!-- <label>ສິດການເຂົ້ານຳໃຊ້ / Role</label>
                   <v-autocomplete
-                    v-model="userStore.create_user_form.Role_ID"
+                    v-model="userStore.update_user_form.Role_ID"
                     :rules="[(v) => !!v || 'ກະລຸນາເລືອກສິດເຂົ້ານຳໃຊ້']"
                     placeholder="ກະລຸນາເລືອກສິດເຂົ້ານຳໃຊ້"
                     density="compact"
@@ -218,19 +274,20 @@ const submitForm = async () => {
                     hide-details="auto"
                     class="pb-6"
                     no-filter
-                  ></v-autocomplete>
+                    readonly
+                  ></v-autocomplete> -->
 
                   <label>ລະຫັດຜ່ານ / Password</label>
                   <v-text-field
-                    v-model="userStore.create_user_form.user_password"
+                    v-model="userStore.update_user_form.user_password"
                     hide-details="auto"
-                    :rules="[(v) => !!v || 'ກະລຸນາປ້ອນລະຫັດຜ່ານ']"
-                    placeholder="ກະລຸນາປ້ອນລະຫັດຜ່ານ"
+                    placeholder="ປ່ອຍວ່າງຖ້າບໍ່ຕ້ອງການປ່ຽນລະຫັດຜ່ານ"
                     density="compact"
                     variant="outlined"
                     class="pb-6"
                     :type="visible ? 'text' : 'password'"
                     :append-inner-icon="visible ? 'mdi-eye-off' : 'mdi-eye'"
+                    @click:append-inner="visible = !visible"
                   ></v-text-field>
                 </v-col>
               </v-row>

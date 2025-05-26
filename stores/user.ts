@@ -11,7 +11,7 @@ export const UserStore = defineStore("user", {
         user_email: "",
         user_mobile: "",
         user_password: "",
-        Div_Id: "",
+        div_id: "",
         user_status: true,
         Maker_Id: "",
         muth_status: "",
@@ -27,7 +27,7 @@ export const UserStore = defineStore("user", {
         user_email: "",
         user_mobile: "",
         user_password: "",
-        Div_Id: "",
+        div_id: "",
         user_status: true,
         Maker_Id: "",
         muth_status: "",
@@ -96,7 +96,7 @@ export const UserStore = defineStore("user", {
           !this.create_user_form.user_name ||
           !this.create_user_form.user_mobile ||
           !this.create_user_form.user_password ||
-          !this.create_user_form.Div_Id ||
+          !this.create_user_form.div_id ||
           !this.create_user_form.Role_ID ||
           !this.create_user_form.Auth_Status
         ) {
@@ -117,7 +117,7 @@ export const UserStore = defineStore("user", {
         formData.append("user_email", this.create_user_form.user_email || "");
         formData.append("user_mobile", this.create_user_form.user_mobile);
         formData.append("user_password", this.create_user_form.user_password);
-        formData.append("Div_Id", this.create_user_form.Div_Id);
+        formData.append("Div_Id", this.create_user_form.div_id);
         formData.append("Role_ID", this.create_user_form.Role_ID);
 
         let authStatus = this.create_user_form.Auth_Status;
@@ -197,7 +197,7 @@ goPath("/user");
         user_email: "",
         user_mobile: "",
         user_password: "",
-        Div_Id: "",
+        div_id: "",
         user_status: true,
         Maker_Id: "",
         Auth_Status: "",
@@ -211,7 +211,7 @@ goPath("/user");
  
   try {
     
-    const res = await axios.get<UserModel.Items>(`api/users/${user_id}`, {
+    const res = await axios.get<UserModel.Items>(`api/users/${user_id}/`, {
 
       headers: {
         "Content-Type": "application/json",
@@ -239,7 +239,7 @@ async UpdateUser(user_id: string) {
       formData.append("user_password", this.update_user_form.user_password);
     }
     
-    formData.append("Div_Id", this.update_user_form.Div_Id);
+    formData.append("Div_Id", this.update_user_form.div_id);
     formData.append("Role_ID", this.update_user_form.Role_ID);
     
     let authStatus = this.update_user_form.Auth_Status;
@@ -255,7 +255,7 @@ async UpdateUser(user_id: string) {
       formData.append("profile_image", this.update_user_form.profile_image);
     }
     
-    const req = await axios.put(`/api/users/${user_id}`, formData, {
+    const req = await axios.put(`/api/users/${user_id}/`, formData, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
@@ -270,6 +270,82 @@ async UpdateUser(user_id: string) {
         timer: 1500,
       });
       goPath("/user");
+      await this.GetUser();
+      return req.data;
+    }
+  } catch (error: any) {
+    console.error("Error updating user:", error);
+    
+    let errorMessage = "ເກີດຂໍ້ຜິດພາດໃນການແກ້ໄຂຂໍ້ມູນຜູ້ໃຊ້";
+    if (error.response?.data) {
+      if (error.response.data.message) {
+        errorMessage = error.response.data.message;
+      } else if (typeof error.response.data === "object") {
+        const firstErrorKey = Object.keys(error.response.data)[0];
+        if (firstErrorKey) {
+          errorMessage = `${firstErrorKey}: ${error.response.data[firstErrorKey]}`;
+        }
+      }
+    }
+    
+    await CallSwal({
+      title: "ຜິດພາດ",
+      text: errorMessage,
+      icon: "error",
+      showConfirmButton: false,
+      timer: 1500,
+    });
+    
+    return null;
+  } finally {
+    this.loading = false;
+  }
+},
+async UpdateMyUser(user_id: string) {
+  this.loading = true;
+  try {
+    const formData = new FormData();  
+    formData.append("user_id", this.update_user_form.user_id);
+    formData.append("user_name", this.update_user_form.user_name);
+    formData.append("user_email", this.update_user_form.user_email || "");
+    formData.append("user_mobile", this.update_user_form.user_mobile);
+    
+   
+    if (this.update_user_form.user_password && this.update_user_form.user_password.trim() !== '') {
+      formData.append("user_password", this.update_user_form.user_password);
+    }
+    
+    formData.append("Div_Id", this.update_user_form.div_id);
+    formData.append("Role_ID", this.update_user_form.Role_ID);
+    
+    let authStatus = this.update_user_form.Auth_Status;
+    if (authStatus === "ເປີດ") {
+      authStatus = "A";
+    } else if (authStatus === "ປິດ") {
+      authStatus = "I";
+    }
+    formData.append("Auth_Status", authStatus);
+    formData.append("user_status", authStatus === "A" ? "true" : "false");
+    
+    if (this.update_user_form.profile_image) {
+      formData.append("profile_image", this.update_user_form.profile_image);
+    }
+    
+    const req = await axios.put(`/api/users/${user_id}/`, formData, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
+    
+    if (req.status === 200 || req.status === 204) {
+      await CallSwal({
+        title: "ສຳເລັດ",
+        text: "ແກ້ໄຂຂໍ້ມູນຜູ້ໃຊ້ສຳເລັດ",
+        icon: "success",
+        showConfirmButton: false,
+        timer: 1500,
+      });
+      goPath("/myuser");
       await this.GetUser();
       return req.data;
     }

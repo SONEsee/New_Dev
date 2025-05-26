@@ -27,12 +27,10 @@ const Submittarnsacto = async () => {
 };
 </script>
 <template>
- <v-col cols="12">
-    <GlobalTextTitleLine :title="title" />
- </v-col>
+
 
   <v-col cols="12">
- 
+ <GlobalTextTitleLine :title="title" />
     <v-form ref="form" @click.prevent="Submittarnsacto">
       <v-row>
         <v-col cols="12" md="4">

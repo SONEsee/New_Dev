@@ -51,7 +51,6 @@ const onDeleteType = async (Div_Id: string) => {
       >
     </div>
   </v-col>
-
   <v-data-table :items="response_data" :headers="Headers" class="text-no-wrap">
     <template v-slot:item.index="{ item, index }">
       {{ index + 1 }}

@@ -62,7 +62,7 @@ const createNewFunction = () => {
         </v-chip>
       </template>
 
-      <template v-slot:item.actions="{ item }">
+      <template v-slot:item.actions="{ item }" class="text-center">
         <v-btn
                 color="primary"
                 icon="mdi-eye"
