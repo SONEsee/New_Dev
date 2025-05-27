@@ -10,10 +10,10 @@
                 mdi-shield-edit
               </v-icon>
               <div>
-                <h2 class="text-h5 font-weight-bold mb-1">
+                <h2 class="text-h5 font-weight-bold mb-1 text-styles">
                   ແກ້ໄຂສິດຜູ້ນໍາໃຊ້
                 </h2>
-                <p class="text-body-2 text-medium-emphasis mb-0">
+                <p class="text-body-2 text-medium-emphasis mb-0 text-styles">
                   ປັບປຸງສິດການເຂົ້າເຖິງຟັງຊັນຕ່າງໆໃນລະບົບ
                 </p>
               </div>
