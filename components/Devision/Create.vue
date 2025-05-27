@@ -32,15 +32,10 @@ const onSubmit = async () => {
 </script>
 
 <template>
-  <v-section style="height: 100vh" class="d-flex align-center justify-center">
-    <v-card class="pa-4">
+  <v-container>
+    <v-section style="height: 100vh" class="">
       <GlobalTextTitleLine :title="title" />
-      <v-form
-        ref="form"
-        @submit.prevent="onSubmit"
-        style="width: 90vh"
-        class="text-center"
-      >
+      <v-form ref="form" @submit.prevent="onSubmit" class="">
         <v-col cols="12">
           <v-row>
             <v-col cols="12" md="6">
@@ -51,9 +46,7 @@ const onSubmit = async () => {
                 :rules="[(v) => !!v || 'ກະລຸນາປອ້ນ ID!']"
                 label="ເພິ່ມ ID"
                 variant="outlined"
-                required
-            /></v-col>
-            <v-col cols="12" md="6">
+                required />
               <v-text-field
                 class="mt-4"
                 density="compact"
@@ -63,6 +56,7 @@ const onSubmit = async () => {
                 variant="outlined"
                 required
             /></v-col>
+
             <v-col cols="12" md="6">
               <v-text-field
                 class="mt-4"
@@ -73,7 +67,7 @@ const onSubmit = async () => {
                 variant="outlined"
                 required
             /></v-col>
-            <v-col cols="12" md="6">
+            <!-- <v-col cols="12" md="6">
               <v-autocomplete
                 :items="[
                   { title: 'ເປິດ', value: 'O' },
@@ -120,42 +114,27 @@ const onSubmit = async () => {
                 label="ເລືອກສະຖານະເຄີຍຖືກອະນຸມັດ "
                 variant="outlined"
                 required
-            /></v-col>
+            /></v-col> -->
           </v-row>
         </v-col>
         <v-col cols="12">
           <v-row>
-            <v-col cols="12" md="6"></v-col>
-            <v-col cols="12" md="6">
-              <v-row>
-                <v-col cols="12" md="6">
-                  <v-btn
-                    style="width: 80%"
-                    type="submit"
-                    color="primary"
-                    class="mt-4"
-                   
-                    text="ບັນທຶກ"
-                  />
-                   
-                 
-                </v-col>
-                <v-col cols="12" md="6">
-                  <v-btn
-                    style="width: 80%"
-                    @click="goPath('/devision')"
-                    color="error"
-                    class="mt-4"
-                    
-                  >
-                    ຍົກເລີກ
-                  </v-btn>
-                </v-col>
-              </v-row>
-            </v-col>
+            <v-row>
+              <v-col cols="12" class="text-center">
+                <v-btn
+                  type="submit"
+                  color="primary"
+                  class="mt-4 mr-3"
+                  text="ບັນທຶກ"
+                />
+                <v-btn @click="goPath('/devision')" color="error" class="mt-4">
+                  ຍົກເລີກ
+                </v-btn>
+              </v-col>
+            </v-row>
           </v-row>
         </v-col>
       </v-form>
-    </v-card></v-section
+    </v-section></v-container
   >
 </template>
