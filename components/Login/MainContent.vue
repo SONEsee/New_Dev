@@ -159,13 +159,13 @@ const handleLogin = async () => {
       
       try {
         
-        const response = await axiosInstance.post("http://127.0.0.1:8000/api/login/", loginPayload, {
+        const response = await axiosInstance.post("http://192.168.10.35:35729/api/login/", loginPayload, {
           headers: {
             'Content-Type': 'application/json'
           }
         });
         
-        console.log("Raw response:", response);
+       
         
         if (response.status === 200) {
           const data = response.data;
