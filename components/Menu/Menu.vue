@@ -103,7 +103,6 @@ const editMenu = (menuId: string) => {
             item-value="module_Id"
             item-title="module_name_la"
             variant="outlined"
-<<<<<<< HEAD
             clearable
             placeholder="ເລືອກໂມດູນ"
             return-object
@@ -120,21 +119,6 @@ const editMenu = (menuId: string) => {
               />
             </template>
           </v-autocomplete>
-=======
-            placeholder="ເລືອກພະແນກເພື່ອກັ່ນຕອງຂໍ້ມູນ"
-           
-          >
-          
-
-              <!-- <template v-slot:item="{ props, item }">
-                <v-list-item
-                  v-bind="props"
-                  :subtitle="item.raw.module_Id"
-                  :title="item.raw.module_name_la"
-                ></v-list-item>
-              </template> -->
-        </v-autocomplete>
->>>>>>> 026a7a1a6db7c88beed52d03d38c30b7e6ca79ed
         </v-col>
 
         <v-col cols="12" md="3">
