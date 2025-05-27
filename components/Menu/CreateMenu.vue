@@ -64,17 +64,7 @@ const submitMainmenu = async () => {
               :rules="[(v) => !!v || 'ກະລຸນາປ້ອນ ID ເມນູ']"
               required
             />
-            <v-autocomplete
-              :items="module"
-              item-title="module_name_la"
-              item-value="module_Id"
-              density="compact"
-              v-model="request.module_Id"
-              :rules="[(v) => !!v || 'ກະລຸນາເລືອກເມນູສາຂາ']"
-              label="ເລືອກເມນູສາຂາ"
-              variant="outlined"
-              required
-            />
+            
           </v-col>
           <v-col cols="12" md="4">
             <v-text-field
@@ -105,6 +95,17 @@ const submitMainmenu = async () => {
               required
             />
             <v-autocomplete
+              :items="module"
+              item-title="module_name_la"
+              item-value="module_Id"
+              density="compact"
+              v-model="request.module_Id"
+              :rules="[(v) => !!v || 'ກະລຸນາເລືອກໂມດູນ']"
+              label="ເລືອກໂມດູນ"
+              variant="outlined"
+              required
+            />
+            <!-- <v-autocomplete
               :items="[
                 { title: 'ເປິດ', value: 'Y' },
                 { title: 'ປິດ', value: 'N' },
@@ -117,7 +118,7 @@ const submitMainmenu = async () => {
               label="ເລືອກສະຖານະໃຊ້ງານ"
               variant="outlined"
               required
-            />
+            /> -->
           </v-col>
           <v-col cols="12" class="d-flex justify-center">
             <v-btn type="submit" color="primary" class="mr-2"> ບັນທຶກ </v-btn>

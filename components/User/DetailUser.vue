@@ -64,7 +64,7 @@ const title = ref("ລາຍລະອຽດຜູ້ໃຊງານ / Detail of 
                   
                   <GlobalCardTitle
                   :title="'ພະແນກ / Department'"
-                  :text="res?.division ?? 'N/A'"
+                  :text="res?.division?.division_name_la ?? 'N/A'"
                 />
                  
                   <GlobalCardTitle

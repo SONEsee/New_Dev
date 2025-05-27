@@ -107,8 +107,8 @@ export const UserStore = defineStore("user", {
           !this.create_user_form.user_mobile ||
           !this.create_user_form.user_password ||
           !this.create_user_form.div_id ||
-          !this.create_user_form.Role_ID ||
-          !this.create_user_form.Auth_Status
+          !this.create_user_form.Role_ID 
+          // !this.create_user_form.Auth_Status
         ) {
           await CallSwal({
             title: "ຜິດພາດ",

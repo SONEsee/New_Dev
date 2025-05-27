@@ -9,7 +9,14 @@ const res = computed(() => {
   if (Array.isArray(data)) return data;
   return [data];
 });
-
+// const res = computed(() => {
+//   const data = menuStore.response_sub_menu_data || null;
+//   if (!data) return [];
+//   let result = Array.isArray(data) ? data : [data];
+//   return result.filter(item => {
+//     return item.status === 'active';
+//   });
+// });
 const searchFunction = async () => {
   try {
     menuStore.query_function_filter.data.sub_menu_id =

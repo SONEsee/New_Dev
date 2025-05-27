@@ -208,6 +208,14 @@ const clearFilters = () => {
             <template v-slot:item.no="{ item, index }">
               {{ index + 1 }}
             </template>
+            <template v-slot:item.User_Status="{ item}">
+              <div v-if="item.User_Status === 'E'">
+                <v-chip color="green"><p>ເປີດໃຊ້ງານ</p> </v-chip>
+              </div>
+              <div v-else-if="item.User_Status === 'D'">
+                <v-chip color="red"><p>ປິດໃຊ້ງານ</p> </v-chip>
+              </div>
+            </template>
 
             <!-- <template v-slot:item.image="{ item }">
               <div class="pa-2">

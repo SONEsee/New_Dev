@@ -55,17 +55,7 @@ const title = "ສ້າງຂໍ້ມູນຟັງຊັ້ນ";
               :rules="[(v) => !!v || 'ກະລຸນາປ້ອນ ID ເມນູ']"
               required
             />
-            <v-autocomplete
-              :items="res"
-              item-title="sub_menu_name_la"
-              item-value="sub_menu_id"
-              density="compact"
-              v-model="request.sub_menu_id"
-              :rules="[(v) => !!v || 'ກະລຸນາເລືອກເມນູຍອ່ຍ']"
-              label="ເລືອກເມນູຍອ່ຍ"
-              variant="outlined"
-              required
-            />
+            
           </v-col>
           <v-col cols="12" md="4">
             <v-text-field
@@ -87,15 +77,26 @@ const title = "ສ້າງຂໍ້ມູນຟັງຊັ້ນ";
             />
           </v-col>
           <v-col cols="12" md="4">
-            <v-text-field
+            <v-autocomplete
+              :items="res"
+              item-title="sub_menu_name_la"
+              item-value="sub_menu_id"
+              density="compact"
+              v-model="request.sub_menu_id"
+              :rules="[(v) => !!v || 'ກະລຸນາເລືອກເມນູຍອ່ຍ']"
+              label="ເລືອກເມນູຍອ່ຍ"
+              variant="outlined"
+              required
+            />
+            <!-- <v-text-field
               density="compact"
               v-model="request.created_by"
               label="ສ້າງໂດຍ"
               variant="outlined"
               :rules="[(v) => !!v || 'ກະລຸນາປ້ອນສ້າງໂດຍ']"
               required
-            />
-            <v-autocomplete
+            /> -->
+            <!-- <v-autocomplete
               :items="[
                 { title: 'ເປິດ', value: 'Y' },
                 { title: 'ປິດ', value: 'N' },
@@ -108,11 +109,11 @@ const title = "ສ້າງຂໍ້ມູນຟັງຊັ້ນ";
               label="ເລືອກສະຖານະໃຊ້ງານ"
               variant="outlined"
               required
-            />
+            /> -->
           </v-col>
           <v-col cols="12" class="d-flex justify-center">
             <v-btn type="submit" color="primary" class="mr-2"> ບັນທຶກ </v-btn>
-            <v-btn color="error" @click="$router.push('/menu')">
+            <v-btn color="error" @click="$router.push('/funtion')">
               ຍົກເລີກ
             </v-btn>
           </v-col>

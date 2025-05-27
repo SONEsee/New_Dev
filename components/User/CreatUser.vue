@@ -44,8 +44,8 @@ const submitForm = async () => {
     !userStore.create_user_form.user_mobile ||
     !userStore.create_user_form.user_password ||
     !userStore.create_user_form.div_id ||
-    !userStore.create_user_form.Role_ID ||
-    !userStore.create_user_form.Auth_Status
+    !userStore.create_user_form.Role_ID 
+    // !userStore.create_user_form.Auth_Status
   ) {
     await CallSwal({
       icon: "warning",
@@ -193,7 +193,7 @@ const submitForm = async () => {
                     class="pb-6"
                   ></v-text-field>
                   
-                  <label>ສະຖານະການໃຊ້ງານ / Status</label>
+                  <!-- <label>ສະຖານະການໃຊ້ງານ / Status</label>
                   <v-autocomplete
                     v-model="userStore.create_user_form.Auth_Status"
                     :rules="[(v) => !!v || 'ກະລຸນາເລືອກສະຖານະການໃຊ້ງານ']"
@@ -204,7 +204,7 @@ const submitForm = async () => {
                     hide-details="auto"
                     class="pb-6"
                     no-filter
-                  ></v-autocomplete>
+                  ></v-autocomplete> -->
                   <label>ສິດການເຂົ້ານຳໃຊ້ / Role</label>
                   <v-autocomplete
                     v-model="userStore.create_user_form.Role_ID"
