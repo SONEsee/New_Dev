@@ -42,12 +42,10 @@ const title = ref("ລາຍລະອຽດພະແນກ / Detail of Division"
                     :title="'ຊື່ພະແນກພາສາອັງກິດ / Division Name (English)'"
                     :text="res?.division_name_en ?? 'N/A'"
                   />
-
-                 
                 </v-col>
 
                 <v-col cols="6">
-                   <GlobalCardTitle
+                  <GlobalCardTitle
                     :title="'ລະຫັດຜູ້ບັນທຶກ / Maker ID'"
                     :text="res?.Maker_Id ?? 'N/A'"
                   />
