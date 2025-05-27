@@ -165,7 +165,7 @@ const handleLogin = async () => {
           }
         });
         
-        console.log("Raw response:", response);
+       
         
         if (response.status === 200) {
           const data = response.data;

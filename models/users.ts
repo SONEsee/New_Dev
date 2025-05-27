@@ -21,7 +21,7 @@ export interface Items {
     profile_image:    File | null | string;
     User_Status:      string;
     pwd_changed_on:   null;
-    division:         null;
+    division:       Division | null;
     role:             Role | null;
     InsertDate:       Date;
     UpdateDate:       Date;
@@ -50,8 +50,8 @@ export interface DetailUsertRespons {
     user_mobile:      string;
     User_Status:      string;
     pwd_changed_on:   null;
-    division:         null;
-    role:             Role;
+    division:       Division | null;
+    role:           Role;
     InsertDate:       Date;
     UpdateDate:       Date;
     Maker_Id:         null;
@@ -61,6 +61,19 @@ export interface DetailUsertRespons {
     Auth_Status:      string;
     Once_Auth:        null;
     
+}
+
+export interface Role {
+    role_id:       string;
+    role_name_la:  string;
+    role_name_en:  string;
+    record_Status: string;
+}
+export interface Division {
+    div_id:           string;
+    division_name_la: string;
+    division_name_en: string;
+    record_Status:    string;
 }
 
 export interface Role {
