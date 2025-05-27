@@ -8,7 +8,7 @@ export const ModulesStore = defineStore("module", {
         module_name_en: "",
         module_icon: "",
         module_order: "",
-        is_active: "",
+        // is_active: "",
         created_by: "",
         module_Id: "",
       },
