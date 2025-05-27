@@ -10,23 +10,20 @@ const Headers = [
   { title: "ຊື່ພາສາລາວ", value: "division_name_la" },
   { title: "ຊື່ພາສາອັງກິດ", value: "division_name_en" },
   { title: "ສະຖານະການໃຊ້ງານ", value: "record_Status" },
-  { title: "ສະຖານະການອານຸມັດ", value: "Auth_Status" },
+  // { title: "ສະຖານະການອານຸມັດ", value: "Auth_Status" },
   { title: "ຈັດການ", value: "Actions" },
 ];
 
 const categories = UseCategoryStore();
 const response_data = computed(() => categories.categories);
-console.log(response_data.value,
-"response_data");
-
+console.log(response_data.value, "response_data");
 
 onMounted(() => {
   categories.GetListData();
 });
 const onDeleteType = async (Div_Id: string) => {
-  
   const result = await categories.DeleteCategory(Div_Id);
- 
+
   if (result) {
     await CallSwal({
       icon: "success",
@@ -36,19 +33,19 @@ const onDeleteType = async (Div_Id: string) => {
       timer: 1500,
     });
     goPath("/devision");
-    
-    
   }
 };
 const title = "ຂໍ້ມູນພະແນກ";
 </script>
 
 <template>
- 
   <v-col cols="12">
-    
-<global-text-title-line :title="title" />
-    <div class="d-flex  mt-2">
+    <global-text-title-line
+      :title="`ໜ້າຈັດການຂໍ້ມູນພະແນກ / Manage Department(${formatnumber(
+        response_data?.length ?? 0
+      )})`"
+    />
+    <div class="d-flex mt-2">
       <v-btn color="primary" @click="goPath('/devision/create')"
         ><v-icon icon="mdi-plus"></v-icon> ເພີ່ມປະເພດ</v-btn
       >
@@ -75,7 +72,6 @@ const title = "ຂໍ້ມູນພະແນກ";
         <v-chip color="yellow"><p>ຍັງບໍ່ທັນອານຸມັດ</p> </v-chip>
       </div>
     </template>
-    
 
     <template v-slot:item.Actions="{ item }">
       <v-btn

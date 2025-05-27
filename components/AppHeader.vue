@@ -11,11 +11,13 @@
     </v-app-bar-title>
 
     <v-spacer></v-spacer>
+    <v-chip color="#ECEFF1"><h5 class="mr-5">ສິດການເຂົ້ານຳໃຊ້: {{ role }}</h5></v-chip>
+    
     <v-menu min-width="200px" rounded>
       <template v-slot:activator="{ props }">
         <v-btn icon v-bind="props" style="flex-shrink: 0">
           <v-avatar class="pa-3,mr-3" color="#BDBDBD" size="large">
-            <span class="text-h5" v-if="user.initials">
+            <span class="text-h5" v-if="user">
               <v-icon
                 icon="mdi-account-circle-outline"
                 color="#c58c20"
@@ -31,24 +33,29 @@
         </v-btn>
       </template>
       <v-card>
+        
         <v-card-text>
+         
           <div class="mx-auto text-center">
             <v-avatar color="brown">
-              <span class="text-h5" v-if="user.initials">{{
-                user.initials
+              <span class="text-h5" v-if="user">{{
+                user
               }}</span>
               <span class="text-h5" v-else>
                 <v-icon icon="mdi-account-circle-outline"></v-icon>
               </span>
             </v-avatar>
-            <h3>{{ user.fullName }}</h3>
+            <h3> ຊື່ຜູ້ໃຊ້ :{{ username }}</h3>
             <p class="text-caption mt-1">
-              {{ user.email }}
+            ອີເມວ: {{ email }}
+            </p>
+            <p class="text-caption mt-1">
+            ພະແນກ: {{ department }}
             </p>
             <v-divider class="my-3"></v-divider>
-            <v-btn variant="text" rounded> Edit Account </v-btn>
+            <v-btn variant="text" rounded> ແກ້ໄຂຂໍ້ມູນສວນຕົວ </v-btn>
             <v-divider class="my-3" color="#c58c20"></v-divider>
-            <v-btn variant="text" rounded @click="onLogout"> Disconnect </v-btn>
+            <v-btn variant="text" rounded @click="onLogout"> ອອກຈາກລະບົບ </v-btn>
           </div>
         </v-card-text>
       </v-card>
@@ -126,7 +133,7 @@
             {{ module.module_name_la }}
           </v-list-subheader>
 
-          <!-- Main Menus -->
+         
           <template
             v-for="(mainMenu, mainMenuIndex) in module.main_menus"
             :key="`main-${module.module_Id}-${mainMenu.menu_id}`"
@@ -218,12 +225,18 @@ const router = useRouter();
 const drawer = ref(true);
 const rail = ref(false);
 const error = ref(false);
-
-const user = ref({
-  fullName: "Admin User",
-  initials: "AU",
-  email: "admin@example.com",
-});
+const user = localStorage.getItem("user")
+console.log("ຂໍ້ມູນຜູ້ໃຊ້:", user);
+const username = user ? JSON.parse(user).user_name : "ບໍ່ພົບຂໍ້ມູນ";
+const email = user ? JSON.parse(user).user_email : "ບໍ່ພົບຂໍ້ມູນ";
+const department = user ? JSON.parse(user).division.division_name_la : "ບໍ່ພົບຂໍ້ມູນ";
+const role = user ? JSON.parse(user).role.role_name_la : "ບໍ່ພົບຂໍ້ມູນ";
+ 
+// const user = ref({
+//   fullName: "Admin User",
+//   initials: "AU",
+//   email: "admin@example.com",
+// });
 
 
 const getUserIdFromLocalStorage = () => {
