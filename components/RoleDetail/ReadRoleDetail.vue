@@ -21,7 +21,16 @@
               clearable
               @update:model-value="filterByRole"
               class="role-filter"
-            />
+            >
+              <template #item="{ props, item }">
+                <v-list-item v-bind="props">
+                  <v-list-item-title>{{ item.raw.text }}</v-list-item-title>
+                  <v-list-item-subtitle v-if="item.raw.subtitle">
+                    {{ item.raw.subtitle }}
+                  </v-list-item-subtitle>
+                </v-list-item>
+              </template>
+            </v-select>
           </v-col>
           <v-spacer />
           <v-col cols="auto">
@@ -214,7 +223,7 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 const items = ref<RoleDetailModel.RoleDetailResponse[]>([])
 const selectedRoleId = ref<number | null>(null)
-const roleOptions = ref<Array<{ text: string; value: number }>>([])
+const roleOptions = ref<Array<{ text: string; value: number; subtitle?: string }>>([])
 const loading = ref(false)
 const deleteDialog = ref(false)
 const itemToDelete = ref<RoleDetailModel.RoleDetailResponse | null>(null)
@@ -296,13 +305,44 @@ const fetchData = async () => {
   }
 }
 
-// Generate role options for filter dropdown
+// Generate role options for filter dropdown - FIXED VERSION
 const generateRoleOptions = () => {
-  const uniqueRoles = [...new Set(items.value.map(item => item.role_id))]
-  roleOptions.value = uniqueRoles.map(roleId => ({
-    text: `ບົດບາດ ${roleId}`,
-    value: roleId
+  // Create a Map to store unique roles with their details
+  const roleMap = new Map()
+  
+  // Process each item to extract unique roles
+  items.value.forEach(item => {
+    const roleId = item.role_id
+    const roleName = item.role_detail?.role_name_la
+    
+    if (roleId && !roleMap.has(roleId)) {
+      roleMap.set(roleId, {
+        role_id: roleId,
+        role_name_la: roleName
+      })
+    }
+  })
+  
+  // Convert Map to array and create dropdown options
+  roleOptions.value = Array.from(roleMap.values()).map(role => ({
+    text: role.role_name_la 
+      ? `${role.role_id} - ${role.role_name_la}`
+      : `ບົດບາດ ${role.role_id}`,
+    value: role.role_id,
+    subtitle: role.role_name_la ? `ລະຫັດ: ${role.role_id}` : undefined
   }))
+  
+  // Sort by role_id
+  roleOptions.value.sort((a, b) => a.value - b.value)
+  
+  // Add "All" option at the beginning
+  roleOptions.value.unshift({
+    text: 'ທັງໝົດ',
+    value: null as any,
+    subtitle: 'ສະແດງທຸກບົດບາດ'
+  })
+  
+  console.log('Generated role options:', roleOptions.value)
 }
 
 // Filter by role
@@ -400,5 +440,15 @@ onMounted(fetchData)
 
 :deep(.v-data-table__tr.v-data-table__tr--selected:hover) {
   background-color: rgba(var(--v-theme-primary), 0.04) !important;
+}
+
+/* Custom styles for dropdown items */
+:deep(.v-list-item-title) {
+  font-weight: 500;
+}
+
+:deep(.v-list-item-subtitle) {
+  font-size: 0.875rem;
+  opacity: 0.7;
 }
 </style>
