@@ -1,6 +1,5 @@
 <template>
   <div>
-    <!-- Tree View Table -->
     <v-data-table
       :headers="headers"
       :items="displayedItems"
@@ -193,13 +192,13 @@ const headers = ref<Header[]>([
     width: "250px",
   },
   {
-    title: "Description (ລາວ)",
+    title: "ລາຍລະອຽດ (ລາວ)",
     key: "gl_Desc_la",
     sortable: false,
     align: "start",
   },
   {
-    title: "Description (English)",
+    title: "ລາຍລະອຽດ (English)",
     key: "gl_Desc_en",
     sortable: false,
     align: "start",
