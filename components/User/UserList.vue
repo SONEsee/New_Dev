@@ -43,7 +43,7 @@ const headers = ref([
   { title: "ຊື່ຜູ້ໃຊ້ງານ", key: "user_name", sortable: false },
   { title: "ອີເມວ", key: "user_email", sortable: false },
   { title: "ເບີ້ໂທ", key: "user_mobile", sortable: false },
-  { title: "ພະແນກ", key: "division", sortable: false },
+  { title: "ພະແນກ", key: "division", sortable: false, align: "center", },
   { title: "ສະຖານະ", key: "Auth_Status", sortable: false },
   { title: "Actions", key: "actions", sortable: false },
 ]);
