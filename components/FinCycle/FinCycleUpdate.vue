@@ -120,6 +120,7 @@
               </v-card>
             </v-col>
 
+            
             <!-- Status Fields -->
             <v-col cols="12">
               <div class="text-subtitle-2 mb-3 text-grey-darken-1 text-styles">ການຕັ້ງຄ່າສະຖານະ</div>
