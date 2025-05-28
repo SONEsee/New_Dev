@@ -61,7 +61,7 @@ watch(
   () => userStore.respone_data_detail,
   (newVal) => {
     if (newVal) {
-      // ໂຫລດຂໍ້ມູນເຂົ້າໃນຟອມແກ້ໄຂ
+      
       userStore.update_user_form.user_id = newVal.user_id || "";
       userStore.update_user_form.user_name = newVal.user_name || "";
       userStore.update_user_form.user_email = newVal.user_email || "";
@@ -71,7 +71,7 @@ watch(
           ? newVal.division?.div_id || ""
           : newVal.division || "";
       userStore.update_user_form.Role_ID = newVal.role?.role_id || "";
-      // userStore.update_user_form.Auth_Status = newVal.auth_status === 'A' ? 'ເປີດ' : 'ປິດ';
+      userStore.update_user_form.Auth_Status = newVal.Auth_Status === 'U' ? 'ເປີດ' : 'ປິດ';
     }
   },
   { immediate: true }
