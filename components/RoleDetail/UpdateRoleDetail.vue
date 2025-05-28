@@ -1,7 +1,7 @@
 <template>
   <v-container fluid class="pa-6">
     <v-row justify="center">
-      <v-col cols="12" md="8" lg="6" xl="5">
+      <v-col cols="12" md="10" lg="8" xl="6">
         <v-card elevation="0" class="rounded-xl border">
           <!-- Header -->
           <v-card-title class="pa-8 pb-6">
@@ -14,7 +14,7 @@
                   ແກ້ໄຂສິດຜູ້ນໍາໃຊ້
                 </h2>
                 <p class="text-body-2 text-medium-emphasis mb-0 text-styles">
-                  ປັບປຸງສິດການເຂົ້າເຖິງຟັງຊັນຕ່າງໆໃນລະບົບ
+                  ປັບປຸງສິດການເຂົ້າເຖິງເມນູແລະຟັງຊັນຕ່າງໆໃນລະບົບ
                 </p>
               </div>
             </div>
@@ -39,8 +39,8 @@
           <v-card-text v-else class="pa-8 pt-0">
             <v-form @submit.prevent="updateForm" v-model="isValid" ref="formRef">
               <v-row>
-                <!-- Role ID (Display Only) -->
-                <v-col cols="12" sm="6">
+                <!-- Role Selection (Read-only) -->
+                <v-col cols="12">
                   <v-text-field
                     v-model="selectedRoleDisplay"
                     label="ບົດບາດ"
@@ -57,37 +57,147 @@
                     </template>
                   </v-text-field>
                 </v-col>
-
-                <!-- Function ID (Display Only) -->
-                <v-col cols="12" sm="6">
-                  <v-text-field
-                    v-model="selectedFunctionDisplay"
-                    label="ຟັງຊັນ"
-                    variant="outlined"
-                    density="comfortable"
-                    prepend-inner-icon="mdi-function"
-                    readonly
-                    class="mb-2"
-                  >
-                    <template #append-inner>
-                      <v-chip color="primary" variant="tonal" size="small">
-                        ບໍ່ສາມາດແກ້ໄຂ
-                      </v-chip>
-                    </template>
-                  </v-text-field>
-                </v-col>
               </v-row>
+
+              <!-- Module/Menu Selection Section (Read-only for existing data) -->
+              <v-card variant="tonal" class="mb-6 rounded-lg">
+                <v-card-title class="pa-4 pb-2">
+                  <v-icon color="info" class="mr-2">mdi-view-dashboard</v-icon>
+                  <span class="text-h6 text-styles">ຂໍ້ມູນໂມດູນແລະເມນູ</span>
+                </v-card-title>
+                <v-card-text class="pa-4 pt-2">
+                  <v-row>
+                    <!-- Module Display -->
+                    <v-col cols="12" md="4">
+                      <v-text-field
+                        v-model="selectedModuleDisplay"
+                        label="ໂມດູນ"
+                        variant="outlined"
+                        density="comfortable"
+                        prepend-inner-icon="mdi-view-module"
+                        readonly
+                      >
+                        <template #append-inner>
+                          <v-chip color="info" variant="tonal" size="small">
+                            ບໍ່ສາມາດແກ້ໄຂ
+                          </v-chip>
+                        </template>
+                      </v-text-field>
+                    </v-col>
+
+                    <!-- Main Menu Display -->
+                    <v-col cols="12" md="4">
+                      <v-text-field
+                        v-model="selectedMainMenuDisplay"
+                        label="ເມນູຫຼັກ"
+                        variant="outlined"
+                        density="comfortable"
+                        prepend-inner-icon="mdi-menu"
+                        readonly
+                      >
+                        <template #append-inner>
+                          <v-chip color="secondary" variant="tonal" size="small">
+                            ບໍ່ສາມາດແກ້ໄຂ
+                          </v-chip>
+                        </template>
+                      </v-text-field>
+                    </v-col>
+
+                    <!-- Sub Menu Display -->
+                    <v-col cols="12" md="4">
+                      <v-text-field
+                        v-model="selectedSubMenuDisplay"
+                        label="ເມນູຍ່ອຍ"
+                        variant="outlined"
+                        density="comfortable"
+                        prepend-inner-icon="mdi-menu-down"
+                        readonly
+                      >
+                        <template #append-inner>
+                          <v-chip color="warning" variant="tonal" size="small">
+                            ບໍ່ສາມາດແກ້ໄຂ
+                          </v-chip>
+                        </template>
+                      </v-text-field>
+                    </v-col>
+                  </v-row>
+
+                  <!-- Function Display (if available) -->
+                  <v-row v-if="selectedFunctionDisplay">
+                    <v-col cols="12">
+                      <v-text-field
+                        v-model="selectedFunctionDisplay"
+                        label="ຟັງຊັນ"
+                        variant="outlined"
+                        density="comfortable"
+                        prepend-inner-icon="mdi-function"
+                        readonly
+                      >
+                        <template #append-inner>
+                          <v-chip color="purple" variant="tonal" size="small">
+                            ບໍ່ສາມາດແກ້ໄຂ
+                          </v-chip>
+                        </template>
+                      </v-text-field>
+                    </v-col>
+                  </v-row>
+                </v-card-text>
+              </v-card>
+
+              <!-- Current Data Display Card -->
+              <v-card variant="outlined" class="mb-6 rounded-lg">
+                <v-card-title class="pa-4 pb-2">
+                  <v-icon color="info" class="mr-2">mdi-information</v-icon>
+                  <span class="text-h6 text-styles">ຂໍ້ມູນປັດຈຸບັນ</span>
+                </v-card-title>
+                <v-card-text class="pa-4 pt-2">
+                  <v-row>
+                    <v-col cols="12" md="6">
+                      <div class="d-flex align-center mb-2">
+                        <v-icon color="primary" class="mr-2">mdi-account-key</v-icon>
+                        <span class="font-weight-medium">ບົດບາດ:</span>
+                        <v-spacer />
+                        <span>{{ currentRoleData?.role_name_la || form.role_id }}</span>
+                      </div>
+                      <div class="d-flex align-center mb-2">
+                        <v-icon color="info" class="mr-2">mdi-menu</v-icon>
+                        <span class="font-weight-medium">ເມນູຍ່ອຍ:</span>
+                        <v-spacer />
+                        <span>{{ currentSubMenuData?.sub_menu_name_la || form.sub_menu_id }}</span>
+                      </div>
+                    </v-col>
+                    <v-col cols="12" md="6">
+                      <div class="d-flex align-center mb-2">
+                        <v-icon color="success" class="mr-2">mdi-identifier</v-icon>
+                        <span class="font-weight-medium">ລະຫັດບົດບາດ:</span>
+                        <v-spacer />
+                        <span>{{ form.role_id }}</span>
+                      </div>
+                      <div class="d-flex align-center mb-2">
+                        <v-icon color="warning" class="mr-2">mdi-menu-right</v-icon>
+                        <span class="font-weight-medium">ລະຫັດເມນູຍ່ອຍ:</span>
+                        <v-spacer />
+                        <span>{{ form.sub_menu_id }}</span>
+                      </div>
+                    </v-col>
+                  </v-row>
+                </v-card-text>
+              </v-card>
 
               <!-- Permissions Section -->
               <v-card variant="tonal" class="mb-6 rounded-lg">
                 <v-card-title class="pa-4 pb-2">
                   <v-icon color="primary" class="mr-2">mdi-lock-outline</v-icon>
-                  <span class="text-h6">ການອະນຸຍາດ</span>
+                  <span class="text-h6 text-styles">ການອະນຸຍາດ</span>
+                  <v-spacer />
+                  <v-chip color="success" variant="tonal" size="small">
+                    ສາມາດແກ້ໄຂໄດ້
+                  </v-chip>
                 </v-card-title>
                 <v-card-text class="pa-4 pt-2">
                   <v-row>
                     <!-- New Permission -->
-                    <v-col cols="12" sm="6" md="3">
+                    <v-col cols="12" sm="6" lg="4">
                       <div class="permission-card">
                         <div class="d-flex align-center justify-space-between mb-3">
                           <div class="d-flex align-center">
@@ -113,7 +223,7 @@
                     </v-col>
 
                     <!-- Delete Permission -->
-                    <v-col cols="12" sm="6" md="3">
+                    <v-col cols="12" sm="6" lg="4">
                       <div class="permission-card">
                         <div class="d-flex align-center justify-space-between mb-3">
                           <div class="d-flex align-center">
@@ -139,7 +249,7 @@
                     </v-col>
 
                     <!-- Edit Permission -->
-                    <v-col cols="12" sm="6" md="3">
+                    <v-col cols="12" sm="6" lg="4">
                       <div class="permission-card">
                         <div class="d-flex align-center justify-space-between mb-3">
                           <div class="d-flex align-center">
@@ -164,8 +274,34 @@
                       </div>
                     </v-col>
 
+                    <!-- View Permission -->
+                    <v-col cols="12" sm="6" lg="4">
+                      <div class="permission-card">
+                        <div class="d-flex align-center justify-space-between mb-3">
+                          <div class="d-flex align-center">
+                            <v-icon color="info" class="mr-2">mdi-eye-check</v-icon>
+                            <span class="font-weight-medium">ກວດສອບ</span>
+                          </div>
+                          <v-chip
+                            :color="form.View_Detail === 1 ? 'success' : 'default'"
+                            variant="tonal"
+                            size="small"
+                          >
+                            {{ form.View_Detail === 1 ? 'ອະນຸຍາດ' : 'ບໍ່ອະນຸຍາດ' }}
+                          </v-chip>
+                        </div>
+                        <v-switch
+                          v-model="permissions.view"
+                          color="success"
+                          density="compact"
+                          hide-details
+                          @update:model-value="updatePermission('View_Detail', $event)"
+                        />
+                      </div>
+                    </v-col>
+
                     <!-- Auth Permission -->
-                    <v-col cols="12" sm="6" md="3">
+                    <v-col cols="12" sm="6" lg="4">
                       <div class="permission-card">
                         <div class="d-flex align-center justify-space-between mb-3">
                           <div class="d-flex align-center">
@@ -256,9 +392,9 @@ const route = useRoute()
 const router = useRouter()
 const formRef = ref()
 
-// Route parameters
+// Route parameters - Updated to use sub_menu_id instead of fun_id
 const role_id = route.query.role_id as string
-const function_id = route.query.fun_id as string
+const sub_menu_id = route.query.sub_menu_id as string
 
 // State
 const isValid = ref(true)
@@ -269,14 +405,19 @@ const initialLoading = ref(true)
 const form = ref<RoleDetailModel.RoleDetailResponse>({
   role_id: '',
   function_id: '',
+  sub_menu_id: '',
   New_Detail: 0,
   Del_Detail: 0,
   Edit_Detail: 0,
   Auth_Detail: 0,
+  View_Detail: 0,
 })
 
-const roleData = ref<any>(null)
-const functionData = ref<any>(null)
+// Current data for display
+const currentRoleData = ref<any>(null)
+const currentSubMenuData = ref<any>(null)
+const currentFunctionData = ref<any>(null)
+const sidebarData = ref<any[]>([])
 
 // Permission switches (for better UX)
 const permissions = reactive({
@@ -284,6 +425,7 @@ const permissions = reactive({
   delete: false,
   edit: false,
   auth: false,
+  view: false
 })
 
 // Snackbar state
@@ -294,34 +436,63 @@ const snackbar = reactive({
   icon: 'mdi-check-circle',
 })
 
-// SweetAlert instance
-declare global {
-  interface Window {
-    Swal: any;
-  }
-}
-
 // Computed properties for display
 const selectedRoleDisplay = computed(() => {
-  if (roleData.value) {
-    return `${roleData.value.id || roleData.value.role_id} - ${roleData.value.role_name_la || roleData.value.name || 'Unknown Role'}`
+  if (currentRoleData.value) {
+    return `${currentRoleData.value.role_id} - ${currentRoleData.value.role_name_la}`
   }
   return form.value.role_id
 })
 
-const selectedFunctionDisplay = computed(() => {
-  if (functionData.value) {
-    return `${functionData.value.id || functionData.value.function_id} - ${functionData.value.description_la || functionData.value.name || 'Unknown Function'}`
+const selectedModuleDisplay = computed(() => {
+  if (sidebarData.value.length > 0 && currentSubMenuData.value) {
+    // Find the module that contains this sub menu
+    for (const module of sidebarData.value) {
+      for (const mainMenu of module.main_menus) {
+        if (mainMenu.sub_menus.some((sm: any) => sm.sub_menu_id === currentSubMenuData.value.sub_menu_id)) {
+          return `${module.module_Id} - ${module.module_name_la}`
+        }
+      }
+    }
   }
-  return form.value.function_id
+  return 'ກໍາລັງໂຫຼດ...'
+})
+
+const selectedMainMenuDisplay = computed(() => {
+  if (sidebarData.value.length > 0 && currentSubMenuData.value) {
+    // Find the main menu that contains this sub menu
+    for (const module of sidebarData.value) {
+      for (const mainMenu of module.main_menus) {
+        if (mainMenu.sub_menus.some((sm: any) => sm.sub_menu_id === currentSubMenuData.value.sub_menu_id)) {
+          return `${mainMenu.menu_id} - ${mainMenu.menu_name_la}`
+        }
+      }
+    }
+  }
+  return 'ກໍາລັງໂຫຼດ...'
+})
+
+const selectedSubMenuDisplay = computed(() => {
+  if (currentSubMenuData.value) {
+    return `${currentSubMenuData.value.sub_menu_id} - ${currentSubMenuData.value.sub_menu_name_la}`
+  }
+  return form.value.sub_menu_id
+})
+
+const selectedFunctionDisplay = computed(() => {
+  if (currentFunctionData.value) {
+    return `${currentFunctionData.value.function_id} - ${currentFunctionData.value.description_la}`
+  }
+  return form.value.function_id || null
 })
 
 // Load current role detail data
 const loadData = async () => {
   initialLoading.value = true
   try {
+    // Load role detail data
     const res = await axios.get<RoleDetailModel.RoleDetailResponse>(
-      `api/role-details/single?role_id=${role_id}&function_id=${function_id}`,
+      `api/role-details/single?role_id=${role_id}&sub_menu_id=${sub_menu_id}`,
       {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -336,10 +507,15 @@ const loadData = async () => {
       permissions.delete = form.value.Del_Detail === 1
       permissions.edit = form.value.Edit_Detail === 1
       permissions.auth = form.value.Auth_Detail === 1
+      permissions.view = form.value.View_Detail === 1
     }
 
-    // Load role and function details for display
-    await Promise.all([loadRoleDetails(), loadFunctionDetails()])
+    // Load additional data for display
+    await Promise.all([
+      loadRoleDetails(),
+      loadSidebarData(),
+      loadSubMenuDetails()
+    ])
     
   } catch (error) {
     console.error('Error loading data:', error)
@@ -349,7 +525,7 @@ const loadData = async () => {
   }
 }
 
-// Load role details for display
+// Load role details
 const loadRoleDetails = async () => {
   try {
     const res = await axios.get('/api/roles/', {
@@ -359,31 +535,51 @@ const loadRoleDetails = async () => {
     })
     
     if (res.status === 200) {
-      roleData.value = res.data.find((role: any) => 
-        (role.id || role.role_id) == role_id
-      )
+      currentRoleData.value = res.data.find((role: any) => role.role_id === role_id)
     }
   } catch (error) {
     console.error('Error loading role details:', error)
   }
 }
 
-// Load function details for display
-const loadFunctionDetails = async () => {
+// Load sidebar data for navigation context
+const loadSidebarData = async () => {
   try {
-    const res = await axios.get('/api/functions/', {
+    const res = await axios.get(`/api/role/${role_id}/sidebar/`, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
     })
     
     if (res.status === 200) {
-      functionData.value = res.data.find((func: any) => 
-        (func.id || func.function_id) == function_id
-      )
+      sidebarData.value = res.data
     }
   } catch (error) {
-    console.error('Error loading function details:', error)
+    console.error('Error loading sidebar data:', error)
+  }
+}
+
+// Load sub menu details
+const loadSubMenuDetails = async () => {
+  try {
+    // Find sub menu data from sidebar data
+    if (sidebarData.value.length > 0) {
+      for (const module of sidebarData.value) {
+        for (const mainMenu of module.main_menus) {
+          const subMenu = mainMenu.sub_menus.find((sm: any) => sm.sub_menu_id === sub_menu_id)
+          if (subMenu) {
+            currentSubMenuData.value = subMenu
+            // If there are functions, get the first one (or find the matching one)
+            if (subMenu.functions && subMenu.functions.length > 0 && form.value.function_id) {
+              currentFunctionData.value = subMenu.functions.find((f: any) => f.function_id === form.value.function_id)
+            }
+            break
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error loading sub menu details:', error)
   }
 }
 
@@ -401,7 +597,7 @@ const updateForm = async () => {
   loading.value = true
   try {
     await axios.put(
-      `api/v1/role-details/update/?role_id=${role_id}&function_id=${function_id}`,
+      `api/role-details/update/?role_id=${role_id}&sub_menu_id=${sub_menu_id}`,
       form.value,
       {
         headers: {
@@ -522,5 +718,3 @@ onMounted(loadData)
   font-size: 1rem !important;
 }
 </style>
-
-<!-- SweetAlert2 CDN -->
