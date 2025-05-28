@@ -77,7 +77,7 @@ watch(
   { immediate: true }
 );
 
-// ຮັບປະກັນວ່າມີ user_id ກ່ອນສົ່ງຟອມ
+
 const submitForm = async () => {
   const isValid = await form.value.validate();
   if (isValid) {
