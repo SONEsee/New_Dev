@@ -38,7 +38,7 @@ const menuItems = computed(() => {
 
 const headers = [
   { title: "ລຳດັບເມນູ", key: "menu_order", sortable: true },
-  { title: "ໂມດູນ", key: "module_Id.module_name_la", sortable: true },
+  { title: "ໂມດູນ", key: "module.module_name_la", sortable: true },
   { title: "ຊື່ເມນູພາສາລາວ", key: "menu_name_la", sortable: true },
   { title: "ຊື່ເມນູພາສາອັງກິດ", key: "menu_name_en", sortable: true },
   { title: "ໄອຄອນ", key: "menu_icon", sortable: false },
@@ -151,7 +151,7 @@ const editMenu = (menuId: string) => {
       </template>
 
       <template v-slot:item.module_name_la="{ item }">
-        {{ item.module_Id?.module_name_la || "ບໍ່ມີຂໍ້ມູນ" }}
+        {{ item.module.module_name_la || "ບໍ່ມີຂໍ້ມູນ" }}
       </template>
 
       <template v-slot:item.is_active="{ item }">
