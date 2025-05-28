@@ -43,6 +43,7 @@ const headers = ref([
   { title: "ຊື່ຜູ້ໃຊ້ງານ", key: "user_name", sortable: false },
   { title: "ອີເມວ", key: "user_email", sortable: false },
   { title: "ເບີ້ໂທ", key: "user_mobile", sortable: false },
+  { title: "ພະແນກ", key: "division", sortable: false, align: "center", },
   { title: "ສະຖານະ", key: "Auth_Status", sortable: false },
   { title: "Actions", key: "actions", sortable: false },
 ]);
@@ -211,6 +212,13 @@ const clearFilters = () => {
               </div>
               <div v-else-if="item.Auth_Status === 'U'">
                 <v-chip color="red"><p>ປິດໃຊ້ງານ</p> </v-chip>
+              </div>
+            </template>
+            <template v-slot:item.division="item" class="text-center">
+              <div class="text-center">
+                <h3>{{ item.item.division?.div_id || "No Data" }}</h3>
+                
+                <p>{{ item.item.division?.division_name_la || "ບໍ່ມີຂໍ້ມູນ" }}</p>
               </div>
             </template>
 
