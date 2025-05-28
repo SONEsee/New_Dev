@@ -244,7 +244,7 @@ export const UserStore = defineStore("user", {
           formData.append("user_password", this.update_user_form.user_password);
         }
 
-        formData.append("Div_Id", this.update_user_form.div_id);
+        formData.append("div_id", this.update_user_form.div_id);
         formData.append("Role_ID", this.update_user_form.Role_ID);
 
         let authStatus = this.update_user_form.Auth_Status;
@@ -322,7 +322,7 @@ export const UserStore = defineStore("user", {
           formData.append("user_password", this.update_user_form.user_password);
         }
 
-        formData.append("Div_Id", this.update_user_form.div_id);
+        formData.append("div_id", this.update_user_form.div_id);
         formData.append("Role_ID", this.update_user_form.Role_ID);
 
         let authStatus = this.update_user_form.Auth_Status;

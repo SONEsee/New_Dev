@@ -20,6 +20,7 @@ const title = ref("ລາຍລະອຽດຜູ້ໃຊງານ / Detail of 
 <template>
   
   <section class="pa-6">
+    
     <v-form ref="form" >
       <v-row>
         <v-col cols="12">

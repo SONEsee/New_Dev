@@ -43,7 +43,7 @@ const headers = ref([
   { title: "ຊື່ຜູ້ໃຊ້ງານ", key: "user_name", sortable: false },
   { title: "ອີເມວ", key: "user_email", sortable: false },
   { title: "ເບີ້ໂທ", key: "user_mobile", sortable: false },
-  { title: "ສະຖານະ", key: "User_Status", sortable: false },
+  { title: "ສະຖານະ", key: "Auth_Status", sortable: false },
   { title: "Actions", key: "actions", sortable: false },
 ]);
 
@@ -205,11 +205,11 @@ const clearFilters = () => {
             <template v-slot:item.no="{ item, index }">
               {{ index + 1 }}
             </template>
-            <template v-slot:item.User_Status="{ item }">
-              <div v-if="item.User_Status === 'E'">
+            <template v-slot:item.Auth_Status="{ item }">
+              <div v-if="item.Auth_Status === 'A'">
                 <v-chip color="green"><p>ເປີດໃຊ້ງານ</p> </v-chip>
               </div>
-              <div v-else-if="item.User_Status === 'D'">
+              <div v-else-if="item.Auth_Status === 'U'">
                 <v-chip color="red"><p>ປິດໃຊ້ງານ</p> </v-chip>
               </div>
             </template>
