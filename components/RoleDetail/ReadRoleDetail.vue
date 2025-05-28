@@ -19,6 +19,7 @@
               density="compact"
               prepend-inner-icon="mdi-filter-variant"
               clearable
+              :loading="roleOptionsLoading"
               @update:model-value="filterByRole"
               class="role-filter"
             >
@@ -211,6 +212,17 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Error Snackbar -->
+    <v-snackbar
+      v-model="showError"
+      color="error"
+      timeout="5000"
+      location="top"
+    >
+      <v-icon class="mr-2">mdi-alert-circle</v-icon>
+      {{ errorMessage }}
+    </v-snackbar>
   </v-container>
 </template>
 
@@ -220,12 +232,23 @@ import axios from '@/helpers/axios'
 import { RoleDetailModel } from '~/models'
 import { useRouter } from 'vue-router'
 
+// Define Role interface for the API response
+interface Role {
+  role_id: number
+  role_name_la: string
+  role_name_en?: string
+  // Add other role properties as needed
+}
+
 const router = useRouter()
 const items = ref<RoleDetailModel.RoleDetailResponse[]>([])
 const selectedRoleId = ref<number | null>(null)
-const roleOptions = ref<Array<{ text: string; value: number; subtitle?: string }>>([])
+const roleOptions = ref<Array<{ text: string; value: number | null; subtitle?: string }>>([])
 const loading = ref(false)
+const roleOptionsLoading = ref(false)
 const deleteDialog = ref(false)
+const showError = ref(false)
+const errorMessage = ref('')
 const itemToDelete = ref<RoleDetailModel.RoleDetailResponse | null>(null)
 
 const title = 'ຈັດການສິດຜູ້ນໍາໃຊ້ລະບົບ'
@@ -284,33 +307,66 @@ const filteredItems = computed(() => {
   return items.value.filter(item => item.role_id === selectedRoleId.value)
 })
 
-// Fetch main data
-const fetchData = async () => {
-  loading.value = true
+// Fetch roles from API for dropdown
+const fetchRoleOptions = async () => {
+  roleOptionsLoading.value = true
   try {
-    const res = await axios.get<RoleDetailModel.RoleDetailResponse[]>('api/role-details', {
+    const res = await axios.get<Role[]>('api/roles/', {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
     })
+    
     if (res.status === 200) {
-      items.value = res.data
-      generateRoleOptions()
+      // Remove duplicates using Map to ensure unique role_id
+      const uniqueRolesMap = new Map()
+      
+      res.data.forEach(role => {
+        if (role.role_id && !uniqueRolesMap.has(role.role_id)) {
+          uniqueRolesMap.set(role.role_id, role)
+        }
+      })
+      
+      // Create dropdown options from unique roles
+      const options = Array.from(uniqueRolesMap.values()).map(role => ({
+        text: `${role.role_id} - ${role.role_name_la}`,
+        value: role.role_id,
+        subtitle: `ລະຫັດ: ${role.role_id}`
+      }))
+      
+      // Sort by role_id
+      options.sort((a, b) => a.value - b.value)
+      
+      // Add "All" option at the beginning
+      roleOptions.value = [
+        {
+          text: 'ທັງໝົດ',
+          value: null,
+          subtitle: 'ສະແດງທຸກບົດບາດ'
+        },
+        ...options
+      ]
+      
+      console.log('Fetched unique role options from API:', roleOptions.value)
+      console.log('Total unique roles:', options.length)
     }
-  } catch (error) {
-    console.error('Error fetching data:', error)
+  } catch (error: any) {
+    console.error('Error fetching roles:', error)
+    showError.value = true
+    errorMessage.value = error.response?.data?.message || 'ເກີດຂໍ້ຜິດພາດໃນການໂຫຼດລາຍການບົດບາດ'
+    
+    // Fallback: Generate options from current items if API fails
+    generateRoleOptionsFromItems()
   } finally {
-    loading.value = false
+    roleOptionsLoading.value = false
   }
 }
 
-// Generate role options for filter dropdown - FIXED VERSION
-const generateRoleOptions = () => {
-  // Create a Map to store unique roles with their details
+// Fallback function to generate role options from current items
+const generateRoleOptionsFromItems = () => {
   const roleMap = new Map()
   
-  // Process each item to extract unique roles
   items.value.forEach(item => {
     const roleId = item.role_id
     const roleName = item.role_detail?.role_name_la
@@ -323,8 +379,7 @@ const generateRoleOptions = () => {
     }
   })
   
-  // Convert Map to array and create dropdown options
-  roleOptions.value = Array.from(roleMap.values()).map(role => ({
+  const options = Array.from(roleMap.values()).map(role => ({
     text: role.role_name_la 
       ? `${role.role_id} - ${role.role_name_la}`
       : `ບົດບາດ ${role.role_id}`,
@@ -332,17 +387,40 @@ const generateRoleOptions = () => {
     subtitle: role.role_name_la ? `ລະຫັດ: ${role.role_id}` : undefined
   }))
   
-  // Sort by role_id
-  roleOptions.value.sort((a, b) => a.value - b.value)
+  options.sort((a, b) => a.value - b.value)
   
-  // Add "All" option at the beginning
-  roleOptions.value.unshift({
-    text: 'ທັງໝົດ',
-    value: null as any,
-    subtitle: 'ສະແດງທຸກບົດບາດ'
-  })
+  roleOptions.value = [
+    {
+      text: 'ທັງໝົດ',
+      value: null,
+      subtitle: 'ສະແດງທຸກບົດບາດ'
+    },
+    ...options
+  ]
   
-  console.log('Generated role options:', roleOptions.value)
+  console.log('Generated fallback role options:', roleOptions.value)
+}
+
+// Fetch main role details data
+const fetchData = async () => {
+  loading.value = true
+  try {
+    const res = await axios.get<RoleDetailModel.RoleDetailResponse[]>('api/role-details', {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    })
+    if (res.status === 200) {
+      items.value = res.data
+    }
+  } catch (error: any) {
+    console.error('Error fetching data:', error)
+    showError.value = true
+    errorMessage.value = error.response?.data?.message || 'ເກີດຂໍ້ຜິດພາດໃນການໂຫຼດຂໍ້ມູນ'
+  } finally {
+    loading.value = false
+  }
 }
 
 // Filter by role
@@ -362,8 +440,10 @@ const filterByRole = async () => {
       if (res.status === 200) {
         items.value = res.data
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error filtering data:', error)
+      showError.value = true
+      errorMessage.value = error.response?.data?.message || 'ເກີດຂໍ້ຜິດພາດໃນການກັ່ນຕອງຂໍ້ມູນ'
     } finally {
       loading.value = false
     }
@@ -384,7 +464,7 @@ const confirmDelete = (item: RoleDetailModel.RoleDetailResponse) => {
   deleteDialog.value = true
 }
 
-// Delete item (you'll need to implement the actual delete API call)
+// Delete item
 const deleteItem = async () => {
   if (itemToDelete.value) {
     try {
@@ -402,13 +482,22 @@ const deleteItem = async () => {
       
       deleteDialog.value = false
       itemToDelete.value = null
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting item:', error)
+      showError.value = true
+      errorMessage.value = error.response?.data?.message || 'ເກີດຂໍ້ຜິດພາດໃນການລົບ'
     }
   }
 }
 
-onMounted(fetchData)
+// Initialize data on component mount
+onMounted(async () => {
+  // Fetch both role options and role details data
+  await Promise.all([
+    fetchRoleOptions(),
+    fetchData()
+  ])
+})
 </script>
 
 <style scoped>
