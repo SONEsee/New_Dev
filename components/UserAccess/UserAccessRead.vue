@@ -127,12 +127,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-
+import axios from '@/helpers/axios'
 const logs = ref([])
 const loading = ref(false)
 const error = ref(null)
 const router = useRouter()
-const apiBase = 'http://127.0.0.1:8000/api'
 const token = localStorage.getItem('token') || ''
 
 // Filter state
@@ -275,7 +274,15 @@ async function fetchWithAuth(url) {
 onMounted(async () => {
   loading.value = true
   try {
-    logs.value = await fetchWithAuth(`${apiBase}/user-access-logs/`)
+    // logs.value = await fetchWithAuth(`user-access-logs/`)
+    const response = await axios.get('api/user-access-logs/', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (response.status === 200) {
+      logs.value = response.data
+    } else {
+      throw new Error(`Error ${response.status}: ${response.statusText}`)
+    }
   } catch (e) {
     error.value = e.message
   } finally {
