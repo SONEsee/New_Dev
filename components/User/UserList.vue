@@ -43,7 +43,8 @@ const headers = ref([
   { title: "ຊື່ຜູ້ໃຊ້ງານ", key: "user_name", sortable: false },
   { title: "ອີເມວ", key: "user_email", sortable: false },
   { title: "ເບີ້ໂທ", key: "user_mobile", sortable: false },
-  { title: "ພະແນກ", key: "division", sortable: false, align: "center", },
+  { title: "ພະແນກ", key: "division", sortable: false, align: "center" },
+  { title: "ສິດເຂົ້ານຳໃຊ້ລະບົບ", key: "role", sortable: false, align: "center" },
   { title: "ສະຖານະ", key: "Auth_Status", sortable: false },
   { title: "Actions", key: "actions", sortable: false },
 ]);
@@ -66,12 +67,10 @@ const onDeleteUser = async (user_id: string) => {
   }
 };
 
-
 const clearFilters = () => {
   selectedDivision.value = null;
   selectedRole.value = null;
 
- 
   agencyStore.reqest_get_user.query.div_id = null;
   agencyStore.reqest_get_user.query.role_id = null;
   agencyStore.GetUser();
@@ -217,8 +216,19 @@ const clearFilters = () => {
             <template v-slot:item.division="item" class="text-center">
               <div class="text-center">
                 <h3>{{ item.item.division?.div_id || "No Data" }}</h3>
-                
-                <p>{{ item.item.division?.division_name_la || "ບໍ່ມີຂໍ້ມູນ" }}</p>
+
+                <p>
+                  {{ item.item.division?.division_name_la || "ບໍ່ມີຂໍ້ມູນ" }}
+                </p>
+              </div>
+            </template>
+            <template v-slot:item.role="item" class="text-center">
+              <div class="text-center">
+                <h3>{{ item.item.role?.role_id || "No Data" }}</h3>
+
+                <p>
+                  {{ item.item.role?.role_name_la || "ບໍ່ມີຂໍ້ມູນ" }}
+                </p>
               </div>
             </template>
 

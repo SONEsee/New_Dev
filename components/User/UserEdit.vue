@@ -61,7 +61,6 @@ watch(
   () => userStore.respone_data_detail,
   (newVal) => {
     if (newVal) {
-      
       userStore.update_user_form.user_id = newVal.user_id || "";
       userStore.update_user_form.user_name = newVal.user_name || "";
       userStore.update_user_form.user_email = newVal.user_email || "";
@@ -71,12 +70,12 @@ watch(
           ? newVal.division?.div_id || ""
           : newVal.division || "";
       userStore.update_user_form.Role_ID = newVal.role?.role_id || "";
-      userStore.update_user_form.Auth_Status = newVal.Auth_Status === 'U' ? 'ເປີດ' : 'ປິດ';
+      userStore.update_user_form.Auth_Status =
+        newVal.Auth_Status || "";
     }
   },
   { immediate: true }
 );
-
 
 const submitForm = async () => {
   const isValid = await form.value.validate();
@@ -222,8 +221,8 @@ const submitForm = async () => {
                     placeholder="ກະລຸນາເລືອກສະຖານະການໃຊ້ງານ"
                     density="compact"
                     :items="[
-                      { title: 'ເປີດ', value: 'A' },
                       { title: 'ປິດ', value: 'U' },
+                      { title: 'ເປີດ', value: 'A' },
                     ]"
                     item-title="title"
                     item-value="value"

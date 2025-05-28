@@ -134,11 +134,11 @@ export const UserStore = defineStore("user", {
         if (authStatus === "ເປີດ") {
           authStatus = "A";
         } else if (authStatus === "ປິດ") {
-          authStatus = "I";
+          authStatus = "U";
         }
         formData.append("Auth_Status", authStatus);
 
-        formData.append("user_status", authStatus === "A" ? "true" : "false");
+        
 
         if (this.create_user_form.profile_image) {
           formData.append("profile_image", this.create_user_form.profile_image);
@@ -251,7 +251,7 @@ export const UserStore = defineStore("user", {
         if (authStatus === "ເປີດ") {
           authStatus = "A";
         } else if (authStatus === "ປິດ") {
-          authStatus = "I";
+          authStatus = "U";
         }
         formData.append("Auth_Status", authStatus);
         formData.append("user_status", authStatus === "A" ? "true" : "false");
