@@ -232,11 +232,6 @@ const email = user ? JSON.parse(user).user_email : "ບໍ່ພົບຂໍ້�
 const department = user ? JSON.parse(user).division.division_name_la : "ບໍ່ພົບຂໍ້ມູນ";
 const role = user ? JSON.parse(user).role.role_name_la : "ບໍ່ພົບຂໍ້ມູນ";
  
-// const user = ref({
-//   fullName: "Admin User",
-//   initials: "AU",
-//   email: "admin@example.com",
-// });
 
 
 const getUserIdFromLocalStorage = () => {
