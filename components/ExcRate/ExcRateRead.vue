@@ -60,7 +60,12 @@
           :items-per-page="10"
           :search="search"
         >
-
+          <!-- Table Header -->
+          <template #top>
+            <div class="pa-4">
+              <span class="text-h6">ລາຍການອັດຕາແລກປ່ຽນ</span>
+            </div>
+          </template>
 
           <!-- Currency Column -->
           <template #item.ccy_code="{ item }">
@@ -109,6 +114,24 @@
             >
               {{ formatCurrency(item.Sale_Rate - item.Buy_Rate) }}
             </v-chip>
+          </template>
+
+          <!-- Date Column -->
+          <template #item.Maker_DT_Stamp="{ item }">
+            <div class="text-center">
+              <v-chip
+                color="info"
+                variant="tonal"
+                size="small"
+                prepend-icon="mdi-calendar"
+                class="font-weight-medium"
+              >
+                {{ formatDate(item.Maker_DT_Stamp) }}
+              </v-chip>
+              <div class="text-caption text-grey mt-1">
+                {{ formatTime(item.Maker_DT_Stamp) }}
+              </div>
+            </div>
           </template>
 
           <!-- INT Auth Status Column -->
@@ -309,6 +332,14 @@
                 
                 <v-list-item class="px-0">
                   <template #prepend>
+                    <v-icon color="brown">mdi-calendar</v-icon>
+                  </template>
+                  <v-list-item-title>ວັນທີສ້າງ</v-list-item-title>
+                  <v-list-item-subtitle>{{ formatDate(selectedItem.Maker_DT_Stamp) }} {{ formatTime(selectedItem.Maker_DT_Stamp) }}</v-list-item-subtitle>
+                </v-list-item>
+                
+                <v-list-item class="px-0">
+                  <template #prepend>
                     <v-icon color="brown">mdi-check-circle</v-icon>
                   </template>
                   <v-list-item-title>ສະຖານະ INT</v-list-item-title>
@@ -369,45 +400,51 @@ const headers = [
     title: 'ສະກຸນເງິນ', 
     key: 'ccy_code',
     align: 'start' as const,
-    width: '150px'
+    width: '120px'
   },
   { 
     title: 'ອັດຕາຊື້', 
     key: 'Buy_Rate',
     align: 'end' as const,
-    width: '120px'
+    width: '100px'
   },
   { 
     title: 'ອັດຕາຂາຍ', 
     key: 'Sale_Rate',
     align: 'end' as const,
-    width: '120px'
+    width: '100px'
   },
   { 
     title: 'ຄ່າຕ່າງ', 
     key: 'spread',
     align: 'center' as const,
-    width: '100px',
+    width: '90px',
     sortable: false
+  },
+  { 
+    title: 'ວັນທີສ້າງ', 
+    key: 'Maker_DT_Stamp',
+    align: 'center' as const,
+    width: '130px'
   },
   { 
     title: 'ສະຖານະ INT', 
     key: 'INT_Auth_Status',
     align: 'center' as const,
-    width: '130px'
+    width: '110px'
   },
   { 
     title: 'ສະຖານະອະນຸມັດ', 
     key: 'Auth_Status',
     align: 'center' as const,
-    width: '140px'
+    width: '120px'
   },
   { 
     title: 'ການປະຕິບັດ', 
     key: 'actions', 
     sortable: false,
     align: 'center' as const,
-    width: '150px'
+    width: '140px'
   }
 ]
 
@@ -425,6 +462,33 @@ const formatCurrency = (value: number | string) => {
   }).format(num)
 }
 
+const formatDate = (dateString: string) => {
+  if (!dateString) return '-'
+  try {
+    const date = new Date(dateString)
+    return date.toLocaleDateString('lo-LA', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    })
+  } catch {
+    return '-'
+  }
+}
+
+const formatTime = (dateString: string) => {
+  if (!dateString) return '-'
+  try {
+    const date = new Date(dateString)
+    return date.toLocaleTimeString('lo-LA', {
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  } catch {
+    return '-'
+  }
+}
+
 const getSpreadColor = (spread: number) => {
   if (spread < 50) return 'success'
   if (spread < 100) return 'warning'
@@ -434,7 +498,8 @@ const getSpreadColor = (spread: number) => {
 const getAuthStatusColor = (status: string) => {
   switch (status) {
     case 'A': return 'success'
-    case 'U': return 'warning'
+    case 'P': return 'warning'
+    case 'R': return 'error'
     default: return 'grey'
   }
 }
@@ -442,7 +507,8 @@ const getAuthStatusColor = (status: string) => {
 const mapAuthStatus = (status: string) => {
   switch (status) {
     case 'A': return 'ອະນຽມັດແລ້ວ'
-    case 'U': return 'ລໍຖ້າອະນຸມັດ'
+    case 'P': return 'ລໍຖ້າອະນຸມັດ'
+    case 'R': return 'ປະຕິເສດ'
     default: return status || '-'
   }
 }
