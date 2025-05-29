@@ -37,14 +37,14 @@ const menuItems = computed(() => {
 });
 
 const headers = [
-  { title: "ລຳດັບເມນູ", key: "menu_order", sortable: true },
-  { title: "ໂມດູນ", key: "module.module_name_la", sortable: true },
+  { title: "ລະຫັດ", key: "menu_id", sortable: true },
+
   { title: "ຊື່ເມນູພາສາລາວ", key: "menu_name_la", sortable: true },
   { title: "ຊື່ເມນູພາສາອັງກິດ", key: "menu_name_en", sortable: true },
-  { title: "ໄອຄອນ", key: "menu_icon", sortable: false },
+  { title: "ລຳດັບ", key: "menu_order", sortable: true },
+  { title: "ໂມດູນ", key: "module", sortable: true, align: "center" },
   { title: "ສະຖານະການໃຊ້ງານ", key: "is_active", sortable: true },
-  { title: "ວັນທີສ້າງ", key: "created_date", sortable: true },
-  { title: "ຈັດການ", key: "action", sortable: false },
+  { title: "ຈັດການ", key: "action", sortable: false, align: "center" },
 ];
 
 const page = ref(1);
@@ -152,6 +152,15 @@ const editMenu = (menuId: string) => {
 
       <template v-slot:item.module_name_la="{ item }">
         {{ item.module.module_name_la || "ບໍ່ມີຂໍ້ມູນ" }}
+      </template>
+
+      <template v-slot:item.module="{ item }">
+        <div class="text-center">
+          <h3>
+            {{ item.module?.module_name_la || "ບໍ່ມີຂໍ້ມູນ" }}
+          </h3>
+          <p>{{ item.module?.module_Id }}</p>
+        </div>
       </template>
 
       <template v-slot:item.is_active="{ item }">
