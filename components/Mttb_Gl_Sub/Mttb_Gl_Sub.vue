@@ -1,151 +1,3 @@
-<template>
-  <div>
-    <v-data-table
-      :headers="headers"
-      :items="displayedItems"
-      item-value="gl_code"
-      hide-default-footer
-      :loading="loading"
-      class="gl-tree-table"
-    >
-      <template v-slot:item.gl_code="{ item }">
-        <div
-          class="d-flex align-center"
-          :style="{ paddingLeft: `${item.level * 20}px` }"
-        >
-          <v-btn
-            v-if="item.has_children"
-            :icon="item.expanded ? 'mdi-chevron-down' : 'mdi-chevron-right'"
-            size="small"
-            variant="text"
-            density="compact"
-            @click="toggleExpand(item)"
-            class="mr-2"
-          />
-          <div v-else class="mr-8"></div>
-
-          <span
-            :class="getCodeClass(item.level)"
-            @click="item.has_children ? toggleExpand(item) : null"
-            :style="{ cursor: item.has_children ? 'pointer' : 'default' }"
-          >
-            {{ item.gl_code }}
-          </span>
-        </div>
-      </template>
-
-      <template v-slot:item.gl_Desc_la="{ item }">
-        <span
-          :class="getDescClass(item.level)"
-          @click="item.has_children ? toggleExpand(item) : null"
-          :style="{ cursor: item.has_children ? 'pointer' : 'default' }"
-        >
-          {{ item.gl_Desc_la }}
-        </span>
-      </template>
-
-      <template v-slot:item.gl_Desc_en="{ item }">
-        <span :class="getDescClass(item.level)">
-          {{ item.gl_Desc_en }}
-        </span>
-      </template>
-
-      <template v-slot:item.level="{ item }">
-        <v-chip :color="getLevelColor(item.level)" size="small" variant="flat">
-          L{{ item.level }}
-        </v-chip>
-      </template>
-
-      <template v-slot:item.has_children="{ item }">
-        <v-icon v-if="item.has_children" color="success" size="small">
-          mdi-folder
-        </v-icon>
-        <v-icon v-else color="info" size="small"> mdi-file-document </v-icon>
-      </template>
-    </v-data-table>
-
-    <!-- <div class="d-flex gap-2 mt-4">
-      <v-btn @click="expandAll" color="primary" variant="outlined" size="small">
-        <v-icon left>mdi-chevron-down</v-icon>
-        Expand All
-      </v-btn>
-      <v-btn @click="collapseAll" color="secondary" variant="outlined" size="small">
-        <v-icon left>mdi-chevron-up</v-icon>
-        Collapse All
-      </v-btn>
-      <v-btn @click="refreshData" color="success" variant="outlined" size="small" :loading="loading">
-        <v-icon left>mdi-refresh</v-icon>
-        Refresh
-      </v-btn>
-      <v-btn @click="showDebug = !showDebug" color="info" variant="outlined" size="small">
-        <v-icon left>mdi-bug</v-icon>
-        {{ showDebug ? 'Hide' : 'Show' }} Debug
-      </v-btn>
-    </div> -->
-
-    <!-- <v-card class="mt-4" elevation="2">
-      <v-card-title class="text-h6">
-        <v-icon left>mdi-chart-tree</v-icon>
-        Chart of Accounts Statistics
-      </v-card-title>
-      <v-card-text>
-        <v-row>
-          <v-col cols="6" md="3">
-            <div class="text-center">
-              <div class="text-h4 text-primary">{{ glStats.total }}</div>
-              <div class="text-caption">Total Accounts</div>
-            </div>
-          </v-col>
-          <v-col cols="6" md="3">
-            <div class="text-center">
-              <div class="text-h4 text-success">{{ glStats.withChildren }}</div>
-              <div class="text-caption">Parent Accounts</div>
-            </div>
-          </v-col>
-          <v-col cols="6" md="3">
-            <div class="text-center">
-              <div class="text-h4 text-info">{{ glStats.leafNodes }}</div>
-              <div class="text-caption">Leaf Accounts</div>
-            </div>
-          </v-col>
-          <v-col cols="6" md="3">
-            <div class="text-center">
-              <div class="text-h4 text-warning">{{ Object.keys(glStats.byLevel).length }}</div>
-              <div class="text-caption">Levels</div>
-            </div>
-          </v-col>
-        </v-row>
-      </v-card-text>
-    </v-card> -->
-
-    <v-card class="mt-4" v-if="showDebug" elevation="1">
-      <v-card-title>
-        <v-icon left>mdi-code-json</v-icon>
-        Debug Data
-      </v-card-title>
-      <v-card-text>
-        <v-tabs v-model="debugTab">
-          <v-tab value="raw">Raw API Data</v-tab>
-          <v-tab value="flattened">Flattened Data</v-tab>
-          <v-tab value="displayed">Displayed Items</v-tab>
-        </v-tabs>
-
-        <v-tabs-window v-model="debugTab">
-          <v-tabs-window-item value="raw">
-            <pre>{{ res }}</pre>
-          </v-tabs-window-item>
-          <v-tabs-window-item value="flattened">
-            <pre>{{ flattenedGlData.slice(0, 10) }}...</pre>
-          </v-tabs-window-item>
-          <v-tabs-window-item value="displayed">
-            <pre>{{ displayedItems.slice(0, 10) }}...</pre>
-          </v-tabs-window-item>
-        </v-tabs-window>
-      </v-card-text>
-    </v-card>
-  </div>
-</template>
-
 <script setup lang="ts">
 interface GLAccount {
   gl_code: string;
@@ -416,7 +268,112 @@ useHead({
     },
   ],
 });
+const title = "ຈັດການຂໍ້ມູນບັນຊີ";
 </script>
+<template>
+  <div>
+    <div>
+      <GlobalTextTitleLine :title="title" />
+      <v-btn color="primary" class="mt-2 ml-2" @click="goPath('/gl/create')">
+        <v-icon icon="mdi-plus"></v-icon>
+        ເພີ່ມບັນຊີໃໝ່ຂັ້ນ 1
+      </v-btn>
+    </div>
+    <v-data-table
+      :headers="headers"
+      :items="displayedItems"
+      item-value="gl_code"
+      :loading="loading"
+      class="gl-tree-table"
+    >
+      <template v-slot:item.gl_code="{ item }">
+        <div
+          class="d-flex align-center"
+          :style="{ paddingLeft: `${item.level * 20}px` }"
+        >
+          <v-btn
+            v-if="item.has_children"
+            :icon="item.expanded ? 'mdi-chevron-down' : 'mdi-chevron-right'"
+            size="small"
+            variant="text"
+            density="compact"
+            @click="toggleExpand(item)"
+            class="mr-2"
+          />
+          <div v-else class="mr-8"></div>
+
+          <span
+            :class="getCodeClass(item.level)"
+            @click="item.has_children ? toggleExpand(item) : null"
+            :style="{ cursor: item.has_children ? 'pointer' : 'default' }"
+          >
+            {{ item.gl_code }}
+          </span>
+        </div>
+      </template>
+
+      <template v-slot:item.gl_Desc_la="{ item }">
+        <span
+          :class="getDescClass(item.level)"
+          @click="item.has_children ? toggleExpand(item) : null"
+          :style="{ cursor: item.has_children ? 'pointer' : 'default' }"
+        >
+          {{ item.gl_Desc_la }}
+        </span>
+      </template>
+
+      <template v-slot:item.gl_Desc_en="{ item }">
+        <span :class="getDescClass(item.level)">
+          {{ item.gl_Desc_en }}
+        </span>
+      </template>
+
+      <template v-slot:item.level="{ item }">
+        <v-chip :color="getLevelColor(item.level)" size="small" variant="flat">
+          ຂັ້ນ{{ item.level }}
+        </v-chip>
+      </template>
+
+      <template v-slot:item.has_children="{ item }">
+        <div v-if="item.has_children">
+          <v-btn
+            @click="goPath(`/glsubal/create/?gl_code=${item.gl_code}`)"
+            width="70px"
+            color="primary"
+          >
+            <v-icon icon="mdi-plus"></v-icon>ເພີ່ມ</v-btn
+          >
+        </div>
+        <v-icon v-else color="info" size="small"> mdi-file-document </v-icon>
+      </template>
+    </v-data-table>
+    <!-- <v-card class="mt-4" v-if="showDebug" elevation="1">
+      <v-card-title>
+        <v-icon left>mdi-code-json</v-icon>
+        Debug Data
+      </v-card-title>
+      <v-card-text>
+        <v-tabs v-model="debugTab">
+          <v-tab value="raw">Raw API Data</v-tab>
+          <v-tab value="flattened">Flattened Data</v-tab>
+          <v-tab value="displayed">Displayed Items</v-tab>
+        </v-tabs>
+
+        <v-tabs-window v-model="debugTab">
+          <v-tabs-window-item value="raw">
+            <pre>{{ res }}</pre>
+          </v-tabs-window-item>
+          <v-tabs-window-item value="flattened">
+            <pre>{{ flattenedGlData.slice(0, 10) }}...</pre>
+          </v-tabs-window-item>
+          <v-tabs-window-item value="displayed">
+            <pre>{{ displayedItems.slice(0, 10) }}...</pre>
+          </v-tabs-window-item>
+        </v-tabs-window>
+      </v-card-text>
+    </v-card> -->
+  </div>
+</template>
 
 <style scoped>
 .gl-tree-table {

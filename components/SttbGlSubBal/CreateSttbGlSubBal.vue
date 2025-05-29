@@ -1,4 +1,22 @@
 <script setup lang="ts">
+
+import { useGlStore } from "@/stores/gl";
+import { useRoute } from "vue-router";
+
+
+const router = useRouter();
+const glStore = useGlStore();
+const request = glStore.create_form_gl;
+const route = useRoute();
+// const id = route.query.id as number || 0;
+const gl_code = Number(route.query.gl_code) || 0;
+const useglStore = useGlStore();
+const res =  computed(()=>{
+  return useglStore.respons_detail_gl || [];
+})
+onMounted(()=>{
+  useglStore.getGlMasterDetail(gl_code)
+})
 import axios from "@/helpers/axios";
 const title = "ຈັດການຂໍ້ມູນຍອດເຫຼືອບັນຊີຍ່ອຍ GL Sub Balance";
 const valid = ref(false);
@@ -29,6 +47,7 @@ const Submittarnsacto = async () => {
 <template>
  
   <v-col cols="12">
+    <pre>{{ res }}</pre>
     
     <v-form ref="form" @click.prevent="Submittarnsacto">
       <v-row>
