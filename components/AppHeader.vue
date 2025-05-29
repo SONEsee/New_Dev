@@ -5,12 +5,9 @@
       style="color: blue; background-color: blanchedalmond; flex-shrink: 0"
     ></v-app-bar-nav-icon>
 
-    <v-app-bar-title class="text-center flex-grow-1">
-      ລະບົບບັນຊີ ບໍລິສັດລັດ ບໍລິຫານໜີ້ ແລະ ຊັບສິນ ຈຳກັດຜູ້ດຽວ (SAMC'S Accounting
-      System)
-    </v-app-bar-title>
-
-    <v-spacer></v-spacer>
+    <v-app-bar-title>ລະບົບບັນຊີ ບໍລິສັດລັດ ບໍລິຫານໜີ້ ແລະ ຊັບສິນ ຈຳກັດຜູ້ດຽວ
+(SAMC’S Accounting System)</v-app-bar-title>
+   
     <v-menu min-width="200px" rounded>
       <template v-slot:activator="{ props }">
         <v-btn icon v-bind="props" style="flex-shrink: 0">
