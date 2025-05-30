@@ -22,11 +22,8 @@ import * as ExcRateModel from "./excrate";
 import * as HolidayModel from "./holiday";
 import * as FinCycleModel from "./fincycle";
 import * as GLMasterModel from "./glmaster";
-<<<<<<< HEAD
 import * as RoleMasterModel from "./rolemaster";
-=======
 import *as GlModel from './gl';
->>>>>>> 2803ad49d30fa146962d4e31f68a092449f20f9a
 export {
   UserModel,
   UsermeModel,
@@ -51,10 +48,7 @@ export {
   HolidayModel,
   FinCycleModel,
   GLMasterModel,
-<<<<<<< HEAD
-  RoleMasterModel
-=======
   GlModel,
+  RoleMasterModel,
   
->>>>>>> 2803ad49d30fa146962d4e31f68a092449f20f9a
 };
