@@ -121,26 +121,6 @@
                       </v-text-field>
                     </v-col>
                   </v-row>
-
-                  <!-- Function Display (if available) -->
-                  <v-row v-if="selectedFunctionDisplay">
-                    <v-col cols="12">
-                      <v-text-field
-                        v-model="selectedFunctionDisplay"
-                        label="ຟັງຊັນ"
-                        variant="outlined"
-                        density="comfortable"
-                        prepend-inner-icon="mdi-function"
-                        readonly
-                      >
-                        <template #append-inner>
-                          <v-chip color="purple" variant="tonal" size="small">
-                            ບໍ່ສາມາດແກ້ໄຂ
-                          </v-chip>
-                        </template>
-                      </v-text-field>
-                    </v-col>
-                  </v-row>
                 </v-card-text>
               </v-card>
 
@@ -416,7 +396,6 @@ const form = ref<RoleDetailModel.RoleDetailResponse>({
 // Current data for display
 const currentRoleData = ref<any>(null)
 const currentSubMenuData = ref<any>(null)
-const currentFunctionData = ref<any>(null)
 const sidebarData = ref<any[]>([])
 
 // Permission switches (for better UX)
@@ -477,13 +456,6 @@ const selectedSubMenuDisplay = computed(() => {
     return `${currentSubMenuData.value.sub_menu_id} - ${currentSubMenuData.value.sub_menu_name_la}`
   }
   return form.value.sub_menu_id
-})
-
-const selectedFunctionDisplay = computed(() => {
-  if (currentFunctionData.value) {
-    return `${currentFunctionData.value.function_id} - ${currentFunctionData.value.description_la}`
-  }
-  return form.value.function_id || null
 })
 
 // Load current role detail data

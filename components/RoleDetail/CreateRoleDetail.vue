@@ -23,7 +23,6 @@
           
           <v-card-text class="pa-8 pt-0">
             <v-form @submit.prevent="submitForm" v-model="isValid" ref="formRef">
-<<<<<<< HEAD
               <!-- Module, Menu, Submenu Selection Section -->
               <v-card variant="tonal" class="mb-6 rounded-lg">
                 <v-card-title class="pa-4 pb-2">
@@ -99,82 +98,47 @@
                   </v-row>
 
                   <!-- Submenu Selection -->
-                  <v-row>
-                    <v-col cols="12">
-                      <v-select
-                        v-model="form.sub_menu_id"
-                        :items="subMenuOptions"
-                        item-title="display"
-                        item-value="sub_menu_id"
-                        label="ເລືອກເມນູຍ່ອຍ *"
-                        variant="outlined"
-                        density="comfortable"
-                        prepend-inner-icon="mdi-menu-right"
-                        :rules="[rules.required]"
-                        :loading="loadingSubmenus"
-                        no-data-text="ບໍ່ມີຂໍ້ມູນເມນູຍ່ອຍ"
-                        :disabled="!form.menu_id"
-                        required
-                        @update:model-value="onSubMenuChange"
-                      >
-                        <template #item="{ props, item }">
-                          <v-list-item v-bind="props" class="py-3">
-                            <template #prepend>
-                              <v-avatar size="36" color="secondary" variant="tonal">
-                                <v-icon>{{ item.raw.sub_menu_icon || 'mdi-menu-right' }}</v-icon>
-                              </v-avatar>
-                            </template>
-                            <v-list-item-title class="font-weight-medium">
-                              {{ item.raw.display }}
-                            </v-list-item-title>
-                            <v-list-item-subtitle>{{ item.raw.sub_menu_name_en }}</v-list-item-subtitle>
-                          </v-list-item>
-                        </template>
-                      </v-select>
-                    </v-col>
-                  </v-row>
+                <v-row>
+                  <v-col cols="12">
+                    <v-select
+                      v-model="form.sub_menu_id"
+                      :items="subMenuOptions"
+                      item-title="display"
+                      item-value="sub_menu_id"
+                      label="ເລືອກເມນູຍ່ອຍ *"
+                      variant="outlined"
+                      density="comfortable"
+                      prepend-inner-icon="mdi-menu-right"
+                      :rules="[rules.required]"
+                      :loading="loadingSubmenus"
+                      no-data-text="ບໍ່ມີຂໍ້ມູນເມນູຍ່ອຍ"
+                      :disabled="!form.menu_id"
+                      required
+                      @update:model-value="onSubMenuChange"
+                    >
+                      <template #item="{ props, item }">
+                        <v-list-item v-bind="props" class="py-3">
+                          <template #prepend>
+                            <v-avatar size="36" color="secondary" variant="tonal">
+                              <v-icon>{{ item.raw.sub_menu_icon || 'mdi-menu-right' }}</v-icon>
+                            </v-avatar>
+                          </template>
+                          <v-list-item-title class="font-weight-medium">
+                            {{ item.raw.display }}
+                          </v-list-item-title>
+                          <v-list-item-subtitle>{{ item.raw.sub_menu_name_en }}</v-list-item-subtitle>
+                        </v-list-item>
+                      </template>
+                    </v-select>
+                  </v-col>
+                </v-row>
 
-                  <!-- Function Selection (if available) -->
-                  <v-row v-if="functionOptions.length > 0" class="mt-2">
-                    <v-col cols="12">
-                      <v-select
-                        v-model="form.function_id"
-                        :items="functionOptions"
-                        item-title="display"
-                        item-value="function_id"
-                        label="ເລືອກຟັງຊັນ *"
-                        variant="outlined"
-                        density="comfortable"
-                        prepend-inner-icon="mdi-function"
-                        :rules="[rules.required]"
-                        no-data-text="ບໍ່ມີຟັງຊັນໃນເມນູນີ້"
-                        :disabled="!form.sub_menu_id"
-                      >
-                        <template #item="{ props, item }">
-                          <v-list-item v-bind="props">
-                            <template #prepend>
-                              <v-avatar size="32" color="purple" variant="tonal">
-                                <v-icon>mdi-cog</v-icon>
-                              </v-avatar>
-                            </template>
-                            <v-list-item-title>{{ item.raw.display }}</v-list-item-title>
-                            <v-list-item-subtitle>{{ item.raw.description_en }}</v-list-item-subtitle>
-                          </v-list-item>
-                        </template>
-                      </v-select>
-                    </v-col>
-                  </v-row>
                 </v-card-text>
               </v-card>
 
               <!-- Role Selection -->
               <v-row v-if="form.sub_menu_id">
                 <v-col cols="12">
-=======
-              <v-row>
-              
-                <v-col cols="12" sm="6">
->>>>>>> 2803ad49d30fa146962d4e31f68a092449f20f9a
                   <v-select
                     v-model="form.role_id"
                     :items="roleOptions"
@@ -202,40 +166,6 @@
                     </template>
                   </v-select>
                 </v-col>
-<<<<<<< HEAD
-=======
-
-                <!-- Function ID -->
-                <v-col cols="12" sm="6">
-                  <v-select
-                    v-model="form.function_id"
-                    :items="functionOptions"
-                    item-title="display"
-                    item-value="id"
-                    label="ເລືອກຟັງຊັນ"
-                    variant="outlined"
-                    density="comfortable"
-                    prepend-inner-icon="mdi-function"
-                    :rules="[rules.required]"
-                    :loading="loadingFunctions"
-                    no-data-text="ບໍ່ມີຂໍ້ມູນຟັງຊັນ"
-                    required
-                    class="mb-2"
-                  >
-                    <template #item="{ props, item }">
-                      <v-list-item v-bind="props">
-                        <template #prepend>
-                          <v-avatar size="32" color="secondary" variant="tonal">
-                            <v-icon>mdi-cog</v-icon>
-                          </v-avatar>
-                        </template>
-                        <!-- <v-list-item-title>{{ item.raw.display }}</v-list-item-title>
-                        <v-list-item-subtitle>{{ item.raw.description_la }}</v-list-item-subtitle> -->
-                      </v-list-item>
-                    </template>
-                  </v-select>
-                </v-col>
->>>>>>> 2803ad49d30fa146962d4e31f68a092449f20f9a
               </v-row>
  <!-- Permissions Section -->
               <v-card variant="tonal" class="mb-6 rounded-lg" v-if="form.role_id && form.sub_menu_id">
@@ -526,19 +456,19 @@ const subMenuOptions = computed(() => {
   })) || []
 })
 
-const functionOptions = computed(() => {
-  if (!form.value.sub_menu_id) return []
+// const functionOptions = computed(() => {
+//   if (!form.value.sub_menu_id) return []
   
-  const module = sidebarData.value.find(m => m.module_Id === form.value.module_id)
-  const menu = module?.main_menus.find((m: any) => m.menu_id === form.value.menu_id)
-  const submenu = menu?.sub_menus.find((sm: any) => sm.sub_menu_id === form.value.sub_menu_id)
-  return submenu?.functions.map((func: any) => ({
-    function_id: func.function_id,
-    display: `${func.function_id} - ${func.description_la}`,
-    description_la: func.description_la,
-    description_en: func.description_en
-  })) || []
-})
+//   const module = sidebarData.value.find(m => m.module_Id === form.value.module_id)
+//   const menu = module?.main_menus.find((m: any) => m.menu_id === form.value.menu_id)
+//   const submenu = menu?.sub_menus.find((sm: any) => sm.sub_menu_id === form.value.sub_menu_id)
+//   return submenu?.functions.map((func: any) => ({
+//     function_id: func.function_id,
+//     display: `${func.function_id} - ${func.description_la}`,
+//     description_la: func.description_la,
+//     description_en: func.description_en
+//   })) || []
+// })
 
 // Event handlers
 const onModuleChange = () => {
