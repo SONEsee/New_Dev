@@ -1,7 +1,6 @@
 import axios from "@/helpers/axios";
 import { MenuModel } from "~/models";
-import Create from "~/pages/agency/create.vue";
-import Update from "~/pages/devision/update.vue";
+
 
 export const useMenuStore = defineStore("menu", {
   state() {
@@ -12,7 +11,7 @@ export const useMenuStore = defineStore("menu", {
         menu_name_en: "",
         menu_icon: "",
         menu_order: "",
-        is_active: "",
+        // is_active: "",
         module_Id: "",
         created_by: "",
       },
@@ -31,7 +30,7 @@ export const useMenuStore = defineStore("menu", {
         sub_menu_name_en: "",
         sub_menu_order: "",
         sub_menu_icon: "",
-        is_active: "",
+        // is_active: "",
         menu_id: "",
         sub_menu_urls: "",
       },
@@ -39,10 +38,10 @@ export const useMenuStore = defineStore("menu", {
         function_id: "",
         description_la: "",
         description_en: "",
-        eod_function: null,
+        // eod_function: null,
         function_order: 0,
-        is_active: "",
-        created_by: "",
+        // is_active: "",
+        // created_by: "",
         sub_menu_id: "",
       },
       update_form_function: {
@@ -156,7 +155,7 @@ export const useMenuStore = defineStore("menu", {
             menu_name_en: "",
             menu_icon: "",
             menu_order: "",
-            is_active: "",
+            // is_active: "",
             module_Id: "",
             created_by: "",
           };
@@ -165,7 +164,11 @@ export const useMenuStore = defineStore("menu", {
             text: "ສຳເລັດການສ້າງຂໍ້ມູນເມນູຫຼັກ",
             icon: "success",
             showCancelButton: false,
-          });
+            showConfirmButton:false,
+          })
+          setTimeout(() => {
+            goPath("/menu");
+          }, 1500);
         }
       } catch (error) {
         CallSwal({
@@ -351,7 +354,7 @@ export const useMenuStore = defineStore("menu", {
             sub_menu_name_en: "",
             sub_menu_order: "",
             sub_menu_icon: "",
-            is_active: "",
+            // is_active: "",
 
             menu_id: "",
             sub_menu_urls: "",
@@ -403,7 +406,7 @@ export const useMenuStore = defineStore("menu", {
               sub_menu_name_en: "",
               sub_menu_order: "",
               sub_menu_icon: "",
-              is_active: "",
+              // is_active: "",
               menu_id: "",
               sub_menu_urls: "",
             };
@@ -513,10 +516,10 @@ export const useMenuStore = defineStore("menu", {
             function_id: "",
             description_la: "",
             description_en: "",
-            eod_function: null,
+            // eod_function: null,
             function_order: 0,
-            is_active: "",
-            created_by: "",
+            // is_active: "",
+            // created_by: "",
             sub_menu_id: "",
           };
           CallSwal({
@@ -595,10 +598,10 @@ export const useMenuStore = defineStore("menu", {
               function_id: "",
               description_la: "",
               description_en: "",
-              eod_function: null,
+              // eod_function: null,
               function_order: 0,
-              is_active: "",
-              created_by: "",
+              // is_active: "",
+              // created_by: "",
               sub_menu_id: "",
             };
             CallSwal({

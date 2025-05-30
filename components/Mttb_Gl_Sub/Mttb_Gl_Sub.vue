@@ -1,277 +1,428 @@
 <script setup lang="ts">
-import axios from "@/helpers/axios";
-const title = "ຈັດການຂໍ້ມູນບັນຊີ GL Master";
-const header = [
-  { title: "ລະຫັດ GL", value: "GL_CODE" },
-  { title: "ຊື່ເລກບັນຊີ", value: "GL_DESC" },
-  { title: "ຂັ້ນບັນຊີ", value: "TYPE" },
-  { title: "ປະເພດບັນຊີ", value: "CATEGORY" },
-  { title: "ສະກຸນເງິນ", value: "CCY_RES" },
-  { title: "ສະຖານະໃຊ້ງານ", value: "RECORD_STAT" },
-  { title: "ສະຖານະອະນຸມັດ", value: "AUTH_STAT" },
-  { title: "ລະຫັດຜູ້ບັນທຶກ", value: "MAKER_ID" },
-  { title: "ຈັດການ", value: "action" },
-];
-const isloding = ref(false);
-const item = ref([
+interface GLAccount {
+  gl_code: string;
+  gl_Desc_la: string;
+  gl_Desc_en: string;
+  children: GLAccount[];
+}
+
+interface TreeGLAccount {
+  gl_code: string;
+  gl_Desc_la: string;
+  gl_Desc_en: string;
+  level: number;
+  parent_code?: string;
+  has_children: boolean;
+  children: TreeGLAccount[];
+  expanded: boolean;
+  visible: boolean;
+}
+
+interface Header {
+  title: string;
+  align?: "start" | "center" | "end";
+  sortable: boolean;
+  key: string;
+  width?: string;
+}
+
+const glStore = useGlStore();
+const res = computed(() => {
+  return glStore.respons_data_gl;
+});
+
+const loading = ref(false);
+const showDebug = ref(false);
+const debugTab = ref("raw");
+
+const headers = ref<Header[]>([
   {
-    GL_ID: 1,
-    GL_CODE: "1001001",
-    GL_DESC: "ເງິນສົດໃນມື",
-    TYPE: "1",
-    CATEGORY: "1",
-    CATEGORY_TYPE: "A",
-    REVAL: "N",
-    CCY_RES: "S",
-    RES_CCY: "LAK",
-    ALLOW_BACK_PERIOD_ENTRY: "N",
-    PL_SPLIT_REQD: "N",
-    TRADING_PROFIT_ACCOUNT: null,
-    TRADING_LOSS_ACCOUNT: null,
-    PROFIT_GL: null,
-    LOSS_GL: null,
-    RECORD_STAT: "O",
-    AUTH_STAT: "A",
-    MAKER_ID: "admin",
-    MAKER_DT_STAMP: "2024-01-01",
-    CHECKER_ID: "supervisor",
-    CHECKER_DT_STAMP: "2024-01-01",
-    MOD_NO: 0,
-    ONCE_AUTH: "Y"
+    title: "ລະຫັດຂັ້ນບັນຊີ (GL Code)",
+    align: "start",
+    sortable: false,
+    key: "gl_code",
+    width: "250px",
   },
   {
-    GL_ID: 2,
-    GL_CODE: "1002001",
-    GL_DESC: "ເງິນຝາກທະນາຄານ",
-    TYPE: "2",
-    CATEGORY: "1",
-    CATEGORY_TYPE: "A",
-    REVAL: "Y",
-    CCY_RES: "A",
-    RES_CCY: null,
-    ALLOW_BACK_PERIOD_ENTRY: "Y",
-    PL_SPLIT_REQD: "Y",
-    TRADING_PROFIT_ACCOUNT: "5001001",
-    TRADING_LOSS_ACCOUNT: "4001001",
-    PROFIT_GL: "5001002",
-    LOSS_GL: "4001002",
-    RECORD_STAT: "O",
-    AUTH_STAT: "A",
-    MAKER_ID: "admin",
-    MAKER_DT_STAMP: "2024-01-02",
-    CHECKER_ID: "supervisor",
-    CHECKER_DT_STAMP: "2024-01-02",
-    MOD_NO: 0,
-    ONCE_AUTH: "Y"
+    title: "ລາຍລະອຽດ (ລາວ)",
+    key: "gl_Desc_la",
+    sortable: false,
+    align: "start",
   },
   {
-    GL_ID: 3,
-    GL_CODE: "2001001",
-    GL_DESC: "ເງິນກູ້ຢືມລູກຄ້າ",
-    TYPE: "3",
-    CATEGORY: "2",
-    CATEGORY_TYPE: "L",
-    REVAL: "N",
-    CCY_RES: "F",
-    RES_CCY: null,
-    ALLOW_BACK_PERIOD_ENTRY: "N",
-    PL_SPLIT_REQD: "N",
-    TRADING_PROFIT_ACCOUNT: null,
-    TRADING_LOSS_ACCOUNT: null,
-    PROFIT_GL: null,
-    LOSS_GL: null,
-    RECORD_STAT: "O",
-    AUTH_STAT: "A",
-    MAKER_ID: "user01",
-    MAKER_DT_STAMP: "2024-01-03",
-    CHECKER_ID: "supervisor",
-    CHECKER_DT_STAMP: "2024-01-03",
-    MOD_NO: 0,
-    ONCE_AUTH: "Y"
+    title: "ລາຍລະອຽດ (English)",
+    key: "gl_Desc_en",
+    sortable: false,
+    align: "start",
   },
   {
-    GL_ID: 4,
-    GL_CODE: "3001001",
-    GL_DESC: "ທຶນຈົດທະບຽນ",
-    TYPE: "4",
-    CATEGORY: "3",
-    CATEGORY_TYPE: "C",
-    REVAL: "N",
-    CCY_RES: "S",
-    RES_CCY: "LAK",
-    ALLOW_BACK_PERIOD_ENTRY: "N",
-    PL_SPLIT_REQD: "N",
-    TRADING_PROFIT_ACCOUNT: null,
-    TRADING_LOSS_ACCOUNT: null,
-    PROFIT_GL: null,
-    LOSS_GL: null,
-    RECORD_STAT: "O",
-    AUTH_STAT: "U",
-    MAKER_ID: "user02",
-    MAKER_DT_STAMP: "2024-01-04",
-    CHECKER_ID: null,
-    CHECKER_DT_STAMP: null,
-    MOD_NO: 0,
-    ONCE_AUTH: "N"
+    title: "ຂັ້ນບັນຊີ (Level)",
+    key: "level",
+    sortable: false,
+    width: "100px",
   },
   {
-    GL_ID: 5,
-    GL_CODE: "4001001",
-    GL_DESC: "ຄ່າໃຊ້ຈ່າຍດໍາເນີນງານ",
-    TYPE: "5",
-    CATEGORY: "4",
-    CATEGORY_TYPE: "E",
-    REVAL: "N",
-    CCY_RES: "A",
-    RES_CCY: null,
-    ALLOW_BACK_PERIOD_ENTRY: "Y",
-    PL_SPLIT_REQD: "N",
-    TRADING_PROFIT_ACCOUNT: null,
-    TRADING_LOSS_ACCOUNT: null,
-    PROFIT_GL: null,
-    LOSS_GL: null,
-    RECORD_STAT: "O",
-    AUTH_STAT: "A",
-    MAKER_ID: "admin",
-    MAKER_DT_STAMP: "2024-01-05",
-    CHECKER_ID: "supervisor",
-    CHECKER_DT_STAMP: "2024-01-05",
-    MOD_NO: 1,
-    ONCE_AUTH: "Y"
-  },
-  {
-    GL_ID: 6,
-    GL_CODE: "5001001",
-    GL_DESC: "ລາຍໄດ້ດອກເບ້ຍ",
-    TYPE: "6",
-    CATEGORY: "5",
-    CATEGORY_TYPE: "I",
-    REVAL: "Y",
-    CCY_RES: "F",
-    RES_CCY: null,
-    ALLOW_BACK_PERIOD_ENTRY: "Y",
-    PL_SPLIT_REQD: "Y",
-    TRADING_PROFIT_ACCOUNT: "5002001",
-    TRADING_LOSS_ACCOUNT: "4002001",
-    PROFIT_GL: "5002002",
-    LOSS_GL: "4002002",
-    RECORD_STAT: "O",
-    AUTH_STAT: "A",
-    MAKER_ID: "admin",
-    MAKER_DT_STAMP: "2024-01-06",
-    CHECKER_ID: "supervisor",
-    CHECKER_DT_STAMP: "2024-01-06",
-    MOD_NO: 0,
-    ONCE_AUTH: "Y"
-  },
-  {
-    GL_ID: 7,
-    GL_CODE: "6001001",
-    GL_DESC: "ບັນຊີເງິນຕາຕ່າງປະເທດ",
-    TYPE: "7",
-    CATEGORY: "6",
-    CATEGORY_TYPE: "P",
-    REVAL: "Y",
-    CCY_RES: "F",
-    RES_CCY: null,
-    ALLOW_BACK_PERIOD_ENTRY: "N",
-    PL_SPLIT_REQD: "Y",
-    TRADING_PROFIT_ACCOUNT: "5003001",
-    TRADING_LOSS_ACCOUNT: "4003001",
-    PROFIT_GL: "5003002",
-    LOSS_GL: "4003002",
-    RECORD_STAT: "C",
-    AUTH_STAT: "A",
-    MAKER_ID: "user03",
-    MAKER_DT_STAMP: "2024-01-07",
-    CHECKER_ID: "supervisor",
-    CHECKER_DT_STAMP: "2024-01-07",
-    MOD_NO: 2,
-    ONCE_AUTH: "Y"
-  },
-  {
-    GL_ID: 8,
-    GL_CODE: "7001001",
-    GL_DESC: "ບັນຊີສົມດູນ",
-    TYPE: "1",
-    CATEGORY: "7",
-    CATEGORY_TYPE: "P",
-    REVAL: "N",
-    CCY_RES: "S",
-    RES_CCY: "LAK",
-    ALLOW_BACK_PERIOD_ENTRY: "N",
-    PL_SPLIT_REQD: "N",
-    TRADING_PROFIT_ACCOUNT: null,
-    TRADING_LOSS_ACCOUNT: null,
-    PROFIT_GL: null,
-    LOSS_GL: null,
-    RECORD_STAT: "O",
-    AUTH_STAT: "A",
-    MAKER_ID: "admin",
-    MAKER_DT_STAMP: "2024-01-08",
-    CHECKER_ID: "supervisor",
-    CHECKER_DT_STAMP: "2024-01-08",
-    MOD_NO: 0,
-    ONCE_AUTH: "Y"
+    title: "Type",
+    key: "has_children",
+    sortable: false,
+    width: "80px",
   },
 ]);
-</script>
 
+const buildTreeData = (
+  accounts: GLAccount[],
+  level: number = 1,
+  parentCode?: string
+): TreeGLAccount[] => {
+  return accounts.map((account) => ({
+    gl_code: account.gl_code,
+    gl_Desc_la: account.gl_Desc_la,
+    gl_Desc_en: account.gl_Desc_en,
+    level: level,
+    parent_code: parentCode,
+    has_children: account.children && account.children.length > 0,
+    children: account.children
+      ? buildTreeData(account.children, level + 1, account.gl_code)
+      : [],
+    expanded: level === 1,
+    visible: true,
+  }));
+};
+
+const treeData = ref<TreeGLAccount[]>([]);
+
+const flattenTreeForDisplay = (items: TreeGLAccount[]): TreeGLAccount[] => {
+  const result: TreeGLAccount[] = [];
+
+  items.forEach((item) => {
+    if (item.visible) {
+      result.push(item);
+
+      if (item.expanded && item.children.length > 0) {
+        item.children.forEach((child) => {
+          child.visible = true;
+        });
+        result.push(...flattenTreeForDisplay(item.children));
+      } else {
+        const hideChildren = (children: TreeGLAccount[]) => {
+          children.forEach((child) => {
+            child.visible = false;
+            if (child.children.length > 0) {
+              hideChildren(child.children);
+            }
+          });
+        };
+        hideChildren(item.children);
+      }
+    }
+  });
+
+  return result;
+};
+
+const displayedItems = computed(() => {
+  return flattenTreeForDisplay(treeData.value);
+});
+
+const flattenedGlData = computed(() => {
+  const flatten = (items: TreeGLAccount[]): TreeGLAccount[] => {
+    const result: TreeGLAccount[] = [];
+    items.forEach((item) => {
+      result.push(item);
+      if (item.children.length > 0) {
+        result.push(...flatten(item.children));
+      }
+    });
+    return result;
+  };
+  return flatten(treeData.value);
+});
+
+const glStats = computed(() => {
+  const data = flattenedGlData.value;
+  return {
+    total: data.length,
+    byLevel: data.reduce((acc, item) => {
+      acc[item.level] = (acc[item.level] || 0) + 1;
+      return acc;
+    }, {} as Record<number, number>),
+    withChildren: data.filter((item) => item.has_children).length,
+    leafNodes: data.filter((item) => !item.has_children).length,
+  };
+});
+
+const getCodeClass = (level: number): string => {
+  const classes = ["font-weight-bold"];
+  if (level === 1) classes.push("text-primary");
+  else if (level === 2) classes.push("text-secondary");
+  else if (level === 3) classes.push("text-success");
+  else classes.push("text-medium-emphasis");
+
+  return classes.join(" ");
+};
+
+const getDescClass = (level: number): string => {
+  const classes = [];
+  if (level === 1) classes.push("font-weight-bold", "text-primary");
+  else if (level === 2) classes.push("font-weight-medium", "text-secondary");
+  else if (level === 3) classes.push("text-success");
+  else classes.push("text-medium-emphasis");
+
+  return classes.join(" ");
+};
+
+const getLevelColor = (level: number): string => {
+  const colors = [
+    "primary",
+    "secondary",
+    "success",
+    "warning",
+    "info",
+    "error",
+  ];
+  return colors[(level - 1) % colors.length];
+};
+
+const findItemByCode = (
+  code: string,
+  items: TreeGLAccount[] = treeData.value
+): TreeGLAccount | null => {
+  for (const item of items) {
+    if (item.gl_code === code) {
+      return item;
+    }
+    if (item.children.length > 0) {
+      const found = findItemByCode(code, item.children);
+      if (found) return found;
+    }
+  }
+  return null;
+};
+
+const toggleExpand = (item: TreeGLAccount) => {
+  if (item.has_children) {
+    item.expanded = !item.expanded;
+  }
+};
+
+const expandAll = () => {
+  const expand = (items: TreeGLAccount[]) => {
+    items.forEach((item) => {
+      if (item.has_children) {
+        item.expanded = true;
+        expand(item.children);
+      }
+    });
+  };
+  expand(treeData.value);
+};
+
+const collapseAll = () => {
+  const collapse = (items: TreeGLAccount[]) => {
+    items.forEach((item) => {
+      if (item.has_children) {
+        item.expanded = false;
+        collapse(item.children);
+      }
+    });
+  };
+  collapse(treeData.value);
+};
+
+const refreshData = async () => {
+  loading.value = true;
+  try {
+    await glStore.getGl();
+    updateTreeData();
+  } finally {
+    loading.value = false;
+  }
+};
+
+const updateTreeData = () => {
+  if (!res.value || !Array.isArray(res.value)) {
+    treeData.value = [];
+    return;
+  }
+  treeData.value = buildTreeData(res.value);
+};
+
+watch(
+  res,
+  () => {
+    updateTreeData();
+  },
+  { immediate: true }
+);
+
+onMounted(async () => {
+  await refreshData();
+});
+
+useHead({
+  title: "Chart of Accounts - Tree View",
+  meta: [
+    {
+      name: "description",
+      content: "Hierarchical Chart of Accounts with expandable tree structure",
+    },
+  ],
+});
+const title = "ຈັດການຂໍ້ມູນບັນຊີ";
+</script>
 <template>
-  <GlobalTextTitleLine :title="title" :loading="isloding" />
-<div class="d-flex justify-end">
-    <v-btn color="primary" @click="goPath('/gl/create')">
-        <v-icon icon="mdi-plus" />
-        ເພີ່ມຂໍ້ມູນ
-    </v-btn>
-</div>
-  <v-col cols="12">
-    <v-data-table :headers="header" :items="item">
-      <template v-slot:item.CATEGORY="{ item }">
-       
-      </template>
-      <template v-slot:item.CCY_RES="{ item }">
-        <v-chip 
-          :color="item.CCY_RES === 'S' ? 'primary' : item.CCY_RES === 'F' ? 'warning' : 'success'" 
-          text-color="white" 
-          size="small"
+  <div>
+    <div>
+      <GlobalTextTitleLine :title="title" />
+      <v-btn color="primary" class="mt-2 ml-2" @click="goPath('/gl/create')">
+        <v-icon icon="mdi-plus"></v-icon>
+        ເພີ່ມບັນຊີໃໝ່ຂັ້ນ 1
+      </v-btn>
+    </div>
+    <v-data-table
+      :headers="headers"
+      :items="displayedItems"
+      item-value="gl_code"
+      :loading="loading"
+      class="gl-tree-table"
+    >
+      <template v-slot:item.gl_code="{ item }">
+        <div
+          class="d-flex align-center"
+          :style="{ paddingLeft: `${item.level * 20}px` }"
         >
-          {{ item.CCY_RES === 'S' ? 'ສະກຸນດຽວ' : item.CCY_RES === 'F' ? 'ຕ່າງປະເທດ' : 'ທຸກສະກຸນ' }}
+          <v-btn
+            v-if="item.has_children"
+            :icon="item.expanded ? 'mdi-chevron-down' : 'mdi-chevron-right'"
+            size="small"
+            variant="text"
+            density="compact"
+            @click="toggleExpand(item)"
+            class="mr-2"
+          />
+          <div v-else class="mr-8"></div>
+
+          <span
+            :class="getCodeClass(item.level)"
+            @click="item.has_children ? toggleExpand(item) : null"
+            :style="{ cursor: item.has_children ? 'pointer' : 'default' }"
+          >
+            {{ item.gl_code }}
+          </span>
+        </div>
+      </template>
+
+      <template v-slot:item.gl_Desc_la="{ item }">
+        <span
+          :class="getDescClass(item.level)"
+          @click="item.has_children ? toggleExpand(item) : null"
+          :style="{ cursor: item.has_children ? 'pointer' : 'default' }"
+        >
+          {{ item.gl_Desc_la }}
+        </span>
+      </template>
+
+      <template v-slot:item.gl_Desc_en="{ item }">
+        <span :class="getDescClass(item.level)">
+          {{ item.gl_Desc_en }}
+        </span>
+      </template>
+
+      <template v-slot:item.level="{ item }">
+        <v-chip :color="getLevelColor(item.level)" size="small" variant="flat">
+          ຂັ້ນ{{ item.level }}
         </v-chip>
       </template>
-      <template v-slot:item.RECORD_STAT="{ item }">
-        <v-chip 
-          :color="item.RECORD_STAT === 'O' ? 'success' : 'error'" 
-          text-color="white" 
-          size="small"
-        >
-          {{ item.RECORD_STAT === 'O' ? 'ເປີດໃຊ້ງານ' : 'ປິດໃຊ້ງານ' }}
-        </v-chip>
-      </template>
-      <template v-slot:item.AUTH_STAT="{ item }">
-        <v-chip 
-          :color="item.AUTH_STAT === 'A' ? 'primary' : 'warning'" 
-          text-color="white" 
-          size="small"
-        >
-          {{ item.AUTH_STAT === 'A' ? 'ອະນຸມັດແລ້ວ' : 'ຍັງບໍ່ອະນຸມັດ' }}
-        </v-chip>
-      </template>
-      <template v-slot:item.action="{ item }">
-        <v-icon
-          icon="mdi-eye"
-          @click="goPath(`/glmaster/detail?id=${item.GL_ID}`)"
-        ></v-icon>
-        <v-icon
-          icon="mdi-pencil"
-          @click="goPath(`/glmaster/edit?id=${item.GL_ID}`)"
-        ></v-icon>
-        <v-icon
-          icon="mdi-delete"
-          
-        ></v-icon>
+
+      <template v-slot:item.has_children="{ item }">
+        <div v-if="item.has_children">
+          <v-btn
+            @click="goPath(`/glsubal/create/?gl_code=${item.gl_code}`)"
+            width="70px"
+            color="primary"
+          >
+            <v-icon icon="mdi-plus"></v-icon>ເພີ່ມ</v-btn
+          >
+        </div>
+        <v-icon v-else color="info" size="small"> mdi-file-document </v-icon>
       </template>
     </v-data-table>
-  </v-col>
+    <!-- <v-card class="mt-4" v-if="showDebug" elevation="1">
+      <v-card-title>
+        <v-icon left>mdi-code-json</v-icon>
+        Debug Data
+      </v-card-title>
+      <v-card-text>
+        <v-tabs v-model="debugTab">
+          <v-tab value="raw">Raw API Data</v-tab>
+          <v-tab value="flattened">Flattened Data</v-tab>
+          <v-tab value="displayed">Displayed Items</v-tab>
+        </v-tabs>
+
+        <v-tabs-window v-model="debugTab">
+          <v-tabs-window-item value="raw">
+            <pre>{{ res }}</pre>
+          </v-tabs-window-item>
+          <v-tabs-window-item value="flattened">
+            <pre>{{ flattenedGlData.slice(0, 10) }}...</pre>
+          </v-tabs-window-item>
+          <v-tabs-window-item value="displayed">
+            <pre>{{ displayedItems.slice(0, 10) }}...</pre>
+          </v-tabs-window-item>
+        </v-tabs-window>
+      </v-card-text>
+    </v-card> -->
+  </div>
 </template>
 
+<style scoped>
+.gl-tree-table {
+  background-color: transparent;
+}
+
+.gl-tree-table .v-data-table__td {
+  border-bottom: 1px solid rgba(var(--v-border-color), 0.12);
+}
+
+.text-primary {
+  color: rgb(var(--v-theme-primary)) !important;
+}
+
+.text-secondary {
+  color: rgb(var(--v-theme-secondary)) !important;
+}
+
+.text-success {
+  color: rgb(var(--v-theme-success)) !important;
+}
+
+.text-medium-emphasis {
+  color: rgba(var(--v-theme-on-surface), 0.6) !important;
+}
+
+pre {
+  background-color: rgba(var(--v-theme-on-surface), 0.05);
+  padding: 16px;
+  border-radius: 4px;
+  overflow-x: auto;
+  font-size: 11px;
+  max-height: 300px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.gap-2 {
+  gap: 8px;
+}
+
+.v-data-table tbody tr:hover {
+  background-color: rgba(var(--v-theme-primary), 0.04) !important;
+}
+
+.gl-tree-table .v-btn {
+  min-width: 24px !important;
+  width: 24px;
+  height: 24px;
+}
+</style>

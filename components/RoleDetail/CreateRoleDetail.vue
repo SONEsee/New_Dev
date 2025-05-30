@@ -20,9 +20,10 @@
             </div>
           </v-card-title>
 
-          <!-- Form -->
+          
           <v-card-text class="pa-8 pt-0">
             <v-form @submit.prevent="submitForm" v-model="isValid" ref="formRef">
+<<<<<<< HEAD
               <!-- Module, Menu, Submenu Selection Section -->
               <v-card variant="tonal" class="mb-6 rounded-lg">
                 <v-card-title class="pa-4 pb-2">
@@ -169,6 +170,11 @@
               <!-- Role Selection -->
               <v-row v-if="form.sub_menu_id">
                 <v-col cols="12">
+=======
+              <v-row>
+              
+                <v-col cols="12" sm="6">
+>>>>>>> 2803ad49d30fa146962d4e31f68a092449f20f9a
                   <v-select
                     v-model="form.role_id"
                     :items="roleOptions"
@@ -190,12 +196,46 @@
                             <v-icon>mdi-account-circle</v-icon>
                           </v-avatar>
                         </template>
-                        <v-list-item-title>{{ item.raw.display }}</v-list-item-title>
-                        <v-list-item-subtitle>{{ item.raw.role_name_la }}</v-list-item-subtitle>
+                        <!-- <v-list-item-title>{{ item.raw.display }}</v-list-item-title>
+                        <v-list-item-subtitle>{{ item.raw.role_name_la }}</v-list-item-subtitle> -->
                       </v-list-item>
                     </template>
                   </v-select>
                 </v-col>
+<<<<<<< HEAD
+=======
+
+                <!-- Function ID -->
+                <v-col cols="12" sm="6">
+                  <v-select
+                    v-model="form.function_id"
+                    :items="functionOptions"
+                    item-title="display"
+                    item-value="id"
+                    label="ເລືອກຟັງຊັນ"
+                    variant="outlined"
+                    density="comfortable"
+                    prepend-inner-icon="mdi-function"
+                    :rules="[rules.required]"
+                    :loading="loadingFunctions"
+                    no-data-text="ບໍ່ມີຂໍ້ມູນຟັງຊັນ"
+                    required
+                    class="mb-2"
+                  >
+                    <template #item="{ props, item }">
+                      <v-list-item v-bind="props">
+                        <template #prepend>
+                          <v-avatar size="32" color="secondary" variant="tonal">
+                            <v-icon>mdi-cog</v-icon>
+                          </v-avatar>
+                        </template>
+                        <!-- <v-list-item-title>{{ item.raw.display }}</v-list-item-title>
+                        <v-list-item-subtitle>{{ item.raw.description_la }}</v-list-item-subtitle> -->
+                      </v-list-item>
+                    </template>
+                  </v-select>
+                </v-col>
+>>>>>>> 2803ad49d30fa146962d4e31f68a092449f20f9a
               </v-row>
  <!-- Permissions Section -->
               <v-card variant="tonal" class="mb-6 rounded-lg" v-if="form.role_id && form.sub_menu_id">

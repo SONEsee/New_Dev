@@ -90,7 +90,7 @@ const Create = async () => {
             >
             </v-text-field>
           </v-col>
-          <v-col cols="12" md="6">
+          <!-- <v-col cols="12" md="6">
             <v-autocomplete
               :items="[
                 { title: 'ເປິດ', value: 'Y' },
@@ -105,7 +105,7 @@ const Create = async () => {
               variant="outlined"
               required
             />
-          </v-col>
+          </v-col> -->
         </v-row>
         <v-col cols="12" class="d-flex justify-center">
           <v-btn

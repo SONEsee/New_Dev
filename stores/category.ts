@@ -270,8 +270,8 @@ export const UseCategoryStore = defineStore("category", {
 
           try {
             const res = await axios.delete(`/api/divisions/${Div_Id}`);
-            if (res.status === 200) {
-              // ລຶບລາຍການຈາກ array ໂດຍບໍ່ຕ້ອງໂຫຼດຂໍ້ມູນໃໝ່
+            if (res.status === 204) {
+              
               this.categories = this.categories.filter(
                 (item) => item.div_id !== Div_Id
               );

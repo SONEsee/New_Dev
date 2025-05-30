@@ -18,20 +18,20 @@ const onDeleteType = async (module_Id: string) => {
 };
 const title = "ຂໍ້ມູນໂມດູນຂອງລະບົບ";
 const header = [
-  { title: "ລຳດັບໂມດູນ", value: "module_order" },
+  { title: "ລະຫັດ", value: "module_Id" },
   { title: "ຊື່ໂມດູນພາສາລາວ", value: "module_name_la" },
   { title: "ຊື່ໂມດູນພາສາອັງກິດ", value: "module_name_en" },
+  { title: "ລຳດັບ", value: "module_order" },
   { title: "ສະຖານະການໃຊ້ງານ", value: "is_active" },
-  { title: "ມື້ສ້າງຂໍ້ມູນ", value: "created_date" },
+  // { title: "ມື້ສ້າງຂໍ້ມູນ", value: "created_date" },
   { title: "ຈັດການ", value: "action" },
 ];
 </script>
 <template>
   <div class="pa-5 mt-2">
-  
     <GlobalTextTitleLine :title="title" />
     <v-col cols="12">
-      <div class="d-flex ">
+      <div class="d-flex">
         <v-btn color="primary" @click="goPath('/module/create')"
           ><v-icon icon="mdi-plus"></v-icon> ເພີ່ມປະເພດ</v-btn
         >

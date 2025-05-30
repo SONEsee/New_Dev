@@ -20,6 +20,7 @@ const title = ref("ລາຍລະອຽດຜູ້ໃຊງານ / Detail of 
 <template>
   
   <section class="pa-6">
+    
     <v-form ref="form" >
       <v-row>
         <v-col cols="12">
@@ -64,7 +65,7 @@ const title = ref("ລາຍລະອຽດຜູ້ໃຊງານ / Detail of 
                   
                   <GlobalCardTitle
                   :title="'ພະແນກ / Department'"
-                  :text="res?.division ?? 'N/A'"
+                  :text="res?.division?.division_name_la ?? 'N/A'"
                 />
                  
                   <GlobalCardTitle

@@ -1,25 +1,24 @@
 <script setup lang="ts">
 import dayjs from "#build/dayjs.imports.mjs";
 const selecteMainMenu = ref<any | null>(null);
-const searchSubMenu = async ()=>{
+const searchSubMenu = async () => {
   try {
-    subMenuStore.query_submenu_filter.data.menu_id=
-    selecteMainMenu.value.menu_id || null;
+    subMenuStore.query_submenu_filter.data.menu_id =
+      selecteMainMenu.value.menu_id || null;
     await subMenuStore.GetMenuSubMenu();
   } catch (error) {
     console.error("Failed to search submenu:", error);
-    
   }
 };
 
-const clearFilters = ()=>{
-selecteMainMenu.value = null;
-subMenuStore.query_submenu_filter.data.menu_id = null;
-subMenuStore.GetMenuSubMenu();
-}
+const clearFilters = () => {
+  selecteMainMenu.value = null;
+  subMenuStore.query_submenu_filter.data.menu_id = null;
+  subMenuStore.GetMenuSubMenu();
+};
 const subMenuStore = useMenuStore();
 const res = computed(() => {
-  const data = subMenuStore.response_sub_menu_data  || null;
+  const data = subMenuStore.response_sub_menu_data || null;
 
   if (!data) return [];
   if (Array.isArray(data)) return data;
@@ -32,7 +31,7 @@ onMounted(async () => {
   try {
     await Promise.all([
       subMenuStore.GetMenuSubMenu(),
-      subMenuStore.GetMainMenu()
+      subMenuStore.GetMainMenu(),
     ]);
   } catch (error) {
     console.error("Failed to load initial data:", error);
@@ -44,9 +43,11 @@ const onDeleteType = async (sub_menu_id: string) => {
 };
 const title = "ຂໍ້ມູນເມນູຍ່ອຍ";
 const header = [
-  { title: "ລຳດັບເມນູຍອ່ຍ", value: "sub_menu_order" },
+  { title: "ລະຫັດ", value: "sub_menu_id" },
   { title: "ຊື່ເມນູພາາລາວ", value: "sub_menu_name_la" },
   { title: "ຊື່ເມນູພາສາອັງກິດ", value: "sub_menu_name_en" },
+  { title: "ລຳດັບ", value: "sub_menu_order" },
+  { title: "ເມນູຫຼັກ", value: "menu_id", align: "center" },
   { title: "ສະຖານະການໃຊ້ງານ", value: "is_active" },
   { title: "ມື້ສ້າງຂໍ້ມູນ", value: "created_date" },
   { title: "ຈັດການ", value: "action" },
@@ -58,27 +59,38 @@ const header = [
     <v-col cols="12">
       <v-row>
         <v-col cols="12" md="3">
-           <div class="d-flex ">
-        <v-btn color="primary" @click="goPath('/submenu/create')"
-          ><v-icon icon="mdi-plus"></v-icon> ເພີ່ມປະເພດ</v-btn
-        >
-      </div>
+          <div class="d-flex">
+            <v-btn color="primary" @click="goPath('/submenu/create')"
+              ><v-icon icon="mdi-plus"></v-icon> ເພີ່ມປະເພດ</v-btn
+            >
+          </div>
         </v-col>
-        
-        <v-col cols="12" md="3"></v-col>
-        <v-col cols="12" md="3">
+
+        <v-col cols="12" md="6" class="text-no-wrap">
           <v-autocomplete
             v-model="selecteMainMenu"
             density="compact"
             label="ເລືອກເມນູຫຼັກ"
             :items="menuItems"
             item-value="menu_id"
-            item-title="menu_name_la"
+            item-title="sub_menu_name_la"
             variant="outlined"
             clearable
-            placeholder="ເລືອກເມນູຫຼັກເພື່ອກັ່ນຕອງຂໍ້ມູນ"
+            placeholder="ເລືອກເມນູຫຼັກ"
             return-object
-          ></v-autocomplete>
+          >
+            <template v-slot:selection="{ item }">
+              {{ item.raw.menu_name_la }}-{{ item.raw.menu_id }}
+            </template>
+
+            <template v-slot:item="{ props, item }">
+              <v-list-item
+                v-bind="props"
+                :subtitle="`ID: ${item.raw.menu_id}`"
+                :title="item.raw.menu_name_la"
+              />
+            </template>
+          </v-autocomplete>
         </v-col>
         <v-col cols="12" md="3">
           <div class="d-flex gap-2">
@@ -98,8 +110,6 @@ const header = [
           </div>
         </v-col>
       </v-row>
-     
-
     </v-col>
 
     <v-data-table :headers="header" :items="res || []" class="elevation-1">
@@ -110,6 +120,18 @@ const header = [
         <v-chip :color="item.is_active ? 'green' : 'red'">
           {{ item.is_active ? "ໃຊ້ງານ" : "ບໍ່ໃຊ້ງານ" }}</v-chip
         >
+      </template>
+      <template v-slot:item.no="{ item, index }">
+        {{ index + 1 }}
+      </template>
+      <template v-slot:item.menu_id="item" class="text-center">
+        <div class="text-center">
+          <h3>{{ item.item.menu?.menu_name_la || "No Data" }}</h3>
+
+          <p>
+            {{ item.item.menu?.menu_id || "ບໍ່ມີຂໍ້ມູນ" }}
+          </p>
+        </div>
       </template>
       <template v-slot:item.action="{ item }">
         <v-btn
