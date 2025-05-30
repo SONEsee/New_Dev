@@ -165,11 +165,11 @@ const editMenu = (menuId: string) => {
 
       <template v-slot:item.is_active="{ item }">
         <v-chip
-          :color="item.is_active === 'true' ? 'green' : 'red'"
+          :color="item.is_active === 'Y' ? 'green' : 'red'"
           size="small"
           label
         >
-          {{ item.is_active === "true" ? "ໃຊ້ງານ" : "ບໍ່ໃຊ້ງານ" }}
+          {{ item.is_active === "Y" ? "ໃຊ້ງານ" : "ບໍ່ໃຊ້ງານ" }}
         </v-chip>
       </template>
 
