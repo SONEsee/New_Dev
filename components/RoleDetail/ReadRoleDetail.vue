@@ -25,10 +25,10 @@
             >
               <template #item="{ props, item }">
                 <v-list-item v-bind="props">
-                  <!-- <v-list-item-title>{{ item.raw.text }}</v-list-item-title> -->
-                  <!-- <v-list-item v-if="item.raw.subtitle">
+                  <v-list-item-title>{{ item.raw.text }}</v-list-item-title>
+                  <v-list-item-subtitle v-if="item.raw.subtitle">
                     {{ item.raw.subtitle }}
-                  </v-list-item> -->
+                  </v-list-item-subtitle>
                 </v-list-item>
               </template>
             </v-select>
