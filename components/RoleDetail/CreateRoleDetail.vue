@@ -20,11 +20,11 @@
             </div>
           </v-card-title>
 
-          <!-- Form -->
+          
           <v-card-text class="pa-8 pt-0">
             <v-form @submit.prevent="submitForm" v-model="isValid" ref="formRef">
               <v-row>
-                <!-- Role ID -->
+              
                 <v-col cols="12" sm="6">
                   <v-select
                     v-model="form.role_id"
@@ -48,8 +48,8 @@
                             <v-icon>mdi-account-circle</v-icon>
                           </v-avatar>
                         </template>
-                        <v-list-item-title>{{ item.raw.display }}</v-list-item-title>
-                        <v-list-item-subtitle>{{ item.raw.role_name_la }}</v-list-item-subtitle>
+                        <!-- <v-list-item-title>{{ item.raw.display }}</v-list-item-title>
+                        <v-list-item-subtitle>{{ item.raw.role_name_la }}</v-list-item-subtitle> -->
                       </v-list-item>
                     </template>
                   </v-select>
@@ -79,8 +79,8 @@
                             <v-icon>mdi-cog</v-icon>
                           </v-avatar>
                         </template>
-                        <v-list-item-title>{{ item.raw.display }}</v-list-item-title>
-                        <v-list-item-subtitle>{{ item.raw.description_la }}</v-list-item-subtitle>
+                        <!-- <v-list-item-title>{{ item.raw.display }}</v-list-item-title>
+                        <v-list-item-subtitle>{{ item.raw.description_la }}</v-list-item-subtitle> -->
                       </v-list-item>
                     </template>
                   </v-select>
