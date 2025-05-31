@@ -2,7 +2,11 @@
 import { useRoute } from "vue-router";
 import { computed, onMounted } from "vue";
 import { useMenuStore } from "~/stores/menu";
-
+definePageMeta({
+  middleware: ['auth'],
+  requiresPermission: true,
+  subMenuId: 5
+})
 const menuStore = useMenuStore();
 const route = useRoute();
 
