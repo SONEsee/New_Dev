@@ -50,13 +50,13 @@
                       >
                         <template #item="{ props, item }">
                           <v-list-item v-bind="props">
-                            <template #prepend>
+                            <!-- <template #prepend>
                               <v-avatar size="32" color="info" variant="tonal">
                                 <v-icon>{{ item.raw.module_icon || 'mdi-view-module' }}</v-icon>
                               </v-avatar>
                             </template>
                             <v-list-item-title>{{ item.raw.display }}</v-list-item-title>
-                            <v-list-item-subtitle>{{ item.raw.module_name_en }}</v-list-item-subtitle>
+                            <v-list-item-subtitle>{{ item.raw.module_name_en }}</v-list-item-subtitle> -->
                           </v-list-item>
                         </template>
                       </v-select>
@@ -84,13 +84,13 @@
                       >
                         <template #item="{ props, item }">
                           <v-list-item v-bind="props">
-                            <template #prepend>
+                            <!-- <template #prepend>
                               <v-avatar size="32" color="secondary" variant="tonal">
                                 <v-icon>{{ item.raw.menu_icon || 'mdi-menu-open' }}</v-icon>
                               </v-avatar>
                             </template>
                             <v-list-item-title>{{ item.raw.display }}</v-list-item-title>
-                            <v-list-item-subtitle>{{ item.raw.menu_name_en }}</v-list-item-subtitle>
+                            <v-list-item-subtitle>{{ item.raw.menu_name_en }}</v-list-item-subtitle> -->
                           </v-list-item>
                         </template>
                       </v-select>
@@ -118,7 +118,7 @@
                     >
                       <template #item="{ props, item }">
                         <v-list-item v-bind="props" class="py-3">
-                          <template #prepend>
+                          <!-- <template #prepend>
                             <v-avatar size="36" color="secondary" variant="tonal">
                               <v-icon>{{ item.raw.sub_menu_icon || 'mdi-menu-right' }}</v-icon>
                             </v-avatar>
@@ -126,7 +126,7 @@
                           <v-list-item-title class="font-weight-medium">
                             {{ item.raw.display }}
                           </v-list-item-title>
-                          <v-list-item-subtitle>{{ item.raw.sub_menu_name_en }}</v-list-item-subtitle>
+                          <v-list-item-subtitle>{{ item.raw.sub_menu_name_en }}</v-list-item-subtitle> -->
                         </v-list-item>
                       </template>
                     </v-select>
@@ -382,7 +382,6 @@ const form = ref<RoleDetailModel.RoleDetailResponse & { module_id: string; menu_
   module_id: '',
   menu_id: '',
   role_id: '',
-  function_id: '',
   sub_menu_id: '',
   New_Detail: 0,
   Del_Detail: 0,
@@ -474,20 +473,17 @@ const subMenuOptions = computed(() => {
 const onModuleChange = () => {
   form.value.menu_id = ''
   form.value.sub_menu_id = ''
-  form.value.function_id = ''
   form.value.role_id = ''
   resetPermissions()
 }
 
 const onMenuChange = () => {
   form.value.sub_menu_id = ''
-  form.value.function_id = ''
   form.value.role_id = ''
   resetPermissions()
 }
 
 const onSubMenuChange = () => {
-  form.value.function_id = ''
   form.value.role_id = ''
   resetPermissions()
 }
@@ -571,7 +567,6 @@ const submitForm = async () => {
   try {
     const payload = {
       role_id: form.value.role_id,
-      function_id: form.value.function_id || null,
       sub_menu_id: form.value.sub_menu_id,
       New_Detail: form.value.New_Detail,
       Del_Detail: form.value.Del_Detail,
@@ -652,7 +647,6 @@ const resetForm = () => {
     module_id: '',
     menu_id: '',
     role_id: '',
-    function_id: '',
     sub_menu_id: '',
     New_Detail: 0,
     Del_Detail: 0,
