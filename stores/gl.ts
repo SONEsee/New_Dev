@@ -17,6 +17,7 @@ export const useGlStore = defineStore("gl", {
         Allow_BackPeriodEntry: "",
         pl_Split_ReqD: "",
       },
+      
       respons_data_gl: null as GlModel.GlResepose[] | null,
       respons_detail_gl: null as GlModel.GlMasterDetailResepose | null,
       glmaster_filer_gl_code: {
