@@ -1,4 +1,4 @@
-<script setup lang="ts">
+v-text-field<script setup lang="ts">
 import { useGlStore } from "@/stores/gl";
 import { useRoute } from "vue-router";
 
@@ -12,9 +12,13 @@ const useglStore = useGlStore();
 const res = computed(() => {
   return useglStore.respons_detail_gl || [];
 });
-onMounted(() => {
-  useglStore.getGlMasterDetail(gl_code);
-});
+// onMounted(() => {
+//   useglStore.getGlMasterDetail(gl_code);
+// });
+onMounted( async ()=>{
+  await useglStore.getGlMasterDetail(gl_code);
+  
+})
 import axios from "@/helpers/axios";
 const title = "ຈັດການຂໍ້ມູນຍອດເຫຼືອບັນຊີຍ່ອຍ GL Sub Balance";
 const valid = ref(false);
@@ -47,18 +51,35 @@ const Submittarnsacto = async () => {
     <pre>{{ res }}</pre>
 
     <v-form ref="form" @click.prevent="Submittarnsacto">
-      <v-col cols="12" md="4">
-        <v-text-field
-          @click:append-inner="Destription"
-          density="compact"
-          variant="outlined"
-          label="ລະຫັດ GL"
-          maxlength="20"
-          :rules="[(v) => !!v || 'ກະລຸນາປ້ອນລະຫັດ GL']"
-          required
-        >
-        </v-text-field>
-      </v-col>
+      <v-row>
+        <v-col cols="12" md="4">
+          <v-text-field
+            v-for="item in res"
+            v-model="item.gl_code"
+            @click:append-inner="Destription"
+            density="compact"
+            variant="outlined"
+            label="ລະຫັດ GL"
+            maxlength="20"
+            :rules="[(v) => !!v || 'ກະລຸນາປ້ອນລະຫັດ GL']"
+            required
+          >
+          </v-text-field>
+        </v-col>
+        <v-col cols="12" md="4">
+          <v-text-field
+            v-for="item in res"
+            v-model="item.gl_Desc_la"
+            @click:append-inner="Destription"
+            density="compact"
+            variant="outlined"
+            label="ລະຫັດ GL"
+            maxlength="20"
+            :rules="[(v) => !!v || 'ກະລຸນາປ້ອນລະຫັດ GL']"
+            required
+          >
+          </v-text-field> </v-col
+      ></v-row>
       <v-col cols="12" class="d-flex justify-center">
         <v-btn
           type="submit"
