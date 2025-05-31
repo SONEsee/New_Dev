@@ -5,5 +5,6 @@ export interface RoleDetailResponse {
     Del_Detail:  number;
     Edit_Detail: number;
     Auth_Detail: number;
+    View_Detail: number;
 }
 

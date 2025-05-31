@@ -37,14 +37,14 @@ const menuItems = computed(() => {
 });
 
 const headers = [
-  { title: "ລຳດັບເມນູ", key: "menu_order", sortable: true },
+  { title: "ລະຫັດ", key: "menu_id", sortable: true },
+
   { title: "ຊື່ເມນູພາສາລາວ", key: "menu_name_la", sortable: true },
-  { title: "ໂມດູນ", key: "module_name_la", sortable: true },
   { title: "ຊື່ເມນູພາສາອັງກິດ", key: "menu_name_en", sortable: true },
-  { title: "ໄອຄອນ", key: "menu_icon", sortable: false },
+  { title: "ລຳດັບ", key: "menu_order", sortable: true },
+  { title: "ໂມດູນ", key: "module", sortable: true, align: "center" },
   { title: "ສະຖານະການໃຊ້ງານ", key: "is_active", sortable: true },
-  { title: "ວັນທີສ້າງ", key: "created_date", sortable: true },
-  { title: "ຈັດການ", key: "action", sortable: false },
+  { title: "ຈັດການ", key: "action", sortable: false, align: "center" },
 ];
 
 const page = ref(1);
@@ -150,17 +150,26 @@ const editMenu = (menuId: string) => {
         {{ dayjs(item.created_date).format("DD/MM/YYYY") }}
       </template>
 
-     <template v-slot:item.module_name_la="{ item }">
-      {{ item.module_Id?.module_name_la || "ບໍ່ມີຂໍ້ມູນ" }}
-    </template>
+      <template v-slot:item.module_name_la="{ item }">
+        {{ item.module.module_name_la || "ບໍ່ມີຂໍ້ມູນ" }}
+      </template>
+
+      <template v-slot:item.module="{ item }">
+        <div class="text-center">
+          <h3>
+            {{ item.module?.module_name_la || "ບໍ່ມີຂໍ້ມູນ" }}
+          </h3>
+          <p>{{ item.module?.module_Id }}</p>
+        </div>
+      </template>
 
       <template v-slot:item.is_active="{ item }">
         <v-chip
-          :color="item.is_active === 'true' ? 'green' : 'red'"
+          :color="item.is_active === 'Y' ? 'green' : 'red'"
           size="small"
           label
         >
-          {{ item.is_active === "true" ? "ໃຊ້ງານ" : "ບໍ່ໃຊ້ງານ" }}
+          {{ item.is_active === "Y" ? "ໃຊ້ງານ" : "ບໍ່ໃຊ້ງານ" }}
         </v-chip>
       </template>
 

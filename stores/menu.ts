@@ -1,7 +1,6 @@
 import axios from "@/helpers/axios";
 import { MenuModel } from "~/models";
-import Create from "~/pages/agency/create.vue";
-import Update from "~/pages/devision/update.vue";
+
 
 export const useMenuStore = defineStore("menu", {
   state() {
@@ -39,10 +38,10 @@ export const useMenuStore = defineStore("menu", {
         function_id: "",
         description_la: "",
         description_en: "",
-        eod_function: null,
+        // eod_function: null,
         function_order: 0,
-        is_active: "",
-        created_by: "",
+        // is_active: "",
+        // created_by: "",
         sub_menu_id: "",
       },
       update_form_function: {
@@ -517,10 +516,10 @@ export const useMenuStore = defineStore("menu", {
             function_id: "",
             description_la: "",
             description_en: "",
-            eod_function: null,
+            // eod_function: null,
             function_order: 0,
-            is_active: "",
-            created_by: "",
+            // is_active: "",
+            // created_by: "",
             sub_menu_id: "",
           };
           CallSwal({
@@ -599,10 +598,10 @@ export const useMenuStore = defineStore("menu", {
               function_id: "",
               description_la: "",
               description_en: "",
-              eod_function: null,
+              // eod_function: null,
               function_order: 0,
-              is_active: "",
-              created_by: "",
+              // is_active: "",
+              // created_by: "",
               sub_menu_id: "",
             };
             CallSwal({

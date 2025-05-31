@@ -1,7 +1,4 @@
 export interface RoleListRespons{
-    Item: Role[];
-}
-export interface Role {
     role_id:          string;
     role_name_la:     string;
     role_name_en:     string;

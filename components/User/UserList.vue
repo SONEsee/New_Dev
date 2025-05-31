@@ -18,12 +18,11 @@ const response_data = computed(() => {
   return agencyStore.userList || [];
 });
 
-
 const searchUsers = () => {
- 
-  agencyStore.reqest_get_user.query.div_id = selectedDivision.value?.div_id || null;
-  agencyStore.reqest_get_user.query.role_id = selectedRole.value?.role_id || null;
-  
+  agencyStore.reqest_get_user.query.div_id =
+    selectedDivision.value?.div_id || null;
+  agencyStore.reqest_get_user.query.role_id =
+    selectedRole.value?.role_id || null;
 
   agencyStore.GetUser();
 };
@@ -44,7 +43,9 @@ const headers = ref([
   { title: "ຊື່ຜູ້ໃຊ້ງານ", key: "user_name", sortable: false },
   { title: "ອີເມວ", key: "user_email", sortable: false },
   { title: "ເບີ້ໂທ", key: "user_mobile", sortable: false },
-  { title: "ສະຖານະ", key: "User_Status", sortable: false },
+  { title: "ພະແນກ", key: "division", sortable: false, align: "center" },
+  { title: "ສິດເຂົ້ານຳໃຊ້ລະບົບ", key: "role", sortable: false, align: "center" },
+  { title: "ສະຖານະ", key: "Auth_Status", sortable: false },
   { title: "Actions", key: "actions", sortable: false },
 ]);
 
@@ -66,12 +67,10 @@ const onDeleteUser = async (user_id: string) => {
   }
 };
 
-// ຟັງຊັນລຶບ filter
 const clearFilters = () => {
   selectedDivision.value = null;
   selectedRole.value = null;
-  
-  // ລຶບ filter ໃນ store ແລະໂຫລດຂໍ້ມູນໃໝ່
+
   agencyStore.reqest_get_user.query.div_id = null;
   agencyStore.reqest_get_user.query.role_id = null;
   agencyStore.GetUser();
@@ -80,7 +79,7 @@ const clearFilters = () => {
 
 <template>
   <div class="">
-    <v-card elevation="0" tile width="100%" min-height="95vh" class="" >
+    <v-card elevation="0" tile width="100%" min-height="95vh" class="">
       <v-row>
         <v-col cols="12">
           <GlobalTextTitleLine
@@ -95,8 +94,8 @@ const clearFilters = () => {
           class="d-flex flex-wrap justify-space-between align-center"
         >
           <v-row>
-             <v-col cols="12" >
-              <div class="d-flex flex-wrap align-center ">
+            <v-col cols="12">
+              <div class="d-flex flex-wrap align-center">
                 <v-btn
                   color="primary"
                   elevation="0"
@@ -107,9 +106,9 @@ const clearFilters = () => {
                 </v-btn>
               </div>
             </v-col>
-            <v-col cols="12" >
+            <v-col cols="12">
               <v-row>
-                <v-col cols="12" md="5" style="font-size: 80%;">
+                <v-col cols="12" md="5" style="font-size: 80%">
                   <!-- <v-autocomplete
                     v-model="selectedDivision"
                     density="compact"
@@ -123,32 +122,32 @@ const clearFilters = () => {
                     return-object
                   ></v-autocomplete> -->
                   <v-autocomplete
-                  style="font-size: 80%;"
-            v-model="selectedDivision"
-            density="compact"
-            label="ເລືອກພະແນກ"
-            :items="userItems"
-            item-value="div_id"
-            item-title="division_name_la"
-            variant="outlined"
-            clearable
-            placeholder="ເລືອກພະແນກເພື່ອກັ່ນຕອງຂໍ້ມູນ"
-            return-object
-          >
-            <template v-slot:selection="{ item }">
-              {{ item.raw.division_name_la}}-{{ item.raw.div_id }}
-            </template>
+                    style="font-size: 80%"
+                    v-model="selectedDivision"
+                    density="compact"
+                    label="ເລືອກພະແນກ"
+                    :items="userItems"
+                    item-value="div_id"
+                    item-title="division_name_la"
+                    variant="outlined"
+                    clearable
+                    placeholder="ເລືອກພະແນກເພື່ອກັ່ນຕອງຂໍ້ມູນ"
+                    return-object
+                  >
+                    <template v-slot:selection="{ item }">
+                      {{ item.raw.division_name_la }}-{{ item.raw.div_id }}
+                    </template>
 
-            <template v-slot:item="{ props, item }">
-              <v-list-item
-                v-bind="props"
-                :subtitle="`ID: ${item.raw.div_id}`"
-                :title="item.raw.division_name_la"
-              />
-            </template>
-          </v-autocomplete>
+                    <template v-slot:item="{ props, item }">
+                      <v-list-item
+                        v-bind="props"
+                        :subtitle="`ID: ${item.raw.div_id}`"
+                        :title="item.raw.division_name_la"
+                      />
+                    </template>
+                  </v-autocomplete>
                 </v-col>
-                
+
                 <v-col cols="12" md="4">
                   <v-autocomplete
                     v-model="selectedRole"
@@ -162,18 +161,18 @@ const clearFilters = () => {
                     placeholder="ເລືອກສິດການນຳໃຊ້ລະບົບ"
                     return-object
                   >
-                  <template v-slot:selection="{ item }">
-              {{ item.raw.role_name_la}}-{{ item.raw.role_id }}
-            </template>
+                    <template v-slot:selection="{ item }">
+                      {{ item.raw.role_name_la }}-{{ item.raw.role_id }}
+                    </template>
 
-            <template v-slot:item="{ props, item }">
-              <v-list-item
-                v-bind="props"
-                :subtitle="`ID: ${item.raw.role_id}`"
-                :title="item.raw.role_name_la"
-              />
-            </template>
-                </v-autocomplete>
+                    <template v-slot:item="{ props, item }">
+                      <v-list-item
+                        v-bind="props"
+                        :subtitle="`ID: ${item.raw.role_id}`"
+                        :title="item.raw.role_name_la"
+                      />
+                    </template>
+                  </v-autocomplete>
                 </v-col>
                 <v-col cols="12" md="2">
                   <div class="d-flex gap-2">
@@ -196,10 +195,8 @@ const clearFilters = () => {
                     </v-btn>
                   </div>
                 </v-col>
-                
               </v-row>
             </v-col>
-           
           </v-row>
         </v-col>
 
@@ -208,12 +205,30 @@ const clearFilters = () => {
             <template v-slot:item.no="{ item, index }">
               {{ index + 1 }}
             </template>
-            <template v-slot:item.User_Status="{ item}">
-              <div v-if="item.User_Status === 'E'">
+            <template v-slot:item.Auth_Status="{ item }">
+              <div v-if="item.Auth_Status === 'A'">
                 <v-chip color="green"><p>ເປີດໃຊ້ງານ</p> </v-chip>
               </div>
-              <div v-else-if="item.User_Status === 'D'">
+              <div v-else-if="item.Auth_Status === 'U'">
                 <v-chip color="red"><p>ປິດໃຊ້ງານ</p> </v-chip>
+              </div>
+            </template>
+            <template v-slot:item.division="item" class="text-center">
+              <div class="text-center">
+                <h3>{{ item.item.division?.div_id || "No Data" }}</h3>
+
+                <p>
+                  {{ item.item.division?.division_name_la || "ບໍ່ມີຂໍ້ມູນ" }}
+                </p>
+              </div>
+            </template>
+            <template v-slot:item.role="item" class="text-center">
+              <div class="text-center">
+                <h3>{{ item.item.role?.role_id || "No Data" }}</h3>
+
+                <p>
+                  {{ item.item.role?.role_name_la || "ບໍ່ມີຂໍ້ມູນ" }}
+                </p>
               </div>
             </template>
 

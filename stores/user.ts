@@ -134,11 +134,11 @@ export const UserStore = defineStore("user", {
         if (authStatus === "ເປີດ") {
           authStatus = "A";
         } else if (authStatus === "ປິດ") {
-          authStatus = "I";
+          authStatus = "U";
         }
         formData.append("Auth_Status", authStatus);
 
-        formData.append("user_status", authStatus === "A" ? "true" : "false");
+        
 
         if (this.create_user_form.profile_image) {
           formData.append("profile_image", this.create_user_form.profile_image);
@@ -244,14 +244,14 @@ export const UserStore = defineStore("user", {
           formData.append("user_password", this.update_user_form.user_password);
         }
 
-        formData.append("Div_Id", this.update_user_form.div_id);
+        formData.append("div_id", this.update_user_form.div_id);
         formData.append("Role_ID", this.update_user_form.Role_ID);
 
         let authStatus = this.update_user_form.Auth_Status;
         if (authStatus === "ເປີດ") {
           authStatus = "A";
         } else if (authStatus === "ປິດ") {
-          authStatus = "I";
+          authStatus = "U";
         }
         formData.append("Auth_Status", authStatus);
         formData.append("user_status", authStatus === "A" ? "true" : "false");
@@ -322,7 +322,7 @@ export const UserStore = defineStore("user", {
           formData.append("user_password", this.update_user_form.user_password);
         }
 
-        formData.append("Div_Id", this.update_user_form.div_id);
+        formData.append("div_id", this.update_user_form.div_id);
         formData.append("Role_ID", this.update_user_form.Role_ID);
 
         let authStatus = this.update_user_form.Auth_Status;

@@ -61,21 +61,22 @@ watch(
   () => userStore.respone_data_detail,
   (newVal) => {
     if (newVal) {
-      // ໂຫລດຂໍ້ມູນເຂົ້າໃນຟອມແກ້ໄຂ
-      userStore.update_user_form.user_id = newVal.user_id || '';
-      userStore.update_user_form.user_name = newVal.user_name || '';
-      userStore.update_user_form.user_email = newVal.user_email || '';
-      userStore.update_user_form.user_mobile = newVal.user_mobile || '';
-      userStore.update_user_form.Div_Id = newVal.division || '';
-      userStore.update_user_form.Role_ID = newVal.role?.role_id || '';
-      userStore.update_user_form.Auth_Status = newVal.auth_status === 'A' ? 'ເປີດ' : 'ປິດ';
-      
+      userStore.update_user_form.user_id = newVal.user_id || "";
+      userStore.update_user_form.user_name = newVal.user_name || "";
+      userStore.update_user_form.user_email = newVal.user_email || "";
+      userStore.update_user_form.user_mobile = newVal.user_mobile || "";
+      userStore.update_user_form.div_id =
+        typeof newVal.division === "object"
+          ? newVal.division?.div_id || ""
+          : newVal.division || "";
+      userStore.update_user_form.Role_ID = newVal.role?.role_id || "";
+      userStore.update_user_form.Auth_Status =
+        newVal.Auth_Status || "";
     }
   },
   { immediate: true }
 );
 
-// ຮັບປະກັນວ່າມີ user_id ກ່ອນສົ່ງຟອມ
 const submitForm = async () => {
   const isValid = await form.value.validate();
   if (isValid) {
@@ -87,7 +88,7 @@ const submitForm = async () => {
       confirmButtonText: "ຕົກລົງ",
       cancelButtonText: "ຍົກເລີກ",
     });
-    if(notification.isConfirmed){
+    if (notification.isConfirmed) {
       await userStore.UpdateUser(user_id);
     }
   }
@@ -103,7 +104,9 @@ const submitForm = async () => {
         </v-col>
 
         <v-col cols="12" class="d-flex flex-wrap justify-end">
-          <v-btn color="primary" flat type="submit" :loading="userStore.loading">ບັນທຶກ</v-btn>
+          <v-btn color="primary" flat type="submit" :loading="userStore.loading"
+            >ບັນທຶກ</v-btn
+          >
         </v-col>
 
         <v-col cols="12" class="pt-12">
@@ -161,7 +164,7 @@ const submitForm = async () => {
                     class="pb-6"
                     disabled
                   ></v-text-field>
-                  
+
                   <label>ຊື່ຜູ້ໃຊ້ງານ / Username</label>
                   <v-text-field
                     v-model="userStore.update_user_form.user_name"
@@ -175,7 +178,7 @@ const submitForm = async () => {
 
                   <label>ພະແນກ / Department</label>
                   <v-autocomplete
-                    v-model="userStore.update_user_form.Div_Id"
+                    v-model="userStore.update_user_form.div_id"
                     :rules="[(v) => !!v || 'ກະລຸນາເລືອກພະແນກ']"
                     placeholder="ກະລຸນາເລືອກພະແນກ"
                     density="compact"
@@ -187,7 +190,7 @@ const submitForm = async () => {
                     class="pb-6"
                     no-filter
                   ></v-autocomplete>
-                  
+
                   <label>ເບີໂທລະສັບ / Phone</label>
                   <v-text-field
                     v-model="userStore.update_user_form.user_mobile"
@@ -210,20 +213,25 @@ const submitForm = async () => {
                     hide-details="auto"
                     class="pb-6"
                   ></v-text-field>
-                  
+
                   <label>ສະຖານະການໃຊ້ງານ / Status</label>
                   <v-autocomplete
                     v-model="userStore.update_user_form.Auth_Status"
                     :rules="[(v) => !!v || 'ກະລຸນາເລືອກສະຖານະການໃຊ້ງານ']"
                     placeholder="ກະລຸນາເລືອກສະຖານະການໃຊ້ງານ"
                     density="compact"
-                    :items="['ປິດ', 'ເປີດ']"
+                    :items="[
+                      { title: 'ປິດ', value: 'U' },
+                      { title: 'ເປີດ', value: 'A' },
+                    ]"
+                    item-title="title"
+                    item-value="value"
                     variant="outlined"
                     hide-details="auto"
                     class="pb-6"
                     no-filter
                   ></v-autocomplete>
-                  
+
                   <label>ສິດການເຂົ້ານຳໃຊ້ / Role</label>
                   <v-autocomplete
                     v-model="userStore.update_user_form.Role_ID"
