@@ -1,18 +1,26 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
-
-import { useMenuStore } from "@/stores/menu"; // adjust path as needed
+import { useRoute } from "vue-router";
+import { useMenuStore } from "@/stores/menu"; 
 
 const title = "ສ້າງຂໍ້ມູນເມນູຫຼັກ";
 
 const valid = ref(false);
 const form = ref();
-
+const route = useRoute();
+const module_id = route.query.module_id as string;
 const moduleStore = ModulesStore();
 const menuStore = useMenuStore();
+const res = computed(()=>{return moduleStore.respons_module_id || []});
+onMounted(async () => {
+  await moduleStore.getModule();
+  await moduleStore.getModuleid(module_id);
 
-onMounted(() => {
-  moduleStore.getModule();
+  const preSelectedModuleId = route.query.module_id;
+
+  if (preSelectedModuleId) {
+    menuStore.create_form_mainmenu.module_Id = preSelectedModuleId as string;
+  }
 });
 
 const module = computed(() => {
@@ -32,7 +40,6 @@ const submitMainmenu = async () => {
     const { valid: isValid } = await form.value.validate();
     if (isValid) {
       await menuStore.CreateMainMenu();
-      
     }
   } catch (error) {
     console.error("Menu creation failed:", error);
@@ -44,6 +51,7 @@ const submitMainmenu = async () => {
   <v-container>
     <GlobalTextTitleLine :title="title" />
     <v-col cols="12">
+      {{ res }}
       <v-form ref="form" @submit.prevent="submitMainmenu">
         <v-row>
           <v-col cols="12" md="4">
@@ -64,7 +72,6 @@ const submitMainmenu = async () => {
               :rules="[(v) => !!v || 'ກະລຸນາປ້ອນ ID ເມນູ']"
               required
             />
-            
           </v-col>
           <v-col cols="12" md="4">
             <v-text-field
