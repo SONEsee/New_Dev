@@ -7,10 +7,10 @@ import { useMenuStore } from "@/stores/menu";
 const moduleStore = ModulesStore();
 const selectedModule = ref<any | null>(null);
 
-// Keys for localStorage
+
 const SELECTED_MODULE_KEY = "selected_module_filter";
 
-// Load saved module selection from localStorage
+
 const loadSavedModuleSelection = () => {
   try {
     const saved = localStorage.getItem(SELECTED_MODULE_KEY);
@@ -23,7 +23,7 @@ const loadSavedModuleSelection = () => {
   }
 };
 
-// Save module selection to localStorage
+
 const saveModuleSelection = (module: any) => {
   try {
     if (module) {
@@ -36,13 +36,12 @@ const saveModuleSelection = (module: any) => {
   }
 };
 
-// Auto search when selectedModule changes
+
 watch(
   selectedModule,
   async (newValue) => {
     saveModuleSelection(newValue);
     
-    // Auto search when module selection changes
     try {
       menuStore.query_menu_filter.data.module_Id = newValue?.module_Id || null;
       await menuStore.GetMainMenu();
@@ -60,17 +59,17 @@ const clearFilters = async () => {
 };
 
 const loadDataAndApplyFilter = async () => {
-  // Load modules first
+  
   await moduleStore.getModule();
 
-  // Load saved selection after modules are loaded
+
   loadSavedModuleSelection();
 
-  // Apply filter if there's a saved selection
+  
   if (selectedModule.value) {
     menuStore.query_menu_filter.data.module_Id = selectedModule.value.module_Id;
   } else {
-    // ຖ້າບໍ່ມີການເລືອກ, reset filter
+    
     menuStore.query_menu_filter.data.module_Id = null;
   }
 
@@ -114,7 +113,7 @@ const itemsPerPage = ref(10);
 const loading = computed(() => menuStore.isloading);
 
 const goToCreateMenu = () => {
-  // ຖ້າມີການເລືອກໂມດູນ, ສົ່ງ module_Id ໄປໜ້າສ້າງ
+  
   if (selectedModule.value && selectedModule.value.module_Id) {
     router.push({
       path: "/menu/create",
@@ -123,7 +122,7 @@ const goToCreateMenu = () => {
       },
     });
   } else {
-    // ຖ້າບໍ່ມີການເລືອກໂມດູນ, ໄປແບບປົກກະຕິ
+    
     router.push("/menu/create");
   }
 };

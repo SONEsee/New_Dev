@@ -71,7 +71,7 @@
             <div>
               <div class="font-weight-bold">
                 {{
-                  item.fuu_details?.sub_menu?.sub_menu_name_la ||
+                  item.fuu_details?.sub_menu_name_la ||
                   item.fuu_details?.description_la ||
                   "-"
                 }}
@@ -485,7 +485,7 @@ const headers = [
   {
     title: "ເມນູຫຼັກ",
     key: "fuu_details",
-    align: "start" as const,
+    align: "center" as const,
     width: "200px",
   },
   {
