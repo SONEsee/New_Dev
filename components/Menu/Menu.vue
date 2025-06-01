@@ -1,10 +1,50 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch, onActivated } from "vue";
 import { useRouter } from "vue-router";
 import dayjs from "dayjs";
 import { useMenuStore } from "@/stores/menu";
+
 const moduleStore = ModulesStore();
 const selectedModule = ref<any | null>(null);
+
+// Keys for localStorage
+const SELECTED_MODULE_KEY = "selected_module_filter";
+
+// Load saved module selection from localStorage
+const loadSavedModuleSelection = () => {
+  try {
+    const saved = localStorage.getItem(SELECTED_MODULE_KEY);
+    if (saved) {
+      const parsedModule = JSON.parse(saved);
+      selectedModule.value = parsedModule;
+    }
+  } catch (error) {
+    console.error("Failed to load saved module selection:", error);
+  }
+};
+
+// Save module selection to localStorage
+const saveModuleSelection = (module: any) => {
+  try {
+    if (module) {
+      localStorage.setItem(SELECTED_MODULE_KEY, JSON.stringify(module));
+    } else {
+      localStorage.removeItem(SELECTED_MODULE_KEY);
+    }
+  } catch (error) {
+    console.error("Failed to save module selection:", error);
+  }
+};
+
+// Watch for changes in selectedModule and save to localStorage
+watch(
+  selectedModule,
+  (newValue) => {
+    saveModuleSelection(newValue);
+  },
+  { deep: true }
+);
+
 const searchMenu = async () => {
   try {
     menuStore.query_menu_filter.data.module_Id =
@@ -20,8 +60,33 @@ const clearFilters = () => {
   menuStore.query_menu_filter.data.module_Id = null;
   menuStore.GetMainMenu();
 };
-onMounted(() => {
-  menuStore.GetMainMenu();
+
+const loadDataAndApplyFilter = async () => {
+  // Load modules first
+  await moduleStore.getModule();
+
+  // Load saved selection after modules are loaded
+  loadSavedModuleSelection();
+
+  // Apply filter if there's a saved selection
+  if (selectedModule.value) {
+    menuStore.query_menu_filter.data.module_Id = selectedModule.value.module_Id;
+  } else {
+    // ຖ້າບໍ່ມີການເລືອກ, reset filter
+    menuStore.query_menu_filter.data.module_Id = null;
+  }
+
+  // Get menu data
+  await menuStore.GetMainMenu();
+};
+
+onMounted(async () => {
+  await loadDataAndApplyFilter();
+});
+
+// ເພີ່ມ onActivated ສຳລັບເວລາ component ຖືກ activate ໃໝ່
+onActivated(async () => {
+  await loadDataAndApplyFilter();
 });
 
 const module = computed(() => {
@@ -38,7 +103,6 @@ const menuItems = computed(() => {
 
 const headers = [
   { title: "ລະຫັດ", key: "menu_id", sortable: true },
-
   { title: "ຊື່ເມນູພາສາລາວ", key: "menu_name_la", sortable: true },
   { title: "ຊື່ເມນູພາສາອັງກິດ", key: "menu_name_en", sortable: true },
   { title: "ລຳດັບ", key: "menu_order", sortable: true },
@@ -51,19 +115,24 @@ const page = ref(1);
 const itemsPerPage = ref(10);
 const loading = computed(() => menuStore.isloading);
 
-onMounted(() => {
-  menuStore.GetMainMenu();
-  moduleStore.getModule();
-});
-
 const goToCreateMenu = () => {
-  router.push("/menu/create");
+  // ຖ້າມີການເລືອກໂມດູນ, ສົ່ງ module_Id ໄປໜ້າສ້າງ
+  if (selectedModule.value && selectedModule.value.module_Id) {
+    router.push({
+      path: "/menu/create",
+      query: {
+        module_id: selectedModule.value.module_Id,
+      },
+    });
+  } else {
+    // ຖ້າບໍ່ມີການເລືອກໂມດູນ, ໄປແບບປົກກະຕິ
+    router.push("/menu/create");
+  }
 };
 
 const onDeleteMenu = async (menuId: string) => {
   try {
     await menuStore.DeleteMenu(menuId);
-
     await menuStore.GetMainMenu();
   } catch (error) {
     console.error("Failed to delete menu:", error);
@@ -77,6 +146,18 @@ const viewMenuDetails = (menuId: string) => {
 const editMenu = (menuId: string) => {
   router.push(`/menu/edit?id=${menuId}`);
 };
+
+
+const clearSavedSelection = () => {
+  localStorage.removeItem(SELECTED_MODULE_KEY);
+  selectedModule.value = null;
+  menuStore.query_menu_filter.data.module_Id = null;
+};
+
+// Export functions for logout
+defineExpose({
+  clearSavedSelection,
+});
 </script>
 
 <template class="">
@@ -84,14 +165,14 @@ const editMenu = (menuId: string) => {
 
   <v-col cols="12">
     <v-row>
-      <v-col cols="12" md="3"
-        ><div class="d-flex mb-2">
+      <v-col cols="12" md="3">
+        <div class="d-flex mb-2">
           <v-btn color="primary" @click="goToCreateMenu">
             <v-icon icon="mdi-plus" start></v-icon>
             ເພີ່ມຂໍ້ມູນເມນູ
           </v-btn>
-        </div></v-col
-      >
+        </div>
+      </v-col>
       <v-col cols="12" md="2"></v-col>
       <v-col cols="12" md="4" class="text-no-wrap">
         <v-autocomplete
