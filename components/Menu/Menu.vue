@@ -36,29 +36,27 @@ const saveModuleSelection = (module: any) => {
   }
 };
 
-// Watch for changes in selectedModule and save to localStorage
+// Auto search when selectedModule changes
 watch(
   selectedModule,
-  (newValue) => {
+  async (newValue) => {
     saveModuleSelection(newValue);
+    
+    // Auto search when module selection changes
+    try {
+      menuStore.query_menu_filter.data.module_Id = newValue?.module_Id || null;
+      await menuStore.GetMainMenu();
+    } catch (error) {
+      console.error("Failed to auto search menu:", error);
+    }
   },
   { deep: true }
 );
 
-const searchMenu = async () => {
-  try {
-    menuStore.query_menu_filter.data.module_Id =
-      selectedModule.value?.module_Id || null;
-    await menuStore.GetMainMenu();
-  } catch (error) {
-    console.error("Failed to search menu:", error);
-  }
-};
-
-const clearFilters = () => {
+const clearFilters = async () => {
   selectedModule.value = null;
   menuStore.query_menu_filter.data.module_Id = null;
-  menuStore.GetMainMenu();
+  await menuStore.GetMainMenu();
 };
 
 const loadDataAndApplyFilter = async () => {
@@ -147,7 +145,6 @@ const editMenu = (menuId: string) => {
   router.push(`/menu/edit?id=${menuId}`);
 };
 
-
 const clearSavedSelection = () => {
   localStorage.removeItem(SELECTED_MODULE_KEY);
   selectedModule.value = null;
@@ -173,7 +170,7 @@ defineExpose({
           </v-btn>
         </div>
       </v-col>
-      <v-col cols="12" md="2"></v-col>
+      <v-col cols="12" md="3"></v-col>
       <v-col cols="12" md="4" class="text-no-wrap">
         <v-autocomplete
           v-model="selectedModule"
@@ -186,6 +183,7 @@ defineExpose({
           clearable
           placeholder="ເລືອກໂມດູນ"
           return-object
+          :loading="menuStore.isloading"
         >
           <template v-slot:selection="{ item }">
             {{ item.raw.module_name_la }}-{{ item.raw.module_Id }}
@@ -201,22 +199,17 @@ defineExpose({
         </v-autocomplete>
       </v-col>
 
-      <v-col cols="12" md="3">
-        <div class="d-flex gap-2">
-          <v-btn
-            color="primary"
-            variant="flat"
-            @click="searchMenu"
-            :loading="menuStore.isloading"
-          >
-            <v-icon class="mr-2">mdi-magnify</v-icon>
-            ຄົ້ນຫາ
-          </v-btn>
-          <v-btn color="secondary" variant="outlined" @click="clearFilters">
-            <v-icon class="mr-2">mdi-filter-remove</v-icon>
-            ລຶບຕົວກັ່ນ
-          </v-btn>
-        </div>
+      <v-col cols="12" md="2">
+        <v-btn 
+          color="secondary" 
+          variant="outlined" 
+          @click="clearFilters"
+          :loading="menuStore.isloading"
+          block
+        >
+          <v-icon class="mr-2">mdi-filter-remove</v-icon>
+          ເຄລຍການກັ່ນຕອງ
+        </v-btn>
       </v-col>
     </v-row>
 
@@ -237,9 +230,9 @@ defineExpose({
 
       <template v-slot:item.module="{ item }">
         <div class="text-center">
-          <h3>
+          <p>
             {{ item.module?.module_name_la || "ບໍ່ມີຂໍ້ມູນ" }}
-          </h3>
+          </p>
           <p>{{ item.module?.module_Id }}</p>
         </div>
       </template>
