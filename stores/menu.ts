@@ -72,6 +72,7 @@ export const useMenuStore = defineStore("menu", {
       respone_sub_menu_detail_data: null as MenuModel.SubMenu | null,
       respons_function_menu_data: null as MenuModel.Function | null,
       respons_function_menu_detail_data: null as MenuModel.Function | null,
+      respons_menu_id: null as MenuModel.MenuIDCountRespons | null,
       isloading: false,
       query_menu_filter: {
         data: {
@@ -94,6 +95,25 @@ export const useMenuStore = defineStore("menu", {
     };
   },
   actions: {
+    async getMenuIDCount(menu_id: string) {
+this.isloading = true;
+try {
+  const res= await axios.get<MenuModel.MenuIDCountRespons>(`api/count-sub-menus/?menu_id=${menu_id}`, {
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
+  });
+  if(res.status ===200){
+    this.respons_menu_id = res.data
+  }
+} catch (error) {
+  console.error("Error fetching menu ID count:", error);
+  
+}finally{
+  this.isloading = false;
+}
+    },
     async Getmenu(users_code: string) {
       if (!users_code) {
         console.error("Cannot fetch menu: No user code provided");
@@ -425,8 +445,12 @@ export const useMenuStore = defineStore("menu", {
               title: "ສຳເລັດ",
               text: "ສຳເລັດການແກ້ໄຂເມນູຍ່ອຍ",
               icon: "success",
+              showConfirmButton:false,
               showCancelButton: false,
             });
+            setTimeout(() => {
+              goPath("/submenu");
+            }, 1500);
 
             return true;
           }

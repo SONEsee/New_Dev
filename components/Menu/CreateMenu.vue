@@ -27,16 +27,19 @@ onMounted(async () => {
   }
 });
 
-
 watch(res, (newRes) => {
+  // ຖ້າມີຂໍ້ມູນ response ແລະ c_main
   if (newRes && newRes.length > 0) {
     const resData = newRes[0];
-    
     const nextId = resData.c_main + 1;
     const paddedId = nextId.toString().padStart(3, '0');
     menuStore.create_form_mainmenu.menu_id = `${resData.module_Id}-${paddedId}`;
-   
     menuStore.create_form_mainmenu.menu_order = nextId;
+  } else if (module_id) {
+    // ຖ້າບໍ່ມີ response ແຕ່ມີ module_id ຈາກ URL parameter
+    // ໃຊ້ຄ່າເລີ່ມຕົ້ນ 001
+    menuStore.create_form_mainmenu.menu_id = `${module_id}-001`;
+    menuStore.create_form_mainmenu.menu_order = 1;
   }
 }, { immediate: true });
 
@@ -91,7 +94,7 @@ const defaultMenuId = computed(() => {
               label="ID ເມນູ"
               variant="outlined"
               :rules="[(v) => !!v || 'ກະລຸນາປ້ອນ ID ເມນູ']"
-              readonly
+              
               required
             />
           </v-col>
@@ -111,7 +114,7 @@ const defaultMenuId = computed(() => {
               type="number"
               variant="outlined"
               :rules="[(v) => !!v || 'ກະລຸນາປ້ອນລຳດັບເມນູ']"
-              readonly
+              
               required
             />
           </v-col>
@@ -134,7 +137,18 @@ const defaultMenuId = computed(() => {
               label="ເລືອກໂມດູນ"
               variant="outlined"
               required
+            >
+           <template v-slot:selection="{ item }">
+            {{ item.raw.module_name_la }}-{{ item.raw.module_Id }}
+          </template>
+
+          <template v-slot:item="{ props, item }">
+            <v-list-item
+              v-bind="props"
+              :subtitle="`ID: ${item.raw.module_Id}`"
+              :title="item.raw.module_name_la"
             />
+          </template></v-autocomplete>
           </v-col>
           <v-col cols="12" class="d-flex justify-center">
             <v-btn type="submit" color="primary" class="mr-2"> ບັນທຶກ </v-btn>

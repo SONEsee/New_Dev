@@ -371,13 +371,18 @@ const onLogout = () => {
     if (typeof window !== "undefined") {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
-      // ເພີ່ມການລົບ filter ທີ່ບັນທຶກໄວ້
-      localStorage.removeItem("selected_module_filter");
+      
+      // ເຄລຍ filter ທັງໝົດທີ່ມີຄຳວ່າ "filter"
+      Object.keys(localStorage).forEach(key => {
+        if (key.includes('filter')) {
+          localStorage.removeItem(key);
+        }
+      });
     }
     router.push("/login");
   } catch (err) {
     console.error("Error during logout:", err);
-
+    
     if (typeof window !== "undefined") {
       window.location.href = "/login";
     }
