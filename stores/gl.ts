@@ -1,4 +1,4 @@
-// ===== INTERFACES (Fixed) =====
+
 export interface GlResponse {
   gl_code: string;
   gl_Desc_la: string | null;
@@ -40,23 +40,16 @@ export const useGlStore = defineStore("gl", {
         gl_Desc_la: null as string | null,
         gl_Desc_en: "",
         glType: "",
-        category: "", // Fixed: was "gategory" (typo)
+        category: "", 
         retal: "",
         ccy_Res: "",
         Res_ccy: "",
         Allow_BackPeriodEntry: "",
         pl_Split_ReqD: "",
       },
-<<<<<<< HEAD
       respons_data_gl: null as GlModel.GlResponse[] | null,
       respons_detail_gl: null as GlModel.GlMasterDetailResponse | null,
-      glmaster_filter_gl_code: { // Fixed: was "filer" (typo)
-=======
-      
-      respons_data_gl: null as GlModel.GlResepose[] | null,
-      respons_detail_gl: null as GlModel.GlMasterDetailResepose | null,
-      glmaster_filer_gl_code: {
->>>>>>> 805b174d518b1310b748382c7d49f9157101d579
+      glmaster_filter_gl_code: { 
         request: {
           gl_code: "",
         },
@@ -164,7 +157,7 @@ export const useGlStore = defineStore("gl", {
         throw error;
       } finally {
         this.isloading = false;
-        this.glmaster_filter_gl_code.isloading = false; // Fixed: property name
+        this.glmaster_filter_gl_code.isloading = false; 
       }
     },
 
