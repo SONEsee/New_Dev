@@ -338,10 +338,10 @@ const title = "ຈັດການຂໍ້ມູນບັນຊີ";
         <div v-if="item.has_children">
           <v-btn
             @click="goPath(`/glsubal/create/?gl_code=${item.gl_code}`)"
-            width="70px"
+            width="105px"
             color="primary"
           >
-            <v-icon icon="mdi-plus"></v-icon>ເພີ່ມ</v-btn
+            <v-icon icon="mdi-plus"></v-icon>ເພີ່ມຂັ້ນຖັດໄປ</v-btn
           >
         </div>
         <v-icon v-else color="info" size="small"> mdi-file-document </v-icon>

@@ -367,6 +367,7 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import axios from '@/helpers/axios'
 import { RoleDetailModel } from '~/models'
 import { useRouter } from 'vue-router'
+const route = useRoute()
 
 const router = useRouter()
 const formRef = ref()
@@ -468,6 +469,9 @@ const subMenuOptions = computed(() => {
 //     description_en: func.description_en
 //   })) || []
 // })
+
+
+
 
 // Event handlers
 const onModuleChange = () => {
@@ -669,6 +673,10 @@ onMounted(async () => {
     fetchRoles(),
     fetchSidebarData()
   ])
+  // Set default role_id from query if present
+  if (route.query.role_id) {
+    form.value.role_id = String(route.query.role_id)
+  }
 })
 </script>
 

@@ -2,57 +2,80 @@
   <v-container fluid class="pa-6">
     <v-card elevation="0" class="rounded-lg">
       <v-card-title class="pa-6 pb-4">
-        <h2 class="text-h5 font-weight-medium text-styles">ຈັດການຮອບວຽນບັນຊີ</h2>
+        <div class="d-flex align-center justify-space-between">
+          <div class="d-flex align-center">
+            <v-icon color="primary" class="mr-3" size="28">mdi-calendar-clock</v-icon>
+            <div>
+              <h2 class="text-h5 font-weight-bold mb-1 text-styles">ຈັດການຮອບວຽນບັນຊີ</h2>
+              <p class="text-body-2 text-medium-emphasis mb-0 text-styles">
+                ສະແດງຂໍ້ມູນຮອບວຽນບັນຊີແລະລາຍເດືອນໃນລະບົບ
+              </p>
+            </div>
+          </div>
+          <v-chip color="info" variant="tonal" prepend-icon="mdi-database">
+            {{ items.length }} ຮອບວຽນ
+          </v-chip>
+        </div>
       </v-card-title>
       
       <!-- Header Actions -->
       <v-card-text class="pa-6 pt-0">
         <v-row align="center" class="mb-4">
-          <v-col cols="auto">
+          <v-col cols="12" md="3">
             <v-btn
               @click="goPath('/fincycle/create')"
               color="primary"
               variant="elevated"
               prepend-icon="mdi-plus"
               class="text-none"
-              size="small"
+              block
             >
               ເພີ່ມຮອບວຽນບັນຊີ
             </v-btn>
           </v-col>
-          <v-col cols="auto">
+          <v-col cols="12" md="2">
             <v-btn
               @click="fetchData"
               color="success"
               variant="outlined"
               prepend-icon="mdi-refresh"
               class="text-none"
-              size="small"
+              block
               :loading="loading"
             >
-              ໂຫຼດຂໍ້ມູນໃໝ່
+              ໂຫຼດໃໝ່
             </v-btn>
           </v-col>
-          <v-col cols="auto">
+          <v-col cols="12" md="3">
+            <v-select
+              v-model="statusFilter"
+              :items="statusFilterItems"
+              label="ຟິວເຕີສະຖານະ"
+              variant="outlined"
+              density="compact"
+              prepend-inner-icon="mdi-filter"
+              clearable
+              hide-details
+              @update:model-value="applyFilters"
+            />
+          </v-col>
+          <v-col cols="12" md="4">
             <v-text-field
               v-model="search"
               prepend-inner-icon="mdi-magnify"
-              label="ຄົ້ນຫາ..."
-              single-line
-              hide-details
-              variant="plain"
+              label="ຄົ້ນຫາລະຫັດຮອບ, ລາຍລະອຽດ..."
+              variant="outlined"
               density="compact"
-              style="max-width: 280px;"
-              class="search-input"
+              hide-details
+              clearable
             />
           </v-col>
-          <v-spacer />
         </v-row>
 
         <!-- Enhanced Data Table -->
         <v-data-table
           :headers="headers"
-          :items="items"
+          :items="filteredItems"
           :loading="loading"
           class="elevation-0 rounded-lg custom-table"
           item-value="fin_cycle"
@@ -60,8 +83,6 @@
           :items-per-page="10"
           :search="search"
         >
- 
-
           <!-- Fin Cycle Column -->
           <template #item.fin_cycle="{ item }">
             <div class="d-flex align-center">
@@ -136,7 +157,24 @@
             </div>
           </template>
 
-          
+          <!-- Period Count Column -->
+          <template #item.period_count="{ item }">
+            <div class="text-center">
+              <v-btn
+                color="purple"
+                variant="tonal"
+                size="small"
+                @click="viewPeriods(item)"
+                :loading="loadingPeriods === item.fin_cycle"
+                class="font-weight-medium"
+              >
+                <v-icon start size="16">mdi-calendar-month</v-icon>
+                {{ getPeriodCount(item.fin_cycle) }}
+              </v-btn>
+              <div class="text-caption text-grey mt-1">ລາຍເດືອນ</div>
+            </div>
+          </template>
+
           <!-- Record Status Column -->
           <template #item.Record_Status="{ item }">
             <v-chip
@@ -150,9 +188,38 @@
             </v-chip>
           </template>
 
+          <!-- Auth Status Column -->
+          <template #item.Auth_Status="{ item }">
+            <v-chip
+              :color="getAuthStatusColor(item.Auth_Status)"
+              variant="tonal"
+              size="small"
+              class="font-weight-medium"
+              :prepend-icon="getAuthStatusIcon(item.Auth_Status)"
+            >
+              {{ mapAuthStatus(item.Auth_Status) }}
+            </v-chip>
+          </template>
+
           <!-- Actions Column -->
           <template #item.actions="{ item }">
             <div class="d-flex align-center gap-1">
+              <!-- View Periods Button -->
+              <v-btn
+                color="purple"
+                variant="text"
+                size="small"
+                icon
+                @click="viewPeriods(item)"
+                class="action-btn"
+                :loading="loadingPeriods === item.fin_cycle"
+              >
+                <v-icon size="20">mdi-calendar-month</v-icon>
+                <v-tooltip activator="parent" location="top">
+                  ເບິ່ງລາຍເດືອນ
+                </v-tooltip>
+              </v-btn>
+
               <!-- Edit Button -->
               <v-btn
                 color="primary"
@@ -248,6 +315,10 @@
             <div class="text-body-2 text-grey-darken-1 mb-2">ລາຍລະອຽດຮອບວຽນ:</div>
             <div class="text-body-2">{{ itemToDelete.cycle_Desc }}</div>
             <div class="text-body-2">{{ formatDate(itemToDelete.StartDate) }} - {{ formatDate(itemToDelete.EndDate) }}</div>
+            <div class="text-body-2 text-warning" v-if="getPeriodCount(itemToDelete.fin_cycle) > 0">
+              <v-icon size="16" color="warning">mdi-alert</v-icon>
+              ມີ {{ getPeriodCount(itemToDelete.fin_cycle) }} ລາຍເດືອນທີ່ເຊື່ອມໂຍງ
+            </div>
           </div>
           <v-alert
             type="warning"
@@ -255,7 +326,7 @@
             class="mb-0"
             icon="mdi-information"
           >
-            ການກະທຳນີ້ບໍ່ສາມາດຍົກເລີກໄດ້
+            ການກະທຳນີ້ຈະລົບຮອບວຽນແລະລາຍເດືອນທີ່ເຊື່ອມໂຍງທັງໝົດ
           </v-alert>
         </v-card-text>
         <v-card-actions class="pa-6 pt-0">
@@ -281,7 +352,7 @@
     </v-dialog>
 
     <!-- Details Dialog -->
-    <v-dialog v-model="detailsDialog" max-width="600">
+    <v-dialog v-model="detailsDialog" max-width="700">
       <v-card class="rounded-lg">
         <v-card-title class="pa-6 pb-4">
           <div class="d-flex align-center">
@@ -316,10 +387,7 @@
                   <v-list-item-title>ວັນທີເລີ່ມຕົ້ນ</v-list-item-title>
                   <v-list-item-subtitle>{{ formatDate(selectedItem.StartDate) }}</v-list-item-subtitle>
                 </v-list-item>
-              </v-list>
-            </v-col>
-            <v-col cols="12" md="6">
-              <v-list class="pa-0">
+
                 <v-list-item class="px-0">
                   <template #prepend>
                     <v-icon color="brown">mdi-calendar-end</v-icon>
@@ -327,7 +395,10 @@
                   <v-list-item-title>ວັນທີສິ້ນສຸດ</v-list-item-title>
                   <v-list-item-subtitle>{{ formatDate(selectedItem.EndDate) }}</v-list-item-subtitle>
                 </v-list-item>
-                
+              </v-list>
+            </v-col>
+            <v-col cols="12" md="6">
+              <v-list class="pa-0">
                 <v-list-item class="px-0">
                   <template #prepend>
                     <v-icon color="brown">mdi-clock-outline</v-icon>
@@ -340,14 +411,39 @@
                   <template #prepend>
                     <v-icon color="brown">mdi-check-circle</v-icon>
                   </template>
-                  <v-list-item-title>ສະຖານະ</v-list-item-title>
+                  <v-list-item-title>ສະຖານະບັນທຶກ</v-list-item-title>
                   <v-list-item-subtitle>{{ mapRecordStatus(selectedItem.Record_Status) }}</v-list-item-subtitle>
+                </v-list-item>
+
+                <v-list-item class="px-0">
+                  <template #prepend>
+                    <v-icon color="brown">mdi-shield-check</v-icon>
+                  </template>
+                  <v-list-item-title>ສະຖານະອະນຸມັດ</v-list-item-title>
+                  <v-list-item-subtitle>{{ mapAuthStatus(selectedItem.Auth_Status) }}</v-list-item-subtitle>
+                </v-list-item>
+
+                <v-list-item class="px-0">
+                  <template #prepend>
+                    <v-icon color="brown">mdi-calendar-month</v-icon>
+                  </template>
+                  <v-list-item-title>ຈຳນວນລາຍເດືອນ</v-list-item-title>
+                  <v-list-item-subtitle>{{ getPeriodCount(selectedItem.fin_cycle) }} ລາຍການ</v-list-item-subtitle>
                 </v-list-item>
               </v-list>
             </v-col>
           </v-row>
         </v-card-text>
         <v-card-actions class="pa-6 pt-0">
+          <v-btn
+            color="purple"
+            variant="outlined"
+            @click="viewPeriods(selectedItem)"
+            prepend-icon="mdi-calendar-month"
+            class="text-none"
+          >
+            ເບິ່ງລາຍເດືອນ
+          </v-btn>
           <v-spacer />
           <v-btn
             variant="text"
@@ -363,6 +459,91 @@
             class="text-none font-weight-medium"
           >
             ແກ້ໄຂ
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Periods Dialog -->
+    <v-dialog v-model="periodsDialog" max-width="900">
+      <v-card class="rounded-lg">
+        <v-card-title class="pa-6 pb-4">
+          <div class="d-flex align-center justify-space-between">
+            <div class="d-flex align-center">
+              <v-icon color="purple" size="28" class="mr-3">mdi-calendar-month</v-icon>
+              <div>
+                <span class="text-h6 font-weight-bold">ລາຍເດືອນຮອບວຽນ {{ selectedCycleForPeriods }}</span>
+                <div class="text-caption text-grey">{{ periods.length }} ລາຍການ</div>
+              </div>
+            </div>
+            <v-btn
+              color="primary"
+              variant="outlined"
+              size="small"
+              @click="generateNewPeriods"
+              prepend-icon="mdi-plus"
+              class="text-none"
+            >
+              ເພີ່ມລາຍເດືອນ
+            </v-btn>
+          </div>
+        </v-card-title>
+        <v-card-text class="pa-6 pt-0">
+          <v-row v-if="periods.length > 0">
+            <v-col 
+              v-for="(period, index) in periods" 
+              :key="index"
+              cols="12" sm="6" md="4"
+            >
+              <v-card 
+                class="pa-3 rounded-lg" 
+                :color="getPeriodTypeColor(period.period_code)" 
+                variant="tonal"
+                elevation="1"
+              >
+                <div class="d-flex justify-space-between align-center mb-2">
+                  <v-icon :color="getPeriodTypeColor(period.period_code)" size="20">
+                    {{ getPeriodTypeIcon(period.period_code) }}
+                  </v-icon>
+                  <v-btn
+                    color="error"
+                    variant="text"
+                    size="x-small"
+                    icon
+                    @click="deletePeriod(period)"
+                  >
+                    <v-icon size="16">mdi-close</v-icon>
+                  </v-btn>
+                </div>
+                <div class="text-center">
+                  <div class="font-weight-bold text-body-2">{{ period.period_code }}</div>
+                  <div class="text-caption mt-1">
+                    {{ formatShortDate(period.PC_StartDate) }} - {{ formatShortDate(period.PC_EndDate) }}
+                  </div>
+                </div>
+              </v-card>
+            </v-col>
+          </v-row>
+          <div v-else class="text-center pa-8">
+            <v-icon size="64" color="grey-lighten-2" class="mb-4">
+              mdi-calendar-blank
+            </v-icon>
+            <p class="text-h6 text-grey-lighten-1 mb-2">
+              ບໍ່ມີລາຍເດືອນ
+            </p>
+            <p class="text-body-2 text-grey-lighten-1 mb-4">
+              ເລີ່ມຕົ້ນໂດຍການເພີ່ມລາຍເດືອນໃໝ່
+            </p>
+          </div>
+        </v-card-text>
+        <v-card-actions class="pa-6 pt-0">
+          <v-spacer />
+          <v-btn
+            variant="text"
+            @click="periodsDialog = false"
+            class="text-none"
+          >
+            ປິດ
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -393,24 +574,48 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from '@/helpers/axios'
 import { FinCycleModel } from '~/models'
 
 const router = useRouter()
 const items = ref<FinCycleModel.FinCycleResponse[]>([])
+const periods = ref<any[]>([])
 const loading = ref(false)
+const loadingPeriods = ref<string | null>(null)
 const deleteLoading = ref(false)
 const search = ref('')
+const statusFilter = ref('')
 const deleteDialog = ref(false)
 const detailsDialog = ref(false)
+const periodsDialog = ref(false)
 const showSuccess = ref(false)
 const showError = ref(false)
 const successMessage = ref('')
 const errorMessage = ref('')
 const itemToDelete = ref<FinCycleModel.FinCycleResponse | null>(null)
 const selectedItem = ref<FinCycleModel.FinCycleResponse | null>(null)
+const selectedCycleForPeriods = ref('')
+
+// Period counts cache
+const periodCounts = ref<Record<string, number>>({})
+
+const statusFilterItems = [
+  { title: 'ທັງໝົດ', value: '' },
+  { title: 'ເປີດໃຊ້ງານ', value: 'O' },
+  { title: 'ປິດໃຊ້ງານ', value: 'C' }
+]
+
+const filteredItems = computed(() => {
+  let filtered = items.value
+  
+  if (statusFilter.value) {
+    filtered = filtered.filter(item => item.Record_Status === statusFilter.value)
+  }
+  
+  return filtered
+})
 
 const headers = [
   { 
@@ -444,8 +649,21 @@ const headers = [
     sortable: false
   },
   { 
-    title: 'ສະຖານະ', 
+    title: 'ລາຍເດືອນ', 
+    key: 'period_count',
+    align: 'center' as const,
+    width: '100px',
+    sortable: false
+  },
+  { 
+    title: 'ສະຖານະບັນທຶກ', 
     key: 'Record_Status',
+    align: 'center' as const,
+    width: '120px'
+  },
+  { 
+    title: 'ສະຖານະອະນຸມັດ', 
+    key: 'Auth_Status',
     align: 'center' as const,
     width: '120px'
   },
@@ -454,7 +672,7 @@ const headers = [
     key: 'actions',
     sortable: false,
     align: 'center' as const,
-    width: '150px'
+    width: '200px'
   }
 ]
 
@@ -471,6 +689,15 @@ function formatDate(d: string | Date | null): string {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit'
+  })
+}
+
+function formatShortDate(dateStr: string): string {
+  if (!dateStr) return '-'
+  const date = new Date(dateStr)
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric'
   })
 }
 
@@ -499,17 +726,33 @@ function calculateDuration(startDate: string | Date | null, endDate: string | Da
 
 function getStatusColor(status: string) {
   switch (status) {
-    case 'A': return 'success'
-    case 'U': return 'error'
+    case 'O': return 'success'
+    case 'C': return 'error'
     default: return 'grey'
   }
 }
 
 function getStatusIcon(status: string) {
   switch (status) {
-    case 'A': return 'mdi-check-circle'
-    case 'U': return 'mdi-cancel'
+    case 'O': return 'mdi-check-circle'
+    case 'C': return 'mdi-cancel'
     default: return 'mdi-help-circle'
+  }
+}
+
+function getAuthStatusColor(status: string) {
+  switch (status) {
+    case 'A': return 'success'
+    case 'U': return 'warning'
+    default: return 'grey'
+  }
+}
+
+function getAuthStatusIcon(status: string) {
+  switch (status) {
+    case 'A': return 'mdi-shield-check'
+    case 'U': return 'mdi-shield-alert'
+    default: return 'mdi-shield-off'
   }
 }
 
@@ -519,6 +762,30 @@ function mapRecordStatus(status: string) {
     case 'C': return 'ປິດໃຊ້ງານ'
     default: return status || '-'
   }
+}
+
+function mapAuthStatus(status: string) {
+  switch (status) {
+    case 'A': return 'ອະນຽມັດແລ້ວ'
+    case 'U': return 'ລໍຖ້າອະນຸມັດ'
+    default: return status || '-'
+  }
+}
+
+function getPeriodCount(finCycle: string): number {
+  return periodCounts.value[finCycle] || 0
+}
+
+function getPeriodTypeColor(periodCode: string): string {
+  if (periodCode.includes('Q')) return 'info'
+  if (periodCode.includes('H')) return 'warning'
+  return 'success' // Monthly
+}
+
+function getPeriodTypeIcon(periodCode: string): string {
+  if (periodCode.includes('Q')) return 'mdi-calendar-range'
+  if (periodCode.includes('H')) return 'mdi-calendar-range-outline'
+  return 'mdi-calendar-month-outline' // Monthly
 }
 
 function confirmDelete(item: FinCycleModel.FinCycleResponse) {
@@ -531,12 +798,68 @@ function viewDetails(item: FinCycleModel.FinCycleResponse) {
   detailsDialog.value = true
 }
 
+async function viewPeriods(item: FinCycleModel.FinCycleResponse) {
+  loadingPeriods.value = item.fin_cycle
+  selectedCycleForPeriods.value = item.fin_cycle
+  
+  try {
+    const { data } = await axios.get(`/api/percodes/?Fin_cycle=${item.fin_cycle}`, {
+      headers: { 
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem('token')}` 
+      }
+    })
+    periods.value = data
+    periodsDialog.value = true
+  } catch (error: any) {
+    errorMessage.value = error.response?.data?.message || 'ເກີດຂໍ້ຜິດພາດໃນການໂຫຼດລາຍເດືອນ'
+    showError.value = true
+    console.error('Error fetching periods:', error)
+  } finally {
+    loadingPeriods.value = null
+  }
+}
+
+async function deletePeriod(period: any) {
+  try {
+    await axios.delete(`/api/percodes/${period.period_code}/`, {
+      headers: { 
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem('token')}` 
+      }
+    })
+    
+    // Remove from local array
+    const index = periods.value.findIndex(p => p.period_code === period.period_code)
+    if (index > -1) {
+      periods.value.splice(index, 1)
+    }
+    
+    // Update period count
+    if (periodCounts.value[selectedCycleForPeriods.value]) {
+      periodCounts.value[selectedCycleForPeriods.value]--
+    }
+    
+    successMessage.value = 'ລົບລາຍເດືອນສຳເລັດແລ້ວ'
+    showSuccess.value = true
+  } catch (error: any) {
+    errorMessage.value = error.response?.data?.message || 'ເກີດຂໍ້ຜິດພາດໃນການລົບລາຍເດືອນ'
+    showError.value = true
+    console.error('Error deleting period:', error)
+  }
+}
+
+function generateNewPeriods() {
+  periodsDialog.value = false
+  goPath(`/fincycle/update?id=${selectedCycleForPeriods.value}`)
+}
+
 async function deleteItem() {
   if (!itemToDelete.value) return
   
   deleteLoading.value = true
   try {
-    await axios.delete(`api/fin-cycles/${itemToDelete.value.fin_cycle}/`, {
+    await axios.delete(`/api/fin-cycles/${itemToDelete.value.fin_cycle}/`, {
       headers: { 
         "Content-Type": "application/json",
         Authorization: `Bearer ${localStorage.getItem('token')}` 
@@ -547,6 +870,11 @@ async function deleteItem() {
     const index = items.value.findIndex(item => item.fin_cycle === itemToDelete.value?.fin_cycle)
     if (index > -1) {
       items.value.splice(index, 1)
+    }
+    
+    // Remove from period counts
+    if (itemToDelete.value.fin_cycle) {
+      delete periodCounts.value[itemToDelete.value.fin_cycle]
     }
     
     successMessage.value = 'ລົບຮອບວຽນບັນຊີສຳເລັດແລ້ວ'
@@ -562,16 +890,41 @@ async function deleteItem() {
   }
 }
 
+async function fetchPeriodCounts() {
+  try {
+    const { data } = await axios.get('/api/percodes/', {
+      headers: { 
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem('token')}` 
+      }
+    })
+    
+    // Count periods per financial cycle
+    const counts: Record<string, number> = {}
+    data.forEach((period: any) => {
+      if (period.Fin_cycle) {
+        counts[period.Fin_cycle] = (counts[period.Fin_cycle] || 0) + 1
+      }
+    })
+    periodCounts.value = counts
+  } catch (error: any) {
+    console.error('Error fetching period counts:', error)
+  }
+}
+
 async function fetchData() {
   loading.value = true
   try {
-    const { data } = await axios.get<FinCycleModel.FinCycleResponse[]>('api/fin-cycles/', {
+    const { data } = await axios.get<FinCycleModel.FinCycleResponse[]>('/api/fin-cycles/', {
       headers: { 
         "Content-Type": "application/json",
         Authorization: `Bearer ${localStorage.getItem('token')}` 
       }
     })
     items.value = data
+    
+    // Fetch period counts after getting cycles
+    await fetchPeriodCounts()
   } catch (error: any) {
     errorMessage.value = error.response?.data?.message || 'ເກີດຂໍ້ຜິດພາດໃນການໂຫຼດຂໍ້ມູນ'
     showError.value = true
@@ -579,6 +932,10 @@ async function fetchData() {
   } finally {
     loading.value = false
   }
+}
+
+function applyFilters() {
+  // Filters are applied through computed property
 }
 
 onMounted(fetchData)
@@ -615,15 +972,6 @@ onMounted(fetchData)
   transform: scale(1.1);
 }
 
-/* Search input without background */
-.search-input :deep(.v-field__field) {
-  background: transparent !important;
-}
-
-.search-input :deep(.v-field__outline) {
-  display: none;
-}
-
 /* Custom scrollbar for table */
 :deep(.v-data-table__wrapper) {
   scrollbar-width: thin;
@@ -646,5 +994,15 @@ onMounted(fetchData)
 
 :deep(.v-data-table__wrapper::-webkit-scrollbar-thumb:hover) {
   background-color: rgba(var(--v-theme-primary), 0.5);
+}
+
+/* Period cards hover effect */
+.v-card:hover {
+  transform: translateY(-2px);
+  transition: transform 0.2s ease;
+}
+
+.text-styles {
+  font-family: 'Noto Sans Lao', sans-serif;
 }
 </style>

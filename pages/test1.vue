@@ -1,212 +1,267 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
+import { useRouter, useRoute } from "vue-router";
 
-interface SalePeriod {
-  sale_date: Date | string;
-  id: string;
-}
+const valid = ref(false);
+const form = ref();
+const router = useRouter();
+const glStore = useGlStore();
+const route = useRoute();
 
-const title = "ຂໍ້ມູນລາຍງານການຂາຍ";
-const saleStore = useReportSaleStore();
-const salesDate = UseSaleStore();
+const gl_code = String(route.query.gl_code) || "";
+const useglStore = useGlStore(); 
 
-const selectedDate = ref<SalePeriod | null>(null);
-const loading = ref(false);
-const dayjs = useDayjs();
+const res = computed(() => {
+  return useglStore.respons_detail_gl || [];
+});
 
-onMounted(async () => {
-  loading.value = true;
-  try {
-    await salesDate.GetSalePeriodListData(null)
+const currentData = computed(() => {
+  return res.value.length > 0 ? res.value[0] : null;
+});
 
-    if (date.value && date.value.length > 0) {
-      selectedDate.value = {
-        ...date.value[0],
-        sale_date: new Date(date.value[0].sale_date),
-      };
+const request = reactive({
+  gl_code: "",
+  gl_Desc_la: "",
+  gl_Desc_en: "",
+  glType: "",
+  gategory: "",
+  retal: "",
+  ccy_Res: "",
+  Res_ccy: "",
+  Allow_BackPeriodEntry: "",
+  pl_Split_ReqD: "",
+});
 
-      if (selectedDate.value) {
-        saleStore.request_sale_report.sale_date = selectedDate.value.sale_date;
-        await saleStore.GetReportSaleData();
-      }
+onMounted(() => {
+  if (gl_code) {
+    useglStore.getGlMasterDetail(gl_code);
+  }
+});
+
+watch(
+  currentData,
+  (newData) => {
+    if (newData) {
+      request.gl_code = newData.gl_code || "";
+      request.gl_Desc_la = newData.gl_Desc_la || "";
+      request.gl_Desc_en = newData.gl_Desc_en || "";
+      request.glType = newData.glType || "";
+      request.gategory = newData.category || "";
+      request.retal = newData.retal || "";
+      request.ccy_Res = newData.ccy_Res || "";
+      request.Res_ccy = newData.Res_ccy || "";
+      request.Allow_BackPeriodEntry = newData.Allow_BackPeriodEntry || "";
+      request.pl_Split_ReqD = newData.pl_Split_ReqD || "";
     }
-  } catch (error) {
-    console.error("Error initializing data:", error);
-  } finally {
-    loading.value = false;
-  }
-});
+  },
+  { immediate: true }
+);
 
-const date = computed(() => {
-  return salesDate.sale_periods;
-});
+const rules = {
+  required: (value: any) => !!value || "ຈຳເປັນຕ້ອງລະບຸ",
+  glCodeLength: (value: string) =>
+    (value && value.length <= 3) || "ລະຫັດ GL ຕ້ອງບໍ່ເກີນ 3 ຕົວເລກ",
+  maxLength250: (value: string) =>
+    (value && value.length <= 250) || "ຄວາມຍາວບໍ່ເກີນ 250 ຕົວອັກສອນ",
+};
 
-const item = computed(() => {
-  return saleStore.response_data_report;
-});
+const submitTransaction = async () => {
+  const { valid: isValid } = await form.value.validate();
+  if (isValid) {
+    try {
+      if (gl_code) {
+        await glStore.createGl(request);
+        console.log("ອັບເດດສຳເລັດ");
+      } else {
+        await glStore.createGl(request);
+        console.log("ບັນທຶກສຳເລັດ");
+      }
 
-const headers = [
-  { title: "Agency Code", value: "agency_code" },
-  { title: "POS Code", value: "pos_code" },
-  { title: "Sales Amount", value: "total_sale_amount" },
-  { title: "Date", value: "sale_date" },
-  { title: "Full Name", value: "agency_name" },
-];
-
-const searchData = async () => {
-  loading.value = true;
-  try {
-    saleStore.request_sale_report.sale_date =
-      selectedDate.value?.sale_date || null;
-    await saleStore.GetReportSaleData();
-  } catch (error) {
-    console.error("Error fetching data:", error);
-  } finally {
-    loading.value = false;
+      router.push("/glmaster");
+    } catch (error) {
+      console.error("ເກີດຂໍ້ຜິດພາດ:", error);
+    }
   }
 };
 
-const formatDisplayDate = (dateValue: SalePeriod | null): string => {
-  if (dateValue && dateValue.sale_date) {
-    return dayjs(dateValue.sale_date).format("YYYY-MM-DD");
-  }
-  return "";
+const goPath = (path: string) => {
+  router.push(path);
 };
 
-const exportToExcel = () => {
-  loading.value = true;
-  try {
-    let csvContent = "";
-
-    const headerRow = headers.map((header) => `"${header.title}"`).join(",");
-    csvContent += headerRow + "\n";
-
-    item.value.forEach((row) => {
-      const dataRow = headers
-        .map((header) => {
-          let value = row[header.value];
-
-          if (header.value === "sale_date" && value) {
-            value = dayjs(value).format("YYYY-MM-DD");
-          }
-
-          if (header.value === "total_sale_amount" && value) {
-            try {
-              value = formatnumber(value);
-            } catch (e) {}
-          }
-
-          return typeof value === "string" && value.includes(",")
-            ? `"${value}"`
-            : `"${value}"`;
-        })
-        .join(",");
-      csvContent += dataRow + "\n";
-    });
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-
-    const date = new Date();
-    const formattedDate = `${date.getFullYear()}-${String(
-      date.getMonth() + 1
-    ).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-
-    const filename = selectedDate.value
-      ? `report_${formatDisplayDate(selectedDate.value)}.xlsx`
-      : `report_all_data_${formattedDate}.xlsx`;
-
-    link.setAttribute("download", filename);
-    document.body.appendChild(link);
-    link.click();
-
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-
-    console.log("Excel file exported successfully");
-  } catch (error) {
-    console.error("Error exporting to Excel:", error);
-  } finally {
-    loading.value = false;
-  }
-};
+const title = computed(() => {
+  return gl_code ? "ແກ້ໄຂຂໍ້ມູນບັນຊີ GL Master" : "ເພີ່ມຂໍ້ມູນບັນຊີ GL Master";
+});
 </script>
 
 <template>
-  <v-card>
-    <div class="pa-3">
-      <div>
-        <v-col cols="12">
-          <GlobalTextTitleLine :title="title" />
-        </v-col>
-      </div>
-      <div>
-        <v-row>
-          <v-col cols="3">
-            <v-autocomplete
-              v-model="selectedDate"
-              density="compact"
-              label="ເລືອກວັນທີ"
-              :items="date"
-              item-value="@self"
-              :item-title="(item) => formatDisplayDate(item)"
-              variant="outlined"
-              clearable
-              placeholder="ເລືອກວັນທີເພື່ອກັ່ນຕອງຂໍ້ມູນ"
-              :loading="loading"
-              return-object
-            ></v-autocomplete>
-          </v-col>
-          <v-col cols="3">
-            <v-btn
-              color="primary"
-              flat
-              prepend-icon="mdi-magnify"
-              :loading="loading"
-              @click="searchData"
-            >
-              <p>ຄົ້ນຫາ</p>
-            </v-btn>
-          </v-col>
-          <v-col cols="6">
-            <div class="d-flex justify-end">
-              <v-btn
-                color="success"
-                flat
-                prepend-icon="mdi-microsoft-excel"
-                :loading="loading"
-                :disabled="!item || item.length === 0"
-                @click="exportToExcel"
-              >
-                <p style="color: white">ສ້າງໄຟລ Excel</p>
-              </v-btn>
-            </div>
-          </v-col>
-        </v-row>
-      </div>
-
-      <div style="height: ">
-        <div class="d-flex justify-center">
-          <v-data-table
-            :items="item"
-            :headers="headers"
-            density="compact"
-            class="text-no-wrap"
-            hover
-            :loading="loading"
-          >
-            <template v-slot:item.sale_date="{ item }">
-              {{ dayjs(item.sale_date).format("YYYY-MM-DD") }}
-            </template>
-            <template v-slot:item.total_sale_amount="{ item }">
-              {{ formatnumber(item.total_sale_amount) }}
-            </template>
-          </v-data-table>
-        </div>
-      </div>
+  <v-col cols="12">
+    <div v-if="currentData">
+      <p>Current GL Code: {{ currentData.gl_code }}</p>
+      <p>Current Category: {{ currentData.category }}</p>
     </div>
-  </v-card>
+
+    <global-text-title-line :title="title" />
+    <v-form ref="form" @submit.prevent="submitTransaction">
+      <v-row>
+        <v-col cols="12" md="4">
+          <v-text-field
+            v-model="request.gl_code"
+            :rules="[rules.required, rules.glCodeLength]"
+            density="compact"
+            variant="outlined"
+            label="ລະຫັດ GL (ສູງສຸດ 3 ຕົວເລກ)"
+            type="text"
+            maxlength="3"
+           
+            required
+          />
+          <v-text-field
+            v-model="request.gl_Desc_la"
+            :rules="[rules.required, rules.maxLength250]"
+            density="compact"
+            variant="outlined"
+            label="ຊື່ເລກບັນຊີ(ພາສາລາວ)"
+            maxlength="250"
+            required
+          />
+          <v-autocomplete
+            v-model="request.glType"
+            :rules="[rules.required]"
+            :items="[
+              { title: 'ຂັ້ນທີ 1', value: '1' },
+              { title: 'ຂັ້ນທີ 2', value: '2' },
+              { title: 'ຂັ້ນທີ 3', value: '3' },
+              { title: 'ຂັ້ນທີ 4', value: '4' },
+              { title: 'ຂັ້ນທີ 5', value: '5' },
+              { title: 'ຂັ້ນທີ 6', value: '6' },
+              { title: 'ຂັ້ນທີ 7', value: '7' },
+            ]"
+            item-title="title"
+            item-value="value"
+            density="compact"
+            label="ເລືອກຂັ້ນບັນຊີ (1-7)"
+            variant="outlined"
+            required
+          />
+          <v-autocomplete
+            v-model="request.pl_Split_ReqD"
+            :rules="[rules.required]"
+            :items="[
+              { title: 'Y = Yes (ຕ້ອງການແບ່ງ P&L)', value: 'Y' },
+              { title: 'N = No (ບໍ່ຕ້ອງການແບ່ງ P&L)', value: 'N' },
+            ]"
+            item-title="title"
+            item-value="value"
+            density="compact"
+            label="ກຳນົດການຕີມູນຄ່າແບບ2ຮູບແບບ, ພາຍໃນມື້ ແລະ ທ້າຍມື້"
+            variant="outlined"
+            required
+          />
+        </v-col>
+        <v-col cols="12" md="4">
+          <v-autocomplete
+            v-model="request.gategory"
+            :rules="[rules.required]"
+            :items="[
+              { title: '1 = ຊັບສິນ', value: '1' },
+              { title: '2 = ໜີ້ສິນ', value: '2' },
+              { title: '3 = ທືນ', value: '3' },
+              { title: '4 = ລາຍຈ່າຍ', value: '4' },
+              { title: '5 = ລາຍຮັບ', value: '5' },
+              { title: '6 = ນອກຝັງ', value: '6' },
+              { title: '7 = ບັນຊີເງົາ', value: '7' },
+              { title: '8 = ບັນຊີນອກພັງ', value: '8' },
+            ]"
+            item-title="title"
+            item-value="value"
+            density="compact"
+            label="ເລືອກປະເພດບັນຊີ"
+            variant="outlined"
+            required
+          />
+          <v-text-field
+            v-model="request.gl_Desc_en"
+            :rules="[rules.maxLength250]"
+            density="compact"
+            variant="outlined"
+            label="ຊື່ເລກບັນຊີ(ພາສາອັງກິດ)"
+            maxlength="250"
+          />
+
+          <v-autocomplete
+            v-model="request.retal"
+            :rules="[rules.required]"
+            :items="[
+              { title: 'Y = Yes (ມີການຕີມູນຄ່າ)', value: 'Y' },
+              { title: 'N = No (ບໍ່ມີການຕີມູນຄ່າ)', value: 'N' },
+            ]"
+            item-title="title"
+            item-value="value"
+            density="compact"
+            label="ການຕີມູນຄ່າທາງດ້ານບັນຊີ"
+            variant="outlined"
+            required
+          />
+        </v-col>
+        <v-col cols="12" md="4">
+          <v-autocomplete
+            v-model="request.ccy_Res"
+            :rules="[rules.required]"
+            :items="[
+              { title: 'S = Single Currency (ສະກຸນດຽວ)', value: 'S' },
+              {
+                title: 'F = All Foreign Currencies (ສະກຸນຕ່າງປະເທດທັງໝົດ)',
+                value: 'F',
+              },
+              { title: 'A = All Currencies (ທຸກສະກຸນ)', value: 'A' },
+            ]"
+            item-title="title"
+            item-value="value"
+            density="compact"
+            label="ສາມາດໃຊ້ສະກຸນເງິນ"
+            variant="outlined"
+            required
+          />
+          <v-text-field
+            v-model="request.Res_ccy"
+            density="compact"
+            variant="outlined"
+            label="ລະຫັດສະກຸນເງິນ (ສໍາລັບ Single Currency)"
+            maxlength="20"
+            placeholder="ເຊັ່ນ: LAK, USD, THB"
+          />
+          <v-autocomplete
+            v-model="request.Allow_BackPeriodEntry"
+            :rules="[rules.required]"
+            :items="[
+              { title: 'Y = Yes (ສາມາດລົງຍ້ອນຫຼັງໄດ້)', value: 'Y' },
+              { title: 'N = No (ບໍ່ສາມາດລົງຍ້ອນຫຼັງ)', value: 'N' },
+            ]"
+            item-title="title"
+            item-value="value"
+            density="compact"
+            label="ເລືອກໃຫ້ສາມາດລົງຍ້ອນຫຼັງໄດ້ສໍາລັບບັນຊີນີ້"
+            variant="outlined"
+            required
+          />
+        </v-col>
+      </v-row>
+
+      <v-col cols="12" class="d-flex justify-center">
+        <v-btn
+          type="submit"
+          color="primary"
+          class="d-flex justify-center mr-2"
+          :text="gl_code ? 'ອັບເດດ' : 'ບັນທຶກ'"
+          :loading="glStore.isloading"
+        />
+        <v-btn
+          color="error"
+          class="d-flex justify-center"
+          text="ຍົກເລີກ"
+          @click="goPath('/glmaster')"
+        />
+      </v-col>
+    </v-form>
+  </v-col>
 </template>
