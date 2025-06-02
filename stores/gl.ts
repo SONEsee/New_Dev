@@ -1,3 +1,34 @@
+// ===== INTERFACES (Fixed) =====
+export interface GlResponse {
+  gl_code: string;
+  gl_Desc_la: string | null;
+  gl_Desc_en: string;
+  detail: GlMasterDetailResponse[];
+  children: GlResponse[];
+}
+
+export interface GlMasterDetailResponse {
+  glid: number;
+  gl_code: string;
+  gl_Desc_la: string | null;
+  gl_Desc_en: string;
+  glType: string;
+  category: string; // Fixed: was missing in create_form_gl
+  retal: string | null;
+  ccy_Res: string | null;
+  Res_ccy: string | null;
+  Allow_BackPeriodEntry: string | null;
+  pl_Split_ReqD: string | null;
+  Record_Status: string | null;
+  Maker_DT_Stamp: string | null;
+  Checker_DT_Stamp: string | null;
+  Auth_Status: string | null;
+  Once_Auth: string | null;
+  Maker_Id: string | null;
+  Checker_Id: string | null;
+}
+
+// ===== STORE (Fixed) =====
 import axios from "@/helpers/axios";
 import { GlModel } from "~/models";
 
@@ -9,17 +40,16 @@ export const useGlStore = defineStore("gl", {
         gl_Desc_la: null as string | null,
         gl_Desc_en: "",
         glType: "",
-        gategory: "",
-        // category_type: "",
+        category: "", // Fixed: was "gategory" (typo)
         retal: "",
         ccy_Res: "",
         Res_ccy: "",
         Allow_BackPeriodEntry: "",
         pl_Split_ReqD: "",
       },
-      respons_data_gl: null as GlModel.GlResepose[] | null,
-      respons_detail_gl: null as GlModel.GlMasterDetailResepose | null,
-      glmaster_filer_gl_code: {
+      respons_data_gl: null as GlModel.GlResponse[] | null,
+      respons_detail_gl: null as GlModel.GlMasterDetailResponse | null,
+      glmaster_filter_gl_code: { // Fixed: was "filer" (typo)
         request: {
           gl_code: "",
         },
@@ -34,7 +64,7 @@ export const useGlStore = defineStore("gl", {
       this.isloading = true;
       this.error = null;
       try {
-        const res = await axios.get<GlModel.GlResepose[]>(`api/gl-tree/`, {
+        const res = await axios.get<GlModel.GlResponse[]>(`api/gl-tree/`, {
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${localStorage.getItem("access")}`,
@@ -59,7 +89,7 @@ export const useGlStore = defineStore("gl", {
         const res = await axios.post(`api/gl-master/`, this.create_form_gl, {
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${localStorage.getItem("access")}`, // Fixed: consistent token key
           },
         });
 
@@ -74,7 +104,6 @@ export const useGlStore = defineStore("gl", {
           }, 1500);
 
           this.resetCreateForm();
-
           return res.data;
         }
       } catch (error) {
@@ -97,8 +126,7 @@ export const useGlStore = defineStore("gl", {
         gl_Desc_la: null,
         gl_Desc_en: "",
         glType: "",
-        gategory: "",
-        // category_type: "",
+        category: "", // Fixed: was "gategory"
         retal: "",
         ccy_Res: "",
         Res_ccy: "",
@@ -106,17 +134,18 @@ export const useGlStore = defineStore("gl", {
         pl_Split_ReqD: "",
       };
     },
-    async getGlMasterDetail(gl_code:number) {
+
+    // Fixed: parameter type should be string to match gl_code type
+    async getGlMasterDetail(gl_code: string) {
       this.isloading = true;
-      this.glmaster_filer_gl_code.isloading = true;
+      this.glmaster_filter_gl_code.isloading = true; // Fixed: property name
       try {
-        const res = await axios.get<GlModel.GlMasterDetailResepose>(
+        const res = await axios.get<GlModel.GlMasterDetailResponse>(
           `api/gl-master/?gl_code=${gl_code}`,
           {
-          
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              Authorization: `Bearer ${localStorage.getItem("access")}`, // Fixed: consistent token key
             },
           }
         );
@@ -124,12 +153,11 @@ export const useGlStore = defineStore("gl", {
           this.respons_detail_gl = res.data;
         }
       } catch (error) {
-        this.error =
-          error instanceof Error ? error.message : "An error occurred";
+        this.error = error instanceof Error ? error.message : "An error occurred";
         throw error;
       } finally {
         this.isloading = false;
-        this.glmaster_filer_gl_code.isloading = false;
+        this.glmaster_filter_gl_code.isloading = false; // Fixed: property name
       }
     },
 
