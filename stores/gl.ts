@@ -1,4 +1,3 @@
-
 export interface GlResponse {
   gl_code: string;
   gl_Desc_la: string | null;
@@ -28,7 +27,6 @@ export interface GlMasterDetailResponse {
   Checker_Id: string | null;
 }
 
-// ===== STORE (Fixed) =====
 import axios from "@/helpers/axios";
 import { GlModel } from "~/models";
 
@@ -40,7 +38,7 @@ export const useGlStore = defineStore("gl", {
         gl_Desc_la: null as string | null,
         gl_Desc_en: "",
         glType: "",
-        category: "", 
+        category: "",
         retal: "",
         ccy_Res: "",
         Res_ccy: "",
@@ -49,7 +47,15 @@ export const useGlStore = defineStore("gl", {
       },
       respons_data_gl: null as GlModel.GlResponse[] | null,
       respons_detail_gl: null as GlModel.GlMasterDetailResponse | null,
-      glmaster_filter_gl_code: { 
+      respons_fiter_gl: null as GlModel.GlMasterDetailResponse | null,
+      glfilter_gl_code: {
+        request: {
+          gl_code: "",
+          glType: "",
+        },
+        isloading: false,
+      },
+      glmaster_filter_gl_code: {
         request: {
           gl_code: "",
         },
@@ -126,7 +132,7 @@ export const useGlStore = defineStore("gl", {
         gl_Desc_la: null,
         gl_Desc_en: "",
         glType: "",
-        category: "", // Fixed: was "gategory"
+        category: "", 
         retal: "",
         ccy_Res: "",
         Res_ccy: "",
@@ -135,17 +141,16 @@ export const useGlStore = defineStore("gl", {
       };
     },
 
-    // Fixed: parameter type should be string to match gl_code type
     async getGlMasterDetail(gl_code: string) {
       this.isloading = true;
-      this.glmaster_filter_gl_code.isloading = true; // Fixed: property name
+      this.glmaster_filter_gl_code.isloading = true;
       try {
         const res = await axios.get<GlModel.GlMasterDetailResponse>(
           `api/gl-master/?gl_code=${gl_code}`,
           {
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${localStorage.getItem("access")}`, // Fixed: consistent token key
+              Authorization: `Bearer ${localStorage.getItem("access")}`,
             },
           }
         );
@@ -153,14 +158,40 @@ export const useGlStore = defineStore("gl", {
           this.respons_detail_gl = res.data;
         }
       } catch (error) {
-        this.error = error instanceof Error ? error.message : "An error occurred";
+        this.error =
+          error instanceof Error ? error.message : "An error occurred";
         throw error;
       } finally {
         this.isloading = false;
-        this.glmaster_filter_gl_code.isloading = false; 
+        this.glmaster_filter_gl_code.isloading = false;
       }
     },
-
+    async getGlMasterDetail2() {
+  this.glfilter_gl_code.isloading = true;
+  this.isloading = true;
+  
+  try {
+    const res = await axios.get<GlModel.GlMasterDetailResponse>(`api/gl-tree/`, {
+      params: {
+        ...this.glfilter_gl_code.request
+      },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("access")}`,
+      }
+    });
+    
+    if (res.status === 200) {
+      this.respons_fiter_gl = res.data;
+    }
+  } catch (error) {
+    this.error = error instanceof Error ? error.message : "An error occurred";
+    throw error;
+  } finally {
+    this.isloading = false;
+    this.glfilter_gl_code.isloading = false;
+  }
+},
     clearError() {
       this.error = null;
     },
