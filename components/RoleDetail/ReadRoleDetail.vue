@@ -11,7 +11,7 @@
           <!-- Move Add Button to the left -->
           <v-col cols="12" md="4">
             <v-btn
-              @click="goPath('/roledetail/create')"
+              @click="goToCreateRoleDetail"
               color="primary"
               variant="elevated"
               prepend-icon="mdi-plus"
@@ -386,6 +386,7 @@
 import { ref, onMounted, computed } from 'vue'
 import axios from '@/helpers/axios'
 import { RoleDetailModel } from '~/models'
+
 import { useRouter } from 'vue-router'
 
 // Define Role interface for the API response
@@ -524,6 +525,14 @@ const fetchRoleOptions = async () => {
     generateRoleOptionsFromItems()
   } finally {
     roleOptionsLoading.value = false
+  }
+}
+
+const goToCreateRoleDetail = () => {
+  if (selectedRoleId.value) {
+    router.push({ path: '/roledetail/create', query: { role_id: selectedRoleId.value } })
+  } else {
+    router.push({ path: '/roledetail/create' })
   }
 }
 
