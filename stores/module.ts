@@ -23,6 +23,7 @@ export const ModulesStore = defineStore("module", {
       },
       response_data_module: null as ModuleModel.ModuleResponsItems[] | null,
       respons_detail_module: null as ModuleModel.ModuleDetailRespons | null,
+      respons_module_id: null as ModuleModel.ModuleMainmenuRespons | null,
       isLoading: false,
     };
   },
@@ -187,5 +188,26 @@ export const ModulesStore = defineStore("module", {
         });
       }
   },
+  async getModuleid(module_id:string){
+    this.isLoading = true;
+    try {
+      const res = await axios.get<ModuleModel.ModuleMainmenuRespons>(
+        `/api/count-menus/?module_Id=${module_id}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+      if (res.status === 200) {
+        this.respons_module_id = res.data;
+      }
+    } catch (error) {
+      console.error("Error fetching module by ID:", error);
+    } finally {
+      this.isLoading = false;
+    }
+  }
 }
 });

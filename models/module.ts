@@ -26,3 +26,9 @@ export interface ModuleDetailRespons {
     modified_by:    null;
     modified_date:  null;
 }
+export interface ModuleMainmenuRespons {
+    menu_id:      string;
+    menu_name_la: string;
+    menu_name_en: string;
+    count_menu:   number;
+}

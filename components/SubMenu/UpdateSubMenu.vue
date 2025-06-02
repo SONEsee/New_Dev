@@ -1,20 +1,17 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { ref, onMounted, computed } from "vue";
+import { useRoute, useRouter } from "vue-router";
 
-// ສ້າງ Store ແລະ Route
 const menuStore = useMenuStore();
 const route = useRoute();
 const router = useRouter();
 
-// ຮັບ ID ຈາກ Route
 const id = computed(() => route.query.id as string);
 
-// ໂຕແປອ້າງອີງຟອມ
 const valid = ref(false);
 const form = ref();
 const title = "ແກ້ໄຂຂໍ້ມູນເມນູຍ່ອຍ";
-const errorMessage = ref('');
+const errorMessage = ref("");
 
 // ຂໍ້ມູນເມນູຫຼັກ
 const menuItems = computed(() => {
@@ -23,34 +20,31 @@ const menuItems = computed(() => {
 
 // ຈັດການຟອມ
 const request = computed({
-  get: () => menuStore.create_form_submenu,
+  get: () => menuStore.update_form_submenu,
   set: (value) => {
-    menuStore.create_form_submenu = value;
-  }
+    menuStore.update_form_submenu = value;
+  },
 });
 
 // ໂຫຼດຂໍ້ມູນເບື້ອງຕົ້ນ
 onMounted(async () => {
   // ດຶງຂໍ້ມູນເມນູຫຼັກ
   await menuStore.GetMainMenu();
-  
-  
+
   if (id.value) {
     await menuStore.getDetailSubMenu(id.value);
-    
-   
+
     if (menuStore.respone_sub_menu_detail_data) {
       const detail = menuStore.respone_sub_menu_detail_data;
-      menuStore.create_form_submenu = {
-        sub_menu_id: detail.sub_menu_id || '',
-        sub_menu_name_la: detail.sub_menu_name_la || '',
-        sub_menu_name_en: detail.sub_menu_name_en || '',
-        sub_menu_order: detail.sub_menu_order || '',
-        sub_menu_icon: detail.sub_menu_icon || '',
-        is_active: detail.is_active ? 'true' : 'false',
-        menu_id: detail.menu_id || '',
-        sub_menu_urls: detail.sub_menu_urls || '',
-        
+      menuStore.update_form_submenu = {
+        sub_menu_id: detail.sub_menu_id || "",
+        sub_menu_name_la: detail.sub_menu_name_la || "",
+        sub_menu_name_en: detail.sub_menu_name_en || "",
+        sub_menu_order: detail.sub_menu_order || "",
+        sub_menu_icon: detail.sub_menu_icon || "",
+        is_active: detail.is_active || " ",
+        menu_id: detail.menu_id || "",
+        sub_menu_urls: detail.sub_menu_urls || "",
       };
     }
   }
@@ -60,39 +54,38 @@ onMounted(async () => {
 const updateSubMenu = async () => {
   try {
     const { valid: isValid } = await form.value.validate();
-    
+
     if (isValid && id.value) {
-      errorMessage.value = '';
-      
-     
+      errorMessage.value = "";
+
       const dataToUpdate = {
         sub_menu_id: request.value.sub_menu_id,
         sub_menu_name_la: request.value.sub_menu_name_la,
         sub_menu_name_en: request.value.sub_menu_name_en,
         sub_menu_order: request.value.sub_menu_order,
         sub_menu_icon: request.value.sub_menu_icon,
-        is_active: request.value.is_active === 'true',
+        is_active: request.value.is_active,
         menu_id: request.value.menu_id,
-        sub_menu_urls: request.value.sub_menu_urls
+        sub_menu_urls: request.value.sub_menu_urls,
       };
 
       // ເອີ້ນໃຊ້ຟັງຊັ່ນອັບເດດຈາກ Store
       const result = await menuStore.UpdateSubMenu(id.value, dataToUpdate);
-      
+
       if (result) {
         // ນຳທາງໄປຫາລາຍການເມນູຍ່ອຍ
-        router.push('/submenu');
+        router.push("/submenu");
       }
     }
   } catch (error) {
-    errorMessage.value = 'ເກີດຂໍ້ຜິດພາດໃນການອັບເດດ';
+    errorMessage.value = "ເກີດຂໍ້ຜິດພາດໃນການອັບເດດ";
     console.error(error);
   }
 };
 
 // ຟັງຊັ່ນຍົກເລີກ
 const cancelUpdate = () => {
-  router.push('/submenu');
+  router.push("/submenu");
 };
 </script>
 
@@ -100,12 +93,7 @@ const cancelUpdate = () => {
   <v-container>
     <GlobalTextTitleLine :title="title" />
 
-    
-    <v-alert 
-      v-if="errorMessage" 
-      type="error" 
-      class="mb-4"
-    >
+    <v-alert v-if="errorMessage" type="error" class="mb-4">
       {{ errorMessage }}
     </v-alert>
 
@@ -117,7 +105,7 @@ const cancelUpdate = () => {
             v-model="request.sub_menu_name_la"
             label="ຊື່ເມນູຍ່ອຍພາສາລາວ"
             variant="outlined"
-            :rules="[v => !!v || 'ຊື່ເມນູຕ້ອງບໍ່ຫວ່າງ']"
+            :rules="[(v) => !!v || 'ຊື່ເມນູຕ້ອງບໍ່ຫວ່າງ']"
             required
           />
           <v-text-field
@@ -125,7 +113,7 @@ const cancelUpdate = () => {
             v-model="request.sub_menu_id"
             label="ID ເມນູຍ່ອຍ"
             variant="outlined"
-            :rules="[v => !!v || 'ID ເມນູຕ້ອງບໍ່ຫວ່າງ']"
+            :rules="[(v) => !!v || 'ID ເມນູຕ້ອງບໍ່ຫວ່າງ']"
             required
           />
           <v-autocomplete
@@ -146,7 +134,7 @@ const cancelUpdate = () => {
             v-model="request.sub_menu_name_en"
             label="ຊື່ເມນູຍ່ອຍພາສາອັງກິດ"
             variant="outlined"
-            :rules="[v => !!v || 'ຊື່ເມນູຕ້ອງບໍ່ຫວ່າງ']"
+            :rules="[(v) => !!v || 'ຊື່ເມນູຕ້ອງບໍ່ຫວ່າງ']"
             required
           />
           <v-text-field
@@ -154,7 +142,7 @@ const cancelUpdate = () => {
             v-model="request.sub_menu_order"
             label="ລຳດັບເມນູຍ່ອຍ"
             variant="outlined"
-            :rules="[v => !!v || 'ລຳດັບເມນູຕ້ອງບໍ່ຫວ່າງ']"
+            :rules="[(v) => !!v || 'ລຳດັບເມນູຕ້ອງບໍ່ຫວ່າງ']"
             required
           />
           <v-text-field
@@ -162,7 +150,7 @@ const cancelUpdate = () => {
             v-model="request.sub_menu_urls"
             label="URL ເມນູຍ່ອຍ"
             variant="outlined"
-            :rules="[v => !!v || 'URL ຕ້ອງບໍ່ຫວ່າງ']"
+            :rules="[(v) => !!v || 'URL ຕ້ອງບໍ່ຫວ່າງ']"
             required
           />
         </v-col>
@@ -172,13 +160,13 @@ const cancelUpdate = () => {
             v-model="request.sub_menu_icon"
             label="ໄອຄອນ"
             variant="outlined"
-            :rules="[v => !!v || 'ໄອຄອນຕ້ອງບໍ່ຫວ່າງ']"
+            :rules="[(v) => !!v || 'ໄອຄອນຕ້ອງບໍ່ຫວ່າງ']"
             required
           />
           <v-autocomplete
             :items="[
-              { title: 'ເປີດໃຊ້ງານ', value: 'true' },
-              { title: 'ປິດໃຊ້ງານ', value: 'false' },
+              { title: 'ເປີດໃຊ້ງານ', value: 'Y' },
+              { title: 'ປິດໃຊ້ງານ', value: 'N' },
             ]"
             item-title="title"
             item-value="value"
@@ -191,22 +179,11 @@ const cancelUpdate = () => {
           />
         </v-col>
       </v-row>
-      
+
       <!-- ປຸ່ມດຳເນີນການ -->
       <v-col cols="12" class="d-flex justify-center">
-        <v-btn 
-          type="submit" 
-          color="primary" 
-          class="mr-2"
-        >
-          ບັນທຶກ
-        </v-btn>
-        <v-btn 
-          color="error" 
-          @click="cancelUpdate"
-        >
-          ຍົກເລີກ
-        </v-btn>
+        <v-btn type="submit" color="primary" class="mr-2"> ບັນທຶກ </v-btn>
+        <v-btn color="error" @click="cancelUpdate"> ຍົກເລີກ </v-btn>
       </v-col>
     </v-form>
   </v-container>
