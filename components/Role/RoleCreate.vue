@@ -1,656 +1,534 @@
-<!-- components/RoleCreate.vue -->
 <template>
-  <div class="role-create-container">
-    <div class="header-section">
-      <div class="breadcrumb">
-        <NuxtLink to="/roles" class="breadcrumb-link">
-          <Icon name="mdi:arrow-left" />
-          Back to Roles
-        </NuxtLink>
+  <v-container fluid class="pa-6">
+    <v-row justify="center">
+      <v-col cols="12" lg="8" xl="6">
+        <!-- Header -->
+        <v-card elevation="0" class="rounded-lg mb-6">
+          <v-card-title class="pa-8 pb-6">
+            <div class="d-flex align-center">
+              <v-btn
+                icon
+                variant="text"
+                @click="goBack"
+                class="mr-3"
+              >
+                <v-icon>mdi-arrow-left</v-icon>
+              </v-btn>
+              <v-icon color="primary" class="mr-3" size="28">mdi-shield-plus</v-icon>
+              <div>
+                <h2 class="text-h5 font-weight-bold mb-1 text-styles">
+                  ເພີ່ມສິດທິໃໝ່
+                </h2>
+                <p class="text-body-2 text-medium-emphasis mb-0 text-styles">
+                  ສ້າງສິດທິໃໝ່ສຳລັບລະບົບ
+                </p>
+              </div>
+            </div>
+          </v-card-title>
+
+          <!-- Form -->
+          <v-card-text class="pa-8 pt-0">
+            <v-form ref="formRef" v-model="formValid" @submit.prevent="createRole">
+              <v-row>
+                <!-- Role ID Field -->
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    v-model="formData.role_id"
+                    label="ລະຫັດສິດທິ *"
+                    variant="outlined"
+                    density="comfortable"
+                    prepend-inner-icon="mdi-identifier"
+                    :rules="roleIdRules"
+                    :error-messages="fieldErrors.role_id"
+                    :loading="checkingRoleId"
+                    @input="clearFieldError('role_id')"
+                    @blur="checkRoleIdUnique"
+                    counter="20"
+                    hint="ລະຫັດສິດທິຕ້ອງເປັນເອກະລັກ"
+                    persistent-hint
+                  />
+                </v-col>
+
+                <!-- Status Field -->
+                <v-col cols="12" md="6">
+                  <v-select
+                    v-model="formData.record_Status"
+                    :items="statusOptions"
+                    item-title="label"
+                    item-value="value"
+                    label="ສະຖານະເບື້ອງຕົ້ນ"
+                    variant="outlined"
+                    density="comfortable"
+                    prepend-inner-icon="mdi-check-circle"
+                    :rules="statusRules"
+                    :error-messages="fieldErrors.record_Status"
+                    @update:model-value="clearFieldError('record_Status')"
+                  />
+                </v-col>
+
+                <!-- Role Name in Lao -->
+                <v-col cols="12">
+                  <v-text-field
+                    v-model="formData.role_name_la"
+                    label="ຊື່ສິດທິ (ພາສາລາວ) *"
+                    variant="outlined"
+                    density="comfortable"
+                    prepend-inner-icon="mdi-shield"
+                    :rules="roleNameLaRules"
+                    :error-messages="fieldErrors.role_name_la"
+                    @input="clearFieldError('role_name_la')"
+                    counter="100"
+                    hint="ໃສ່ຊື່ສິດທິເປັນພາສາລາວ"
+                    persistent-hint
+                  />
+                </v-col>
+
+                <!-- Role Name in English -->
+                <v-col cols="12">
+                  <v-text-field
+                    v-model="formData.role_name_en"
+                    label="ຊື່ສິດທິ (ພາສາອັງກິດ)"
+                    variant="outlined"
+                    density="comfortable"
+                    prepend-inner-icon="mdi-translate"
+                    :rules="roleNameEnRules"
+                    :error-messages="fieldErrors.role_name_en"
+                    @input="clearFieldError('role_name_en')"
+                    counter="100"
+                    hint="ໃສ່ຊື່ສິດທິເປັນພາສາອັງກິດ (ທາງເລືອກ)"
+                    persistent-hint
+                  />
+                </v-col>
+
+                <!-- Role Description -->
+                <v-col cols="12">
+                  <v-textarea
+                    v-model="formData.role_description"
+                    label="ລາຍລະອຽດສິດທິ"
+                    variant="outlined"
+                    density="comfortable"
+                    prepend-inner-icon="mdi-information"
+                    rows="3"
+                    :error-messages="fieldErrors.role_description"
+                    @input="clearFieldError('role_description')"
+                    counter="500"
+                    hint="ອະທິບາຍລາຍລະອຽດຂອງສິດທິນີ້ (ທາງເລືອກ)"
+                    persistent-hint
+                  />
+                </v-col>
+              </v-row>
+
+              <!-- Form Preview -->
+              <v-card 
+                v-if="formData.role_id || formData.role_name_la" 
+                variant="tonal" 
+                color="primary" 
+                class="mt-6"
+              >
+                <v-card-title class="text-subtitle-1 pb-2">
+                  <v-icon class="mr-2">mdi-eye</v-icon>
+                  ຕົວຢ່າງຂໍ້ມູນສິດທິ
+                </v-card-title>
+                <v-card-text class="pt-0">
+                  <v-row>
+                    <v-col cols="12" md="6">
+                      <div class="d-flex align-center mb-2">
+                        <v-avatar size="24" color="primary" variant="tonal" class="mr-2">
+                          <span class="text-caption font-weight-bold">
+                            {{ formData.role_id ? formData.role_id.substring(0, 2).toUpperCase() : 'RL' }}
+                          </span>
+                        </v-avatar>
+                        <div>
+                          <div class="text-body-2 font-weight-medium">
+                            {{ formData.role_id || 'ລະຫັດສິດທິ' }}
+                          </div>
+                          <div class="text-caption text-grey">ລະຫັດສິດທິ</div>
+                        </div>
+                      </div>
+                    </v-col>
+                    <v-col cols="12" md="6">
+                      <div class="mb-2">
+                        <v-chip
+                          :color="getStatusColor(formData.record_Status)"
+                          variant="tonal"
+                          size="small"
+                          :prepend-icon="getStatusIcon(formData.record_Status)"
+                        >
+                          {{ getStatusLabel(formData.record_Status) }}
+                        </v-chip>
+                      </div>
+                    </v-col>
+                    <v-col cols="12">
+                      <div class="mb-1">
+                        <strong>ຊື່ສິດທິ (ລາວ):</strong> {{ formData.role_name_la || '-' }}
+                      </div>
+                      <div class="mb-1">
+                        <strong>ຊື່ສິດທິ (ອັງກິດ):</strong> {{ formData.role_name_en || '-' }}
+                      </div>
+                      <div v-if="formData.role_description">
+                        <strong>ລາຍລະອຽດ:</strong> {{ formData.role_description }}
+                      </div>
+                    </v-col>
+                  </v-row>
+                </v-card-text>
+              </v-card>
+
+              <!-- Action Buttons -->
+              <v-row class="mt-6">
+                <v-col cols="12">
+                  <div class="d-flex flex-wrap gap-3 justify-end">
+                    <v-btn
+                      variant="outlined"
+                      @click="resetForm"
+                      prepend-icon="mdi-refresh"
+                      class="text-none"
+                    >
+                      ລ້າງຟອມ
+                    </v-btn>
+                    
+                    <v-btn
+                      variant="text"
+                      @click="goBack"
+                      class="text-none"
+                    >
+                      ຍົກເລີກ
+                    </v-btn>
+                    
+                    <v-btn
+                      color="primary"
+                      variant="elevated"
+                      type="submit"
+                      :loading="loading"
+                      :disabled="!formValid"
+                      prepend-icon="mdi-content-save"
+                      class="text-none font-weight-medium"
+                    >
+                      ບັນທຶກສິດທິ
+                    </v-btn>
+                  </div>
+                </v-col>
+              </v-row>
+            </v-form>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+
+    <!-- Success Dialog -->
+    <v-dialog v-model="successDialog" max-width="400" persistent>
+      <v-card class="rounded-lg text-center pa-4">
+        <div class="mb-4">
+          <v-icon color="success" size="64">mdi-check-circle</v-icon>
+        </div>
+        <v-card-title class="text-h6 font-weight-bold mb-2">
+          ສຳເລັດ!
+        </v-card-title>
+        <v-card-text class="text-body-1 mb-4">
+          ສ້າງສິດທິ <strong>{{ createdRole?.role_name_la }}</strong> ສຳເລັດແລ້ວ
+        </v-card-text>
+        <v-card-actions class="justify-center">
+          <v-btn
+            color="primary"
+            variant="elevated"
+            @click="handleSuccessAction('list')"
+            class="text-none mr-2"
+          >
+            ໄປຫາລາຍການສິດທິ
+          </v-btn>
+          <v-btn
+            variant="outlined"
+            @click="handleSuccessAction('new')"
+            class="text-none"
+          >
+            ສ້າງສິດທິໃໝ່
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Snackbar -->
+    <v-snackbar
+      v-model="snackbar.show"
+      :color="snackbar.color"
+      :timeout="4000"
+      location="top"
+    >
+      <div class="d-flex align-center">
+        <v-icon class="mr-2">{{ snackbar.icon }}</v-icon>
+        {{ snackbar.message }}
       </div>
-      <h2 class="page-title">Create New Role</h2>
-    </div>
-
-    <div class="form-container">
-      <form @submit.prevent="handleSubmit" class="role-form">
-        <!-- Role ID Field -->
-        <div class="form-group">
-          <label for="role_id" class="form-label required">
-            Role ID
-          </label>
-          <input
-            id="role_id"
-            v-model="form.role_id"
-            type="text"
-            class="form-input"
-            :class="{ 'error': errors.role_id }"
-            placeholder="Enter unique role ID"
-            maxlength="20"
-            required
-          />
-          <div v-if="errors.role_id" class="error-message">
-            {{ errors.role_id }}
-          </div>
-          <div class="field-hint">
-            Maximum 20 characters. Use uppercase letters and underscores (e.g., ADMIN_ROLE)
-          </div>
-        </div>
-
-        <!-- Role Name LA Field -->
-        <div class="form-group">
-          <label for="role_name_la" class="form-label">
-            Role Name (Lao)
-          </label>
-          <input
-            id="role_name_la"
-            v-model="form.role_name_la"
-            type="text"
-            class="form-input"
-            :class="{ 'error': errors.role_name_la }"
-            placeholder="ປ້ອນຊື່ບົດບາດເປັນພາສາລາວ"
-            maxlength="250"
-          />
-          <div v-if="errors.role_name_la" class="error-message">
-            {{ errors.role_name_la }}
-          </div>
-        </div>
-
-        <!-- Role Name EN Field -->
-        <div class="form-group">
-          <label for="role_name_en" class="form-label">
-            Role Name (English)
-          </label>
-          <input
-            id="role_name_en"
-            v-model="form.role_name_en"
-            type="text"
-            class="form-input"
-            :class="{ 'error': errors.role_name_en }"
-            placeholder="Enter role name in English"
-            maxlength="250"
-          />
-          <div v-if="errors.role_name_en" class="error-message">
-            {{ errors.role_name_en }}
-          </div>
-        </div>
-
-        <!-- Record Status Field -->
-        <div class="form-group">
-          <label for="record_Status" class="form-label">
-            Record Status
-          </label>
-          <select
-            id="record_Status"
-            v-model="form.record_Status"
-            class="form-select"
-            :class="{ 'error': errors.record_Status }"
-          >
-            <option value="C">Created</option>
-            <option value="A">Active</option>
-            <option value="I">Inactive</option>
-          </select>
-          <div v-if="errors.record_Status" class="error-message">
-            {{ errors.record_Status }}
-          </div>
-        </div>
-
-        <!-- Authorization Settings -->
-        <div class="form-section">
-          <h3 class="section-title">Authorization Settings</h3>
-          
-          <div class="form-group">
-            <label for="Auth_Status" class="form-label">
-              Authorization Status
-            </label>
-            <select
-              id="Auth_Status"
-              v-model="form.Auth_Status"
-              class="form-select"
-              :class="{ 'error': errors.Auth_Status }"
-            >
-              <option value="U">Unauthorized</option>
-              <option value="A">Authorized</option>
-              <option value="R">Rejected</option>
-            </select>
-            <div v-if="errors.Auth_Status" class="error-message">
-              {{ errors.Auth_Status }}
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="Once_Auth" class="form-label">
-              Once Authorization
-            </label>
-            <select
-              id="Once_Auth"
-              v-model="form.Once_Auth"
-              class="form-select"
-              :class="{ 'error': errors.Once_Auth }"
-            >
-              <option value="N">No</option>
-              <option value="Y">Yes</option>
-            </select>
-            <div v-if="errors.Once_Auth" class="error-message">
-              {{ errors.Once_Auth }}
-            </div>
-            <div class="field-hint">
-              Select "Yes" if this role requires one-time authorization
-            </div>
-          </div>
-        </div>
-
-        <!-- Form Actions -->
-        <div class="form-actions">
-          <button
-            type="button"
-            @click="resetForm"
-            class="btn btn-secondary"
-            :disabled="isSubmitting"
-          >
-            <Icon name="mdi:refresh" />
-            Reset
-          </button>
-          
-          <button
-            type="button"
-            @click="goBack"
-            class="btn btn-outline"
-            :disabled="isSubmitting"
-          >
-            <Icon name="mdi:close" />
-            Cancel
-          </button>
-          
-          <button
-            type="submit"
-            class="btn btn-primary"
-            :disabled="isSubmitting || !isFormValid"
-          >
-            <Icon v-if="isSubmitting" name="mdi:loading" class="animate-spin" />
-            <Icon v-else name="mdi:check" />
-            {{ isSubmitting ? 'Creating...' : 'Create Role' }}
-          </button>
-        </div>
-      </form>
-
-      <!-- Preview Card -->
-      <div class="preview-card">
-        <h3 class="preview-title">
-          <Icon name="mdi:eye" />
-          Preview
-        </h3>
-        <div class="preview-content">
-          <div class="preview-item">
-            <span class="preview-label">Role ID:</span>
-            <span class="preview-value">{{ form.role_id || '-' }}</span>
-          </div>
-          <div class="preview-item">
-            <span class="preview-label">Role Name (LA):</span>
-            <span class="preview-value">{{ form.role_name_la || '-' }}</span>
-          </div>
-          <div class="preview-item">
-            <span class="preview-label">Role Name (EN):</span>
-            <span class="preview-value">{{ form.role_name_en || '-' }}</span>
-          </div>
-          <div class="preview-item">
-            <span class="preview-label">Status:</span>
-            <span :class="getStatusClass(form.record_Status)">
-              {{ getStatusText(form.record_Status) }}
-            </span>
-          </div>
-          <div class="preview-item">
-            <span class="preview-label">Auth Status:</span>
-            <span :class="getAuthStatusClass(form.Auth_Status)">
-              {{ getAuthStatusText(form.Auth_Status) }}
-            </span>
-          </div>
-          <div class="preview-item">
-            <span class="preview-label">Once Auth:</span>
-            <span class="preview-value">{{ form.Once_Auth === 'Y' ? 'Yes' : 'No' }}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+      <template #actions>
+        <v-btn
+          variant="text"
+          @click="snackbar.show = false"
+          icon="mdi-close"
+          size="small"
+        />
+      </template>
+    </v-snackbar>
+  </v-container>
 </template>
 
 <script setup lang="ts">
-import type { RoleListResponse } from '~/models/rolemaster'
+import { ref, reactive, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import axios from '@/helpers/axios'
 
-// Page metadata
-definePageMeta({
-  title: 'Create Role'
-})
+// Types
+interface RoleFormData {
+  role_id: string
+  role_name_la: string
+  role_name_en: string
+  role_description: string
+  record_Status: string
+}
+
+interface CreatedRole {
+  role_id: string
+  role_name_la: string
+  role_name_en?: string
+  record_Status: string
+}
+
+interface SnackbarState {
+  show: boolean
+  message: string
+  color: string
+  icon: string
+}
+
+interface FieldErrors {
+  [key: string]: string[]
+}
+
+const router = useRouter()
+
+// Reactive state
+const loading = ref(false)
+const checkingRoleId = ref(false)
+const formValid = ref(false)
+const successDialog = ref(false)
+const formRef = ref()
+const createdRole = ref<CreatedRole | null>(null)
 
 // Form data
-const form = reactive({
+const formData = reactive<RoleFormData>({
   role_id: '',
   role_name_la: '',
   role_name_en: '',
-  record_Status: 'C',
-  Auth_Status: 'U',
-  Once_Auth: 'N'
+  role_description: '',
+  record_Status: 'O'
 })
 
-// Form state
-const errors = reactive<Record<string, string>>({})
-const isSubmitting = ref(false)
+// Field errors
+const fieldErrors = reactive<FieldErrors>({})
 
-// Computed properties
-const isFormValid = computed(() => {
-  return form.role_id.trim().length > 0 && Object.keys(errors).length === 0
+// Status options
+const statusOptions = [
+  { label: 'ເປີດໃຊ້', value: 'O', color: 'success', icon: 'mdi-check-circle' },
+  { label: 'ລໍຖ້າອະນຸມັດ', value: 'C', color: 'warning', icon: 'mdi-clock' },
+  { label: 'ປິດໃຊ້', value: 'I', color: 'error', icon: 'mdi-close-circle' }
+]
+
+// Snackbar state
+const snackbar = reactive<SnackbarState>({
+  show: false,
+  message: '',
+  color: 'success',
+  icon: 'mdi-check-circle'
 })
 
 // Validation rules
-const validateForm = () => {
-  // Clear previous errors
-  Object.keys(errors).forEach(key => delete errors[key])
-  
-  // Role ID validation
-  if (!form.role_id.trim()) {
-    errors.role_id = 'Role ID is required'
-  } else if (form.role_id.length > 20) {
-    errors.role_id = 'Role ID must not exceed 20 characters'
-  } else if (!/^[A-Z0-9_]+$/.test(form.role_id)) {
-    errors.role_id = 'Role ID should contain only uppercase letters, numbers, and underscores'
-  }
-  
-  // Role Name LA validation
-  if (form.role_name_la && form.role_name_la.length > 250) {
-    errors.role_name_la = 'Role name (LA) must not exceed 250 characters'
-  }
-  
-  // Role Name EN validation
-  if (form.role_name_en && form.role_name_en.length > 250) {
-    errors.role_name_en = 'Role name (EN) must not exceed 250 characters'
-  }
-  
-  return Object.keys(errors).length === 0
+const roleIdRules = [
+  (v: string) => !!v || 'ຕ້ອງໃສ່ລະຫັດສິດທິ',
+  (v: string) => (v && v.length >= 3) || 'ລະຫັດສິດທິຕ້ອງມີຢ່າງໜ້ອຍ 3 ຕົວອັກສອນ',
+  (v: string) => (v && v.length <= 20) || 'ລະຫັດສິດທິຕ້ອງບໍ່ເກີນ 20 ຕົວອັກສອນ',
+  (v: string) => /^[A-Za-z0-9_-]+$/.test(v) || 'ລະຫັດສິດທິສາມາດມີໄດ້ແຕ່ຕົວອັກສອນ, ຕົວເລກ, _ ແລະ -'
+]
+
+const roleNameLaRules = [
+  (v: string) => !!v || 'ຕ້ອງໃສ່ຊື່ສິດທິເປັນພາສາລາວ',
+  (v: string) => (v && v.length >= 2) || 'ຊື່ສິດທິຕ້ອງມີຢ່າງໜ້ອຍ 2 ຕົວອັກສອນ',
+  (v: string) => (v && v.length <= 100) || 'ຊື່ສິດທິຕ້ອງບໍ່ເກີນ 100 ຕົວອັກສອນ'
+]
+
+const roleNameEnRules = [
+  (v: string) => !v || v.length <= 100 || 'ຊື່ສິດທິຕ້ອງບໍ່ເກີນ 100 ຕົວອັກສອນ'
+]
+
+const statusRules = [
+  (v: string) => !!v || 'ຕ້ອງເລືອກສະຖານະ'
+]
+
+// Helper functions
+const getAuthHeaders = () => ({
+  'Content-Type': 'application/json',
+  Authorization: `Bearer ${localStorage.getItem('token')}`
+})
+
+const showSnackbar = (message: string, color: string = 'success', icon: string = 'mdi-check-circle') => {
+  snackbar.message = message
+  snackbar.color = color
+  snackbar.icon = icon
+  snackbar.show = true
 }
 
-// Watch for form changes to validate
-watch(form, () => {
-  if (Object.keys(errors).length > 0) {
-    validateForm()
+const clearFieldError = (field: string) => {
+  if (fieldErrors[field]) {
+    delete fieldErrors[field]
   }
-}, { deep: true })
+}
 
-// Methods
-const handleSubmit = async () => {
-  if (!validateForm()) {
-    return
-  }
-  
-  isSubmitting.value = true
-  
+const clearAllErrors = () => {
+  Object.keys(fieldErrors).forEach(key => {
+    delete fieldErrors[key]
+  })
+}
+
+const goBack = () => {
+  router.push('/role')
+}
+
+const getStatusColor = (status: string) => {
+  const option = statusOptions.find(opt => opt.value === status)
+  return option?.color || 'grey'
+}
+
+const getStatusIcon = (status: string) => {
+  const option = statusOptions.find(opt => opt.value === status)
+  return option?.icon || 'mdi-help-circle'
+}
+
+const getStatusLabel = (status: string) => {
+  const option = statusOptions.find(opt => opt.value === status)
+  return option?.label || 'ບໍ່ຮູ້ຈັກ'
+}
+
+// API functions
+const checkRoleIdUnique = async () => {
+  if (!formData.role_id || formData.role_id.length < 3) return
+
+  checkingRoleId.value = true
   try {
-    const response = await $fetch<RoleListResponse>('/api/roles/', {
-      method: 'POST',
-      body: {
-        role_id: form.role_id.trim(),
-        role_name_la: form.role_name_la.trim() || null,
-        role_name_en: form.role_name_en.trim() || null,
-        record_Status: form.record_Status,
-        Auth_Status: form.Auth_Status,
-        Once_Auth: form.Once_Auth
-      }
+    const response = await axios.get(`/api/roles/${formData.role_id}/`, {
+      headers: getAuthHeaders()
     })
     
-    // Show success message
-    useNuxtApp().$toast?.success('Role created successfully!')
-    
-    // Navigate to role list or detail page
-    await navigateTo('/roles')
-    
+    // If we get a response, the role ID already exists
+    if (response.status === 200) {
+      fieldErrors.role_id = ['ລະຫັດສິດທິນີ້ມີຢູ່ແລ້ວ']
+    }
   } catch (error: any) {
-    console.error('Create role error:', error)
-    
-    // Handle validation errors from backend
-    if (error.data && error.data.errors) {
-      Object.assign(errors, error.data.errors)
-    } else if (error.data && error.data.role_id) {
-      errors.role_id = Array.isArray(error.data.role_id) 
-        ? error.data.role_id[0] 
-        : error.data.role_id
+    // If we get a 404, the role ID is available
+    if (error.response?.status === 404) {
+      clearFieldError('role_id')
     } else {
-      useNuxtApp().$toast?.error('Failed to create role. Please try again.')
+      console.error('Error checking role ID:', error)
     }
   } finally {
-    isSubmitting.value = false
+    checkingRoleId.value = false
+  }
+}
+
+const createRole = async () => {
+  if (!formValid.value) return
+
+  loading.value = true
+  clearAllErrors()
+
+  try {
+    const payload = {
+      role_id: formData.role_id.trim(),
+      role_name_la: formData.role_name_la.trim(),
+      role_name_en: formData.role_name_en.trim() || undefined,
+      role_description: formData.role_description.trim() || undefined,
+      record_Status: formData.record_Status
+    }
+
+    const response = await axios.post('/api/roles/', payload, {
+      headers: getAuthHeaders()
+    })
+
+    if (response.status === 201 || response.status === 200) {
+      createdRole.value = response.data
+      successDialog.value = true
+    }
+  } catch (error: any) {
+    console.error('Error creating role:', error)
+    
+    if (error.response?.status === 400) {
+      // Handle validation errors
+      const errorData = error.response.data
+      if (typeof errorData === 'object') {
+        Object.keys(errorData).forEach(field => {
+          if (Array.isArray(errorData[field])) {
+            fieldErrors[field] = errorData[field]
+          } else {
+            fieldErrors[field] = [String(errorData[field])]
+          }
+        })
+      }
+      showSnackbar('ກາລຸນາກວດສອບຂໍ້ມູນທີ່ໃສ່', 'error', 'mdi-alert-circle')
+    } else if (error.response?.status === 401) {
+      router.push('/login')
+    } else {
+      const errorMessage = error.response?.data?.detail || 
+                          error.response?.data?.message || 
+                          'ເກີດຂໍ້ຜິດພາດໃນການສ້າງສິດທິ'
+      
+      showSnackbar(errorMessage, 'error', 'mdi-alert-circle')
+    }
+  } finally {
+    loading.value = false
   }
 }
 
 const resetForm = () => {
-  Object.assign(form, {
-    role_id: '',
-    role_name_la: '',
-    role_name_en: '',
-    record_Status: 'C',
-    Auth_Status: 'U',
-    Once_Auth: 'N'
-  })
+  formData.role_id = ''
+  formData.role_name_la = ''
+  formData.role_name_en = ''
+  formData.role_description = ''
+  formData.record_Status = 'O'
+  clearAllErrors()
+  formRef.value?.resetValidation()
+}
+
+const handleSuccessAction = (action: 'list' | 'new') => {
+  successDialog.value = false
   
-  // Clear errors
-  Object.keys(errors).forEach(key => delete errors[key])
-}
-
-const goBack = () => {
-  navigateTo('/roles')
-}
-
-const getStatusClass = (status: string) => {
-  const classes = {
-    'A': 'status-active',
-    'I': 'status-inactive', 
-    'C': 'status-created'
+  if (action === 'list') {
+    router.push('/role')
+  } else {
+    createdRole.value = null
+    resetForm()
   }
-  return `status-badge ${classes[status as keyof typeof classes] || 'status-default'}`
 }
-
-const getStatusText = (status: string) => {
-  const texts = {
-    'A': 'Active',
-    'I': 'Inactive',
-    'C': 'Created'
-  }
-  return texts[status as keyof typeof texts] || status
-}
-
-const getAuthStatusClass = (status: string) => {
-  const classes = {
-    'A': 'auth-authorized',
-    'U': 'auth-unauthorized',
-    'R': 'auth-rejected'
-  }
-  return `auth-badge ${classes[status as keyof typeof classes] || 'auth-default'}`
-}
-
-const getAuthStatusText = (status: string) => {
-  const texts = {
-    'A': 'Authorized',
-    'U': 'Unauthorized', 
-    'R': 'Rejected'
-  }
-  return texts[status as keyof typeof texts] || status
-}
-
-// Auto-focus on role ID field when component mounts
-onMounted(() => {
-  const roleIdInput = document.getElementById('role_id')
-  if (roleIdInput) {
-    roleIdInput.focus()
-  }
-})
 </script>
 
 <style scoped>
-.role-create-container {
-  padding: 1.5rem;
-  max-width: 1200px;
-  margin: 0 auto;
+.text-styles {
+  font-family: 'Noto Sans Lao', sans-serif;
 }
 
-.header-section {
-  margin-bottom: 2rem;
+:deep(.v-field__outline) {
+  border-radius: 8px;
 }
 
-.breadcrumb {
-  margin-bottom: 1rem;
+:deep(.v-text-field .v-input__details) {
+  padding-inline-start: 44px;
 }
 
-.breadcrumb-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: #6b7280;
-  text-decoration: none;
-  font-size: 0.875rem;
-  transition: color 0.2s;
+:deep(.v-textarea .v-input__details) {
+  padding-inline-start: 44px;
 }
 
-.breadcrumb-link:hover {
-  color: #374151;
+/* Form validation styling */
+:deep(.v-input--error .v-field__outline) {
+  border-color: rgb(var(--v-theme-error));
 }
 
-.page-title {
-  font-size: 1.875rem;
-  font-weight: 700;
-  color: #1f2937;
-  margin: 0;
-}
-
-.form-container {
-  display: grid;
-  grid-template-columns: 1fr 300px;
-  gap: 2rem;
-}
-
-@media (max-width: 768px) {
-  .form-container {
-    grid-template-columns: 1fr;
-  }
-}
-
-.role-form {
-  background: white;
-  padding: 2rem;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.form-group {
-  margin-bottom: 1.5rem;
-}
-
-.form-label {
-  display: block;
-  font-weight: 600;
-  color: #374151;
-  margin-bottom: 0.5rem;
-}
-
-.form-label.required::after {
-  content: ' *';
-  color: #ef4444;
-}
-
-.form-input,
-.form-select {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.form-input:focus,
-.form-select:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.form-input.error,
-.form-select.error {
-  border-color: #ef4444;
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
-}
-
-.error-message {
-  color: #ef4444;
-  font-size: 0.75rem;
-  margin-top: 0.25rem;
-}
-
-.field-hint {
-  color: #6b7280;
-  font-size: 0.75rem;
-  margin-top: 0.25rem;
-}
-
-.form-section {
-  border-top: 1px solid #e5e7eb;
-  padding-top: 1.5rem;
-  margin-top: 1.5rem;
-}
-
-.section-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 1rem;
-}
-
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  margin-top: 2rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid #e5e7eb;
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.375rem;
-  font-weight: 500;
-  transition: all 0.2s;
-  cursor: pointer;
-  border: none;
-  text-decoration: none;
-  font-size: 0.875rem;
-}
-
-.btn-primary {
-  background-color: #3b82f6;
-  color: white;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background-color: #2563eb;
-}
-
-.btn-secondary {
-  background-color: #6b7280;
-  color: white;
-}
-
-.btn-secondary:hover:not(:disabled) {
-  background-color: #4b5563;
-}
-
-.btn-outline {
-  background-color: white;
-  color: #374151;
-  border: 1px solid #d1d5db;
-}
-
-.btn-outline:hover:not(:disabled) {
-  background-color: #f9fafb;
-}
-
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.animate-spin {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.preview-card {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  height: fit-content;
-  position: sticky;
-  top: 1rem;
-}
-
-.preview-title {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 1rem;
-}
-
-.preview-content {
-  space-y: 0.75rem;
-}
-
-.preview-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid #f3f4f6;
-}
-
-.preview-item:last-child {
-  border-bottom: none;
-}
-
-.preview-label {
-  font-weight: 500;
-  color: #6b7280;
-  font-size: 0.875rem;
-}
-
-.preview-value {
-  font-weight: 500;
-  color: #1f2937;
-  font-size: 0.875rem;
-}
-
-.status-badge,
-.auth-badge {
-  display: inline-block;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  text-transform: uppercase;
-}
-
-.status-active {
-  background-color: #dcfce7;
-  color: #166534;
-}
-
-.status-inactive {
-  background-color: #fee2e2;
-  color: #991b1b;
-}
-
-.status-created {
-  background-color: #dbeafe;
-  color: #1e40af;
-}
-
-.auth-authorized {
-  background-color: #dcfce7;
-  color: #166534;
-}
-
-.auth-unauthorized {
-  background-color: #fef3c7;
-  color: #92400e;
-}
-
-.auth-rejected {
-  background-color: #fee2e2;
-  color: #991b1b;
+/* Success preview card styling */
+:deep(.v-card--variant-tonal.v-card--density-default) {
+  background-color: rgba(var(--v-theme-primary), 0.08);
 }
 </style>

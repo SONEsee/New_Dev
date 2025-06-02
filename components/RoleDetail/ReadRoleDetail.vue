@@ -6,6 +6,7 @@
       </v-card-title>
 
       <!-- Filter and Add Button Section -->
+<<<<<<< HEAD
       <v-card-text class="">
         <v-row class="mb-4">
           <v-col cols="3">
@@ -15,11 +16,29 @@
               variant="elevated"
               prepend-icon="mdi-plus"
               class="text-none font-weight-medium"
+=======
+      <v-card-text class="pa-6 pt-0">
+        <v-row align="center" class="mb-4">
+          <!-- Move Add Button to the left -->
+          <v-col cols="12" md="4">
+            <v-btn
+              @click="goToCreateRoleDetail"
+              color="primary"
+              variant="elevated"
+              prepend-icon="mdi-plus"
+              class="text-none font-weight-medium mb-2 mb-md-0 add-role-btn"
+>>>>>>> 30f6e1ca9646852cc11f0527e897ec263bdb4af4
             >
               ເພີ່ມສິດຜູ້ນໍາໃຊ້
             </v-btn>
           </v-col>
+<<<<<<< HEAD
           <v-col cols="12" md="9" class="text-end">
+=======
+          <v-spacer />
+          <!-- Move Filter Dropdown to the right -->
+          <v-col cols="12" md="4">
+>>>>>>> 30f6e1ca9646852cc11f0527e897ec263bdb4af4
             <v-select
               width="60%"
               v-model="selectedRoleId"
@@ -37,10 +56,10 @@
             >
               <template #item="{ props, item }">
                 <v-list-item v-bind="props">
-                  <v-list-item-title>{{ item.raw.text }}</v-list-item-title>
+                  <!-- <v-list-item-title>{{ item.raw.text }}</v-list-item-title>
                   <v-list-item-subtitle v-if="item.raw.subtitle">
                     {{ item.raw.subtitle }}
-                  </v-list-item-subtitle>
+                  </v-list-item-subtitle> -->
                 </v-list-item>
               </template>
             </v-select>
@@ -70,11 +89,15 @@
           <template #item.sub_menu_id="{ item }">
             <div>
               <div class="font-weight-bold">
+<<<<<<< HEAD
                 {{
                   item.fuu_details?.sub_menu_name_la ||
                   item.fuu_details?.description_la ||
                   "-"
                 }}
+=======
+                {{ item.fuu_details?.sub_menu?.sub_menu_name_la || item.fuu_details?.sub_menu_name_la || '-' }}
+>>>>>>> 30f6e1ca9646852cc11f0527e897ec263bdb4af4
               </div>
               <div class="text-caption text-grey text-styles">
                 {{
@@ -438,6 +461,7 @@
 </template>
 
 <script setup lang="ts">
+<<<<<<< HEAD
 import { ref, onMounted, computed } from "vue";
 import axios from "@/helpers/axios";
 import { RoleDetailModel } from "~/models";
@@ -466,6 +490,42 @@ const showError = ref(false);
 const errorMessage = ref("");
 const itemToDelete = ref<RoleDetailModel.RoleDetailResponse | null>(null);
 const selectedItem = ref<RoleDetailModel.RoleDetailResponse | null>(null);
+=======
+import { ref, onMounted, computed } from 'vue'
+import axios from '@/helpers/axios'
+import { RoleDetailModel } from '~/models'
+
+import { useRouter } from 'vue-router'
+
+// Define Role interface for the API response
+interface Role {
+    role_id:          string;
+    role_name_la:     string;
+    role_name_en:     string;
+    record_Status:    string;
+    Maker_DT_Stamp:   Date;
+    Checker_DT_Stamp: Date;
+    Auth_Status:      string;
+    Once_Auth:        string;
+    Maker_Id:         null;
+    Checker_Id:       null;
+}
+
+const router = useRouter()
+const items = ref<RoleDetailModel.RoleDetailResponse[]>([])
+const selectedRoleId = ref<string | null>(null)
+const roleOptions = ref<Array<{ text: string; value: string | null; subtitle?: string }>>([])
+
+const loading = ref(false)
+const deleteLoading = ref(false)
+const roleOptionsLoading = ref(false)
+const deleteDialog = ref(false)
+const detailsDialog = ref(false)
+const showError = ref(false)
+const errorMessage = ref('')
+const itemToDelete = ref<RoleDetailModel.RoleDetailResponse | null>(null)
+const selectedItem = ref<RoleDetailModel.RoleDetailResponse | null>(null)
+>>>>>>> 30f6e1ca9646852cc11f0527e897ec263bdb4af4
 
 const title = "ຈັດການສິດຜູ້ນໍາໃຊ້ລະບົບ";
 
@@ -532,10 +592,15 @@ const filteredItems = computed(() => {
   if (!selectedRoleId.value) {
     return items.value;
   }
+<<<<<<< HEAD
   return items.value.filter((item) => item.role_id === selectedRoleId.value);
 });
 
 // Fetch roles from API for dropdown
+=======
+  return items.value.filter(item => item.role_id === selectedRoleId.value)
+})
+>>>>>>> 30f6e1ca9646852cc11f0527e897ec263bdb4af4
 const fetchRoleOptions = async () => {
   roleOptionsLoading.value = true;
   try {
@@ -547,18 +612,29 @@ const fetchRoleOptions = async () => {
     });
 
     if (res.status === 200) {
+<<<<<<< HEAD
       // Remove duplicates using Map to ensure unique role_id
       const uniqueRolesMap = new Map();
 
       res.data.forEach((role) => {
         if (role.role_id && !uniqueRolesMap.has(role.role_id)) {
           uniqueRolesMap.set(role.role_id, role);
+=======
+      // Remove duplicates using Map to ensure unique role_id (as string)
+      const uniqueRolesMap = new Map<string, Role>()
+      
+      res.data.forEach(role => {
+        const roleId = String(role.role_id)
+        if (roleId && !uniqueRolesMap.has(roleId)) {
+          uniqueRolesMap.set(roleId, role)
+>>>>>>> 30f6e1ca9646852cc11f0527e897ec263bdb4af4
         }
       });
 
       // Create dropdown options from unique roles
       const options = Array.from(uniqueRolesMap.values()).map((role) => ({
         text: `${role.role_id} - ${role.role_name_la}`,
+<<<<<<< HEAD
         value: role.role_id,
         subtitle: `ລະຫັດ: ${role.role_id}`,
       }));
@@ -566,6 +642,15 @@ const fetchRoleOptions = async () => {
       // Sort by role_id
       options.sort((a, b) => a.value - b.value);
 
+=======
+        value: String(role.role_id),
+        subtitle: `ລະຫັດ: ${role.role_id}`
+      }))
+      
+      // Sort by role_id
+      options.sort((a, b) => a.value.localeCompare(b.value))
+      
+>>>>>>> 30f6e1ca9646852cc11f0527e897ec263bdb4af4
       // Add "All" option at the beginning
       roleOptions.value = [
         {
@@ -573,6 +658,7 @@ const fetchRoleOptions = async () => {
           value: null,
           subtitle: "ສະແດງທຸກບົດບາດ",
         },
+<<<<<<< HEAD
         ...options,
       ];
 
@@ -587,19 +673,42 @@ const fetchRoleOptions = async () => {
 
     // Fallback: Generate options from current items if API fails
     generateRoleOptionsFromItems();
+=======
+        ...options
+      ]
+    }
+  } catch (error: any) {
+    // ...existing error handling...
+    generateRoleOptionsFromItems()
+>>>>>>> 30f6e1ca9646852cc11f0527e897ec263bdb4af4
   } finally {
     roleOptionsLoading.value = false;
   }
 };
 
-// Fallback function to generate role options from current items
+const goToCreateRoleDetail = () => {
+  if (selectedRoleId.value) {
+    router.push({ path: '/roledetail/create', query: { role_id: selectedRoleId.value } })
+  } else {
+    router.push({ path: '/roledetail/create' })
+  }
+}
+
 const generateRoleOptionsFromItems = () => {
+<<<<<<< HEAD
   const roleMap = new Map();
 
   items.value.forEach((item) => {
     const roleId = item.role_id;
     const roleName = item.role_detail?.role_name_la;
 
+=======
+  const roleMap = new Map<string, { role_id: string, role_name_la: string }>()
+  
+  items.value.forEach(item => {
+    const roleId = String(item.role_id)
+    const roleName = item.role_detail?.role_name_la
+>>>>>>> 30f6e1ca9646852cc11f0527e897ec263bdb4af4
     if (roleId && !roleMap.has(roleId)) {
       roleMap.set(roleId, {
         role_id: roleId,
@@ -613,22 +722,37 @@ const generateRoleOptionsFromItems = () => {
       ? `${role.role_id} - ${role.role_name_la}`
       : `ບົດບາດ ${role.role_id}`,
     value: role.role_id,
+<<<<<<< HEAD
     subtitle: role.role_name_la ? `ລະຫັດ: ${role.role_id}` : undefined,
   }));
 
   options.sort((a, b) => a.value - b.value);
 
+=======
+    subtitle: role.role_name_la ? `ລະຫັດ: ${role.role_id}` : undefined
+  }))
+  
+  options.sort((a, b) => a.value.localeCompare(b.value))
+  
+>>>>>>> 30f6e1ca9646852cc11f0527e897ec263bdb4af4
   roleOptions.value = [
     {
       text: "ທັງໝົດ",
       value: null,
       subtitle: "ສະແດງທຸກບົດບາດ",
     },
+<<<<<<< HEAD
     ...options,
   ];
 
   console.log("Generated fallback role options:", roleOptions.value);
 };
+=======
+    ...options
+  ]
+}
+>>>>>>> 30f6e1ca9646852cc11f0527e897ec263bdb4af4
+
 
 // Fetch main role details data
 const fetchData = async () => {
@@ -709,6 +833,7 @@ const deleteItem = async () => {
   if (itemToDelete.value) {
     deleteLoading.value = true;
     try {
+<<<<<<< HEAD
       // Add your delete API call here
       // await axios.delete(`api/role-details/${itemToDelete.value.role_id}`)
 
@@ -720,10 +845,29 @@ const deleteItem = async () => {
             item.fuu_details?.sub_menu?.sub_menu_id ===
               itemToDelete.value?.fuu_details?.sub_menu?.sub_menu_id)
       );
+=======
+      // Use both role_id and sub_menu_id as query params
+      const roleId = itemToDelete.value.role_id
+      const subMenuId = itemToDelete.value.sub_menu_id || itemToDelete.value.fuu_details?.sub_menu?.sub_menu_id
+      await axios.delete(`api/roledetail-delete/?role_id=${roleId}&sub_menu_id=${subMenuId}`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      })
+
+      // Remove item from local array for now
+      const index = items.value.findIndex(item =>
+        item.role_id === roleId &&
+        (item.sub_menu_id === subMenuId ||
+          item.fuu_details?.sub_menu?.sub_menu_id === subMenuId)
+      )
+>>>>>>> 30f6e1ca9646852cc11f0527e897ec263bdb4af4
       if (index > -1) {
         items.value.splice(index, 1);
       }
 
+<<<<<<< HEAD
       deleteDialog.value = false;
       itemToDelete.value = null;
     } catch (error: any) {
@@ -731,6 +875,14 @@ const deleteItem = async () => {
       showError.value = true;
       errorMessage.value =
         error.response?.data?.message || "ເກີດຂໍ້ຜິດພາດໃນການລົບ";
+=======
+      deleteDialog.value = false
+      itemToDelete.value = null
+    } catch (error: any) {
+      console.error('Error deleting item:', error)
+      showError.value = true
+      errorMessage.value = error.response?.data?.detail || 'ເກີດຂໍ້ຜິດພາດໃນການລົບ'
+>>>>>>> 30f6e1ca9646852cc11f0527e897ec263bdb4af4
     } finally {
       deleteLoading.value = false;
     }

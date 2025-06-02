@@ -5,59 +5,69 @@
         <!-- Header -->
         <v-card elevation="0" class="rounded-lg mb-6">
           <v-card-title class="pa-8 pb-6">
-            <div class="d-flex align-center justify-space-between">
-              <div class="d-flex align-center">
-                <v-icon color="primary" class="mr-3" size="28">mdi-account-group</v-icon>
-                <div>
-                  <h2 class="text-h5 font-weight-bold mb-1 text-styles">
-                    ຈັດການພະນັກງານ
-                  </h2>
-                  <p class="text-body-2 text-medium-emphasis mb-0 text-styles">
-                    ສະແດງຂໍ້ມູນພະນັກງານໃນລະບົບ
-                  </p>
-                </div>
+            <div class="d-flex align-center">
+              <v-icon color="primary" class="mr-3" size="28">mdi-account-group</v-icon>
+              <div>
+                <h2 class="text-h5 font-weight-bold mb-1 text-styles">
+                  ຈັດການພະນັກງານ
+                </h2>
+                <p class="text-body-2 text-medium-emphasis mb-0 text-styles">
+                  ສະແດງຂໍ້ມູນພະນັກງານໃນລະບົບ
+                </p>
               </div>
-              <v-btn
-                color="primary"
-                variant="elevated"
-                prepend-icon="mdi-plus"
-                @click="goPath('/employee/create')"
-                class="text-none"
-              >
-                ເພີ່ມພະນັກງານ
-              </v-btn>
             </div>
           </v-card-title>
 
           <!-- Filters Section -->
           <v-card-text class="pa-6 pt-0">
             <v-row align="center" class="mb-4">
+              <!-- Add Employee Button - Left Side -->
               <v-col cols="12" md="4">
-                <v-select
-                  v-model="div_id"
-                  :items="divisionOptions"
-                  item-title="display"
-                  item-value="div_id"
-                  label="ກັ່ນຕອງຕາມພະແນກ"
-                  variant="outlined"
-                  density="compact"
-                  prepend-inner-icon="mdi-filter"
-                  clearable
-                  hide-details
-                  :loading="loadingDivisions"
-                  @update:model-value="fetchEmployees"
-                />
+                <v-btn
+                  color="primary"
+                  variant="elevated"
+                  prepend-icon="mdi-plus"
+                  @click="goPath('/employee/create')"
+                  class="text-none"
+                >
+                  ເພີ່ມພະນັກງານ
+                </v-btn>
               </v-col>
+              
+              <!-- Spacer for medium screens and up -->
+              <v-col cols="0" md="4" class="d-none d-md-block"></v-col>
+              
+              <!-- Filters - Right Side -->
               <v-col cols="12" md="4">
-                <v-text-field
-                  v-model="search"
-                  prepend-inner-icon="mdi-magnify"
-                  label="ຄົ້ນຫາພະນັກງານ..."
-                  variant="outlined"
-                  density="compact"
-                  hide-details
-                  clearable
-                />
+                <v-row>
+                  <v-col cols="12" sm="6" md="12" lg="6">
+                    <v-select
+                      v-model="div_id"
+                      :items="divisionOptions"
+                      item-title="display"
+                      item-value="div_id"
+                      label="ກັ່ນຕອງຕາມພະແນກ"
+                      variant="outlined"
+                      density="compact"
+                      prepend-inner-icon="mdi-filter"
+                      clearable
+                      hide-details
+                      :loading="loadingDivisions"
+                      @update:model-value="fetchEmployees"
+                    />
+                  </v-col>
+                  <v-col cols="12" sm="6" md="12" lg="6">
+                    <v-text-field
+                      v-model="search"
+                      prepend-inner-icon="mdi-magnify"
+                      label="ຄົ້ນຫາພະນັກງານ..."
+                      variant="outlined"
+                      density="compact"
+                      hide-details
+                      clearable
+                    />
+                  </v-col>
+                </v-row>
               </v-col>
             </v-row>
 
