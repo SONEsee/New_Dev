@@ -16,6 +16,7 @@ interface TreeGLAccount {
   children: TreeGLAccount[];
   expanded: boolean;
   visible: boolean;
+  category?: string; // ເພີ່ມ category field
 }
 
 interface Header {
@@ -34,6 +35,34 @@ const res = computed(() => {
 const loading = ref(false);
 const showDebug = ref(false);
 const debugTab = ref("raw");
+
+// ⭐ ເພີ່ມ Filter States
+const filterLevel = ref(null);
+const filterCategory = ref(null);
+const searchGlCode = ref("");
+
+// ⭐ Level Options
+const levelOptions = computed(() => [
+  { title: 'ທັງໝົດ', value: null },
+  { title: 'ຂັ້ນທີ 1', value: 1 },
+  { title: 'ຂັ້ນທີ 2', value: 2 },
+  { title: 'ຂັ້ນທີ 3', value: 3 },
+  { title: 'ຂັ້ນທີ 4', value: 4 },
+  { title: 'ຂັ້ນທີ 5', value: 5 },
+]);
+
+
+const categoryOptions = computed(() => [
+  { title: 'ທັງໝົດ-all', value: null },
+  { title: 'ຊັບສິນ-1', value: '1' },
+  { title: 'ໜີ້ສິນ-2', value: '2' },
+  { title: 'ທືນ-3', value: '3' },
+  { title: 'ລາຍຈ່າຍ-4', value: '4' },
+  { title: 'ລາຍຮັບ-5', value: '5' },
+  { title: 'ນອກຝັງ-6', value: '6' },
+  { title: 'ບັນຊີເງົາ-7', value: '7' },
+  { title: 'ບັນຊີນອກພັງ-8', value: '8' },
+]);
 
 const headers = ref<Header[]>([
   {
@@ -62,7 +91,7 @@ const headers = ref<Header[]>([
     width: "100px",
   },
   {
-    title: "Type",
+    title: "",
     key: "has_children",
     sortable: false,
     width: "80px",
@@ -84,9 +113,28 @@ const buildTreeData = (
     children: account.children
       ? buildTreeData(account.children, level + 1, account.gl_code)
       : [],
-    expanded: level === 1,
+    expanded: false, 
     visible: true,
+  
+    category: getCategoryByGLCode(account.gl_code),
   }));
+};
+
+
+const getCategoryByGLCode = (glCode: string): string => {
+  const firstDigit = glCode.charAt(0);
+
+  const categoryMap: Record<string, string> = {
+    '1': '1', 
+    '2': '2', 
+    '3': '3', 
+    '4': '4', 
+    '5': '5', 
+    '6': '6', 
+    '7': '7', 
+    '8': '8', 
+  };
+  return categoryMap[firstDigit] || '1';
 };
 
 const treeData = ref<TreeGLAccount[]>([]);
@@ -120,8 +168,62 @@ const flattenTreeForDisplay = (items: TreeGLAccount[]): TreeGLAccount[] => {
   return result;
 };
 
+
+const filteredTreeData = computed(() => {
+  if (!filterLevel.value && !filterCategory.value && !searchGlCode.value.trim()) {
+    return treeData.value;
+  }
+
+  const filterTree = (items: TreeGLAccount[]): TreeGLAccount[] => {
+    return items.filter(item => {
+  
+      const categoryMatch = !filterCategory.value || item.category === filterCategory.value;
+      
+
+      const glCodeMatch = !searchGlCode.value.trim() || 
+        item.gl_code.toLowerCase().includes(searchGlCode.value.trim().toLowerCase()) ||
+        item.gl_Desc_la?.toLowerCase().includes(searchGlCode.value.trim().toLowerCase()) ||
+        item.gl_Desc_en?.toLowerCase().includes(searchGlCode.value.trim().toLowerCase());
+      
+  
+      let levelMatch = true;
+      let shouldIncludeChildren = true;
+      
+      if (filterLevel.value) {
+    
+        levelMatch = item.level === filterLevel.value || 
+                    (item.level < filterLevel.value && hasChildrenAtLevel(item, filterLevel.value));
+      }
+      
+  
+      const directMatch = levelMatch && categoryMatch && glCodeMatch;
+      
+
+      const hasMatchingChildren = item.children.length > 0 && 
+        filterTree(item.children).length > 0;
+      
+      return directMatch || hasMatchingChildren;
+    }).map(item => ({
+      ...item,
+      children: filterTree(item.children),
+     
+      expanded: (searchGlCode.value.trim() || filterCategory.value) ? true : item.expanded
+    }));
+  };
+
+  return filterTree(treeData.value);
+});
+
+
+const hasChildrenAtLevel = (item: TreeGLAccount, targetLevel: number): boolean => {
+  if (item.level === targetLevel) return true;
+  if (item.children.length === 0) return false;
+  
+  return item.children.some(child => hasChildrenAtLevel(child, targetLevel));
+};
+
 const displayedItems = computed(() => {
-  return flattenTreeForDisplay(treeData.value);
+  return flattenTreeForDisplay(filteredTreeData.value);
 });
 
 const flattenedGlData = computed(() => {
@@ -150,6 +252,13 @@ const glStats = computed(() => {
     leafNodes: data.filter((item) => !item.has_children).length,
   };
 });
+
+
+const clearFilters = () => {
+  filterLevel.value = null;
+  filterCategory.value = null;
+  searchGlCode.value = "";
+};
 
 const getCodeClass = (level: number): string => {
   const classes = ["font-weight-bold"];
@@ -268,17 +377,101 @@ useHead({
     },
   ],
 });
+
 const title = "ຈັດການຂໍ້ມູນບັນຊີ";
 </script>
+
 <template>
   <div>
     <div>
       <GlobalTextTitleLine :title="title" />
+      
+      <!-- ⭐ Filter Section -->
+      <v-card class="mb-4" elevation="1">
+        <v-card-title class="text-h6">
+          <v-icon class="mr-2">mdi-filter</v-icon>
+          ຟິວເຕີ້ຂໍ້ມູນ
+        </v-card-title>
+        <v-card-text>
+          <v-row>
+            <v-col cols="12" md="3">
+              <v-text-field
+                v-model="searchGlCode"
+                label="ຄົ້ນຫາ GL Code / ຊື່ບັນຊີ"
+                variant="outlined"
+                density="compact"
+                clearable
+                placeholder="ເຊັ່ນ: 110, ເງິນສົດ, Cash"
+              >
+                <template v-slot:prepend-inner>
+                  <v-icon>mdi-magnify</v-icon>
+                </template>
+              </v-text-field>
+            </v-col>
+            
+            <!-- <v-col cols="12" md="3">
+              <v-autocomplete
+                v-model="filterLevel"
+                :items="levelOptions"
+                item-title="title"
+                item-value="value"
+                label="ເລືອກຂັ້ນບັນຊີ"
+                variant="outlined"
+                density="compact"
+                clearable
+              >
+                <template v-slot:prepend-inner>
+                  <v-icon>mdi-layers</v-icon>
+                </template>
+              </v-autocomplete>
+            </v-col> -->
+            
+            <v-col cols="12" md="3">
+              <v-autocomplete
+                v-model="filterCategory"
+                :items="categoryOptions"
+                item-title="title"
+                item-value="value"
+                label="ເລືອກປະເພດບັນຊີ"
+                variant="outlined"
+                density="compact"
+                clearable
+              >
+                <template v-slot:prepend-inner>
+                  <v-icon>mdi-tag</v-icon>
+                </template>
+              </v-autocomplete>
+            </v-col>
+            
+            <v-col cols="12" md="3" class="d-flex align-center">
+              <v-btn
+                @click="clearFilters"
+                color="secondary"
+                variant="outlined"
+                class="mr-2 mb-5"
+              >
+                <v-icon class="mr-1">mdi-filter-off</v-icon>
+                ລ້າງຟິວເຕີ້
+              </v-btn>
+              
+              <v-chip
+                v-if="filterLevel || filterCategory || searchGlCode.trim()"
+                color="primary"
+                size="small"
+              >
+                {{ displayedItems.length }} ລາຍການ
+              </v-chip>
+            </v-col>
+          </v-row>
+        </v-card-text>
+      </v-card>
+
       <v-btn color="primary" class="mt-2 ml-2" @click="goPath('/gl/create')">
         <v-icon icon="mdi-plus"></v-icon>
         ເພີ່ມບັນຊີໃໝ່ຂັ້ນ 1
       </v-btn>
     </div>
+    
     <v-data-table
       :headers="headers"
       :items="displayedItems"
@@ -335,43 +528,32 @@ const title = "ຈັດການຂໍ້ມູນບັນຊີ";
       </template>
 
       <template v-slot:item.has_children="{ item }">
-        <div v-if="item.has_children">
+        <div
+          v-if="
+            (item.children && item.children.length > 0) ||
+            parseInt(item.level) < 5
+          "
+        >
           <v-btn
-            @click="goPath(`/glsubal/create/?gl_code=${item.gl_code}`)"
-            width="105px"
+            @click="
+              goPath(
+                `/glsubal/create/?gl_code=${item.gl_code}&glType=${item.level}`
+              )
+            "
+            width="100px"
             color="primary"
+            size="small"
           >
-            <v-icon icon="mdi-plus"></v-icon>ເພີ່ມຂັ້ນຖັດໄປ</v-btn
-          >
+            <v-icon icon="mdi-plus"></v-icon>ເພີ່ມ ຂັ້ນ{{ item.level + 1 }}
+          </v-btn>
         </div>
-        <v-icon v-else color="info" size="small"> mdi-file-document </v-icon>
+
+        <div v-else-if="item.level === 5">
+          <v-icon color="success" size="small"> mdi-check-circle </v-icon>
+          <span class="text-caption ml-1">ສຸດທ້າຍ</span>
+        </div>
       </template>
     </v-data-table>
-    <!-- <v-card class="mt-4" v-if="showDebug" elevation="1">
-      <v-card-title>
-        <v-icon left>mdi-code-json</v-icon>
-        Debug Data
-      </v-card-title>
-      <v-card-text>
-        <v-tabs v-model="debugTab">
-          <v-tab value="raw">Raw API Data</v-tab>
-          <v-tab value="flattened">Flattened Data</v-tab>
-          <v-tab value="displayed">Displayed Items</v-tab>
-        </v-tabs>
-
-        <v-tabs-window v-model="debugTab">
-          <v-tabs-window-item value="raw">
-            <pre>{{ res }}</pre>
-          </v-tabs-window-item>
-          <v-tabs-window-item value="flattened">
-            <pre>{{ flattenedGlData.slice(0, 10) }}...</pre>
-          </v-tabs-window-item>
-          <v-tabs-window-item value="displayed">
-            <pre>{{ displayedItems.slice(0, 10) }}...</pre>
-          </v-tabs-window-item>
-        </v-tabs-window>
-      </v-card-text>
-    </v-card> -->
   </div>
 </template>
 
