@@ -47,9 +47,16 @@ export const useGlStore = defineStore("gl", {
         Allow_BackPeriodEntry: "",
         pl_Split_ReqD: "",
       },
+<<<<<<< HEAD
       respons_data_gl: null as GlModel.GlResponse[] | null,
       respons_detail_gl: null as GlModel.GlMasterDetailResponse | null,
       glmaster_filter_gl_code: { // Fixed: was "filer" (typo)
+=======
+      
+      respons_data_gl: null as GlModel.GlResepose[] | null,
+      respons_detail_gl: null as GlModel.GlMasterDetailResepose | null,
+      glmaster_filer_gl_code: {
+>>>>>>> 805b174d518b1310b748382c7d49f9157101d579
         request: {
           gl_code: "",
         },

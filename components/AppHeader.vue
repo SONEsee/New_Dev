@@ -229,8 +229,13 @@ const user = localStorage.getItem("user")
 console.log("ຂໍ້ມູນຜູ້ໃຊ້:", user);
 const username = user ? JSON.parse(user).user_name : "ບໍ່ພົບຂໍ້ມູນ";
 const email = user ? JSON.parse(user).user_email : "ບໍ່ພົບຂໍ້ມູນ";
-const department = user ? JSON.parse(user).division.division_name_la : "ບໍ່ພົບຂໍ້ມູນ";
-const role = user ? JSON.parse(user).role.role_name_la : "ບໍ່ພົບຂໍ້ມູນ";
+const department = user ? 
+  (JSON.parse(user).division?.division_name_la || "ບໍ່ພົບຂໍ້ມູນ") : 
+  "ບໍ່ພົບຂໍ້ມູນ";
+const role = user ? 
+  (JSON.parse(user).role?.role_name_la || "ບໍ່ພົບຂໍ້ມູນ") : 
+  "ບໍ່ພົບຂໍ້ມູນ";
+// const role = user ? JSON.parse(user).role.role_name_la : "ບໍ່ພົບຂໍ້ມູນ";
  
 
 
@@ -361,17 +366,23 @@ onMounted(async () => {
     error.value = true;
   }
 });
-
 const onLogout = () => {
   try {
     if (typeof window !== "undefined") {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
+      
+      // ເຄລຍ filter ທັງໝົດທີ່ມີຄຳວ່າ "filter"
+      Object.keys(localStorage).forEach(key => {
+        if (key.includes('filter')) {
+          localStorage.removeItem(key);
+        }
+      });
     }
     router.push("/login");
   } catch (err) {
     console.error("Error during logout:", err);
-
+    
     if (typeof window !== "undefined") {
       window.location.href = "/login";
     }

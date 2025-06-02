@@ -34,13 +34,23 @@ export const useMenuStore = defineStore("menu", {
         menu_id: "",
         sub_menu_urls: "",
       },
+      update_form_submenu: {
+        sub_menu_id: "",
+        sub_menu_name_la: "",
+        sub_menu_name_en: "",
+        sub_menu_order: "",
+        sub_menu_icon: "",
+        is_active: "",
+        menu_id: "",
+        sub_menu_urls: "",
+      },
       create_form_function: {
         function_id: "",
         description_la: "",
         description_en: "",
         // eod_function: null,
         function_order: 0,
-        // is_active: "",
+        is_active: "",
         // created_by: "",
         sub_menu_id: "",
       },
@@ -62,6 +72,7 @@ export const useMenuStore = defineStore("menu", {
       respone_sub_menu_detail_data: null as MenuModel.SubMenu | null,
       respons_function_menu_data: null as MenuModel.Function | null,
       respons_function_menu_detail_data: null as MenuModel.Function | null,
+      respons_menu_id: null as MenuModel.MenuIDCountRespons | null,
       isloading: false,
       query_menu_filter: {
         data: {
@@ -84,6 +95,25 @@ export const useMenuStore = defineStore("menu", {
     };
   },
   actions: {
+    async getMenuIDCount(menu_id: string) {
+this.isloading = true;
+try {
+  const res= await axios.get<MenuModel.MenuIDCountRespons>(`api/count-sub-menus/?menu_id=${menu_id}`, {
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
+  });
+  if(res.status ===200){
+    this.respons_menu_id = res.data
+  }
+} catch (error) {
+  console.error("Error fetching menu ID count:", error);
+  
+}finally{
+  this.isloading = false;
+}
+    },
     async Getmenu(users_code: string) {
       if (!users_code) {
         console.error("Cannot fetch menu: No user code provided");
@@ -218,7 +248,7 @@ export const useMenuStore = defineStore("menu", {
             menu_icon: this.update_form_mainmenu.menu_icon,
             menu_order: this.update_form_mainmenu.menu_order,
             is_active: this.update_form_mainmenu.is_active,
-            sub_menus: this.update_form_mainmenu.module_Id,
+            module_Id: this.update_form_mainmenu.module_Id,
           };
           const res = await axios.put<MenuModel.MainMenu>(
             `api/main-menus/${id}/`,
@@ -400,13 +430,13 @@ export const useMenuStore = defineStore("menu", {
           );
 
           if (res.status === 200) {
-            this.create_form_submenu = {
+            this.update_form_submenu = {
               sub_menu_id: "",
               sub_menu_name_la: "",
               sub_menu_name_en: "",
               sub_menu_order: "",
               sub_menu_icon: "",
-              // is_active: "",
+              is_active: "",
               menu_id: "",
               sub_menu_urls: "",
             };
@@ -415,8 +445,12 @@ export const useMenuStore = defineStore("menu", {
               title: "ສຳເລັດ",
               text: "ສຳເລັດການແກ້ໄຂເມນູຍ່ອຍ",
               icon: "success",
+              showConfirmButton:false,
               showCancelButton: false,
             });
+            setTimeout(() => {
+              goPath("/submenu");
+            }, 1500);
 
             return true;
           }
@@ -518,7 +552,7 @@ export const useMenuStore = defineStore("menu", {
             description_en: "",
             // eod_function: null,
             function_order: 0,
-            // is_active: "",
+            is_active: "",
             // created_by: "",
             sub_menu_id: "",
           };
@@ -600,7 +634,7 @@ export const useMenuStore = defineStore("menu", {
               description_en: "",
               // eod_function: null,
               function_order: 0,
-              // is_active: "",
+              is_active: "",
               // created_by: "",
               sub_menu_id: "",
             };

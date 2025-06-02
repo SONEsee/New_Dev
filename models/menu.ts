@@ -59,3 +59,9 @@ export interface ModuleID {
     module_name_la: string;
     module_name_en: string;
 }
+export interface MenuIDCountRespons {
+    menu_id:      string;
+    menu_name_la: string;
+    menu_name_en: string;
+    count_menu:   number;
+}

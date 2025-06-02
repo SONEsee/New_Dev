@@ -1,7 +1,7 @@
 <template>
   <v-container fluid class="pa-6">
     <v-row justify="center">
-      <v-col cols="12" md="8" lg="6" xl="5">
+      <v-col cols="12" md="10" lg="8" xl="6">
         <v-card elevation="0" class="rounded-xl border">
           <!-- Header -->
           <v-card-title class="pa-8 pb-6">
@@ -14,7 +14,7 @@
                   ສ້າງສິດຜູ້ນໍາໃຊ້ໃໝ່
                 </h2>
                 <p class="text-body-2 text-medium-emphasis mb-0 text-styles">
-                  ກໍານົດສິດການເຂົ້າເຖິງຟັງຊັນຕ່າງໆໃນລະບົບ
+                  ກໍານົດສິດການເຂົ້າເຖິງເມນູແລະຟັງຊັນຕ່າງໆໃນລະບົບ
                 </p>
               </div>
             </div>
@@ -23,15 +23,128 @@
           
           <v-card-text class="pa-8 pt-0">
             <v-form @submit.prevent="submitForm" v-model="isValid" ref="formRef">
-              <v-row>
-              
-                <v-col cols="12" sm="6">
+              <!-- Module, Menu, Submenu Selection Section -->
+              <v-card variant="tonal" class="mb-6 rounded-lg">
+                <v-card-title class="pa-4 pb-2">
+                  <v-icon color="info" class="mr-2">mdi-view-dashboard</v-icon>
+                  <span class="text-h6 text-styles">ເລືອກໂມດູນ, ເມນູ, ແລະເມນູຍ່ອຍ</span>
+                </v-card-title>
+                <v-card-text class="pa-4 pt-2">
+                  <!-- Module Selection -->
+                  <v-row class="mb-4">
+                    <v-col cols="12">
+                      <v-select
+                        v-model="form.module_id"
+                        :items="moduleOptions"
+                        item-title="display"
+                        item-value="module_Id"
+                        label="ເລືອກໂມດູນ *"
+                        variant="outlined"
+                        density="comfortable"
+                        prepend-inner-icon="mdi-filter"
+                        :rules="[rules.required]"
+                        :loading="loadingModules"
+                        no-data-text="ບໍ່ມີຂໍ້ມູນໂມດູນ"
+                        required
+                        @update:model-value="onModuleChange"
+                      >
+                        <template #item="{ props, item }">
+                          <v-list-item v-bind="props">
+                            <template #prepend>
+                              <v-avatar size="32" color="info" variant="tonal">
+                                <v-icon>{{ item.raw.module_icon || 'mdi-view-module' }}</v-icon>
+                              </v-avatar>
+                            </template>
+                            <v-list-item-title>{{ item.raw.display }}</v-list-item-title>
+                            <v-list-item-subtitle>{{ item.raw.module_name_en }}</v-list-item-subtitle>
+                          </v-list-item>
+                        </template>
+                      </v-select>
+                    </v-col>
+                  </v-row>
+
+                  <!-- Menu Selection -->
+                  <v-row class="mb-4">
+                    <v-col cols="12">
+                      <v-select
+                        v-model="form.menu_id"
+                        :items="menuOptions"
+                        item-title="display"
+                        item-value="menu_id"
+                        label="ເລືອກເມນູຫຼັກ *"
+                        variant="outlined"
+                        density="comfortable"
+                        prepend-inner-icon="mdi-menu"
+                        :rules="[rules.required]"
+                        :loading="loadingMenus"
+                        no-data-text="ບໍ່ມີຂໍ້ມູນເມນູຫຼັກ"
+                        :disabled="!form.module_id"
+                        required
+                        @update:model-value="onMenuChange"
+                      >
+                        <template #item="{ props, item }">
+                          <v-list-item v-bind="props">
+                            <template #prepend>
+                              <v-avatar size="32" color="secondary" variant="tonal">
+                                <v-icon>{{ item.raw.menu_icon || 'mdi-menu-open' }}</v-icon>
+                              </v-avatar>
+                            </template>
+                            <v-list-item-title>{{ item.raw.display }}</v-list-item-title>
+                            <v-list-item-subtitle>{{ item.raw.menu_name_en }}</v-list-item-subtitle>
+                          </v-list-item>
+                        </template>
+                      </v-select>
+                    </v-col>
+                  </v-row>
+
+                  <!-- Submenu Selection -->
+                <v-row>
+                  <v-col cols="12">
+                    <v-select
+                      v-model="form.sub_menu_id"
+                      :items="subMenuOptions"
+                      item-title="display"
+                      item-value="sub_menu_id"
+                      label="ເລືອກເມນູຍ່ອຍ *"
+                      variant="outlined"
+                      density="comfortable"
+                      prepend-inner-icon="mdi-menu-right"
+                      :rules="[rules.required]"
+                      :loading="loadingSubmenus"
+                      no-data-text="ບໍ່ມີຂໍ້ມູນເມນູຍ່ອຍ"
+                      :disabled="!form.menu_id"
+                      required
+                      @update:model-value="onSubMenuChange"
+                    >
+                      <template #item="{ props, item }">
+                        <v-list-item v-bind="props" class="py-3">
+                          <template #prepend>
+                            <v-avatar size="36" color="secondary" variant="tonal">
+                              <v-icon>{{ item.raw.sub_menu_icon || 'mdi-menu-right' }}</v-icon>
+                            </v-avatar>
+                          </template>
+                          <v-list-item-title class="font-weight-medium">
+                            {{ item.raw.display }}
+                          </v-list-item-title>
+                          <v-list-item-subtitle>{{ item.raw.sub_menu_name_en }}</v-list-item-subtitle>
+                        </v-list-item>
+                      </template>
+                    </v-select>
+                  </v-col>
+                </v-row>
+
+                </v-card-text>
+              </v-card>
+
+              <!-- Role Selection -->
+              <v-row v-if="form.sub_menu_id">
+                <v-col cols="12">
                   <v-select
                     v-model="form.role_id"
                     :items="roleOptions"
                     item-title="display"
                     item-value="id"
-                    label="ເລືອກບົດບາດ"
+                    label="ເລືອກບົດບາດ *"
                     variant="outlined"
                     density="comfortable"
                     prepend-inner-icon="mdi-account-key"
@@ -39,7 +152,6 @@
                     :loading="loadingRoles"
                     no-data-text="ບໍ່ມີຂໍ້ມູນບົດບາດ"
                     required
-                    class="mb-2"
                   >
                     <template #item="{ props, item }">
                       <v-list-item v-bind="props">
@@ -54,41 +166,9 @@
                     </template>
                   </v-select>
                 </v-col>
-
-                <!-- Function ID -->
-                <v-col cols="12" sm="6">
-                  <v-select
-                    v-model="form.function_id"
-                    :items="functionOptions"
-                    item-title="display"
-                    item-value="id"
-                    label="ເລືອກຟັງຊັນ"
-                    variant="outlined"
-                    density="comfortable"
-                    prepend-inner-icon="mdi-function"
-                    :rules="[rules.required]"
-                    :loading="loadingFunctions"
-                    no-data-text="ບໍ່ມີຂໍ້ມູນຟັງຊັນ"
-                    required
-                    class="mb-2"
-                  >
-                    <template #item="{ props, item }">
-                      <v-list-item v-bind="props">
-                        <template #prepend>
-                          <v-avatar size="32" color="secondary" variant="tonal">
-                            <v-icon>mdi-cog</v-icon>
-                          </v-avatar>
-                        </template>
-                        <!-- <v-list-item-title>{{ item.raw.display }}</v-list-item-title>
-                        <v-list-item-subtitle>{{ item.raw.description_la }}</v-list-item-subtitle> -->
-                      </v-list-item>
-                    </template>
-                  </v-select>
-                </v-col>
               </v-row>
-
-              <!-- Permissions Section -->
-              <v-card variant="tonal" class="mb-6 rounded-lg">
+ <!-- Permissions Section -->
+              <v-card variant="tonal" class="mb-6 rounded-lg" v-if="form.role_id && form.sub_menu_id">
                 <v-card-title class="pa-4 pb-2">
                   <v-icon color="primary" class="mr-2">mdi-lock-outline</v-icon>
                   <span class="text-h6 text-styles">ການອະນຸຍາດ</span>
@@ -96,7 +176,7 @@
                 <v-card-text class="pa-4 pt-2">
                   <v-row>
                     <!-- New Permission -->
-                    <v-col cols="12" sm="6" md="3">
+                    <v-col cols="12" sm="6" lg="4">
                       <div class="permission-card">
                         <div class="d-flex align-center justify-space-between mb-3">
                           <div class="d-flex align-center">
@@ -122,7 +202,7 @@
                     </v-col>
 
                     <!-- Delete Permission -->
-                    <v-col cols="12" sm="6" md="3">
+                    <v-col cols="12" sm="6" lg="4">
                       <div class="permission-card">
                         <div class="d-flex align-center justify-space-between mb-3">
                           <div class="d-flex align-center">
@@ -134,7 +214,7 @@
                             variant="tonal"
                             size="small"
                           >
-                            {{ form.Del_Detail === 1 ? 'ອະນຸຍາດ' : 'ບໍ່ອະນຸຍາດ' }}
+                            {{ form.Del_Detail === 1 ? 'ອະນຸຍາດ' : 'ບໍ່ອະນຸຯາດ' }}
                           </v-chip>
                         </div>
                         <v-switch
@@ -148,7 +228,7 @@
                     </v-col>
 
                     <!-- Edit Permission -->
-                    <v-col cols="12" sm="6" md="3">
+                    <v-col cols="12" sm="6" lg="4">
                       <div class="permission-card">
                         <div class="d-flex align-center justify-space-between mb-3">
                           <div class="d-flex align-center">
@@ -173,8 +253,34 @@
                       </div>
                     </v-col>
 
+                    <!-- View Permission -->
+                    <v-col cols="12" sm="6" lg="4">
+                      <div class="permission-card">
+                        <div class="d-flex align-center justify-space-between mb-3">
+                          <div class="d-flex align-center">
+                            <v-icon color="info" class="mr-2">mdi-eye-check</v-icon>
+                            <span class="font-weight-medium">ກວດສອບ</span>
+                          </div>
+                          <v-chip
+                            :color="form.View_Detail === 1 ? 'success' : 'default'"
+                            variant="tonal"
+                            size="small"
+                          >
+                            {{ form.View_Detail === 1 ? 'ອະນຸຍາດ' : 'ບໍ່ອະນຸຍາດ' }}
+                          </v-chip>
+                        </div>
+                        <v-switch
+                          v-model="permissions.view"
+                          color="success"
+                          density="compact"
+                          hide-details
+                          @update:model-value="updatePermission('View_Detail', $event)"
+                        />
+                      </div>
+                    </v-col>
+
                     <!-- Auth Permission -->
-                    <v-col cols="12" sm="6" md="3">
+                    <v-col cols="12" sm="6" lg="4">
                       <div class="permission-card">
                         <div class="d-flex align-center justify-space-between mb-3">
                           <div class="d-flex align-center">
@@ -202,6 +308,7 @@
                 </v-card-text>
               </v-card>
 
+
               <!-- Action Buttons -->
               <div class="d-flex gap-3 justify-end">
                 <v-btn
@@ -219,11 +326,11 @@
                   variant="elevated"
                   size="large"
                   prepend-icon="mdi-content-save"
-                  :disabled="!isValid"
+                  :disabled="!isValid || !form.sub_menu_id || !form.role_id"
                   :loading="loading"
                   class="text-none font-weight-medium px-8"
                 >
-                  ບັນທຶກ
+                  ເພີ່ມສິດ
                 </v-btn>
               </div>
             </v-form>
@@ -256,7 +363,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import axios from '@/helpers/axios'
 import { RoleDetailModel } from '~/models'
 import { useRouter } from 'vue-router'
@@ -266,28 +373,35 @@ const formRef = ref()
 const isValid = ref(true)
 const loading = ref(false)
 const loadingRoles = ref(false)
-const loadingFunctions = ref(false)
-
-// Dropdown options
-const roleOptions = ref<Array<{ id: string | number; name: string }>>([])
-const functionOptions = ref<Array<{ id: string | number; name: string }>>([])
+const loadingModules = ref(false)
+const loadingMenus = ref(false)
+const loadingSubmenus = ref(false)
 
 // Form data
-const form = ref<RoleDetailModel.RoleDetailResponse>({
+const form = ref<RoleDetailModel.RoleDetailResponse & { module_id: string; menu_id: string }>({
+  module_id: '',
+  menu_id: '',
   role_id: '',
   function_id: '',
+  sub_menu_id: '',
   New_Detail: 0,
   Del_Detail: 0,
   Edit_Detail: 0,
   Auth_Detail: 0,
+  View_Detail: 0,
 })
 
-// Permission switches (for better UX)
+// Dropdown options
+const roleOptions = ref<Array<{ id: string | number; display: string; role_name_la: string }>>([])
+const sidebarData = ref<any[]>([])
+
+// Permission switches
 const permissions = reactive({
   new: false,
   delete: false,
   edit: false,
   auth: false,
+  view: false
 })
 
 // Snackbar state
@@ -303,6 +417,94 @@ const rules = {
   required: (value: any) => !!value || 'ຈໍາເປັນຕ້ອງມີຂໍ້ມູນນີ້',
 }
 
+// Computed options
+const moduleOptions = computed(() => {
+  return sidebarData.value.map(module => ({
+    module_Id: module.module_Id,
+    display: `${module.module_Id} - ${module.module_name_la}`,
+    module_name_la: module.module_name_la,
+    module_name_en: module.module_name_en,
+    module_icon: module.module_icon
+  }))
+})
+
+const menuOptions = computed(() => {
+  if (!form.value.module_id) return []
+  
+  const module = sidebarData.value.find(m => m.module_Id === form.value.module_id)
+  return module?.main_menus.map((menu: any) => ({
+    menu_id: menu.menu_id,
+    display: `${menu.menu_id} - ${menu.menu_name_la}`,
+    menu_name_la: menu.menu_name_la,
+    menu_name_en: menu.menu_name_en,
+    menu_icon: menu.menu_icon
+  })) || []
+})
+
+const subMenuOptions = computed(() => {
+  if (!form.value.menu_id) return []
+  
+  const module = sidebarData.value.find(m => m.module_Id === form.value.module_id)
+  const menu = module?.main_menus.find((m: any) => m.menu_id === form.value.menu_id)
+  return menu?.sub_menus.map((submenu: any) => ({
+    sub_menu_id: submenu.sub_menu_id,
+    display: `${submenu.sub_menu_id} - ${submenu.sub_menu_name_la}`,
+    sub_menu_name_la: submenu.sub_menu_name_la,
+    sub_menu_name_en: submenu.sub_menu_name_en,
+    sub_menu_icon: submenu.sub_menu_icon,
+    functions: submenu.functions || []
+  })) || []
+})
+
+// const functionOptions = computed(() => {
+//   if (!form.value.sub_menu_id) return []
+  
+//   const module = sidebarData.value.find(m => m.module_Id === form.value.module_id)
+//   const menu = module?.main_menus.find((m: any) => m.menu_id === form.value.menu_id)
+//   const submenu = menu?.sub_menus.find((sm: any) => sm.sub_menu_id === form.value.sub_menu_id)
+//   return submenu?.functions.map((func: any) => ({
+//     function_id: func.function_id,
+//     display: `${func.function_id} - ${func.description_la}`,
+//     description_la: func.description_la,
+//     description_en: func.description_en
+//   })) || []
+// })
+
+// Event handlers
+const onModuleChange = () => {
+  form.value.menu_id = ''
+  form.value.sub_menu_id = ''
+  form.value.function_id = ''
+  form.value.role_id = ''
+  resetPermissions()
+}
+
+const onMenuChange = () => {
+  form.value.sub_menu_id = ''
+  form.value.function_id = ''
+  form.value.role_id = ''
+  resetPermissions()
+}
+
+const onSubMenuChange = () => {
+  form.value.function_id = ''
+  form.value.role_id = ''
+  resetPermissions()
+}
+
+const resetPermissions = () => {
+  permissions.new = false
+  permissions.delete = false
+  permissions.edit = false
+  permissions.auth = false
+  permissions.view = false
+  form.value.New_Detail = 0
+  form.value.Del_Detail = 0
+  form.value.Edit_Detail = 0
+  form.value.Auth_Detail = 0
+  form.value.View_Detail = 0
+}
+
 // Fetch roles
 const fetchRoles = async () => {
   loadingRoles.value = true
@@ -316,9 +518,9 @@ const fetchRoles = async () => {
     
     if (res.status === 200) {
       roleOptions.value = res.data.map((role: any) => ({
-        id: role.id || role.role_id,
-        display: `${role.id || role.role_id} - ${role.role_name_la || role.name || 'Unknown Role'}`,
-        role_name_la: role.role_name_la || role.name || 'Unknown Role'
+        id: role.role_id,
+        display: `${role.role_id} - ${role.role_name_la}`,
+        role_name_la: role.role_name_la
       }))
     }
   } catch (error) {
@@ -329,11 +531,13 @@ const fetchRoles = async () => {
   }
 }
 
-// Fetch functions
-const fetchFunctions = async () => {
-  loadingFunctions.value = true
+// Fetch sidebar data
+const fetchSidebarData = async () => {
+  loadingModules.value = true
+  loadingMenus.value = true
+  loadingSubmenus.value = true
   try {
-    const res = await axios.get('/api/functions/', {
+    const res = await axios.get('/api/module/all/', {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -341,17 +545,15 @@ const fetchFunctions = async () => {
     })
     
     if (res.status === 200) {
-      functionOptions.value = res.data.map((func: any) => ({
-        id: func.id || func.function_id,
-        display: `${func.id || func.function_id} - ${func.description_la || func.name || 'Unknown Function'}`,
-        description_la: func.description_la || func.name || 'Unknown Function'
-      }))
+      sidebarData.value = res.data
     }
   } catch (error) {
-    console.error('Error fetching functions:', error)
-    showSnackbar('ເກີດຂໍ້ຜິດພາດໃນການໂຫຼດຂໍ້ມູນຟັງຊັນ', 'error', 'mdi-alert-circle')
+    console.error('Error fetching sidebar data:', error)
+    showSnackbar('ເກີດຂໍ້ຜິດພາດໃນການໂຫຼດຂໍ້ມູນໂມດູນ', 'error', 'mdi-alert-circle')
   } finally {
-    loadingFunctions.value = false
+    loadingModules.value = false
+    loadingMenus.value = false
+    loadingSubmenus.value = false
   }
 }
 
@@ -362,13 +564,23 @@ const updatePermission = (field: keyof RoleDetailModel.RoleDetailResponse, value
 
 // Submit form
 const submitForm = async () => {
-  // Validate form first
   const { valid } = await formRef.value.validate()
   if (!valid) return
 
   loading.value = true
   try {
-    const res = await axios.post('api/role-details/', form.value, {
+    const payload = {
+      role_id: form.value.role_id,
+      function_id: form.value.function_id || null,
+      sub_menu_id: form.value.sub_menu_id,
+      New_Detail: form.value.New_Detail,
+      Del_Detail: form.value.Del_Detail,
+      Edit_Detail: form.value.Edit_Detail,
+      Auth_Detail: form.value.Auth_Detail,
+      View_Detail: form.value.View_Detail,
+    }
+
+    const res = await axios.post('/api/role-details/', payload, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -376,7 +588,6 @@ const submitForm = async () => {
     })
     
     if (res.status === 201) {
-      // Show SweetAlert success message
       if (window.Swal) {
         window.Swal.fire({
           title: 'ສຳເລັດ!',
@@ -393,7 +604,6 @@ const submitForm = async () => {
           resetForm()
         })
       } else {
-        // Fallback to snackbar if SweetAlert is not available
         showSnackbar('ສ້າງສິດຜູ້ນໍາໃຊ້ສໍາເລັດແລ້ວ!', 'success', 'mdi-check-circle')
         setTimeout(() => {
           resetForm()
@@ -403,7 +613,6 @@ const submitForm = async () => {
   } catch (error: any) {
     console.error('Error creating role detail:', error)
     
-    // Show SweetAlert error message
     if (window.Swal) {
       window.Swal.fire({
         title: 'ເກີດຂໍ້ຜິດພາດ!',
@@ -418,7 +627,6 @@ const submitForm = async () => {
         }
       })
     } else {
-      // Fallback to snackbar if SweetAlert is not available
       showSnackbar(
         error.response?.data?.message || 'ເກີດຂໍ້ຜິດພາດໃນການສ້າງສິດຜູ້ນໍາໃຊ້',
         'error',
@@ -441,17 +649,18 @@ const showSnackbar = (message: string, color: string, icon: string) => {
 // Reset form
 const resetForm = () => {
   form.value = {
+    module_id: '',
+    menu_id: '',
     role_id: '',
     function_id: '',
+    sub_menu_id: '',
     New_Detail: 0,
     Del_Detail: 0,
     Edit_Detail: 0,
     Auth_Detail: 0,
+    View_Detail: 0,
   }
-  permissions.new = false
-  permissions.delete = false
-  permissions.edit = false
-  permissions.auth = false
+  resetPermissions()
   formRef.value?.resetValidation()
 }
 
@@ -460,9 +669,12 @@ const goBack = () => {
   router.back()
 }
 
-// Initialize data on component mount
+// Initialize data
 onMounted(async () => {
-  await Promise.all([fetchRoles(), fetchFunctions()])
+  await Promise.all([
+    fetchRoles(),
+    fetchSidebarData()
+  ])
 })
 </script>
 
@@ -496,7 +708,6 @@ onMounted(async () => {
   border: 1px solid rgba(var(--v-theme-outline), 0.12) !important;
 }
 
-/* SweetAlert Custom Styles */
 :global(.swal-popup) {
   font-family: 'Noto Sans Lao', sans-serif !important;
   border-radius: 12px !important;
@@ -509,5 +720,21 @@ onMounted(async () => {
 
 :global(.swal-content) {
   font-size: 1rem !important;
+}
+
+:deep(.v-list-item) {
+  border-bottom: 1px solid rgba(var(--v-theme-outline), 0.08);
+}
+
+:deep(.v-list-item:last-child) {
+  border-bottom: none;
+}
+
+:deep(.v-list-item:hover) {
+  background-color: rgba(var(--v-theme-primary), 0.08);
+}
+
+.v-card[variant="tonal"] {
+  background-color: rgba(var(--v-theme-surface-variant), 0.3) !important;
 }
 </style>
