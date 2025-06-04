@@ -16,7 +16,7 @@ interface TreeGLAccount {
   children: TreeGLAccount[];
   expanded: boolean;
   visible: boolean;
-  category?: string; // ເພີ່ມ category field
+  category?: string;
 }
 
 interface Header {
@@ -36,32 +36,29 @@ const loading = ref(false);
 const showDebug = ref(false);
 const debugTab = ref("raw");
 
-// ⭐ ເພີ່ມ Filter States
 const filterLevel = ref(null);
 const filterCategory = ref(null);
 const searchGlCode = ref("");
 
-// ⭐ Level Options
 const levelOptions = computed(() => [
-  { title: 'ທັງໝົດ', value: null },
-  { title: 'ຂັ້ນທີ 1', value: 1 },
-  { title: 'ຂັ້ນທີ 2', value: 2 },
-  { title: 'ຂັ້ນທີ 3', value: 3 },
-  { title: 'ຂັ້ນທີ 4', value: 4 },
-  { title: 'ຂັ້ນທີ 5', value: 5 },
+  { title: "ທັງໝົດ", value: null },
+  { title: "ຂັ້ນທີ 1", value: 1 },
+  { title: "ຂັ້ນທີ 2", value: 2 },
+  { title: "ຂັ້ນທີ 3", value: 3 },
+  { title: "ຂັ້ນທີ 4", value: 4 },
+  { title: "ຂັ້ນທີ 5", value: 5 },
 ]);
 
-
 const categoryOptions = computed(() => [
-  { title: 'ທັງໝົດ-all', value: null },
-  { title: 'ຊັບສິນ-1', value: '1' },
-  { title: 'ໜີ້ສິນ-2', value: '2' },
-  { title: 'ທືນ-3', value: '3' },
-  { title: 'ລາຍຈ່າຍ-4', value: '4' },
-  { title: 'ລາຍຮັບ-5', value: '5' },
-  { title: 'ນອກຝັງ-6', value: '6' },
-  { title: 'ບັນຊີເງົາ-7', value: '7' },
-  { title: 'ບັນຊີນອກພັງ-8', value: '8' },
+  { title: "ທັງໝົດ-all", value: null },
+  { title: "ຊັບສິນ-1", value: "1" },
+  { title: "ໜີ້ສິນ-2", value: "2" },
+  { title: "ທືນ-3", value: "3" },
+  { title: "ລາຍຈ່າຍ-4", value: "4" },
+  { title: "ລາຍຮັບ-5", value: "5" },
+  { title: "ນອກຝັງ-6", value: "6" },
+  { title: "ບັນຊີເງົາ-7", value: "7" },
+  { title: "ບັນຊີນອກພັງ-8", value: "8" },
 ]);
 
 const headers = ref<Header[]>([
@@ -113,28 +110,27 @@ const buildTreeData = (
     children: account.children
       ? buildTreeData(account.children, level + 1, account.gl_code)
       : [],
-    expanded: false, 
+    expanded: false,
     visible: true,
-  
+
     category: getCategoryByGLCode(account.gl_code),
   }));
 };
-
 
 const getCategoryByGLCode = (glCode: string): string => {
   const firstDigit = glCode.charAt(0);
 
   const categoryMap: Record<string, string> = {
-    '1': '1', 
-    '2': '2', 
-    '3': '3', 
-    '4': '4', 
-    '5': '5', 
-    '6': '6', 
-    '7': '7', 
-    '8': '8', 
+    "1": "1",
+    "2": "2",
+    "3": "3",
+    "4": "4",
+    "5": "5",
+    "6": "6",
+    "7": "7",
+    "8": "8",
   };
-  return categoryMap[firstDigit] || '1';
+  return categoryMap[firstDigit] || "1";
 };
 
 const treeData = ref<TreeGLAccount[]>([]);
@@ -168,58 +164,72 @@ const flattenTreeForDisplay = (items: TreeGLAccount[]): TreeGLAccount[] => {
   return result;
 };
 
-
 const filteredTreeData = computed(() => {
-  if (!filterLevel.value && !filterCategory.value && !searchGlCode.value.trim()) {
+  if (
+    !filterLevel.value &&
+    !filterCategory.value &&
+    !searchGlCode.value.trim()
+  ) {
     return treeData.value;
   }
 
   const filterTree = (items: TreeGLAccount[]): TreeGLAccount[] => {
-    return items.filter(item => {
-  
-      const categoryMatch = !filterCategory.value || item.category === filterCategory.value;
-      
+    return items
+      .filter((item) => {
+        const categoryMatch =
+          !filterCategory.value || item.category === filterCategory.value;
 
-      const glCodeMatch = !searchGlCode.value.trim() || 
-        item.gl_code.toLowerCase().includes(searchGlCode.value.trim().toLowerCase()) ||
-        item.gl_Desc_la?.toLowerCase().includes(searchGlCode.value.trim().toLowerCase()) ||
-        item.gl_Desc_en?.toLowerCase().includes(searchGlCode.value.trim().toLowerCase());
-      
-  
-      let levelMatch = true;
-      let shouldIncludeChildren = true;
-      
-      if (filterLevel.value) {
-    
-        levelMatch = item.level === filterLevel.value || 
-                    (item.level < filterLevel.value && hasChildrenAtLevel(item, filterLevel.value));
-      }
-      
-  
-      const directMatch = levelMatch && categoryMatch && glCodeMatch;
-      
+        const glCodeMatch =
+          !searchGlCode.value.trim() ||
+          item.gl_code
+            .toLowerCase()
+            .includes(searchGlCode.value.trim().toLowerCase()) ||
+          item.gl_Desc_la
+            ?.toLowerCase()
+            .includes(searchGlCode.value.trim().toLowerCase()) ||
+          item.gl_Desc_en
+            ?.toLowerCase()
+            .includes(searchGlCode.value.trim().toLowerCase());
 
-      const hasMatchingChildren = item.children.length > 0 && 
-        filterTree(item.children).length > 0;
-      
-      return directMatch || hasMatchingChildren;
-    }).map(item => ({
-      ...item,
-      children: filterTree(item.children),
-     
-      expanded: (searchGlCode.value.trim() || filterCategory.value) ? true : item.expanded
-    }));
+        let levelMatch = true;
+        let shouldIncludeChildren = true;
+
+        if (filterLevel.value) {
+          levelMatch =
+            item.level === filterLevel.value ||
+            (item.level < filterLevel.value &&
+              hasChildrenAtLevel(item, filterLevel.value));
+        }
+
+        const directMatch = levelMatch && categoryMatch && glCodeMatch;
+
+        const hasMatchingChildren =
+          item.children.length > 0 && filterTree(item.children).length > 0;
+
+        return directMatch || hasMatchingChildren;
+      })
+      .map((item) => ({
+        ...item,
+        children: filterTree(item.children),
+
+        expanded:
+          searchGlCode.value.trim() || filterCategory.value
+            ? true
+            : item.expanded,
+      }));
   };
 
   return filterTree(treeData.value);
 });
 
-
-const hasChildrenAtLevel = (item: TreeGLAccount, targetLevel: number): boolean => {
+const hasChildrenAtLevel = (
+  item: TreeGLAccount,
+  targetLevel: number
+): boolean => {
   if (item.level === targetLevel) return true;
   if (item.children.length === 0) return false;
-  
-  return item.children.some(child => hasChildrenAtLevel(child, targetLevel));
+
+  return item.children.some((child) => hasChildrenAtLevel(child, targetLevel));
 };
 
 const displayedItems = computed(() => {
@@ -252,7 +262,6 @@ const glStats = computed(() => {
     leafNodes: data.filter((item) => !item.has_children).length,
   };
 });
-
 
 const clearFilters = () => {
   filterLevel.value = null;
@@ -385,8 +394,7 @@ const title = "ຈັດການຂໍ້ມູນບັນຊີ";
   <div>
     <div>
       <GlobalTextTitleLine :title="title" />
-      
-      <!-- ⭐ Filter Section -->
+
       <v-card class="mb-4" elevation="1">
         <v-card-title class="text-h6">
           <v-icon class="mr-2">mdi-filter</v-icon>
@@ -408,7 +416,7 @@ const title = "ຈັດການຂໍ້ມູນບັນຊີ";
                 </template>
               </v-text-field>
             </v-col>
-            
+
             <!-- <v-col cols="12" md="3">
               <v-autocomplete
                 v-model="filterLevel"
@@ -425,7 +433,7 @@ const title = "ຈັດການຂໍ້ມູນບັນຊີ";
                 </template>
               </v-autocomplete>
             </v-col> -->
-            
+
             <v-col cols="12" md="3">
               <v-autocomplete
                 v-model="filterCategory"
@@ -442,7 +450,7 @@ const title = "ຈັດການຂໍ້ມູນບັນຊີ";
                 </template>
               </v-autocomplete>
             </v-col>
-            
+
             <v-col cols="12" md="3" class="d-flex align-center">
               <v-btn
                 @click="clearFilters"
@@ -453,7 +461,7 @@ const title = "ຈັດການຂໍ້ມູນບັນຊີ";
                 <v-icon class="mr-1">mdi-filter-off</v-icon>
                 ລ້າງຟິວເຕີ້
               </v-btn>
-              
+
               <v-chip
                 v-if="filterLevel || filterCategory || searchGlCode.trim()"
                 color="primary"
@@ -471,7 +479,7 @@ const title = "ຈັດການຂໍ້ມູນບັນຊີ";
         ເພີ່ມບັນຊີໃໝ່ຂັ້ນ 1
       </v-btn>
     </div>
-    
+
     <v-data-table
       :headers="headers"
       :items="displayedItems"
