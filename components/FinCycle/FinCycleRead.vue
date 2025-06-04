@@ -96,7 +96,7 @@
               </v-avatar>
               <div>
                 <div class="font-weight-medium">{{ item.fin_cycle || '-' }}</div>
-                <div class="text-caption text-grey">ລະຫັດຮອບ</div>
+                <div class="text-caption text-grey text-styles">ລະຫັດຮອບ</div>
               </div>
             </div>
           </template>
@@ -105,7 +105,7 @@
           <template #item.cycle_Desc="{ item }">
             <div>
               <div class="font-weight-medium">{{ item.cycle_Desc || '-' }}</div>
-              <div class="text-caption text-grey">ລາຍລະອຽດຮອບວຽນ</div>
+              <div class="text-caption text-grey text-styles">ລາຍລະອຽດຮອບວຽນ</div>
             </div>
           </template>
 
@@ -121,7 +121,7 @@
               >
                 {{ formatDate(item.StartDate) }}
               </v-chip>
-              <div class="text-caption text-grey mt-1">ເລີ່ມຕົ້ນ</div>
+              <div class="text-caption text-grey mt-1 text-styles">ເລີ່ມຕົ້ນ</div>
             </div>
           </template>
 
@@ -137,7 +137,7 @@
               >
                 {{ formatDate(item.EndDate) }}
               </v-chip>
-              <div class="text-caption text-grey mt-1">ສິ້ນສຸດ</div>
+              <div class="text-caption text-grey mt-1 text-styles">ສິ້ນສຸດ</div>
             </div>
           </template>
 
@@ -153,7 +153,7 @@
               >
                 {{ calculateDuration(item.StartDate, item.EndDate) }}
               </v-chip>
-              <div class="text-caption text-grey mt-1">ໄລຍະເວລາ</div>
+              <div class="text-caption text-grey mt-1 text-styles">ໄລຍະເວລາ</div>
             </div>
           </template>
 
@@ -171,7 +171,7 @@
                 <v-icon start size="16">mdi-calendar-month</v-icon>
                 {{ getPeriodCount(item.fin_cycle) }}
               </v-btn>
-              <div class="text-caption text-grey mt-1">ລາຍເດືອນ</div>
+              <div class="text-caption text-grey mt-1 text-styles">ລາຍເດືອນ</div>
             </div>
           </template>
 
@@ -312,7 +312,7 @@
             ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການລົບຮອບວຽນບັນຊີ <strong>{{ itemToDelete?.fin_cycle }}</strong>?
           </p>
           <div class="mb-4" v-if="itemToDelete">
-            <div class="text-body-2 text-grey-darken-1 mb-2">ລາຍລະອຽດຮອບວຽນ:</div>
+            <div class="text-body-2 text-grey-darken-1 mb-2 text-styles">ລາຍລະອຽດຮອບວຽນ:</div>
             <div class="text-body-2">{{ itemToDelete.cycle_Desc }}</div>
             <div class="text-body-2">{{ formatDate(itemToDelete.StartDate) }} - {{ formatDate(itemToDelete.EndDate) }}</div>
             <div class="text-body-2 text-warning" v-if="getPeriodCount(itemToDelete.fin_cycle) > 0">
@@ -357,7 +357,7 @@
         <v-card-title class="pa-6 pb-4">
           <div class="d-flex align-center">
             <v-icon color="info" size="28" class="mr-3">mdi-information</v-icon>
-            <span class="text-h6 font-weight-bold">ລາຍລະອຽດຮອບວຽນບັນຊີ</span>
+            <span class="text-h6 font-weight-bold text-styles">ລາຍລະອຽດຮອບວຽນບັນຊີ</span>
           </div>
         </v-card-title>
         <v-card-text class="pa-6 pt-0" v-if="selectedItem">
