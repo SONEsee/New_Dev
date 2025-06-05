@@ -586,14 +586,14 @@ const fetchRoleOptions = async () => {
     errorMessage.value =
       error.response?.data?.message || "ເກີດຂໍ້ຜິດພາດໃນການໂຫຼດລາຍການບົດບາດ";
 
-    // Fallback: Generate options from current items if API fails
+    
     generateRoleOptionsFromItems();
   } finally {
     roleOptionsLoading.value = false;
   }
 };
 
-// Fallback function to generate role options from current items
+
 const generateRoleOptionsFromItems = () => {
   const roleMap = new Map();
 
@@ -631,7 +631,7 @@ const generateRoleOptionsFromItems = () => {
   console.log("Generated fallback role options:", roleOptions.value);
 };
 
-// Fetch main role details data
+
 const fetchData = async () => {
   loading.value = true;
   try {
@@ -657,7 +657,7 @@ const fetchData = async () => {
   }
 };
 
-// Filter by role
+
 const filterByRole = async () => {
   if (selectedRoleId.value) {
     loading.value = true;
@@ -683,7 +683,7 @@ const filterByRole = async () => {
       loading.value = false;
     }
   } else {
-    // If no role selected, fetch all data
+    
     await fetchData();
   }
 };
@@ -699,13 +699,13 @@ const confirmDelete = (item: RoleDetailModel.RoleDetailResponse) => {
   deleteDialog.value = true;
 };
 
-// View details
+
 const viewDetails = (item: RoleDetailModel.RoleDetailResponse) => {
   selectedItem.value = item;
   detailsDialog.value = true;
 };
 
-// Delete item
+
 const deleteItem = async () => {
   if (itemToDelete.value) {
     deleteLoading.value = true;
