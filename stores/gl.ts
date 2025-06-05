@@ -58,6 +58,8 @@ export const useGlStore = defineStore("gl", {
       respons_fiter_gl: null as GlModel.GlMasterDetailResponse | null,
       respons_gl_sup: null as GlModel.GlSupResepose | null,
       respons_gl_sup_filter: null as GlModel.GlSupResepose | null,
+      tree_gl_sup_response: null as GlModel.TreeGlSupResepose | null,
+
       glsup_filter_type: {
         request: {
           gl_code: "",
@@ -88,6 +90,27 @@ export const useGlStore = defineStore("gl", {
     };
   },
   actions: {
+    async getTreeGlSup(gl_code:number) {
+        this.isloading = true;
+        try {
+            const res = await axios.get<GlModel.TreeGlSupResepose>(`/api/glsub-tree/${gl_code}`, {
+                headers:{
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${localStorage.getItem("access")}`,
+                }
+            });
+            if(res.status ===200){
+                this.tree_gl_sup_response = res.data;
+            }
+        } catch (error) {
+            this.error =
+                error instanceof Error ? error.message : "An error occurred";
+            throw error;
+            
+        }finally{
+            this.isloading = false;
+        }
+    },
     async getDataGlfilter() {
       this.isloading = true;
       this.glfilter_gl_code.isloading = true;
