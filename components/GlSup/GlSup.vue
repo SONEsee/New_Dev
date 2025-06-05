@@ -5,11 +5,11 @@ import { useRouter } from "vue-router";
 const router = useRouter();
 const glStore = useGlStore();
 
-// Search filters
+
 const searchGlCode = ref("");
 const selectedCategory = ref("");
 
-// Category options for autocomplete
+
 const categoryOptions = [
   { title: "ທັງໝົດ", value: "" },
   { title: "1 = ຊັບສິນ", value: "1" },
@@ -22,16 +22,16 @@ const categoryOptions = [
   { title: "8 = ບັນຊີນອກພັງ", value: "8" },
 ];
 
-// Raw data from store
+
 const rawData = computed((): any[] => {
   return (glStore.respons_gl_sup as any) || [];
 });
 
-// Filtered data based on search criteria
+
 const res = computed((): any[] => {
   let filtered = rawData.value;
 
-  // Filter by GL Code
+ 
   if (searchGlCode.value.trim()) {
     filtered = filtered.filter(item => 
       item.gl_code && 
@@ -39,7 +39,7 @@ const res = computed((): any[] => {
     );
   }
 
-  // Filter by Category
+
   if (selectedCategory.value) {
     filtered = filtered.filter(item => 
       item.category === selectedCategory.value
@@ -49,23 +49,23 @@ const res = computed((): any[] => {
   return filtered;
 });
 
-// Clear all filters
+
 const clearFilters = () => {
   searchGlCode.value = "";
   selectedCategory.value = "";
 };
 
-// Navigation function
+
 const goPath = (path: string) => {
   router.push(path);
 };
 
-// Load data on mount
+
 onMounted(() => {
   glStore.getGlsup();
 });
 
-// Table headers
+
 const header = [
   { title: "ລະຫັດ", value: "gl_code" },
   { title: "ຊື່ Gl sup", value: "gl_Desc_la" },
@@ -85,7 +85,7 @@ const header = [
 
 const title = "ຈັດການຂໍ້ມູນ Gl sup";
 
-// Display category name
+
 const getCategoryName = (category: string) => {
   const categories: Record<string, string> = {
     '1': 'ຊັບສິນ',
@@ -100,7 +100,7 @@ const getCategoryName = (category: string) => {
   return categories[category] || category;
 };
 
-// Display GL Type name
+
 const getGlTypeName = (glType: string) => {
   return glType ? `ຂັ້ນທີ ${glType}` : '';
 };
@@ -108,10 +108,10 @@ const getGlTypeName = (glType: string) => {
 
 <template>
   <v-col cols="12">
-    <!-- Title -->
+   
     <GlobalTextTitleLine :title="title" />
     
-    <!-- Search Filters -->
+    
     <v-card class="mb-4" variant="outlined">
       <v-card-title class="text-h6 bg-blue-lighten-5">
         <v-icon icon="mdi-magnify" class="mr-2"></v-icon>
@@ -119,7 +119,7 @@ const getGlTypeName = (glType: string) => {
       </v-card-title>
       <v-card-text>
         <v-row>
-          <!-- Search by GL Code -->
+       
           <v-col cols="12" md="4">
             <v-text-field
               v-model="searchGlCode"
@@ -132,7 +132,7 @@ const getGlTypeName = (glType: string) => {
             />
           </v-col>
           
-          <!-- Filter by Category -->
+         
           <v-col cols="12" md="4">
             <v-autocomplete
               v-model="selectedCategory"
@@ -147,7 +147,7 @@ const getGlTypeName = (glType: string) => {
             />
           </v-col>
           
-          <!-- Action Buttons -->
+        
           <v-col cols="12" md="4" class="d-flex align-center">
             <v-btn
               color="warning"
@@ -169,7 +169,7 @@ const getGlTypeName = (glType: string) => {
       </v-card-text>
     </v-card>
 
-    <!-- Data Table -->
+  
     <v-card variant="outlined">
       <v-data-table
         :items="res"
@@ -179,7 +179,7 @@ const getGlTypeName = (glType: string) => {
         :items-per-page="10"
         :search="false"
       >
-        <!-- GL Type Column -->
+       
         <template v-slot:item.glType="{ item }">
           <v-chip 
             :color="item.glType ? 'primary' : 'grey'" 
@@ -190,7 +190,7 @@ const getGlTypeName = (glType: string) => {
           </v-chip>
         </template>
 
-        <!-- Category Column -->
+       
         <template v-slot:item.category="{ item }">
           <v-chip 
             :color="item.category === '1' ? 'green' : 
@@ -205,7 +205,7 @@ const getGlTypeName = (glType: string) => {
           </v-chip>
         </template>
 
-        <!-- Yes/No fields -->
+       
         <template v-slot:item.retal="{ item }">
           <v-icon 
             :icon="item.retal === 'Y' ? 'mdi-check-circle' : 'mdi-close-circle'"
@@ -227,7 +227,7 @@ const getGlTypeName = (glType: string) => {
           ></v-icon>
         </template>
 
-        <!-- Action Column -->
+     
         <template v-slot:item.action="{ item }">
           <v-btn
             color="primary"
@@ -240,7 +240,7 @@ const getGlTypeName = (glType: string) => {
           </v-btn>
         </template>
 
-        <!-- No data message -->
+       
         <template v-slot:no-data>
           <div class="text-center pa-4">
             <v-icon icon="mdi-database-search" size="48" color="grey"></v-icon>
