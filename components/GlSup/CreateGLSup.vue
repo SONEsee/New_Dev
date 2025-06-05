@@ -11,7 +11,7 @@ const glStore = useGlStore();
 const id = route.query.id as string;
 const glsub_id = route.query.glsub_id as string;
 
-
+// ຂໍ້ມູນ GL ແມ່
 const parentGlData = computed(() => {
   return glStore.respons_gl_sup && glStore.respons_gl_sup.length > 0
     ? glStore.respons_gl_sup[0]
@@ -28,9 +28,9 @@ const nextAvailableSubCode = computed(() => {
   const parentCode = parentGlData.value?.gl_code;
   if (!parentCode) return '';
   
-  
+
   if (data.value && data.value.length > 0) {
-   
+    
     const existingCodes = data.value
       .map(item => item.glsub_code)
       .filter(code => code && code.startsWith(parentCode + '.'))
@@ -58,7 +58,7 @@ const availableSubCodes = computed(() => {
   const parentCode = parentGlData.value.gl_code;
   const availableCodes = [];
 
- 
+  
   for (let i = 1; i <= 1000; i++) {
     const subCode = `${parentCode}.${i.toString().padStart(7, "0")}`;
     availableCodes.push({
@@ -108,7 +108,7 @@ watch(
   parentGlData,
   (newData) => {
     if (newData) {
-      
+  
       glStore.create_form_glsup.glcode = newData.gl_code;
     }
   },
@@ -121,6 +121,9 @@ watch(
   (newData) => {
     if (newData && newData.length > 0 && newData[0].gl_code) {
       glStore.create_form_glsup.gl_code = newData[0].gl_code;
+    } else if (glsub_id) {
+      
+      glStore.create_form_glsup.gl_code = glsub_id;
     }
   },
   { immediate: true }
@@ -130,7 +133,7 @@ watch(
 watch(
   [nextAvailableSubCode, parentGlData],
   () => {
-    if (nextAvailableSubCode.value && !glStore.create_form_glsup.glsub_code) {
+    if (nextAvailableSubCode.value) {
       glStore.create_form_glsup.glsub_code = nextAvailableSubCode.value;
     }
   },
@@ -169,8 +172,8 @@ const title = computed(() => {
    
     <global-text-title-line :title="title" />
     
-  
-    
+   
+    <!-- <pre>{{ data }}</pre> -->
     
    
     <v-card v-if="parentGlData" class="mb-4" variant="outlined">
@@ -215,7 +218,7 @@ const title = computed(() => {
       </v-card-text>
     </v-card>
 
- 
+  
     <v-form ref="form" @submit.prevent="submitTransaction">
       <v-card variant="outlined">
         <v-card-title class="text-h6 bg-green-lighten-5">
@@ -223,7 +226,7 @@ const title = computed(() => {
         </v-card-title>
         <v-card-text>
           <v-row>
-           
+          
             <v-col cols="12" md="6">
               <v-text-field
                 v-model="glStore.create_form_glsup.glcode"
@@ -235,22 +238,19 @@ const title = computed(() => {
               />
             </v-col>
 
-           
+          
             <v-col cols="12" md="6">
-              <v-combobox
+              <v-text-field
                 v-model="glStore.create_form_glsup.glsub_code"
                 :rules="[validateSubCode]"
-                :items="availableSubCodes"
-                item-title="display"
-                item-value="glsub_code"
                 density="compact"
                 label="ລະຫັດ GL SubMaster (ອັດຕະໂນມັດ)"
                 variant="outlined"
                 required
+                readonly
                 persistent-hint
                 :hint="`ລະຫັດຖັດໄປ: ${nextAvailableSubCode}`"
                 prepend-inner-icon="mdi-auto-fix"
-                readonly
               />
               <!-- <v-alert
                 type="success"
@@ -263,7 +263,7 @@ const title = computed(() => {
               </v-alert> -->
             </v-col>
 
-          
+           
             <v-col cols="12" md="6">
               <v-text-field
                 v-model="glStore.create_form_glsup.glsub_Desc_la"
@@ -277,7 +277,7 @@ const title = computed(() => {
               />
             </v-col>
 
-        
+            
             <v-col cols="12" md="6">
               <v-text-field
                 v-model="glStore.create_form_glsup.glsub_Desc_en"
@@ -290,7 +290,7 @@ const title = computed(() => {
               />
             </v-col>
 
-           
+            
             <v-col cols="12" md="6" v-show="false">
               <v-text-field
                 v-model="glStore.create_form_glsup.gl_code"
@@ -304,7 +304,7 @@ const title = computed(() => {
         </v-card-text>
       </v-card>
 
-      
+     
       <v-row class="mt-4">
         <v-col cols="12" class="d-flex justify-center">
           <v-btn
@@ -323,7 +323,7 @@ const title = computed(() => {
       </v-row>
     </v-form>
 
-    
+    <!-- ຂໍ້ມູນ Debug (ລຶບອອກໃນ production) -->
     <!-- <v-card v-if="parentGlData" class="mt-4" variant="outlined">
       <v-card-title class="text-subtitle-1">Debug Info</v-card-title>
       <v-card-text>
