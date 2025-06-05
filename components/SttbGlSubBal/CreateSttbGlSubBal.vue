@@ -24,10 +24,14 @@ const request = reactive({
   Allow_BackPeriodEntry: "",
   pl_Split_ReqD: "",
 });
-
+const cerrenStore = useCerrencyStore()
+const cerrency = computed(() => {
+  return cerrenStore.respons_cerrency_data || [];
+})
 const res = computed(() => {
   return useglStore.respons_detail_gl || [];
 });
+
 
 // const req = computed(() => {
 //   const existingData = useglStore.respons_fiter_gl || [];
@@ -93,6 +97,7 @@ const currentData = computed(() => {
 });
 
 onMounted(() => {
+  cerrenStore.getDataCerrency();
   if (gl_code) {
     useglStore.glfilter_gl_code.request.gl_code = gl_code;
     useglStore.glfilter_gl_code.request.glType = String(parseInt(glType) + 1);
@@ -309,7 +314,10 @@ const title = computed(() => {
             variant="outlined"
             required
           />
-          <v-text-field
+         <v-autocomplete
+          :items="cerrency"
+          item-title="ccy_code"
+          item-value="ccy_code"
             v-model="request.Res_ccy"
             density="compact"
             variant="outlined"
