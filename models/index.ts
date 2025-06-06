@@ -22,6 +22,7 @@ import * as ExcRateModel from "./excrate";
 import * as HolidayModel from "./holiday";
 import * as FinCycleModel from "./fincycle";
 import * as GLMasterModel from "./glmaster";
+import * as CerrencyModel from "./currency";
 <<<<<<< HEAD
 <<<<<<< HEAD
 import *as GlModel from './gl';
@@ -56,6 +57,7 @@ export {
   HolidayModel,
   FinCycleModel,
   GLMasterModel,
+  CerrencyModel,
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======

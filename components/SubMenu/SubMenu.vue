@@ -128,7 +128,7 @@ defineExpose({
 </script>
 
 <template>
-  <v-container>
+ 
     <GlobalTextTitleLine :title="title" />
     <v-col cols="12">
       <v-row>
@@ -141,7 +141,8 @@ defineExpose({
         </v-col>
 
         <v-col cols="12" md="7" class="text-no-wrap">
-          <v-autocomplete
+          <v-autocomplete 
+          width=""
             v-model="selecteMainMenu"
             density="compact"
             label="ເລືອກເມນູຫຼັກ"
@@ -181,9 +182,9 @@ defineExpose({
           </v-btn>
         </v-col>
       </v-row>
-    </v-col>
+    
 
-    <v-data-table :headers="header" :items="res || []" class="elevation-1">
+    <v-data-table :headers="header" :items="res || []" >
       <template v-slot:item.created_date="{ item }">
         {{ dayjs(item.created_date).format("DD/MM/YYYY") }}
       </template>
@@ -231,5 +232,5 @@ defineExpose({
         />
       </template>
     </v-data-table>
-  </v-container>
+ </v-col>
 </template>

@@ -9,16 +9,8 @@ const glStore = useGlStore();
 const route = useRoute();
 
 const gl_code = String(route.query.gl_code) || "";
+const glType = String(route.query.glType) || "";
 const useglStore = useGlStore();
-
-const res = computed(() => {
-  return useglStore.respons_detail_gl || [];
-});
-
-const currentData = computed(() => {
-  return res.value.length > 0 ? res.value[0] : null;
-});
-
 
 const request = reactive({
   gl_code: "",
@@ -30,53 +22,130 @@ const request = reactive({
   ccy_Res: "",
   Res_ccy: "",
   Allow_BackPeriodEntry: "",
-  pl_Split_ReqD: ""
+  pl_Split_ReqD: "",
+});
+const cerrenStore = useCerrencyStore()
+const cerrency = computed(() => {
+  return cerrenStore.respons_cerrency_data || [];
+})
+const res = computed(() => {
+  return useglStore.respons_detail_gl || [];
 });
 
 
+// const req = computed(() => {
+//   const existingData = useglStore.respons_fiter_gl || [];
+
+//   if (existingData.length === 0) return [];
+
+//   const firstCode = existingData[0].gl_code;
+//   const prefix = firstCode.slice(0, -1);
+
+//   const allPossible = [];
+//   for (let i = 0; i <= 9; i++) {
+//     allPossible.push(prefix + i);
+//   }
+
+//   const existingCodes = existingData.map((item) => item.gl_code);
+//   const availableCodes = allPossible.filter(
+//     (code) => !existingCodes.includes(code)
+//   );
+
+//   return availableCodes.map((code) => ({
+//     gl_code: code,
+//   }));
+// });
+const req = computed(() => {
+  const existingData = useglStore.respons_fiter_gl || [];
+  
+  
+  if (existingData.length === 0) {
+    const parentCode = currentData.value?.gl_code;
+    if (!parentCode) return [];
+    
+   
+    const allPossible = [];
+    for (let i = 0; i <= 9; i++) {
+      allPossible.push(parentCode + i);
+    }
+    
+    return allPossible.map((code) => ({
+      gl_code: code,
+    }));
+  }
+
+
+  const firstCode = existingData[0].gl_code;
+  const prefix = firstCode.slice(0, -1);
+
+  const allPossible = [];
+  for (let i = 0; i <= 9; i++) {
+    allPossible.push(prefix + i);
+  }
+
+  const existingCodes = existingData.map((item) => item.gl_code);
+  const availableCodes = allPossible.filter(
+    (code) => !existingCodes.includes(code)
+  );
+
+  return availableCodes.map((code) => ({
+    gl_code: code,
+  }));
+});
+const currentData = computed(() => {
+  return res.value.length > 0 ? res.value[0] : null;
+});
+
 onMounted(() => {
+  cerrenStore.getDataCerrency();
   if (gl_code) {
+    useglStore.glfilter_gl_code.request.gl_code = gl_code;
+    useglStore.glfilter_gl_code.request.glType = String(parseInt(glType) + 1);
+    useglStore.getGlMasterDetail2();
     useglStore.getGlMasterDetail(gl_code);
   }
 });
 
 
-watch(
-  currentData,
-  (newData) => {
-    if (newData) {
-      request.gl_code = newData.gl_code || "";
-      request.gl_Desc_la = newData.gl_Desc_la || "";
-      request.gl_Desc_en = newData.gl_Desc_en || "";
-      
+watch([req, currentData], ([newReq, newCurrentData]) => {
+  console.log('=== COMBINED WATCH ===');
+  console.log('Available codes:', newReq);
+  console.log('Current data:', newCurrentData);
   
-      const currentGlType = parseInt(newData.glType) || 0;
-      const nextGlType = Math.min(currentGlType + 1, 7);
-      request.glType = nextGlType.toString();
-      
-      request.category = newData.category || "";
-      request.retal = newData.retal || "";
-      request.ccy_Res = newData.ccy_Res || "";
-      request.Res_ccy = newData.Res_ccy || "";
-      request.Allow_BackPeriodEntry = newData.Allow_BackPeriodEntry || "";
-      request.pl_Split_ReqD = newData.pl_Split_ReqD || "";
-    }
-  },
-  { immediate: true }
-);
+ 
+  if (newCurrentData) {
+    request.gl_Desc_la = newCurrentData.gl_Desc_la || "";
+    request.gl_Desc_en = newCurrentData.gl_Desc_en || "";
 
+    const currentGlType = parseInt(newCurrentData.glType) || 0;
+    const nextGlType = Math.min(currentGlType + 1, 7);
+    request.glType = nextGlType.toString();
+
+    request.category = newCurrentData.category || "";
+    request.retal = newCurrentData.retal || "";
+    request.ccy_Res = newCurrentData.ccy_Res || "";
+    request.Res_ccy = newCurrentData.Res_ccy || "";
+    request.Allow_BackPeriodEntry = newCurrentData.Allow_BackPeriodEntry || "";
+    request.pl_Split_ReqD = newCurrentData.pl_Split_ReqD || "";
+  }
+  
+ 
+  if (newReq && newReq.length > 0) {
+    console.log('Setting gl_code to:', newReq[0].gl_code);
+    request.gl_code = newReq[0].gl_code;
+  }
+}, { immediate: true });
 
 const glCodeConfig = computed(() => {
   const existingGlCode = currentData.value?.gl_code || "";
   const currentLength = existingGlCode.length;
-  
- 
+
   const maxLength = currentLength > 0 ? currentLength + 1 : 3;
   const label = `ລະຫັດ GL (ສູງສຸດ ${maxLength} ຕົວເລກ)`;
-  
+
   return {
     maxLength,
-    label
+    label,
   };
 });
 
@@ -84,7 +153,10 @@ const rules = {
   required: (value: any) => !!value || "ຈຳເປັນຕ້ອງລະບຸ",
   glCodeLength: (value: string) => {
     const maxLen = glCodeConfig.value.maxLength;
-    return (value && value.length <= maxLen) || `ລະຫັດ GL ຕ້ອງບໍ່ເກີນ ${maxLen} ຕົວເລກ`;
+    return (
+      (value && value.length <= maxLen) ||
+      `ລະຫັດ GL ຕ້ອງບໍ່ເກີນ ${maxLen} ຕົວເລກ`
+    );
   },
   maxLength250: (value: string) =>
     (value && value.length <= 250) || "ຄວາມຍາວບໍ່ເກີນ 250 ຕົວອັກສອນ",
@@ -94,10 +166,8 @@ const submitTransaction = async () => {
   const { valid: isValid } = await form.value.validate();
   if (isValid) {
     try {
-      
       Object.assign(glStore.create_form_gl, request);
-      
-     
+
       await glStore.createGl();
       console.log("ບັນທຶກສຳເລັດ");
     } catch (error) {
@@ -110,7 +180,6 @@ const goPath = (path: string) => {
   router.push(path);
 };
 
-
 const title = computed(() => {
   if (gl_code && currentData.value) {
     return `ສ້າງບັນຊີລູກຂອງ GL: ${currentData.value.gl_code} - ${currentData.value.gl_Desc_la}`;
@@ -121,24 +190,19 @@ const title = computed(() => {
 
 <template>
   <v-col cols="12">
-   
-    <div v-if="currentData">
-      <p>Current GL Code: {{ currentData.gl_code }}</p>
-      <p>Current Category: {{ currentData.category }}</p>
-    </div>
-    
     <global-text-title-line :title="title" />
     <v-form ref="form" @submit.prevent="submitTransaction">
       <v-row>
         <v-col cols="12" md="4">
-          <v-text-field
+          <v-autocomplete
             v-model="request.gl_code"
-            :rules="[rules.required, rules.glCodeLength]"
+            :rules="[rules.required]"
+            :items="req"
+            item-title="gl_code"
+            item-value="gl_code"
             density="compact"
+            label="ເລືອກລະຫັດ GL ສໍາລັບເພີ່ມ"
             variant="outlined"
-            :label="glCodeConfig.label"
-            type="text"
-            :maxlength="glCodeConfig.maxLength"
             required
           />
           <v-text-field
@@ -151,6 +215,7 @@ const title = computed(() => {
             required
           />
           <v-autocomplete
+          readonly
             v-model="request.glType"
             :rules="[rules.required]"
             :items="[
@@ -186,6 +251,7 @@ const title = computed(() => {
         </v-col>
         <v-col cols="12" md="4">
           <v-autocomplete
+          readonly
             v-model="request.category"
             :rules="[rules.required]"
             :items="[
@@ -213,7 +279,7 @@ const title = computed(() => {
             label="ຊື່ເລກບັນຊີ(ພາສາອັງກິດ)"
             maxlength="250"
           />
-      
+
           <v-autocomplete
             v-model="request.retal"
             :rules="[rules.required]"
@@ -248,7 +314,10 @@ const title = computed(() => {
             variant="outlined"
             required
           />
-          <v-text-field
+         <v-autocomplete
+          :items="cerrency"
+          item-title="ccy_code"
+          item-value="ccy_code"
             v-model="request.Res_ccy"
             density="compact"
             variant="outlined"

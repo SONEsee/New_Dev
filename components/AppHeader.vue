@@ -1,5 +1,5 @@
 <template>
-  <v-app-bar :elevation="2" color="#c58c20" class="d-flex align-center">
+  <v-app-bar :elevation="2" color="#616161" class="d-flex align-center">
     <v-app-bar-nav-icon
       @click="drawer = !drawer"
       style="color: blue; background-color: blanchedalmond; flex-shrink: 0"
@@ -68,12 +68,12 @@
     permanent
     :rail="rail"
     order="1"
-    :style="{ background: '#fdfdf5', borderColor: '#c58c20' }"
+    :style="{ background: '#616161', borderColor: '#c58c20' }"
   >
     <v-list nav density="comfortable" style="color: #c58c20; padding: 0">
       <template v-if="isLoading">
         <v-list-subheader
-          style="color: #c58c20; padding-left: 0px"
+          style="color: #CFD8DC; padding-left: 0px"
           v-show="!rail"
           >ກຳລັງໂຫຼດ...</v-list-subheader
         >
@@ -142,14 +142,14 @@
             <template
               v-if="mainMenu.sub_menus && mainMenu.sub_menus.length > 0"
             >
-              <v-list-group :value="mainMenu.menu_id">
+              <v-list-group :value="mainMenu.menu_id" style="background-color: #616161;">
                 <template v-slot:activator="{ props }">
                   <v-list-item
                     v-bind="props"
                     :prepend-icon="convertIcon(mainMenu.menu_icon)"
                     :title="rail ? '' : mainMenu.menu_name_la"
                     variant="tonal"
-                    color="primary"
+                    color="info"
                     style="margin-bottom: 2px"
                     class="px-0"
                   ></v-list-item>
@@ -157,7 +157,7 @@
 
              
                 <template v-if="!rail">
-                  <v-list-item
+                  <v-list-item 
                     v-for="(subMenu, subMenuIndex) in mainMenu.sub_menus"
                     :key="`sub-${module.module_Id}-${mainMenu.menu_id}-${subMenu.sub_menu_id}`"
                     :value="subMenu.sub_menu_id"
@@ -166,8 +166,8 @@
                     :to="cleanUrl(subMenu.sub_menu_urls)"
                     :active="route.path === cleanUrl(subMenu.sub_menu_urls)"
                     variant="plain"
-                    color="primary"
-                    style="margin-bottom: 2px"
+                    color="accent"
+                    style="margin-bottom: 2px; background-color: #CFD8DC;"
                     class="sub-menu-item"
                   ></v-list-item>
                 </template>
@@ -180,7 +180,7 @@
                 :title="rail ? '' : mainMenu.menu_name_la"
                 :to="mainMenu.menu_url ? cleanUrl(mainMenu.menu_url) : '#'"
                 variant="tonal"
-                color="primary"
+                color="#c58c20"
                 style="margin-bottom: 2px"
                 class="px-0"
               ></v-list-item>
@@ -466,13 +466,13 @@ const onLogout = () => {
 
 
 .sub-menu-item {
-  border-left: 2px solid rgba(197, 140, 32, 0.3) !important;
+  border-left: 2px solid rgba(41, 34, 24, 0.425) !important;
   margin-left: 0px !important;
   padding-left: 8px !important;
 }
 
 .sub-menu-item.v-list-item--active {
-  border-left-color: #c58c20 !important;
-  background-color: rgba(197, 140, 32, 0.1) !important;
+  border-left-color: #f2f7f8 !important;
+  background-color: rgba(250, 248, 244, 0.596) !important;
 }
 </style>
