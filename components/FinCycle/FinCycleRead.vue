@@ -472,8 +472,8 @@
             <div class="d-flex align-center">
               <v-icon color="purple" size="28" class="mr-3">mdi-calendar-month</v-icon>
               <div>
-                <span class="text-h6 font-weight-bold">ລາຍເດືອນຮອບວຽນ {{ selectedCycleForPeriods }}</span>
-                <div class="text-caption text-grey">{{ periods.length }} ລາຍການ</div>
+                <span class="text-h6 font-weight-bold text-styles">ລາຍເດືອນຮອບວຽນ {{ selectedCycleForPeriods }}</span>
+                <div class="text-caption text-grey text-styles">{{ periods.length }} ລາຍການ</div>
               </div>
             </div>
             <v-btn
