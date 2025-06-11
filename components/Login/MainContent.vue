@@ -121,6 +121,7 @@ import { ref } from "vue";
 import { useRouter } from "vue-router";
 import Swal from "sweetalert2";
 import { Style } from "#build/components";
+const baseUrl = import.meta.env.VITE_BASE_URL;
 
 const user_name = ref(null);
 const user_password = ref(null);
@@ -159,7 +160,9 @@ const handleLogin = async () => {
       
       try {
         
-        const response = await axiosInstance.post("http://192.168.10.35:35729/api/login/", loginPayload, {
+        // const response = await axiosInstance.post("http://127.0.0.1:8000/api/login/", loginPayload, {
+        const response = await axiosInstance.post(`${baseUrl}api/login/`, loginPayload, {
+        // const response = await axiosInstance.post("http://192.168.10.35:35729/api/login/", loginPayload, {
           headers: {
             'Content-Type': 'application/json'
           }

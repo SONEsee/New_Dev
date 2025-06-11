@@ -371,7 +371,7 @@ watch([selectedStatus, selectedAuthStatus], () => {
               </v-avatar>
               <div>
                 <div class="font-weight-medium">{{ item.trn_code }}</div>
-                <div class="text-caption text-grey">ລະຫັດທຸລະກຳ</div>
+                
               </div>
               <v-btn
                 icon="mdi-content-copy"
@@ -399,7 +399,7 @@ watch([selectedStatus, selectedAuthStatus], () => {
                 {{ item.trn_Desc_en }}
               </v-tooltip>
               <div v-else class="font-weight-medium">{{ item.trn_Desc_en || '-' }}</div>
-              <div class="text-caption text-grey">ລາຍລະອຽດ (ອັງກິດ)</div>
+             
             </div>
           </template>
 
@@ -407,7 +407,7 @@ watch([selectedStatus, selectedAuthStatus], () => {
           <template #item.trn_Desc_la="{ item }">
             <div>
               <div class="font-weight-medium">{{ item.trn_Desc_la || '-' }}</div>
-              <div class="text-caption text-grey">ລາຍລະອຽດ (ລາວ)</div>
+          
             </div>
           </template>
 

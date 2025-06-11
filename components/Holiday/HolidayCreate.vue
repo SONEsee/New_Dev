@@ -118,7 +118,7 @@
           <v-col cols="12" md="6" class="text-right">
             <div class="text-h6 mb-2 text-styles">ສັງລວມ</div>
             <div class="text-body-2 mb-3 text-styles">
-              ວັນພັກທັງໝົດ: <strong class="text-amber-darken-4 text-styles">{{ totalHolidays }}</strong> ມື້
+              ຈໍານວນວັນພັກທັງໝົດ: <strong class="text-amber-darken-4 text-styles">{{ totalHolidays }}</strong> ມື້
             </div>
             <v-btn
               color="grey-darken-2"
