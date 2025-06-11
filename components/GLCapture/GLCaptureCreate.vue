@@ -1047,7 +1047,7 @@ const submitJournal = async () => {
       if (entry.DebitAccount) {
         batchPayload.entries.push({
           Account: entry.DebitAccount,
-          Fcy_Amount: amount,
+          Amount: amount,
           Dr_cr: 'D'
         })
       }
@@ -1056,7 +1056,7 @@ const submitJournal = async () => {
       if (entry.CreditAccount) {
         batchPayload.entries.push({
           Account: entry.CreditAccount,
-          Fcy_Amount: amount,
+          Amount: amount,
           Dr_cr: 'C'
         })
       }
