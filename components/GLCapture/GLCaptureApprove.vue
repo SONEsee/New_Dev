@@ -9,18 +9,6 @@
       <p class="page-subtitle">ຈັດການ ແລະ ກວດສອບລາຍການບັນທຶກບັນຊີ</p>
     </div>
 
-
-    <div class="top-left-action mb-2 py-2">
-      <v-btn
-        color="primary"
-        variant="flat"
-        @click="$router.push('/glcapture/create')"
-        prepend-icon="mdi-plus"
-        class="mr-2"
-      >
-        ເພີ່ມບັນທຶກໃໝ່
-      </v-btn>
-    </div>
     <!-- Filters Card -->
     <v-card class="filters-card mb-4" elevation="1">
       <v-card-text class="pa-4">
@@ -197,7 +185,11 @@
             </div>
           </template>
 
-   
+          <template v-slot:item.Value_date="{ item }">
+            <div class="date-cell">
+              {{ formatDate(item.Value_date) }}
+            </div>
+          </template>
 
           <template v-slot:item.Account="{ item }">
             <div class="account-cell">
@@ -217,14 +209,7 @@
               </div>
             </div>
           </template>
-            
-          <template v-slot:item.Value_date="{ item }">
-              <div class="date-cell">
-                {{ formatDate(item.Value_date) }}
-              </div>
-          </template>
 
-          
           <template v-slot:item.Dr_cr="{ item }">
             <v-chip
               :color="item.Dr_cr === 'D' ? 'primary' : 'success'"
@@ -270,7 +255,49 @@
               >
                 <v-icon size="small">mdi-eye</v-icon>
               </v-btn>
-
+              
+              <v-btn
+                v-if="item.Auth_Status === 'U'"
+                icon
+                size="small"
+                color="warning"
+                @click="editEntry(item)"
+                :title="'ແກ້ໄຂ'"
+              >
+                <v-icon size="small">mdi-pencil</v-icon>
+              </v-btn>
+              
+              <v-btn
+                v-if="item.Auth_Status === 'U'"
+                icon
+                size="small"
+                color="success"
+                @click="authorizeEntry(item)"
+                :title="'ອະນຸມັດ'"
+              >
+                <v-icon size="small">mdi-check</v-icon>
+              </v-btn>
+              
+              <v-btn
+                icon
+                size="small"
+                color="secondary"
+                @click="checkBalance(item.Reference_No)"
+                :title="'ກວດສອບຍອດ'"
+              >
+                <v-icon size="small">mdi-scale-balance</v-icon>
+              </v-btn>
+              
+              <v-btn
+                v-if="item.Auth_Status === 'U'"
+                icon
+                size="small"
+                color="error"
+                @click="deleteEntry(item)"
+                :title="'ລຶບ'"
+              >
+                <v-icon size="small">mdi-delete</v-icon>
+              </v-btn>
             </div>
           </template>
 
@@ -483,11 +510,10 @@ const summaryStats = reactive({
 // Table configuration
 const tableHeaders = [
   { title: 'ເລກອ້າງອີງ', key: 'Reference_No', sortable: true, width: '150px' },
-  { title: 'ບັນຊີ', key: 'Account', sortable: false, width: '160px' },
-  { title: 'ຈຳນວນເງິນ', key: 'amounts', sortable: false, width: '150px' },
-  { title: 'ເນື້ອໃນ', key: 'Addl_sub_text', sortable: true, width: '120px' },
-  { title: 'ປະເພດ', key: 'Dr_cr', sortable: true, width: '100px' },
   { title: 'ວັນທີ', key: 'Value_date', sortable: true, width: '120px' },
+  { title: 'ບັນຊີ', key: 'Account', sortable: false, width: '200px' },
+  { title: 'ຈຳນວນເງິນ', key: 'amounts', sortable: false, width: '150px' },
+  { title: 'ປະເພດ', key: 'Dr_cr', sortable: true, width: '100px' },
   { title: 'ສະຖານະ', key: 'Auth_Status', sortable: true, width: '120px' },
   { title: 'ຜູ້ສ້າງ', key: 'audit', sortable: false, width: '150px' },
   { title: 'ການດຳເນີນການ', key: 'actions', sortable: false, width: '200px' }
