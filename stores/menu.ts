@@ -73,6 +73,7 @@ export const useMenuStore = defineStore("menu", {
       respons_function_menu_data: null as MenuModel.Function | null,
       respons_function_menu_detail_data: null as MenuModel.Function | null,
       respons_menu_id: null as MenuModel.MenuIDCountRespons | null,
+    
       isloading: false,
       query_menu_filter: {
         data: {
