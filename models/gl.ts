@@ -59,6 +59,15 @@ export interface Datum {
     glsub_code:       string;
     glsub_Desc_la:    string;
     glsub_Desc_en:    string;
+    glType:          string;
+    category:        string;
+    retal:           null;
+    ccy_Res:         null;
+    Res_ccy:         null;
+    Allow_BackPeriodEntry: string;
+    pl_Split_ReqD:   null;
+    
+
     Record_Status:    string;
     Maker_DT_Stamp:   Date;
     Checker_DT_Stamp: null;
