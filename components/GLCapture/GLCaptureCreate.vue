@@ -1563,6 +1563,7 @@ const submitJournal = async () => {
       if (entry.DebitAccount) {
         batchPayload.entries.push({
           Account: entry.DebitAccount,
+          Account_no: getAccountCode(entry.DebitAccount),
           Amount: amount,
           Dr_cr: 'D',
           Addl_sub_text: entry.Addl_sub_text || batchPayload.Addl_sub_text || '',  // Priority: entry -> main -> empty
@@ -1575,6 +1576,7 @@ const submitJournal = async () => {
       if (entry.CreditAccount) {
         batchPayload.entries.push({
           Account: entry.CreditAccount,
+          Account_no: getAccountCode(entry.CreditAccount),
           Amount: amount,
           Dr_cr: 'C',
           Addl_sub_text: entry.Addl_sub_text || batchPayload.Addl_sub_text || '',  // Priority: entry -> main -> empty
