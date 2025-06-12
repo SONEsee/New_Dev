@@ -1,3 +1,4 @@
+import { ref } from "vue";
 export interface GlResponse {
   gl_code: string;
   gl_Desc_la: string | null;
@@ -41,6 +42,7 @@ export const useGlStore = defineStore("gl", {
         gl_code_id: "",
         gl_code: "",
       },
+
       create_form_gl: {
         gl_code: "",
         gl_Desc_la: null as string | null,
@@ -53,12 +55,18 @@ export const useGlStore = defineStore("gl", {
         Allow_BackPeriodEntry: "",
         pl_Split_ReqD: "",
       },
+      update_form_gl: {
+        glsub_code: "",
+        glsub_Desc_la: null as string | null,
+        glsub_Desc_en: "",
+      },
       respons_data_gl: null as GlModel.GlResponse[] | null,
       respons_detail_gl: null as GlModel.GlMasterDetailResponse | null,
       respons_fiter_gl: null as GlModel.GlMasterDetailResponse | null,
       respons_gl_sup: null as GlModel.GlSupResepose | null,
       respons_gl_sup_filter: null as GlModel.GlSupResepose | null,
       tree_gl_sup_response: null as GlModel.TreeGlSupResepose | null,
+      respons_gl_sub_detail: null as GlModel.Datum | null,
 
       glsup_filter_type: {
         request: {
@@ -85,31 +93,145 @@ export const useGlStore = defineStore("gl", {
         },
         isloading: false,
       },
+      glsub_id_filter: {
+        request: {
+          glsub_id: "",
+        },
+        isloading: false,
+      },
       isloading: false,
       error: null as string | null,
     };
   },
   actions: {
-    async getTreeGlSup(gl_code:number) {
-        this.isloading = true;
-        try {
-            const res = await axios.get<GlModel.TreeGlSupResepose>(`/api/glsub-tree/${gl_code}`, {
-                headers:{
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${localStorage.getItem("access")}`,
-                }
-            });
-            if(res.status ===200){
-                this.tree_gl_sup_response = res.data;
-            }
-        } catch (error) {
-            this.error =
-                error instanceof Error ? error.message : "An error occurred";
-            throw error;
-            
-        }finally{
-            this.isloading = false;
+    async getGlDetailSub(id: number) {
+      this.isloading = true;
+      this.glsub_id_filter.isloading = true;
+      try {
+        const res = await axios.get<GlModel.Datum>(`api/gl-sub/${id}`, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("access")}`,
+          },
+        });
+        if (res.status === 200) {
+          this.respons_gl_sub_detail = res.data;
+          console.log("res", res.data);
         }
+      } catch (error) {
+        this.error =
+          error instanceof Error ? error.message : "An error occurred";
+        throw error;
+      } finally {
+        this.isloading = false;
+        this.glsub_id_filter.isloading = false;
+      }
+    },
+    async updateGlsub(id: number) {
+      this.isloading = true;
+      try {
+        const notitication = await CallSwal({
+          title: "ແກ້ໄຂ",
+          text: "ທ່ານຕອ້ງການບັນທຶກການປຽນແປງນຮໍີ້ແທ້ບໍ?",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonText: "ຢືນຢັນ",
+          cancelButtonText: "ຍົກເລີນ",
+        });
+        if (notitication.isConfirmed) {
+          const res = await axios.put<GlModel.Datum>(
+            `api/gl-sub/${id}/`,
+            this.update_form_gl,
+            {
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem("access")}`,
+              },
+            }
+          );
+          if (res.status === 200 || res.status === 201) {
+            CallSwal({
+              title: "ສຳເລັດ",
+              text: "ແກ້ໄຂ GL ສຳເລັດ",
+              icon: "success",
+            });
+            setTimeout(() => {
+              goPath("/gl/glsub/");
+            }, 1500);
+            return res.data;
+          }
+        }
+      } catch (error) {
+        console.error("Error updating GL sub:", error);
+        this.error =
+          error instanceof Error ? error.message : "An error occurred";
+      } finally {
+        this.isloading = false;
+      }
+    },
+    async deleteGlsub(id: number) {
+      this.isloading = true;
+
+      try {
+        const notitication = await CallSwal({
+          title: "ລຶບ",
+          text: "ທ່ານຕອ້ງການລຶບ GL ບໍ?",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonText: "ຢືນຢັນ",
+          cancelButtonText: "ຍົກເລີກ",
+        });
+        if(!notitication.isConfirmed){
+          this.isloading = false;
+          return;
+        }
+        if (notitication.isConfirmed) {
+          const res = await axios.delete(`api/gl-sub/${id}/`, {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("access")}`,
+            },
+          });
+          if (res.status === 204) {
+            CallSwal({
+              title: "ສຳເລັດ",
+              text: "GL ຖືກລຶບແລ້ວ",
+              icon: "success",
+            });
+            setTimeout(() => {
+              goPath("/gl/glsub/");
+            }, 1500);
+          }
+        }
+      } catch (error) {
+        this.error =
+          error instanceof Error ? error.message : "An error occurred";
+      } finally {
+        this.isloading = false;
+      }
+    },
+    async getTreeGlSup(gl_code: number) {
+      this.isloading = true;
+      try {
+        const res = await axios.get<GlModel.TreeGlSupResepose>(
+          `/api/glsub-tree/${gl_code}`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("access")}`,
+            },
+          }
+        );
+        if (res.status === 200) {
+          this.tree_gl_sup_response = res.data;
+        }
+      } catch (error) {
+        this.error =
+          error instanceof Error ? error.message : "An error occurred";
+        throw error;
+      } finally {
+        this.isloading = false;
+      }
     },
     async getDataGlfilter() {
       this.isloading = true;

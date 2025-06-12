@@ -11,7 +11,7 @@ const glStore = useGlStore();
 const id = route.query.id as string;
 const glsub_id = route.query.glsub_id as string;
 
-// ຂໍ້ມູນ GL ແມ່
+
 const parentGlData = computed(() => {
   return glStore.respons_gl_sup && glStore.respons_gl_sup.length > 0
     ? glStore.respons_gl_sup[0]
@@ -173,7 +173,7 @@ const title = computed(() => {
     <global-text-title-line :title="title" />
     
    
-    <!-- <pre>{{ data }}</pre> -->
+    
     
    
     <v-card v-if="parentGlData" class="mb-4" variant="outlined">

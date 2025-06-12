@@ -51,7 +51,7 @@ export interface TreeGlSupResepose {
     success:        boolean;
     message:        string;
     gl_master_info: null;
-    data:           Datum[];
+    data:           Datum;
 }
 
 export interface Datum {

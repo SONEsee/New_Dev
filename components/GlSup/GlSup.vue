@@ -162,36 +162,38 @@ const flatTableData = computed(() => {
   return result;
 });
 const deleteSubItem = async (subItem: any, glCode: string) => {
-  const result = await Swal.fire({
-    title: 'ຢືນຢັນການລຶບ',
-    html: `
-      <div>ທ່ານຕ້ອງການລຶບຂໍ້ມູນນີ້ບໍ?</div>
-      <div class="mt-2">
-        <strong>ລະຫັດ:</strong> ${subItem.glsub_code || subItem.code}<br>
-        <strong>ຊື່:</strong> ${subItem.glsub_Desc_la || subItem.name_la}
-      </div>
-    `,
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#d33',
-    cancelButtonColor: '#3085d6',
-    confirmButtonText: 'ລຶບ',
-    cancelButtonText: 'ຍົກເລີກ'
-  });
+  // const result = await Swal.fire({
+  //   title: 'ຢືນຢັນການລຶບ',
+  //   html: `
+  //     <div>ທ່ານຕ້ອງການລຶບຂໍ້ມູນນີ້ບໍ?</div>
+  //     <div class="mt-2">
+  //       <strong>ລະຫັດ:</strong> ${subItem.glsub_code || subItem.code}<br>
+  //       <strong>ຊື່:</strong> ${subItem.glsub_Desc_la || subItem.name_la}
+  //     </div>
+  //   `,
+  //   icon: 'warning',
+  //   showCancelButton: true,
+  //   confirmButtonColor: '#d33',
+  //   cancelButtonColor: '#3085d6',
+  //   confirmButtonText: 'ລຶບ',
+  //   cancelButtonText: 'ຍົກເລີກ'
+  // });
 
-  if (result.isConfirmed) {
+ 
     try {
+    await glStore.deleteGlsub(subItem.glsub_id || subItem.id);
+     if(!subItem){
+      return;
+     }
       
-      console.log('Deleting SubMaster:', subItem);
+      // Swal.fire({
+      //   title: 'ລຶບສຳເລັດ!', 
+      //   text: `${subItem.glsub_code || subItem.code} ຖືກລຶບແລ້ວ`, 
+      //   icon: 'success',
+      //   timer: 2000
+      // });
       
-      Swal.fire({
-        title: 'ລຶບສຳເລັດ!', 
-        text: `${subItem.glsub_code || subItem.code} ຖືກລຶບແລ້ວ`, 
-        icon: 'success',
-        timer: 2000
-      });
-      
-    
+     
       const parentGL = rawData.value.find(gl => gl.gl_code === glCode);
       if (parentGL) {
         await loadSubData(parentGL.glid, glCode);
@@ -200,9 +202,8 @@ const deleteSubItem = async (subItem: any, glCode: string) => {
       console.error('Delete error:', error);
       Swal.fire('ເກີດຂໍ້ຜິດພາດ!', 'ບໍ່ສາມາດລຶບຂໍ້ມູນໄດ້', 'error');
     }
-  }
+  
 };
-
 onMounted(() => {
   glStore.getGlsup(); 
 });
@@ -456,7 +457,7 @@ const getGlTypeName = (glType: string) => {
               size="small"
               variant="text"
               color="error"
-              @click="deleteSubItem(item.rawData, item.parent_gl_code)"
+              @click="deleteSubItem(item.rawData, item.rawData.glsub_id)"
               title="ລຶບ"
             >
             </v-btn>
