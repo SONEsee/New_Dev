@@ -8,8 +8,6 @@
       </h2>
       <p class="page-subtitle">ຈັດການ ແລະ ກວດສອບລາຍການບັນທຶກບັນຊີ</p>
     </div>
-
-
     <div class="top-left-action mb-2 py-2">
       <v-btn
         color="primary"

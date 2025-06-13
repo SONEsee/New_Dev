@@ -6,7 +6,7 @@
         <v-icon left color="primary">mdi-book-open-page-variant</v-icon>
         ລາຍການບັນທຶກບັນຊີ
       </h2>
-      <p class="page-subtitle">ສ້າງລາຍການບັນທຶກບັນຊີ</p>
+      <!-- <p class="page-subtitle">ສ້າງລາຍການບັນທຶກບັນຊີ</p> -->
     </div>
 
     <!-- Main Form Card -->
@@ -22,36 +22,16 @@
             </h3>
             <v-row dense>
               <v-col cols="12" md="2">
-                <v-text-field
-                  v-model="journalData.Reference_No"
-                  label="ເລກອ້າງອີງ *"
-                  :rules="referenceRules"
-                  :disabled="autoReferenceMode"
-                  variant="outlined"
-                  density="comfortable"
-                  counter="30"
-                  prepend-inner-icon="mdi-identifier"
-                  hide-details="auto"
-                  :placeholder="referencePlaceholder"
-                ></v-text-field>
+                <v-text-field v-model="journalData.Reference_No" label="ເລກອ້າງອີງ *" :rules="referenceRules"
+                  :disabled="autoReferenceMode" variant="outlined" density="comfortable" counter="30"
+                  prepend-inner-icon="mdi-identifier" hide-details="auto"
+                  :placeholder="referencePlaceholder"></v-text-field>
               </v-col>
               <v-col cols="12" md="2">
-                <v-select
-                  v-model="journalData.module_id"
-                  :items="modules"
-                  item-title="module_name_la"
-                  item-value="module_Id"
-                  label="ໂມດູນ *"
-                  :rules="requiredRules"
-                  variant="outlined"
-                  density="comfortable"
-                  :loading="loading.modules"
-                  @update:model-value="onModuleChange"
-                  prepend-inner-icon="mdi-cube-outline"
-                  hide-details="auto"
-                  no-data-text="ບໍ່ມີຂໍ້ມູນໂມດູນ"
-                  class="module-field"
-                >
+                <v-select v-model="journalData.module_id" :items="modules" item-title="module_name_la"
+                  item-value="module_Id" label="ໂມດູນ *" :rules="requiredRules" variant="outlined" density="comfortable"
+                  :loading="loading.modules" @update:model-value="onModuleChange" prepend-inner-icon="mdi-cube-outline"
+                  hide-details="auto" no-data-text="ບໍ່ມີຂໍ້ມູນໂມດູນ" class="module-field">
                   <template #item="{ props, item }">
                     <v-list-item v-bind="props">
                     </v-list-item>
@@ -59,22 +39,11 @@
                 </v-select>
               </v-col>
               <v-col cols="12" md="2">
-                <v-select
-                  v-model="journalData.Ccy_cd"
-                  :items="currencies"
-                  item-title="Ccy_Name_la"
-                  item-value="ccy_code"
-                  label="ສະກຸນເງິນ *"
-                  :rules="requiredRules"
-                  variant="outlined"
-                  density="comfortable"
-                  :loading="loading.currencies"
-                  @update:model-value="onMainCurrencyChange"
-                  prepend-inner-icon="mdi-currency-usd"
-                  hide-details="auto"
-                  no-data-text="ບໍ່ມີຂໍ້ມູນສະກຸນເງິນ"
-                  class="currency-field"
-                >
+                <v-select v-model="journalData.Ccy_cd" :items="currencies" item-title="Ccy_Name_la"
+                  item-value="ccy_code" label="ສະກຸນເງິນ *" :rules="requiredRules" variant="outlined"
+                  density="comfortable" :loading="loading.currencies" @update:model-value="onMainCurrencyChange"
+                  prepend-inner-icon="mdi-currency-usd" hide-details="auto" no-data-text="ບໍ່ມີຂໍ້ມູນສະກຸນເງິນ"
+                  class="currency-field">
                   <template #item="{ props, item }">
                     <v-list-item v-bind="props">
                     </v-list-item>
@@ -82,21 +51,11 @@
                 </v-select>
               </v-col>
               <v-col cols="12" md="2">
-                <v-select
-                  v-model="journalData.Txn_code"
-                  :items="transactionCodes"
-                  item-title="txn_display"
-                  item-value="trn_code"
-                  label="ລະຫັດການເຄື່ອນໄຫວ *"
-                  :rules="requiredRules"
-                  variant="outlined"
-                  density="comfortable"
-                  :loading="loading.transactionCodes"
-                  @update:model-value="onTransactionCodeChange"
-                  prepend-inner-icon="mdi-code-tags"
-                  hide-details="auto"
-                  no-data-text="ບໍ່ມີຂໍ້ມູນລະຫັດການເຄື່ອນໄຫວ"
-                >
+                <v-select v-model="journalData.Txn_code" :items="transactionCodes" item-title="txn_display"
+                  item-value="trn_code" label="ລະຫັດການເຄື່ອນໄຫວ *" :rules="requiredRules" variant="outlined"
+                  density="comfortable" :loading="loading.transactionCodes"
+                  @update:model-value="onTransactionCodeChange" prepend-inner-icon="mdi-code-tags" hide-details="auto"
+                  no-data-text="ບໍ່ມີຂໍ້ມູນລະຫັດການເຄື່ອນໄຫວ">
                   <template #item="{ props, item }">
                     <v-list-item v-bind="props">
                     </v-list-item>
@@ -104,86 +63,44 @@
                 </v-select>
               </v-col>
               <v-col cols="12" md="2">
-                <v-text-field
-                  v-model="journalData.Value_date"
-                  label="ວັນທີ *"
-                  type="date"
-                  variant="outlined"
-                  density="comfortable"
-                  @change="updateReferenceNumber"
-                  prepend-inner-icon="mdi-calendar"
-                  hide-details="auto"
-                ></v-text-field>
+                <v-text-field v-model="journalData.Value_date" label="ວັນທີ *" type="date" variant="outlined"
+                  density="comfortable" @change="updateReferenceNumber" prepend-inner-icon="mdi-calendar"
+                  hide-details="auto"></v-text-field>
               </v-col>
               <v-col cols="12" md="2">
-                <v-btn
-                  color="success"
-                  variant="outlined"
-                  size="default"
-                  @click="generateReference"
+                <v-btn color="success" variant="outlined" size="default" @click="generateReference"
                   :disabled="!journalData.Txn_code || !journalData.module_id || loading.generateRef"
-                  :loading="loading.generateRef"
-                  class="generate-btn"
-                  block
-                >
+                  :loading="loading.generateRef" class="generate-btn" block>
                   <v-icon left>mdi-auto-fix</v-icon>
                   ສ້າງອ້າງອີງ
                 </v-btn>
               </v-col>
             </v-row>
-            
+
             <!-- Enhanced Description Fields Row -->
             <v-row dense class="mt-2">
               <v-col cols="12" md="4">
-                <v-text-field
-                  v-model="journalData.Addl_text"
-                  label="ຂໍ້ຄວາມເພີ່ມເຕີມ (ຫຼັກ)"
-                  variant="outlined"
-                  density="comfortable"
-                  counter="255"
-                  :rules="addlTextRules"
-                  prepend-inner-icon="mdi-text"
-                  hide-details="auto"
-                  placeholder="ໃສ່ຂໍ້ຄວາມເພີ່ມເຕີມຫຼັກ..."
-                  @input="onMainDescriptionChange"
-                ></v-text-field>
+                <v-text-field v-model="journalData.Addl_text" label="ຂໍ້ຄວາມເພີ່ມເຕີມ (ຫຼັກ)" variant="outlined"
+                  density="comfortable" counter="255" :rules="addlTextRules" prepend-inner-icon="mdi-text"
+                  hide-details="auto" placeholder="ໃສ່ຂໍ້ຄວາມເພີ່ມເຕີມຫຼັກ..."
+                  @input="onMainDescriptionChange"></v-text-field>
               </v-col>
               <v-col cols="12" md="4">
-                <v-select
-                  v-model="journalData.fin_cycle"
-                  :items="finCycles"
-                  item-title="cycle_display"
-                  item-value="fin_cycle"
-                  label="ຮອບການເງິນ"
-                  variant="outlined"
-                  density="comfortable"
-                  :loading="loading.finCycles"
-                  @update:model-value="loadPeriodCodes"
-                  prepend-inner-icon="mdi-calendar-range"
-                  hide-details="auto"
-                  no-data-text="ບໍ່ມີຂໍ້ມູນຮອບການເງິນ"
-                >
+                <v-select v-model="journalData.fin_cycle" :items="finCycles" item-title="cycle_display"
+                  item-value="fin_cycle" label="ຮອບການເງິນ" variant="outlined" density="comfortable"
+                  :loading="loading.finCycles" @update:model-value="loadPeriodCodes"
+                  prepend-inner-icon="mdi-calendar-range" hide-details="auto" no-data-text="ບໍ່ມີຂໍ້ມູນຮອບການເງິນ">
                   <template #item="{ props, item }">
                     <v-list-item v-bind="props">
                     </v-list-item>
                   </template>
                 </v-select>
               </v-col>
-               <v-col cols="12" md="4">
-                <v-select
-                  v-model="journalData.Period_code"
-                  :items="periodCodes"
-                  item-title="period_display"
-                  item-value="period_code"
-                  label="ລະຫັດໄລຍະ"
-                  variant="outlined"
-                  density="comfortable"
-                  :loading="loading.periodCodes"
-                  :disabled="!journalData.fin_cycle"
-                  prepend-inner-icon="mdi-calendar-clock"
-                  hide-details="auto"
-                  no-data-text="ບໍ່ມີຂໍ້ມູນລະຫັດໄລຍະ"
-                >
+              <v-col cols="12" md="4">
+                <v-select v-model="journalData.Period_code" :items="periodCodes" item-title="period_display"
+                  item-value="period_code" label="ລະຫັດໄລຍະ" variant="outlined" density="comfortable"
+                  :loading="loading.periodCodes" :disabled="!journalData.fin_cycle"
+                  prepend-inner-icon="mdi-calendar-clock" hide-details="auto" no-data-text="ບໍ່ມີຂໍ້ມູນລະຫັດໄລຍະ">
                   <template #item="{ props, item }">
                     <v-list-item v-bind="props">
                     </v-list-item>
@@ -192,32 +109,6 @@
               </v-col>
             </v-row>
 
-            <!-- Description Templates Row -->
-            <v-row dense class="mt-1" v-if="descriptionTemplates.length > 0">
-              <v-col cols="12">
-                <div class="description-templates">
-                  <span class="template-label">ແມ່ແບບ:</span>
-                  <v-chip-group
-                    v-model="selectedTemplate"
-                    @update:model-value="applyDescriptionTemplate"
-                    variant="outlined"
-                    size="small"
-                    class="template-chips"
-                  >
-                    <v-chip 
-                      v-for="(template, index) in descriptionTemplates" 
-                      :key="index"
-                      :value="index"
-                      size="small"
-                      variant="outlined"
-                      color="primary"
-                    >
-                      {{ template.label }}
-                    </v-chip>
-                  </v-chip-group>
-                </div>
-              </v-col>
-            </v-row>
           </div>
 
           <!-- Exchange Rate Info -->
@@ -226,14 +117,8 @@
               <v-icon left size="small">mdi-calculator</v-icon>
               ອັດຕາແລກປ່ຽນ: 1 {{ journalData.Ccy_cd }} = {{ formatNumber(exchangeRate) }} LAK
             </v-chip>
-            <v-btn
-              size="x-small"
-              variant="text"
-              color="info"
-              @click="onMainCurrencyChange"
-              :loading="loading.exchangeRate"
-              class="ml-2"
-            >
+            <v-btn size="x-small" variant="text" color="info" @click="onMainCurrencyChange"
+              :loading="loading.exchangeRate" class="ml-2">
               <v-icon size="small">mdi-refresh</v-icon>
               ໂຫລດໃໝ່
             </v-btn>
@@ -247,61 +132,22 @@
                 ລາຍການບັນທຶກ (Journal Entries)
               </h3>
               <div class="section-actions">
-                <v-btn 
-                  color="primary" 
-                  size="small"
-                  variant="outlined"
-                  @click="addJournalEntry"
-                  :disabled="loading.submit"
-                  class="mr-2"
-                >
+                <v-btn color="primary" size="small" variant="outlined" @click="addJournalEntry"
+                  :disabled="loading.submit" class="mr-2">
                   <v-icon left size="small">mdi-plus</v-icon>
                   ເພີ່ມແຖວ
                 </v-btn>
-                <v-btn 
-                  color="secondary" 
-                  size="small"
-                  variant="text"
-                  @click="addQuickEntry"
-                  :disabled="loading.submit"
-                  class="mr-2"
-                >
+                <v-btn color="secondary" size="small" variant="text" @click="addQuickEntry" :disabled="loading.submit"
+                  class="mr-2">
                   <v-icon left size="small">mdi-lightning-bolt</v-icon>
                   ເພີ່ມໄວ
                 </v-btn>
-                <v-btn 
-                  color="info" 
-                  size="small"
-                  variant="text"
-                  @click="fillSubTextFromMain"
-                  :disabled="loading.submit || !journalData.Addl_sub_text"
-                >
+                <v-btn color="info" size="small" variant="text" @click="fillSubTextFromMain"
+                  :disabled="loading.submit || !journalData.Addl_sub_text">
                   <v-icon left size="small">mdi-format-text</v-icon>
                   ຕື່ມລາຍລະອຽດ
                 </v-btn>
               </div>
-            </div>
-
-            <!-- Entry Templates -->
-            <div class="entry-templates" v-if="entryTemplates.length > 0">
-              <v-chip-group
-                variant="outlined"
-                size="small"
-                class="mb-3"
-              >
-                <v-chip 
-                  v-for="(template, index) in entryTemplates" 
-                  :key="index"
-                  size="small"
-                  variant="outlined"
-                  color="secondary"
-                  @click="applyEntryTemplate(template)"
-                  :disabled="loading.submit"
-                >
-                  <v-icon left size="small">mdi-bookmark</v-icon>
-                  {{ template.name }}
-                </v-chip>
-              </v-chip-group>
             </div>
 
             <!-- Table Header -->
@@ -336,130 +182,94 @@
                     </v-col>
 
                     <!-- Debit Account -->
-                    <v-col cols="12" sm="6" md="2">
-                      <v-autocomplete
-                        v-model="entry.DebitAccount"
-                        :items="accounts"
-                        item-title="account_display"
-                        item-value="glsub_id"
-                        label="ບັນຊີເດບິດ"
-                        variant="outlined"
-                        density="comfortable"
-                        :loading="loading.accounts"
-                        clearable
-                        hide-details="auto"
-                        @update:model-value="validateEntry(entry)"
-                        no-data-text="ບໍ່ມີຂໍ້ມູນບັນຊີ"
-                      >
-                      
+                    <v-col cols="12" sm="6" md="3">
+                      <v-autocomplete v-model="entry.DebitAccount" :items="accounts" item-title="account_display"
+                        item-value="glsub_id" label="ບັນຊີເດບິດ" variant="outlined" density="comfortable"
+                        :loading="loading.accounts" clearable hide-details="auto"
+                        @update:model-value="validateEntry(entry)" no-data-text="ບໍ່ມີຂໍ້ມູນບັນຊີ">
+
                       </v-autocomplete>
+                      <div v-if="entry.DebitAccount" class="text-caption text-grey-darken-1 pl-2 pb-1 text-styles">
+                        {{ getAccountDescLa(entry.DebitAccount) }}
+                      </div>
                     </v-col>
 
                     <!-- Credit Account -->
-                    <v-col cols="12" sm="6" md="2">
-                      <v-autocomplete
-                        v-model="entry.CreditAccount"
-                        :items="accounts"
-                        item-title="account_display"
-                        item-value="glsub_id"
-                        label="ບັນຊີເຄຣດິດ"
-                        variant="outlined"
-                        density="comfortable"
-                        :loading="loading.accounts"
-                        clearable
-                        hide-details="auto"
-                        @update:model-value="validateEntry(entry)"
-                        no-data-text="ບໍ່ມີຂໍ້ມູນບັນຊີ"
-                      >
-                        
+                    <v-col cols="12" sm="6" md="3">
+                      <v-autocomplete v-model="entry.CreditAccount" :items="accounts" item-title="account_display"
+                        item-value="glsub_id" label="ບັນຊີເຄຣດິດ" variant="outlined" density="comfortable"
+                        :loading="loading.accounts" clearable hide-details="auto"
+                        @update:model-value="validateEntry(entry)" no-data-text="ບໍ່ມີຂໍ້ມູນບັນຊີ">
+
                       </v-autocomplete>
+                      <div v-if="entry.CreditAccount" class="text-caption text-grey-darken-1 pl-2 pb-1 text-styles">
+                        {{ getAccountDescLa_2(entry.CreditAccount) }}
+                      </div>
                     </v-col>
 
-                    <!-- Amount -->
-                    <v-col cols="12" sm="6" md="2">
-                      <v-text-field
-                        v-model.number="entry.Fcy_Amount"
-                        label="ຈຳນວນ *"
-                        type="number"
-                        :rules="amountRules"
-                        variant="outlined"
-                        density="comfortable"
-                        step="0.001"
-                        @update:model-value="() => calculateLcyAmount(entry)"
-                        @blur="() => calculateLcyAmount(entry)"
-                        hide-details="auto"
-                        class="amount-field"
-                        placeholder="0.00"
-                      ></v-text-field>
-                    </v-col>
+              <!-- Amount -->
+              <v-col cols="12" sm="6" md="2">
+                <v-text-field
+                  v-model.number="entry.Fcy_Amount"
+                  label="ຈຳນວນ *"
+                  type="number"
+                  :rules="amountRules"
+                  variant="outlined"
+                  density="comfortable"
+                  step="0.001"
+                  @update:model-value="() => calculateLcyAmount(entry)"
+                  @blur="() => calculateLcyAmount(entry)"
+                  hide-details="auto"
+                  class="amount-field"
+                  placeholder="0.00"
+                ></v-text-field>
+              </v-col>
 
-                    <!-- LCY Amount -->
-                    <v-col cols="12" sm="6" md="2">
-                      <v-text-field
-                        :value="formatNumber(getLcyAmount(entry))"
-                        label="ຈຳນວນກີບ"
-                        variant="outlined"
-                        density="comfortable"
-                        readonly
-                        :hide-details="false"
-                        class="lcy-field"
-                        :hint="exchangeRate !== 1 ? `Rate: 1 ${journalData.Ccy_cd} = ${formatNumber(exchangeRate)} LAK` : ''"
-                        persistent-hint
-                      ></v-text-field>
-                    </v-col>
+<!-- LCY Amount -->
+<!-- <v-col cols="12" sm="6" md="1">
+  <v-text-field
+    :value="entry.Fcy_Amount ? formatNumber(getLcyAmount(entry)) : ''"
+    label="ຈຳນວນກີບ"
+    variant="outlined"
+    density="comfortable"
+    readonly
+    :hide-details="false"
+    class="lcy-field"
+    :hint="exchangeRate !== 1 ? `Rate: 1 ${journalData.Ccy_cd} = ${formatNumber(exchangeRate)} LAK` : ''"
+    persistent-hint
+    placeholder="0.00"
+  ></v-text-field>
+</v-col> -->
 
                     <!-- Enhanced Additional Sub Text -->
                     <v-col cols="12" sm="12" md="2">
-                      <v-text-field
-                        v-model="entry.Addl_sub_text"
-                        label="ຂໍ້ຄວາມເພີ່ມເຕີມ"
-                        variant="outlined"
-                        density="comfortable"
-                        hide-details="auto"
-                        counter="255"
-                        :rules="entrySubTextRules"
-                        placeholder="ລາຍລະອຽດເພີ່ມເຕີມ..."
-                        class="entry-sub-text-field"
-                        @blur="onEntrySubTextBlur(entry, index)"
-                      >
+                      <v-text-field v-model="entry.Addl_sub_text" label="ຂໍ້ຄວາມເພີ່ມເຕີມ" variant="outlined"
+                        density="comfortable" hide-details="auto" counter="255" :rules="entrySubTextRules"
+                        placeholder="ລາຍລະອຽດເພີ່ມເຕີມ..." class="entry-sub-text-field"
+                        @blur="onEntrySubTextBlur(entry, index)">
                         <template #append-inner>
                           <v-menu>
                             <template #activator="{ props }">
-                              <v-btn
-                                icon
-                                size="x-small"
-                                variant="text"
-                                color="info"
-                                v-bind="props"
-                                :disabled="!journalData.Addl_sub_text && subTextSuggestions.length === 0"
-                              >
+                              <v-btn icon size="x-small" variant="text" color="info" v-bind="props"
+                                :disabled="!journalData.Addl_sub_text && subTextSuggestions.length === 0">
                                 <v-icon size="small">mdi-dots-vertical</v-icon>
                               </v-btn>
                             </template>
                             <v-list density="compact">
-                              <v-list-item
-                                v-if="journalData.Addl_sub_text"
-                                @click="entry.Addl_sub_text = journalData.Addl_sub_text"
-                                title="ໃຊ້ຂໍ້ຄວາມຫຼັກ"
-                              >
+                              <v-list-item v-if="journalData.Addl_sub_text"
+                                @click="entry.Addl_sub_text = journalData.Addl_sub_text" title="ໃຊ້ຂໍ້ຄວາມຫຼັກ">
                                 <template #prepend>
                                   <v-icon size="small">mdi-content-copy</v-icon>
                                 </template>
                               </v-list-item>
-                              <v-list-item
-                                v-for="(suggestion, idx) in subTextSuggestions.slice(0, 3)"
-                                :key="idx"
-                                @click="entry.Addl_sub_text = suggestion"
-                                :title="suggestion"
-                              >
+                              <v-list-item v-for="(suggestion, idx) in subTextSuggestions.slice(0, 3)" :key="idx"
+                                @click="entry.Addl_sub_text = suggestion" :title="suggestion">
                                 <template #prepend>
                                   <v-icon size="small">mdi-lightbulb-outline</v-icon>
                                 </template>
                               </v-list-item>
-                              <v-list-item
-                                @click="entry.Addl_sub_text = generateAutoDescription(entry)"
-                                title="ສ້າງອັດຕະໂນມັດ"
-                              >
+                              <v-list-item @click="entry.Addl_sub_text = generateAutoDescription(entry)"
+                                title="ສ້າງອັດຕະໂນມັດ">
                                 <template #prepend>
                                   <v-icon size="small">mdi-auto-fix</v-icon>
                                 </template>
@@ -473,25 +283,12 @@
                     <!-- Actions -->
                     <v-col cols="auto">
                       <div class="entry-actions">
-                        <v-btn 
-                          icon
-                          size="small"
-                          color="info" 
-                          variant="text"
-                          @click="duplicateEntry(index)"
-                          :disabled="loading.submit"
-                          title="ຄັດລອກແຖວ"
-                        >
+                        <v-btn icon size="small" color="info" variant="text" @click="duplicateEntry(index)"
+                          :disabled="loading.submit" title="ຄັດລອກແຖວ">
                           <v-icon size="small">mdi-content-duplicate</v-icon>
                         </v-btn>
-                        <v-btn 
-                          icon
-                          size="small"
-                          color="error" 
-                          @click="removeJournalEntry(index)"
-                          :disabled="loading.submit"
-                          title="ລຶບແຖວ"
-                        >
+                        <v-btn icon size="small" color="error" @click="removeJournalEntry(index)"
+                          :disabled="loading.submit" title="ລຶບແຖວ">
                           <v-icon size="small">mdi-delete</v-icon>
                         </v-btn>
                       </div>
@@ -500,16 +297,11 @@
 
                   <!-- Enhanced Entry Status -->
                   <div class="entry-status" v-if="entry.Fcy_Amount > 0">
-                    <v-chip 
-                      size="x-small" 
-                      :color="getEntryStatusColor(entry)" 
-                      variant="flat"
-                      class="mr-2"
-                    >
+                    <v-chip size="x-small" :color="getEntryStatusColor(entry)" variant="flat" class="mr-2">
                       {{ getEntryStatus(entry) }}
                     </v-chip>
                     <span class="text-caption text-grey">
-                      ເດບິດ: {{ getAccountName(entry.DebitAccount) || 'ບໍ່ໄດ້ເລືອກ' }} | 
+                      ເດບິດ: {{ getAccountName(entry.DebitAccount) || 'ບໍ່ໄດ້ເລືອກ' }} |
                       ເຄຣດິດ: {{ getAccountName(entry.CreditAccount) || 'ບໍ່ໄດ້ເລືອກ' }}
                     </span>
                     <div v-if="entry.Addl_sub_text" class="entry-description mt-1">
@@ -524,7 +316,7 @@
 
           <!-- Summary Section -->
           <div class="summary-section" v-if="journalEntries.length > 0">
-            <v-row dense>
+            <v-row dense align="stretch" class="summary-row">
               <v-col cols="12" md="3">
                 <v-card class="summary-card" elevation="1" color="primary-lighten-5">
                   <v-card-text class="pa-3 text-center">
@@ -538,8 +330,8 @@
                 <v-card class="summary-card" elevation="1" color="success-lighten-5">
                   <v-card-text class="pa-3 text-center">
                     <div class="summary-label">ລວມເດບິດ</div>
-                    <div class="summary-value text-success">{{ formatNumber(totalDebitAmount) }}</div>
-                    <div class="summary-currency">LAK</div>
+                    <div class="summary-value text-success">{{ formatNumber(totalDebitAmount) }} LAK</div>
+                    <div class="summary-currency"></div>
                     <div v-if="journalData.Ccy_cd !== 'LAK'" class="summary-fcy text-caption">
                       ({{ formatNumber(totalDebitAmount / (exchangeRate || 1)) }} {{ journalData.Ccy_cd }})
                     </div>
@@ -550,8 +342,8 @@
                 <v-card class="summary-card" elevation="1" color="info-lighten-5">
                   <v-card-text class="pa-3 text-center">
                     <div class="summary-label">ລວມເຄຣດິດ</div>
-                    <div class="summary-value text-info">{{ formatNumber(totalCreditAmount) }}</div>
-                    <div class="summary-currency">LAK</div>
+                    <div class="summary-value text-info">{{ formatNumber(totalCreditAmount) }} LAK</div>
+                    <div class="summary-currency"></div>
                     <div v-if="journalData.Ccy_cd !== 'LAK'" class="summary-fcy text-caption">
                       ({{ formatNumber(totalCreditAmount / (exchangeRate || 1)) }} {{ journalData.Ccy_cd }})
                     </div>
@@ -559,14 +351,11 @@
                 </v-card>
               </v-col>
               <v-col cols="12" md="3">
-                <v-card class="summary-card" elevation="1" :color="isBalanced ? 'success-lighten-5' : 'error-lighten-5'">
+                <v-card class="summary-card" elevation="1"
+                  :color="isBalanced ? 'success-lighten-5' : 'error-lighten-5'">
                   <v-card-text class="pa-3 text-center">
                     <div class="summary-label">ສະຖານະ</div>
-                    <v-chip 
-                      size="small" 
-                      :color="isBalanced ? 'success' : 'error'" 
-                      variant="flat"
-                    >
+                    <v-chip size="small" :color="isBalanced ? 'success' : 'error'" variant="flat">
                       <v-icon left size="x-small">{{ isBalanced ? 'mdi-check' : 'mdi-alert' }}</v-icon>
                       {{ isBalanced ? 'ສົມດຸນ' : 'ບໍ່ສົມດຸນ' }}
                     </v-chip>
@@ -580,7 +369,7 @@
           </div>
 
           <!-- Description Analysis (Show commonly used descriptions) -->
-          <div class="description-analysis" v-if="journalEntries.length > 1">
+          <!-- <div class="description-analysis" v-if="journalEntries.length > 1">
             <v-expansion-panels variant="accordion">
               <v-expansion-panel>
                 <v-expansion-panel-title>
@@ -616,10 +405,10 @@
                 </v-expansion-panel-text>
               </v-expansion-panel>
             </v-expansion-panels>
-          </div>
+          </div> -->
 
           <!-- Debug Information (for development) -->
-          <div class="debug-section" v-if="journalEntries.length > 0">
+          <!-- <div class="debug-section" v-if="journalEntries.length > 0">
             <v-expansion-panels variant="accordion">
               <v-expansion-panel>
                 <v-expansion-panel-title>
@@ -658,33 +447,21 @@
                 </v-expansion-panel-text>
               </v-expansion-panel>
             </v-expansion-panels>
-          </div>
+          </div> -->
 
           <!-- Action Buttons -->
           <div class="action-buttons">
-            <v-btn
-              color="primary"
-              size="large"
-              :disabled="!isFormValid || loading.submit"
-              :loading="loading.submit"
-              @click="submitJournal"
-              class="submit-btn"
-            >
+            <v-btn color="primary" size="large" :disabled="!isFormValid || loading.submit" :loading="loading.submit"
+              @click="submitJournal" class="submit-btn">
               <v-icon left>mdi-content-save</v-icon>
               ບັນທຶກ ({{ apiEntriesCount }} ລາຍການ API)
             </v-btn>
-            
-            <v-btn
-              variant="outlined"
-              size="large"
-              @click="resetForm"
-              :disabled="loading.submit"
-              class="reset-btn"
-            >
+
+            <v-btn variant="outlined" size="large" @click="resetForm" :disabled="loading.submit" class="reset-btn">
               <v-icon left>mdi-refresh</v-icon>
               ລ້າງຟອມ
             </v-btn>
-<!-- 
+            <!-- 
             <v-btn
               variant="text"
               size="large"
@@ -853,9 +630,9 @@ const balanceDifference = computed(() => {
 })
 
 const isBalanced = computed(() => {
-  return Math.abs(balanceDifference.value) < 0.01 && 
-         totalDebitAmount.value > 0 && 
-         totalCreditAmount.value > 0
+  return Math.abs(balanceDifference.value) < 0.01 &&
+    totalDebitAmount.value > 0 &&
+    totalCreditAmount.value > 0
 })
 
 const getLcyAmount = (entry) => {
@@ -888,7 +665,7 @@ const uniqueDescriptions = computed(() => {
       descriptions[text] = (descriptions[text] || 0) + 1
     }
   })
-  
+
   return Object.entries(descriptions)
     .map(([text, count]) => ({ text, count }))
     .sort((a, b) => b.count - a.count)
@@ -904,12 +681,12 @@ const isFormValid = computed(() => {
   if (!valid.value || journalEntries.value.length === 0) {
     return false
   }
-  
+
   // Required fields validation
   if (!journalData.Reference_No || !journalData.Ccy_cd || !journalData.Txn_code || !journalData.module_id) {
     return false
   }
-  
+
   // Check if either main Addl_text or Addl_sub_text is provided
   if (!journalData.Addl_text && !journalData.Addl_sub_text) {
     const hasEntryDescription = journalEntries.value.some(entry => entry.Addl_sub_text && entry.Addl_sub_text.trim())
@@ -917,22 +694,22 @@ const isFormValid = computed(() => {
       return false
     }
   }
-  
+
   // Check if all entries have valid amounts and at least one account
   const validEntries = journalEntries.value.every(entry => {
     const hasValidAmount = entry.Fcy_Amount && parseFloat(entry.Fcy_Amount) > 0
     const hasAccount = entry.DebitAccount || entry.CreditAccount
     return hasValidAmount && hasAccount
   })
-  
+
   if (!validEntries) {
     return false
   }
-  
+
   // Calculate API-level balance (what will actually be sent to backend)
   let totalDebit = 0
   let totalCredit = 0
-  
+
   journalEntries.value.forEach(entry => {
     const amount = parseFloat(entry.Fcy_Amount) || 0
     if (amount > 0) {
@@ -944,10 +721,10 @@ const isFormValid = computed(() => {
       }
     }
   })
-  
+
   // Must be balanced within 0.01 tolerance
   const isApiBalanced = Math.abs(totalDebit - totalCredit) < 0.01 && totalDebit > 0 && totalCredit > 0
-  
+
   return isApiBalanced
 })
 
@@ -973,7 +750,7 @@ const formatNumber = (num) => {
 const calculateLcyAmount = (entry) => {
   const fcyAmount = parseFloat(entry.Fcy_Amount) || 0
   const rate = parseFloat(exchangeRate.value) || 1
-  
+
   if (fcyAmount > 0) {
     entry.Lcy_Amount = parseFloat((fcyAmount * rate).toFixed(3))
     console.log('Calculate LCY:', {
@@ -1002,7 +779,7 @@ const fillSubTextFromMain = () => {
         entry.Addl_sub_text = journalData.Addl_sub_text
       }
     })
-    
+
     Swal.fire({
       icon: 'success',
       title: 'ສຳເລັດ',
@@ -1031,7 +808,7 @@ const applyDescriptionTemplate = (templateIndex) => {
 const applyEntryTemplate = (template) => {
   // Clear existing entries
   journalEntries.value = []
-  
+
   // Add template entries
   template.entries.forEach(entryTemplate => {
     const newEntry = {
@@ -1059,22 +836,22 @@ const onEntrySubTextBlur = (entry, index) => {
 
 const updateSubTextSuggestions = () => {
   const suggestions = new Set()
-  
+
   // Add from current form
   if (journalData.Addl_text) suggestions.add(journalData.Addl_text)
   if (journalData.Addl_sub_text) suggestions.add(journalData.Addl_sub_text)
-  
+
   // Add from existing entries
   journalEntries.value.forEach(entry => {
     if (entry.Addl_sub_text) suggestions.add(entry.Addl_sub_text)
   })
-  
+
   // Add from templates
   descriptionTemplates.value.forEach(template => {
     suggestions.add(template.main)
     suggestions.add(template.sub)
   })
-  
+
   subTextSuggestions.value = Array.from(suggestions).filter(s => s.length > 0).slice(0, 10)
 }
 
@@ -1082,7 +859,7 @@ const generateAutoDescription = (entry) => {
   const debitAccount = accounts.value.find(a => a.glsub_id === entry.DebitAccount)
   const creditAccount = accounts.value.find(a => a.glsub_id === entry.CreditAccount)
   const amount = formatNumber(entry.Fcy_Amount || 0)
-  
+
   if (debitAccount && creditAccount) {
     return `ໂອນ ${amount} ${journalData.Ccy_cd} ຈາກ ${creditAccount.glsub_code} ໄປ ${debitAccount.glsub_code}`
   } else if (debitAccount) {
@@ -1103,7 +880,7 @@ const duplicateEntry = (index) => {
     CreditAccount: originalEntry.CreditAccount,
     Addl_sub_text: originalEntry.Addl_sub_text + ' (ສຳເນົາ)'
   }
-  
+
   journalEntries.value.splice(index + 1, 0, newEntry)
   setupEntryWatchers(newEntry)
 }
@@ -1111,12 +888,12 @@ const duplicateEntry = (index) => {
 const validateDescriptions = () => {
   const errors = []
   const warnings = []
-  
+
   // Check main descriptions
   if (!journalData.Addl_text && !journalData.Addl_sub_text) {
     warnings.push('ບໍ່ມີຂໍ້ຄວາມເພີ່ມເຕີມຫຼັກ')
   }
-  
+
   // Check entry descriptions
   journalEntries.value.forEach((entry, index) => {
     if (!entry.Addl_sub_text || !entry.Addl_sub_text.trim()) {
@@ -1125,7 +902,7 @@ const validateDescriptions = () => {
       errors.push(`ລາຍການທີ ${index + 1} ລາຍລະອຽດຍາວເກີນໄປ`)
     }
   })
-  
+
   // Show results
   if (errors.length > 0) {
     Swal.fire({
@@ -1156,19 +933,19 @@ const validateDescriptions = () => {
 const onMainCurrencyChange = async () => {
   const selectedCurrency = currencies.value.find(c => c.ccy_code === journalData.Ccy_cd)
   console.log('Currency changed to:', journalData.Ccy_cd, selectedCurrency)
-  
+
   if (selectedCurrency && journalData.Ccy_cd !== 'LAK') {
     // Try to get exchange rate from API
     try {
       loading.exchangeRate = true
       const url = `/api/exc-rate/?ccy_code=${journalData.Ccy_cd}`
       console.log('Fetching exchange rate from:', url)
-      
+
       const response = await axios.get(url, getAuthHeaders())
       console.log('Exchange rate response:', response.data)
-      
+
       let saleRate = 1
-      
+
       // Handle different response structures
       if (response.data) {
         if (response.data.results && Array.isArray(response.data.results) && response.data.results.length > 0) {
@@ -1182,17 +959,17 @@ const onMainCurrencyChange = async () => {
           saleRate = parseFloat(response.data[0].Sale_Rate || response.data[0].sale_rate || 1)
         }
       }
-      
+
       exchangeRate.value = saleRate
       console.log('Exchange rate set to:', exchangeRate.value)
-      
+
       if (saleRate === 1) {
         console.warn('Exchange rate defaulted to 1, API response might not contain rate data')
       }
     } catch (error) {
       console.error('Error fetching exchange rate:', error)
       exchangeRate.value = 1
-      
+
       // Show error to user
       Swal.fire({
         icon: 'warning',
@@ -1208,7 +985,7 @@ const onMainCurrencyChange = async () => {
     // LAK or no currency selected
     exchangeRate.value = 1
   }
-  
+
   // Recalculate all entries with new exchange rate
   journalEntries.value.forEach(entry => {
     calculateLcyAmount(entry)
@@ -1261,6 +1038,15 @@ const getAccountName = (accountId) => {
   const account = accounts.value.find(a => a.glsub_id === accountId)
   return account ? account.glsub_code : null
 }
+const getAccountDescLa = (accountId) => {
+  const account = accounts.value.find(a => a.glsub_id === accountId)
+  return account ? account.glsub_Desc_la : ''
+}
+const getAccountDescLa_2 = (accountId) => {
+  const account = accounts.value.find(a => a.glsub_id === accountId)
+  return account ? account.glsub_Desc_la : ''
+}
+
 
 const generateReference = async () => {
   if (!journalData.Txn_code || !journalData.module_id) {
@@ -1275,23 +1061,23 @@ const generateReference = async () => {
 
   try {
     loading.generateRef = true
-    
+
     // Use the exact payload structure expected by backend
     const payload = {
       module_id: journalData.module_id,
       txn_code: journalData.Txn_code,
       value_date: journalData.Value_date
     }
-    
+
     console.log('Generating reference with payload:', payload)
-    
+
     const response = await axios.post('/api/journal-entries/generate_reference/', payload, getAuthHeaders())
-    
+
     console.log('Generate reference response:', response.data)
-    
+
     journalData.Reference_No = response.data.reference_no
     autoReferenceMode.value = true
-    
+
     Swal.fire({
       icon: 'success',
       title: 'ສຳເລັດ',
@@ -1301,15 +1087,15 @@ const generateReference = async () => {
     })
   } catch (error) {
     console.error('Error generating reference:', error)
-    
+
     let errorMessage = 'ບໍ່ສາມາດສ້າງເລກອ້າງອີງໄດ້'
-    
+
     if (error.response?.data?.error) {
       errorMessage = error.response.data.error
     } else if (error.response?.data?.detail) {
       errorMessage = error.response.data.detail
     }
-    
+
     Swal.fire({
       icon: 'error',
       title: 'ຂໍ້ຜິດພາດ',
@@ -1367,18 +1153,18 @@ const addQuickEntry = () => {
 
 const checkBalance = async () => {
   if (!journalData.Reference_No) return
-  
+
   try {
     loading.checkBalance = true
     const response = await axios.get('/api/journal-entries/balance_check/', {
       params: { reference_no: journalData.Reference_No },
       ...getAuthHeaders()
     })
-    
+
     const balanceInfo = response.data
     const icon = balanceInfo.overall_balanced ? 'success' : 'warning'
     const title = balanceInfo.overall_balanced ? 'ສົມດຸນແລ້ວ' : 'ບໍ່ສົມດຸນ'
-    
+
     Swal.fire({
       icon: icon,
       title: title,
@@ -1433,7 +1219,7 @@ const loadCurrencies = async () => {
     loading.currencies = true
     const response = await axios.get('/api/currencies/', getAuthHeaders())
     currencies.value = response.data.results || response.data || []
-    
+
     // If a currency is already selected, load its exchange rate
     if (journalData.Ccy_cd && journalData.Ccy_cd !== 'LAK') {
       onMainCurrencyChange()
@@ -1502,7 +1288,7 @@ const loadPeriodCodes = async () => {
     periodCodes.value = []
     return
   }
-  
+
   try {
     loading.periodCodes = true
     const response = await axios.get(`/api/percodes/?fin_cycle=${journalData.fin_cycle}`, getAuthHeaders())
@@ -1529,10 +1315,10 @@ const submitJournal = async () => {
     })
     return
   }
-  
+
   try {
     loading.submit = true
-    
+
     // Prepare batch create payload exactly matching backend API
     const batchPayload = {
       Reference_No: journalData.Reference_No,
@@ -1546,19 +1332,19 @@ const submitJournal = async () => {
       module_id: journalData.module_id || 'GL',
       entries: []
     }
-    
+
     // Convert journal entries to API format
     journalEntries.value.forEach(entry => {
       // Calculate LCY amount before submission
       calculateLcyAmount(entry)
       const getAccountCode = (accountId) => {
-      const account = accounts.value.find(a => a.glsub_id === accountId)
-      return account ? account.glsub_code : ''
-}
+        const account = accounts.value.find(a => a.glsub_id === accountId)
+        return account ? account.glsub_code : ''
+      }
       // Ensure we have a valid amount
       const amount = parseFloat(entry.Fcy_Amount) || 0
       if (amount <= 0) return
-      
+
       // Add debit entry if debit account is selected
       if (entry.DebitAccount) {
         batchPayload.entries.push({
@@ -1571,7 +1357,7 @@ const submitJournal = async () => {
 
         })
       }
-      
+
       // Add credit entry if credit account is selected
       if (entry.CreditAccount) {
         batchPayload.entries.push({
@@ -1584,7 +1370,7 @@ const submitJournal = async () => {
         })
       }
     })
-    
+
     // Validate entries before submission
     if (batchPayload.entries.length === 0) {
       Swal.fire({
@@ -1595,7 +1381,7 @@ const submitJournal = async () => {
       })
       return
     }
-    
+
     // Calculate totals for validation
     const totalDebit = batchPayload.entries
       .filter(e => e.Dr_cr === 'D')
@@ -1603,7 +1389,7 @@ const submitJournal = async () => {
     const totalCredit = batchPayload.entries
       .filter(e => e.Dr_cr === 'C')
       .reduce((sum, e) => sum + e.Amount, 0)
-    
+
     if (Math.abs(totalDebit - totalCredit) > 0.01) {
       Swal.fire({
         icon: 'error',
@@ -1620,14 +1406,14 @@ const submitJournal = async () => {
       })
       return
     }
-    
+
     console.log('Submitting batch payload:', batchPayload)
-    
+
     // Submit using batch create API
     const response = await axios.post('/api/journal-entries/batch_create/', batchPayload, getAuthHeaders())
-    
+
     console.log('Batch create response:', response.data)
-    
+
     // Success message with detailed information
     await Swal.fire({
       icon: 'success',
@@ -1645,29 +1431,29 @@ const submitJournal = async () => {
       confirmButtonText: 'ຕົກລົງ',
       timer: 7000
     })
-    
+
     // Auto-generate next reference if in auto mode
     if (autoReferenceMode.value) {
       setTimeout(() => {
         generateReference()
       }, 1000)
     }
-    
+
     resetForm()
-    
+
   } catch (error) {
     console.error('Error submitting journal:', error)
-    
+
     let errorMessage = 'ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກ'
     let errorDetails = ''
-    
+
     if (error.response?.data) {
       const errorData = error.response.data
-      
+
       // Handle validation errors
       if (errorData.entries) {
         errorMessage = 'ຂໍ້ຜິດພາດໃນລາຍການບັນທຶກ'
-        errorDetails = Array.isArray(errorData.entries) 
+        errorDetails = Array.isArray(errorData.entries)
           ? errorData.entries.join(', ')
           : JSON.stringify(errorData.entries)
       }
@@ -1691,7 +1477,7 @@ const submitJournal = async () => {
         }
       }
     }
-    
+
     Swal.fire({
       icon: 'error',
       title: 'ຂໍ້ຜິດພາດ',
@@ -1713,7 +1499,7 @@ const resetForm = () => {
   const currentCurrency = journalData.Ccy_cd
   const currentModule = journalData.module_id
   const wasAutoMode = autoReferenceMode.value
-  
+
   Object.assign(journalData, {
     Reference_No: '',
     module_id: currentModule || 'GL',
@@ -1725,14 +1511,14 @@ const resetForm = () => {
     fin_cycle: null,
     Period_code: null
   })
-  
+
   journalEntries.value = []
   autoReferenceMode.value = false
   selectedTemplate.value = null
-  
+
   // Clear suggestions
   subTextSuggestions.value = []
-  
+
   // If we were in auto mode and have the required fields, generate new reference
   if (wasAutoMode && currentTxnCode && currentModule) {
     nextTick(() => {
@@ -1740,7 +1526,7 @@ const resetForm = () => {
       generateReference()
     })
   }
-  
+
   nextTick(() => {
     form.value?.resetValidation()
     // Add default entry
@@ -1778,15 +1564,15 @@ onMounted(async () => {
     loadTransactionCodes(),
     loadFinCycles()
   ])
-  
+
   // If LAK is not the default currency, load exchange rate
   if (journalData.Ccy_cd && journalData.Ccy_cd !== 'LAK') {
     onMainCurrencyChange()
   }
-  
+
   // Initialize suggestions
   updateSubTextSuggestions()
-  
+
   // Add first entry by default
   addJournalEntry()
 })
@@ -1966,7 +1752,7 @@ onMounted(async () => {
 }
 
 .entry-card:hover {
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .row-number {
@@ -1999,6 +1785,9 @@ onMounted(async () => {
   align-items: center;
 }
 
+.summary-row {
+  align-items: stretch !important;
+}
 .summary-section {
   margin: 24px 0;
 }
@@ -2007,34 +1796,39 @@ onMounted(async () => {
   border-radius: 8px;
   transition: all 0.2s ease;
 }
+.summary-card .v-card-text {
+  padding: 12px 6px !important;
+  font-size: 0.95rem;
+}
 
 .summary-card:hover {
   transform: translateY(-1px);
 }
 
 .summary-label {
-  font-size: 0.8rem;
-  color: #666;
-  font-weight: 500;
-  margin-bottom: 4px;
+  font-size: 0.85rem;
+  margin-bottom: 2px;
 }
 
 .summary-value {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   font-weight: 600;
+  margin-bottom: 2px;
 }
 
 .summary-currency {
   font-size: 0.75rem;
   color: #666;
+  margin-top: 0px;
+}
+
+.summary-meta,
+.summary-fcy,
+.summary-currency,
+.balance-difference {
+  font-size: 0.75rem;
   margin-top: 2px;
 }
-
-.summary-fcy {
-  margin-top: 4px;
-  color: #888;
-}
-
 .balance-difference {
   font-size: 0.75rem;
   color: #f44336;
@@ -2066,7 +1860,9 @@ onMounted(async () => {
   border-top: 1px solid #f0f0f0;
 }
 
-.submit-btn, .reset-btn, .balance-btn {
+.submit-btn,
+.reset-btn,
+.balance-btn {
   min-width: 160px;
   border-radius: 6px;
 }
@@ -2092,33 +1888,35 @@ onMounted(async () => {
   .journal-entry-container {
     padding: 8px;
   }
-  
+
   .page-title {
     font-size: 1.4rem;
   }
-  
+
   .action-buttons {
     flex-direction: column;
     align-items: center;
   }
-  
-  .submit-btn, .reset-btn, .balance-btn {
+
+  .submit-btn,
+  .reset-btn,
+  .balance-btn {
     width: 100%;
     max-width: 280px;
   }
-  
+
   .section-header {
     flex-direction: column;
     gap: 8px;
     align-items: flex-start;
   }
-  
+
   .section-actions {
     flex-direction: column;
     width: 100%;
     gap: 8px;
   }
-  
+
   .entry-status {
     flex-direction: column;
     align-items: flex-start;
@@ -2132,9 +1930,10 @@ onMounted(async () => {
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
-</style>  
+</style>
