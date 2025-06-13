@@ -26,21 +26,21 @@ interface CategoryState {
     div_id: string;
     division_name_la: string;
     division_name_en: string;
-    record_Status: string;
-    Maker_Id: string;
-    Checker_Id: string;
-    Auth_Status: string;
-    Once_Auth: string;
+    // record_Status: string;
+    // Maker_Id: string;
+    // Checker_Id: string;
+    // Auth_Status: string;
+    // Once_Auth: string;
   };
   form_update_data: {
     div_id: string;
     division_name_la: string;
     division_name_en: string;
-    record_Status: string;
-    Maker_Id: string;
-    Checker_Id: string;
-    Auth_Status: string;
-    Once_Auth: string;
+    // record_Status: string;
+    // Maker_Id: string;
+    // Checker_Id: string;
+    // Auth_Status: string;
+    // Once_Auth: string;
   };
   categories: Category[];
   response_detail_query_data: Category[];
@@ -53,21 +53,21 @@ export const UseCategoryStore = defineStore("category", {
       div_id: "",
       division_name_la: "",
       division_name_en: "",
-      record_Status: "",
-      Maker_Id: "",
-      Checker_Id: "",
-      Auth_Status: "",
-      Once_Auth: "",
+      // record_Status: "",
+      // Maker_Id: "",
+      // Checker_Id: "",
+      // Auth_Status: "",
+      // Once_Auth: "",
     },
     form_update_data: {
       div_id: "",
       division_name_la: "",
       division_name_en: "",
-      record_Status: "",
-      Maker_Id: "",
-      Checker_Id: "",
-      Auth_Status: "",
-      Once_Auth: "",
+      // record_Status: "",
+      // Maker_Id: "",
+      // Checker_Id: "",
+      // Auth_Status: "",
+      // Once_Auth: "",
     },
     response_detail_query_data: [],
     categories: [],
@@ -103,10 +103,10 @@ export const UseCategoryStore = defineStore("category", {
         this.loading = false;
       }
     },
-    async GetDataDetail(id: string | null) {
+    async GetDataDetail(div_id: string | null) {
       this.loading = true;
       try {
-        if (!id) {
+        if (!div_id) {
           await CallSwal({
             title: "ຜິດພາດ",
             text: "ກະລຸນາລະບຸ ID ຂອງປະເພດ",
@@ -119,7 +119,7 @@ export const UseCategoryStore = defineStore("category", {
 
         const { data, status } = await axios.get<
           CategoryModel.Category[]
-        >(`/api/divisions/${id}`, {
+        >(`/api/divisions/${div_id}`, {
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -186,10 +186,10 @@ export const UseCategoryStore = defineStore("category", {
       }
     },
 
-    async UpdateCategory(id: string | null) {
+    async UpdateCategory(div_id: string | null) {
       this.loading = true;
       try {
-        if (!id) {
+        if (!div_id) {
           await CallSwal({
             title: "ຜິດພາດ",
             text: "ກະລຸນາລະບຸ ID ຂອງປະເພດ",
@@ -212,7 +212,7 @@ export const UseCategoryStore = defineStore("category", {
         }
 
         const { data, status } = await axios.put<Category>(
-          `/categories/${id}`,
+          `/categories/${div_id}`,
           this.form_update_data
         );
 

@@ -6,12 +6,12 @@ import { useRoute, useRouter } from "vue-router";
 const store = DevisionStore();
 const route = useRoute();
 const router = useRouter();
-const id = route.query.id as string;
+const div_id = route.query.div_id as string;
 
 
 onMounted(() => {
-  if (id) {
-    store.GetDataDetail(id);
+  if (div_id) {
+    store.GetDataDetail(div_id);
   } else {
    
     router.push('/devisions');
@@ -65,7 +65,7 @@ const onSubmit = async () => {
       }
       
       
-      await store.UpdateDevision(id);
+      await store.UpdateDevision(div_id);
     }
   } catch (error) {
     console.error("Error during submission:", error);
@@ -74,7 +74,7 @@ const onSubmit = async () => {
 
 const onCancel = () => {
   
-  router.push('/devisions');
+  router.push('/devision');
 };
 
 const title = ref("ອັບເດດຂໍ້ມູນພະແນກ / Update Division");
@@ -146,9 +146,9 @@ const title = ref("ອັບເດດຂໍ້ມູນພະແນກ / Update 
                 label="ສະຖານະອະນຸມັດ / Once Auth"
                 :items="[
                   { title: 'ອະນຸມັດ (A)', value: 'A' },
-                  { title: 'ກຳລັງດຳເນີນການ (P)', value: 'P' },
-                  { title: 'ບໍ່ອະນຸມັດ (N)', value: 'N' },
-                  { title: 'ອະນຸມັດ (Y)', value: 'Y' }
+                  // { title: 'ກຳລັງດຳເນີນການ (P)', value: 'P' },
+                  { title: 'ບໍ່ອະນຸມັດ (U)', value: 'U' },
+                  // { title: 'ອະນຸມັດ (Y)', value: 'Y' }
                 ]"
                 variant="outlined"
                 density="compact"
@@ -164,7 +164,7 @@ const title = ref("ອັບເດດຂໍ້ມູນພະແນກ / Update 
                 v-model="response_data.record_Status"
                 label="ສະຖານະ / Status"
                 :items="[
-                  { title: 'ເປີດໃຊ້ງານ (A)', value: 'A' },
+                  // { title: 'ເປີດໃຊ້ງານ (A)', value: 'A' },
                   { title: 'ປິດໃຊ້ງານ (C)', value: 'C' },
                   { title: 'ເປີດໃຊ້ງານ (O)', value: 'O' }
                 ]"

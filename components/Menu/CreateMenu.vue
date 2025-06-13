@@ -39,7 +39,7 @@ watch(res, (newRes) => {
     // ຖ້າບໍ່ມີ response ແຕ່ມີ module_id ຈາກ URL parameter
     // ໃຊ້ຄ່າເລີ່ມຕົ້ນ 001
     menuStore.create_form_mainmenu.menu_id = `${module_id}-001`;
-    menuStore.create_form_mainmenu.menu_order = 1;
+   menuStore.create_form_mainmenu.menu_order = menuStore.create_form_mainmenu.menu_order ?? 1;
   }
 }, { immediate: true });
 
@@ -91,7 +91,7 @@ const defaultMenuId = computed(() => {
             <v-text-field
               density="compact"
               v-model="request.menu_id"
-              label="ID ເມນູ"
+              label="ID ເມນູ (ຕົວຢາງ: ລະຫັດໂມດູນ_ລຳດັບ)"
               variant="outlined"
               :rules="[(v) => !!v || 'ກະລຸນາປ້ອນ ID ເມນູ']"
               
@@ -110,7 +110,7 @@ const defaultMenuId = computed(() => {
             <v-text-field
               density="compact"
               v-model="request.menu_order"
-              label="ລຳດັບເມນູ"
+              label="ລຳດັບເມນູ "
               type="number"
               variant="outlined"
               :rules="[(v) => !!v || 'ກະລຸນາປ້ອນລຳດັບເມນູ']"
@@ -122,9 +122,9 @@ const defaultMenuId = computed(() => {
             <v-text-field
               density="compact"
               v-model="request.menu_icon"
-              label="ໄອຄອນ"
+              label="ໄອຄອນ (ຕົວຢ່າງ: mdi-home)"
               variant="outlined"
-              :rules="[(v) => !!v || 'ກະລຸນາປ້ອນໄອຄອນ']"
+              :rules="[(v) => !!v || 'ກະລຸນາປ້ອນໄອຄອນ(ຕົວຢ່າງ: mdi-home)']"
               required
             />
             <v-autocomplete
