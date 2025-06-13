@@ -18,6 +18,7 @@
                   <v-text-field
                     v-model="form.employee_id"
                     label="ລະຫັດພະນັກງານ *"
+                    placeholder="ຕົວຢ່າງ: EMP001"
                     variant="outlined"
                     :rules="[rules.required, rules.maxLength(20)]"
                   />
@@ -33,18 +34,13 @@
                     clearable
                     :loading="loadingUsers"
                   >
-                    <template #item="{ props, item }">
-                      <v-list-item v-bind="props">
-                        <v-list-item-title>{{ item.raw.display }}</v-list-item-title>
-                        <v-list-item-subtitle>{{ item.raw.user_email }}</v-list-item-subtitle>
-                      </v-list-item>
-                    </template>
                   </v-select>
                 </v-col>
                 <v-col cols="12" sm="6">
                   <v-text-field
                     v-model="form.employee_name_la"
                     label="ຊື່ພະນັກງານ (ລາວ) *"
+                    placeholder="ຕົວຢ່າງ: ສຸລິກາ ສຸລິນ"
                     variant="outlined"
                     :rules="[rules.required, rules.maxLength(250)]"
                   />
@@ -53,6 +49,7 @@
                   <v-text-field
                     v-model="form.employee_name_en"
                     label="ຊື່ພະນັກງານ (ອັງກິດ)"
+                    placeholder="ຕົວຢ່າງ: Sulika Sulin"
                     variant="outlined"
                     :rules="[rules.maxLength(250)]"
                   />
@@ -80,6 +77,7 @@
                   <v-text-field
                     v-model="form.national_id"
                     label="ເລກບັດປະຈຳຕົວ"
+                    placeholder="ຕົວຢ່າງ: 1234567890123"
                     variant="outlined"
                     :rules="[rules.maxLength(20)]"
                   />
@@ -88,6 +86,7 @@
                   <v-text-field
                     v-model="form.phone_number"
                     label="ເບີໂທລະສັບ"
+                    placeholder="ຕົວຢ່າງ: 020 1234 5678"
                     variant="outlined"
                     :rules="[rules.maxLength(15)]"
                   />
@@ -96,6 +95,7 @@
                   <v-text-field
                     v-model="form.email"
                     label="ອີເມວ"
+                    placeholder="ຕົວຢ່າງ: 2T0Qw@example.com"
                     variant="outlined"
                     :rules="[rules.email, rules.maxLength(100)]"
                   />
@@ -116,6 +116,7 @@
                   <v-text-field
                     v-model="form.position_code"
                     label="ລະຫັດຕຳແໜ່ງ"
+                    placeholder="ຕົວຢ່າງ: POS001"
                     variant="outlined"
                     :rules="[rules.maxLength(10)]"
                   />
@@ -169,6 +170,7 @@
                   prepend-icon="mdi-content-save"
                   :loading="loading"
                   class="text-none"
+                   
                 >
                   ບັນທຶກ
                 </v-btn>
@@ -324,7 +326,7 @@ const submitForm = async () => {
     })
     if (res.status === 201) {
       showSnackbar('ສ້າງພະນັກງານສຳເລັດ', 'success', 'mdi-check-circle')
-      setTimeout(() => router.push({ name: 'employee-read' }), 1500)
+      setTimeout(() => router.push({ name: 'employee' }), 1500)
     }
   } catch (error: any) {
     showSnackbar(
@@ -345,7 +347,7 @@ const showSnackbar = (message: string, color: string, icon: string) => {
 }
 
 const goBack = () => {
-  router.push({ name: 'employee-read' })
+  router.push({ name: 'employee' })
 }
 
 onMounted(async () => {
