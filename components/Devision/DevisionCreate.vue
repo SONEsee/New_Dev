@@ -9,7 +9,7 @@ const Headers = [
   { title: "ລະຫັດພະແນກ", value: "div_id" },
   { title: "ຊື່ພາສາລາວ", value: "division_name_la" },
   { title: "ຊື່ພາສາອັງກິດ", value: "division_name_en" },
-  { title: "ສະຖານະການໃຊ້ງານ", value: "record_Status" },
+  { title: "ສະຖານະການໃຊ້ງານ", value: "Once_Auth" },
   // { title: "ສະຖານະການອານຸມັດ", value: "Auth_Status" },
   { title: "ຈັດການ", value: "Actions" },
 ];
@@ -39,7 +39,8 @@ const title = "ຂໍ້ມູນພະແນກ";
 </script>
 
 <template>
-  <v-col cols="12">
+  <div class="pa-4">
+  <v-col cols="12" class="pt-5">
     <global-text-title-line
       :title="`ໜ້າຈັດການຂໍ້ມູນພະແນກ / Manage Department(${formatnumber(
         response_data?.length ?? 0
@@ -56,11 +57,11 @@ const title = "ຂໍ້ມູນພະແນກ";
       {{ index + 1 }}
     </template>
 
-    <template v-slot:item.record_Status="{ item }">
-      <div v-if="item.record_Status === 'O'">
+    <template v-slot:item.Once_Auth="{ item }">
+      <div v-if="item.Once_Auth === 'A'">
         <v-chip color="green"><p>ເປີດໃຊ້ງານ</p> </v-chip>
       </div>
-      <div v-else="item.Record_Status === 'C'">
+      <div v-else="item.Once_Auth === 'U'">
         <v-chip color="red"><p>ປີດໃຊ້ງານ</p> </v-chip>
       </div>
     </template>
@@ -79,14 +80,14 @@ const title = "ຂໍ້ມູນພະແນກ";
         flat
         class="text-primary"
         icon="mdi-eye-outline"
-        @click="goPath(`/devision/detail?id=${item.div_id}`)"
+        @click="goPath(`/devision/detail?div_id=${item.div_id}`)"
       />
       <v-btn
         small
         flat
         class="text-info"
         icon="mdi-pen"
-        @click="goPath(`/devision/update?id=${item.div_id}`)"
+        @click="goPath(`/devision/update?div_id=${item.div_id}`)"
       />
       <v-btn
         small
@@ -96,5 +97,5 @@ const title = "ຂໍ້ມູນພະແນກ";
         @click="onDeleteType(item.div_id)"
       />
     </template>
-  </v-data-table>
+  </v-data-table></div>
 </template>

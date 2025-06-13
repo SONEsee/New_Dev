@@ -150,13 +150,14 @@ const clearSavedSelection = () => {
   menuStore.query_menu_filter.data.module_Id = null;
 };
 
-// Export functions for logout
+
 defineExpose({
   clearSavedSelection,
 });
 </script>
 
 <template class="">
+  <div class="pa-5">
   <GlobalTextTitleLine :title="title" />
 
   <v-col cols="12">
@@ -290,5 +291,5 @@ defineExpose({
         ></v-alert>
       </template>
     </v-data-table>
-  </v-col>
+  </v-col></div>
 </template>

@@ -1,5 +1,7 @@
 <script lang="ts" setup>
 import { useRoute } from "vue-router";
+import axios from "@/helpers/axios";
+
 interface Userparam {
   div_id: string;
   role_id: string;
@@ -10,7 +12,63 @@ const roleStore = RoleStore();
 const devision = UseCategoryStore();
 const role = computed(() => roleStore.respons_data_role || []);
 const userItems = computed(() => devision.categories || []);
+const isUpdatingStatus = ref(false);
+const updateAdproveStatus = async (id: string) => {
+  try {
+    isUpdatingStatus.value = true;
+    
+    const res = await axios.post(`api/users/${id}/authorize/`, {}, {  // ເພີ່ມ {} ສຳລັບ body
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
 
+    if (res.status === 200) {
+      // ສຳເລັດ - refresh data
+      await agencyStore.GetUser();
+      
+      await CallSwal({
+        icon: "success",
+        title: "ສຳເລັດ",
+        text: "ອະນຸມັດຜູ້ໃຊ້ງານແລ້ວ",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+    }
+  } catch (error) {
+    console.error("Error updating approve status:", error);
+    
+    await CallSwal({
+      icon: "error",
+      title: "ເກີດຂໍ້ຜິດພາດ",
+      text: "ບໍ່ສາມາດອະນຸມັດຜູ້ໃຊ້ງານໄດ້",
+    });
+  } finally {
+    isUpdatingStatus.value = false;
+  }
+};
+
+// ຫຼື ຖ້າຢາກໃຫ້ມີ confirmation dialog
+const toggleUserStatus = async (user: any) => {
+  try {
+    const result = await CallSwal({
+      icon: "question",
+      title: "ຢືນຢັນການອະນຸມັດ",
+      text: `ທ່ານຕ້ອງການອະນຸມັດຜູ້ໃຊ້ງານ "${user.user_name}" ບໍ?`,
+      showCancelButton: true,
+      confirmButtonText: "ອະນຸມັດ",
+      cancelButtonText: "ຍົກເລີກ",
+      confirmButtonColor: "#4CAF50",
+    });
+
+    if (result.isConfirmed) {
+      await updateAdproveStatus(user.user_id);
+    }
+  } catch (error) {
+    console.error("Error in toggleUserStatus:", error);
+  }
+};
 const route = useRoute();
 const user_id = route.query.user_id as string;
 const agencyStore = UserStore();
@@ -26,8 +84,11 @@ const searchUsers = () => {
 
   agencyStore.GetUser();
 };
-
+const role1 = computed(() => {
+  return roleStore.responst_data_detail;
+});
 onMounted(() => {
+  roleStore.GetRoleDetail();
   agencyStore.GetUser();
   if (user_id) {
     agencyStore.DeleteUser(user_id);
@@ -37,16 +98,22 @@ onMounted(() => {
 });
 
 const headers = ref([
-  // { title: "ລຳດັບ", key: "no", sortable: false },
+ 
   { title: "ລຳດັບຜູ້ໃຊ້ງານ", key: "user_id", sortable: false },
-  // { title: "ຮູບພາບ", key: "image", sortable: false },
+  
   { title: "ຊື່ຜູ້ໃຊ້ງານ", key: "user_name", sortable: false },
   { title: "ອີເມວ", key: "user_email", sortable: false },
   { title: "ເບີ້ໂທ", key: "user_mobile", sortable: false },
   { title: "ພະແນກ", key: "division", sortable: false, align: "center" },
-  { title: "ສິດເຂົ້ານຳໃຊ້ລະບົບ", key: "role", sortable: false, align: "center" },
+  {
+    title: "ສິດເຂົ້ານຳໃຊ້ລະບົບ",
+    key: "role",
+    sortable: false,
+    align: "center",
+  },
   { title: "ສະຖານະ", key: "Auth_Status", sortable: false },
-  { title: "Actions", key: "actions", sortable: false },
+  { title: "ອານຸມັດ", key: "consfirm", sortable: false, align: "center" },
+  { title: "ຈັດການ", key: "actions", sortable: false, align: "center" },
 ]);
 
 const onDeleteUser = async (user_id: string) => {
@@ -66,7 +133,6 @@ const onDeleteUser = async (user_id: string) => {
     }
   }
 };
-
 const clearFilters = () => {
   selectedDivision.value = null;
   selectedRole.value = null;
@@ -97,6 +163,7 @@ const clearFilters = () => {
             <v-col cols="12">
               <div class="d-flex flex-wrap align-center">
                 <v-btn
+                  v-if="(role1 as any)?.[0]?.View_Detail === 1"
                   color="primary"
                   elevation="0"
                   @click="goPath('/user/create')"
@@ -237,9 +304,95 @@ const clearFilters = () => {
                 <GlobalMenuSpanImage :image="item.profile_image" />
               </div>
             </template> -->
+<template v-slot:item.consfirm="{ item }">
+  <div class="d-flex align-center">
+    <v-btn
+      v-if="(role1 as any)?.[0]?.Auth_Detail === 1"
+      :color="item.Auth_Status === 'A' ? 'success' : 'warning'"
+      :icon="
+        item.Auth_Status === 'A'
+          ? 'mdi-check-circle'
+          : 'mdi-toggle-switch-off-outline'
+      "
+      variant="text"
+      size="small"
+      :loading="isUpdatingStatus"
+      :disabled="item.Auth_Status === 'A'"
+      @click="toggleUserStatus(item)"
+      :class="{
+        'disabled-btn': item.Auth_Status === 'A'
+      }"
+      :title="item.Auth_Status === 'A' ? 'ອະນຸມັດແລ້ວ' : 'ຄລິກເພື່ອອະນຸມັດ'"
+    />
+    
+  
+    <v-fade-transition>
+      <v-icon
+        v-if="item.Auth_Status === 'A'"
+        color="success"
+        size="small"
+        class="ml-2"
+      >
+        mdi-shield-check
+      </v-icon>
+    </v-fade-transition>
+  </div>
+</template>
+
+            <!-- <template v-slot:item.consfirm="{ item }">
+             
+              <v-btn
+                v-if="(role1 as any)?.[0]?.Auth_Detail === 1 "
+                color="success"
+                icon="mdi-check-circle"
+                variant="text"
+                size="small"
+                :loading="isUpdatingStatus"
+                @click="approveUser(item)"
+                title="ອະນຸມັດຢູ້ໃຊ້ງານ"
+              />
+
+              
+              <v-btn
+                v-if="(role1 as any)?.[0]?.Auth_Detail === 1"
+                :color="item.Auth_Status === 'A' ? 'error' : 'primary'"
+                :icon="
+                  item.Auth_Status === 'A'
+                    ? 'mdi-toggle-switch'
+                    : 'mdi-toggle-switch-off-outline'
+                "
+                variant="text"
+                size="small"
+                :loading="isUpdatingStatus"
+                @click="toggleUserStatus(item)"
+                :title="item.Auth_Status === 'A' ? 'ປິດໃຊ້ງານ' : 'ເປີດໃຊ້ງານ'"
+              />
+
+             
+              <v-tooltip bottom>
+                <template v-slot:activator="{ props }">
+                  <v-chip
+                    v-bind="props"
+                    :color="item.Auth_Status === 'A' ? 'success' : 'warning'"
+                    size="small"
+                    variant="flat"
+                  >
+                    {{
+                      item.Auth_Status === "A" ? "ອະນຸມັດແລ້ວ" : "ລໍຖ້າອະນຸມັດ"
+                    }}
+                  </v-chip>
+                </template>
+                <span>{{
+                  item.Auth_Status === "A"
+                    ? "ຜູ້ໃຊ້ງານນີ້ໄດ້ຮັບການອະນຸມັດແລ້ວ"
+                    : "ຜູ້ໃຊ້ງານນີ້ລໍຖ້າການອະນຸມັດ"
+                }}</span>
+              </v-tooltip>
+            </template> -->
 
             <template v-slot:item.actions="{ item }">
               <v-btn
+                v-if="(role1 as any)?.[0]?.Edit_Detail === 1"
                 color="primary"
                 icon="mdi-pencil"
                 variant="text"
@@ -248,6 +401,7 @@ const clearFilters = () => {
               ></v-btn>
 
               <v-btn
+                v-if="(role1 as any)?.[0]?.View_Detail === 1"
                 color="primary"
                 icon="mdi-eye"
                 variant="text"
@@ -256,6 +410,7 @@ const clearFilters = () => {
               ></v-btn>
 
               <v-btn
+                v-if="(role1 as any)?.[0]?.Del_Detail === 1"
                 color="error"
                 icon="mdi-delete"
                 variant="text"
@@ -269,3 +424,10 @@ const clearFilters = () => {
     </v-card>
   </div>
 </template>
+<style scoped>
+.disabled-btn {
+  opacity: 0.6;
+  pointer-events: none;
+  filter: grayscale(20%);
+}
+</style>

@@ -267,8 +267,12 @@ try {
               text: "ສຳເລັດການແກ້ໄຂເມນູ",
               icon: "success",
               showCancelButton: false,
+              showConfirmButton: false,
             });
-            goPath("/menu");
+            setTimeout(() => {
+              goPath("/menu");
+            },  1500);
+            
           }
         }
       } catch (error) {
@@ -308,14 +312,18 @@ try {
               },
             }
           );
-          if (res.status === 200) {
+          if (res.status === 204) {
             CallSwal({
               title: "ສຳເລັດ",
               text: "ສຳເລັດການລົບເມນູ",
               icon: "success",
               showCancelButton: false,
+              showConfirmButton: false,
             });
-            goPath("/menu");
+            setTimeout(() => {
+              goPath("/menu");
+            }, );
+            
           }
         }
       } catch (error) {
