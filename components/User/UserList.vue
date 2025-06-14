@@ -1,7 +1,17 @@
 <script lang="ts" setup>
 import { useRoute } from "vue-router";
 import axios from "@/helpers/axios";
-
+import { useRolePermissions } from "@/composables/useRolePermissions";
+const {
+  canEdit,
+  canDelete,
+  canView,
+  camAdd,
+  canAuthorize,
+  hasPermission,
+  initializeRole,
+  
+} = useRolePermissions();
 interface Userparam {
   div_id: string;
   role_id: string;
@@ -16,18 +26,23 @@ const isUpdatingStatus = ref(false);
 const updateAdproveStatus = async (id: string) => {
   try {
     isUpdatingStatus.value = true;
-    
-    const res = await axios.post(`api/users/${id}/authorize/`, {}, {  // ເພີ່ມ {} ສຳລັບ body
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    });
+
+    const res = await axios.post(
+      `api/users/${id}/authorize/`,
+      {},
+      {
+        // ເພີ່ມ {} ສຳລັບ body
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
 
     if (res.status === 200) {
       // ສຳເລັດ - refresh data
       await agencyStore.GetUser();
-      
+
       await CallSwal({
         icon: "success",
         title: "ສຳເລັດ",
@@ -38,7 +53,7 @@ const updateAdproveStatus = async (id: string) => {
     }
   } catch (error) {
     console.error("Error updating approve status:", error);
-    
+
     await CallSwal({
       icon: "error",
       title: "ເກີດຂໍ້ຜິດພາດ",
@@ -88,6 +103,7 @@ const role1 = computed(() => {
   return roleStore.responst_data_detail;
 });
 onMounted(() => {
+  initializeRole();
   roleStore.GetRoleDetail();
   agencyStore.GetUser();
   if (user_id) {
@@ -98,9 +114,8 @@ onMounted(() => {
 });
 
 const headers = ref([
- 
   { title: "ລຳດັບຜູ້ໃຊ້ງານ", key: "user_id", sortable: false },
-  
+
   { title: "ຊື່ຜູ້ໃຊ້ງານ", key: "user_name", sortable: false },
   { title: "ອີເມວ", key: "user_email", sortable: false },
   { title: "ເບີ້ໂທ", key: "user_mobile", sortable: false },
@@ -144,7 +159,7 @@ const clearFilters = () => {
 </script>
 
 <template>
-  <div class="">
+  <div class="pa-4">
     <v-card elevation="0" tile width="100%" min-height="95vh" class="">
       <v-row>
         <v-col cols="12">
@@ -163,7 +178,7 @@ const clearFilters = () => {
             <v-col cols="12">
               <div class="d-flex flex-wrap align-center">
                 <v-btn
-                  v-if="(role1 as any)?.[0]?.View_Detail === 1"
+                  v-if="camAdd"
                   color="primary"
                   elevation="0"
                   @click="goPath('/user/create')"
@@ -268,7 +283,11 @@ const clearFilters = () => {
         </v-col>
 
         <v-col cols="12">
-          <v-data-table :headers="headers" :items="response_data">
+          <v-data-table
+            :headers="headers"
+            :items="response_data"
+            class="text-no-wrap"
+          >
             <template v-slot:item.no="{ item, index }">
               {{ index + 1 }}
             </template>
@@ -282,7 +301,7 @@ const clearFilters = () => {
             </template>
             <template v-slot:item.division="item" class="text-center">
               <div class="text-center">
-                <h3>{{ item.item.division?.div_id || "No Data" }}</h3>
+                <p>{{ item.item.division?.div_id || "No Data" }}</p>
 
                 <p>
                   {{ item.item.division?.division_name_la || "ບໍ່ມີຂໍ້ມູນ" }}
@@ -291,7 +310,7 @@ const clearFilters = () => {
             </template>
             <template v-slot:item.role="item" class="text-center">
               <div class="text-center">
-                <h3>{{ item.item.role?.role_id || "No Data" }}</h3>
+                <p>{{ item.item.role?.role_id || "No Data" }}</p>
 
                 <p>
                   {{ item.item.role?.role_name_la || "ບໍ່ມີຂໍ້ມູນ" }}
@@ -304,7 +323,7 @@ const clearFilters = () => {
                 <GlobalMenuSpanImage :image="item.profile_image" />
               </div>
             </template> -->
-<template v-slot:item.consfirm="{ item }">
+            <!-- <template v-slot:item.consfirm="{ item }">
   <div class="d-flex align-center">
     <v-btn
       v-if="(role1 as any)?.[0]?.Auth_Detail === 1"
@@ -337,8 +356,15 @@ const clearFilters = () => {
       </v-icon>
     </v-fade-transition>
   </div>
-</template>
-
+</template> -->
+            <template v-slot:item.consfirm="{ item }">
+              <GlobalUserApproval
+                :item="item"
+                :role-permissions="role1"
+                :loading="isUpdatingStatus"
+                @approve="toggleUserStatus"
+              />
+            </template>
             <!-- <template v-slot:item.consfirm="{ item }">
              
               <v-btn
@@ -392,7 +418,7 @@ const clearFilters = () => {
 
             <template v-slot:item.actions="{ item }">
               <v-btn
-                v-if="(role1 as any)?.[0]?.Edit_Detail === 1"
+                v-if="canEdit"
                 color="primary"
                 icon="mdi-pencil"
                 variant="text"
@@ -401,7 +427,7 @@ const clearFilters = () => {
               ></v-btn>
 
               <v-btn
-                v-if="(role1 as any)?.[0]?.View_Detail === 1"
+                v-if="canView"
                 color="primary"
                 icon="mdi-eye"
                 variant="text"
@@ -410,7 +436,7 @@ const clearFilters = () => {
               ></v-btn>
 
               <v-btn
-                v-if="(role1 as any)?.[0]?.Del_Detail === 1"
+                v-if="canDelete"
                 color="error"
                 icon="mdi-delete"
                 variant="text"
