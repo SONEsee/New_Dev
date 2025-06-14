@@ -10,6 +10,10 @@ const router = useRouter();
 const glStore = useGlStore();
 const request = glStore.create_form_gl;
 const route = useRoute();
+const cerrenStore = useCerrencyStore()
+const cerrency = computed(() => {
+  return cerrenStore.respons_cerrency_data || [];
+})
 // const id = route.query.id as number || 0;
 const gl_code = Number(route.query.gl_code) || 0;
 const useglStore = useGlStore();
@@ -17,6 +21,7 @@ const res =  computed(()=>{
   return useglStore.respons_detail_gl || [];
 })
 onMounted(()=>{
+  cerrenStore.getDataCerrency();
   useglStore.getGlMasterDetail(gl_code)
 })
 
@@ -55,7 +60,7 @@ const title="ເພີ່ມຂໍ້ມູນບັນຊີ GL Master";
 
 <template>
   <v-col cols="12">
-  
+
     <global-text-title-line :title="title" />
     <v-form ref="form" @submit.prevent="submitTransaction">
       <v-row>
@@ -177,7 +182,10 @@ const title="ເພີ່ມຂໍ້ມູນບັນຊີ GL Master";
             variant="outlined"
             required
           />
-          <v-text-field
+          <v-autocomplete
+          :items="cerrency"
+          item-title="ccy_code"
+          item-value="ccy_code"
             v-model="request.Res_ccy"
             density="compact"
             variant="outlined"

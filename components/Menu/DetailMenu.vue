@@ -57,12 +57,12 @@ interface MenuData {
             :title="'ໄອຄອນເມນູ'"
           />
         </v-col>
-        <v-col cols="12" md="4">
-          <GlobalCardTitle
-            :text="res?.is_active ?? 'N/A'"
-            :title="'ສະຖານະໃຊ້ງານ'"
-          />
-        </v-col>
+       <v-col cols="12" md="4">
+  <GlobalCardTitle
+    :text="res?.is_active === 'Y' ? 'ເປີດໃຊ້ງານ' : res?.is_active === 'N' ? 'ປິດໃຊ້ງານ' : 'N/A'"
+    :title="'ສະຖານະໃຊ້ງານ'"
+  />
+</v-col>
         <v-col cols="12" md="4">
           <GlobalCardTitle
             :text="res?.menu_order ?? 'N/A'"

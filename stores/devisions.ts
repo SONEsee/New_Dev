@@ -57,8 +57,8 @@ export const DevisionStore = defineStore("devision", {
         if (res.status === 200) {
           this.respons_detail_query_data = res.data;
           await CallSwal({
-            title: "Success",
-            text: "Update Devision Success",
+            title: "ສຳເລັດ",
+            text: "ອັບເດດສໍາເລັດ",
             icon: "success",
           });
           goPath("/devision");

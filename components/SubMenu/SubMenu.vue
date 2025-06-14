@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import dayjs from "#build/dayjs.imports.mjs";
 import { ref, computed, onMounted, watch } from "vue";
-
+const roleStore = RoleStore();
+const role = computed(() => {
+  return roleStore.responst_data_detail;
+});
 const selecteMainMenu = ref<any | null>(null);
-
 
 const SELECTED_MAINMENU_KEY = "selected_mainmenu_filter";
 
@@ -35,9 +37,10 @@ watch(
   selecteMainMenu,
   async (newValue) => {
     saveMainMenuSelection(newValue);
-  
+
     try {
-      subMenuStore.query_submenu_filter.data.menu_id = newValue?.menu_id || null;
+      subMenuStore.query_submenu_filter.data.menu_id =
+        newValue?.menu_id || null;
       await subMenuStore.GetMenuSubMenu();
     } catch (error) {
       console.error("Failed to auto search submenu:", error);
@@ -67,7 +70,6 @@ const menuItems = computed(() => {
 
 const loadDataAndApplyFilter = async () => {
   try {
-  
     await Promise.all([
       subMenuStore.GetMenuSubMenu(),
       subMenuStore.GetMainMenu(),
@@ -76,7 +78,8 @@ const loadDataAndApplyFilter = async () => {
     loadSavedMainMenuSelection();
 
     if (selecteMainMenu.value) {
-      subMenuStore.query_submenu_filter.data.menu_id = selecteMainMenu.value.menu_id;
+      subMenuStore.query_submenu_filter.data.menu_id =
+        selecteMainMenu.value.menu_id;
       await subMenuStore.GetMenuSubMenu();
     }
   } catch (error) {
@@ -86,6 +89,7 @@ const loadDataAndApplyFilter = async () => {
 
 onMounted(async () => {
   await loadDataAndApplyFilter();
+  roleStore.GetRoleDetail();
 });
 
 const onDeleteType = async (sub_menu_id: string) => {
@@ -95,23 +99,113 @@ const onDeleteType = async (sub_menu_id: string) => {
 
 const title = "ຂໍ້ມູນເມນູຍ່ອຍ";
 const header = [
-  { title: "ລະຫັດ", value: "sub_menu_id" },
-  { title: "ຊື່ເມນູພາາລາວ", value: "sub_menu_name_la" },
-  { title: "ຊື່ເມນູພາສາອັງກິດ", value: "sub_menu_name_en" },
-  { title: "ລຳດັບ", value: "sub_menu_order" },
-  { title: "ເມນູຫຼັກ", value: "menu_id", align: "center" },
-  { title: "ສະຖານະການໃຊ້ງານ", value: "is_active" },
-  { title: "ມື້ສ້າງຂໍ້ມູນ", value: "created_date" },
-  { title: "ຈັດການ", value: "action" },
+  {
+    title: "ລະຫັດ",
+    value: "sub_menu_id",
+    key: "sub_menu_id",
+    align: "start",
+    sortable: true,
+    filterable: true,
+    groupable: false,
+    divider: false,
+    class: "text-primary font-weight-bold",
+    cellClass: "pa-2",
+  },
+
+  {
+    title: "ຊື່ເມນູພາສາລາວ",
+    value: "sub_menu_name_la",
+    align: "start",
+    sortable: true,
+    filterable: true,
+
+    class: "text-h6",
+    cellClass: "text-wrap",
+  },
+
+  {
+    title: "ຊື່ເມນູພາສາອັງກິດ",
+    value: "sub_menu_name_en",
+    align: "start",
+    sortable: true,
+    filterable: true,
+
+    class: "text-subtitle-1",
+  },
+
+  {
+    title: "ລຳດັບ",
+    value: "sub_menu_order",
+    align: "center",
+    sortable: true,
+    filterable: false,
+
+    class: "text-center",
+    cellClass: "text-center font-weight-bold",
+  },
+
+  {
+    title: "ເມນູຫຼັກ",
+    value: "menu_id",
+    align: "center",
+    sortable: true,
+    filterable: true,
+
+    // Custom sort function
+    sort: (a, b) => {
+      return a.menu_id.localeCompare(b.menu_id);
+    },
+  },
+
+  {
+    title: "ສະຖານະການໃຊ້ງານ",
+    value: "is_active",
+    align: "center",
+    sortable: true,
+    filterable: true,
+
+    class: "text-center",
+    cellClass: "text-center",
+    // Custom filter function
+    filter: (value, query, item) => {
+      if (!query) return true;
+      const statusText = value === "Y" ? "ເປີດໃຊ້ງານ" : "ປິດໃຊ້ງານ";
+      return statusText.includes(query);
+    },
+  },
+
+  {
+    title: "ມື້ສ້າງຂໍ້ມູນ",
+    value: "created_date",
+    align: "center",
+    sortable: true,
+    filterable: false,
+
+    class: "text-center",
+    // Custom sort for dates
+    // sort: (a, b) => {
+    //   return new Date(a.created_date) - new Date(b.created_date);
+    // },
+  },
+
+  {
+    title: "ຈັດການ",
+    value: "action",
+    align: "center",
+    sortable: false,
+    filterable: false,
+
+    class: "text-center",
+    cellClass: "text-center",
+    fixed: true, // Fix column
+  },
 ];
 
 const goToCreateSubMenu = () => {
-
   if (selecteMainMenu.value && selecteMainMenu.value.menu_id) {
     goPath(`/submenu/create?menu_id=${selecteMainMenu.value.menu_id}`);
   } else {
-   
-    goPath('/submenu/create');
+    goPath("/submenu/create");
   }
 };
 
@@ -121,74 +215,101 @@ const clearSavedSelection = () => {
   subMenuStore.query_submenu_filter.data.menu_id = null;
 };
 
-
 defineExpose({
   clearSavedSelection,
 });
 </script>
 
 <template>
-  <v-container>
-    <GlobalTextTitleLine :title="title" />
-    <v-col cols="12">
-      <v-row>
-        <v-col cols="12" md="3">
-          <div class="d-flex">
-            <v-btn color="primary" @click="goToCreateSubMenu()"
-              ><v-icon icon="mdi-plus"></v-icon> ເພີ່ມປະເພດ</v-btn
-            >
-          </div>
-        </v-col>
+  <GlobalTextTitleLine :title="title" />
 
-        <v-col cols="12" md="7" class="text-no-wrap">
-          <v-autocomplete
-            v-model="selecteMainMenu"
-            density="compact"
-            label="ເລືອກເມນູຫຼັກ"
-            :items="menuItems"
-            item-value="menu_id"
-            item-title="sub_menu_name_la"
-            variant="outlined"
-            clearable
-            placeholder="ເລືອກເມນູຫຼັກ"
-            return-object
-            :loading="subMenuStore.isloading"
+  <v-col cols="12">
+    <v-row>
+      <v-col cols="12" md="3">
+        <div class="d-flex">
+          <v-btn color="primary" @click="goToCreateSubMenu()"
+          v-if="(role as any)?.[0]?.New_Detail === 1"
+            ><v-icon icon="mdi-plus"></v-icon> ເພີ່ມປະເພດ</v-btn
           >
-            <template v-slot:selection="{ item }">
-              {{ item.raw.menu_name_la }}-{{ item.raw.menu_id }}
-            </template>
+        </div>
+      </v-col>
 
-            <template v-slot:item="{ props, item }">
-              <v-list-item
-                v-bind="props"
-                :subtitle="`ID: ${item.raw.menu_id}`"
-                :title="item.raw.menu_name_la"
-              />
-            </template>
-          </v-autocomplete>
-        </v-col>
-        
-        <v-col cols="12" md="2">
-          <v-btn 
-            color="secondary" 
-            variant="outlined" 
-            @click="clearFilters"
-            :loading="subMenuStore.isloading"
-            block
-          >
-            <v-icon class="mr-2">mdi-filter-remove</v-icon>
-            ເຄລຍການກັ່ນຕອງ
-          </v-btn>
-        </v-col>
-      </v-row>
-    </v-col>
+      <v-col cols="12" md="7" class="text-no-wrap">
+        <v-autocomplete
+          width=""
+          v-model="selecteMainMenu"
+          density="compact"
+          label="ເລືອກເມນູຫຼັກ"
+          :items="menuItems"
+          item-value="menu_id"
+          item-title="sub_menu_name_la"
+          variant="outlined"
+          clearable
+          placeholder="ເລືອກເມນູຫຼັກ"
+          return-object
+          :loading="subMenuStore.isloading"
+        >
+          <template v-slot:selection="{ item }">
+            {{ item.raw.menu_name_la }}-{{ item.raw.menu_id }}
+          </template>
 
-    <v-data-table :headers="header" :items="res || []" class="elevation-1">
+          <template v-slot:item="{ props, item }">
+            <v-list-item
+              v-bind="props"
+              :subtitle="`ID: ${item.raw.menu_id}`"
+              :title="item.raw.menu_name_la"
+            />
+          </template>
+        </v-autocomplete>
+      </v-col>
+
+      <v-col cols="12" md="2">
+        <v-btn
+          color="secondary"
+          variant="outlined"
+          @click="clearFilters"
+          :loading="subMenuStore.isloading"
+          block
+        >
+          <v-icon class="mr-2">mdi-filter-remove</v-icon>
+          ເຄລຍການກັ່ນຕອງ
+        </v-btn>
+      </v-col>
+    </v-row>
+
+    <v-data-table :headers="header" :items="res || []">
+      <template v-slot:header.sub_menu_id="{ column }">
+        <v-icon start>mdi-identifier</v-icon>
+        <b>{{ column.title }}</b>
+      </template>
+
+      <template v-slot:header.sub_menu_name_la="{ column }">
+        <b> {{ column.title }}</b>
+      </template>
+      <template v-slot:header.sub_menu_name_en="{ column }">
+        <b> {{ column.title }}</b>
+      </template>
+      <template v-slot:header.sub_menu_order="{ column }">
+        <b> {{ column.title }}</b>
+      </template>
+      <template v-slot:header.menu_id="{ column }">
+        <b> {{ column.title }}</b>
+      </template>
+      <template v-slot:header.created_date="{ column }">
+        <b> {{ column.title }}</b>
+      </template>
+      <template v-slot:header.is_active="{ column }">
+        <b> {{ column.title }}</b>
+      </template>
+      <template v-slot:header.action="{ column }">
+        <b> {{ column.title }}</b>
+      </template>
+
       <template v-slot:item.created_date="{ item }">
         {{ dayjs(item.created_date).format("DD/MM/YYYY") }}
       </template>
       <template v-slot:item.is_active="{ item }">
-          <v-chip
+        <v-chip
           :color="item.is_active === 'Y' ? 'green' : 'red'"
           size="small"
           label
@@ -204,25 +325,37 @@ defineExpose({
           <h3>{{ item.item.menu?.menu_name_la || "No Data" }}</h3>
 
           <p>
-            {{ item.item.menu?.menu_id || "ບໍ່ມີຂໍ້ມູນ" }}</p>
+            {{ item.item.menu?.menu_id || "ບໍ່ມີຂໍ້ມູນ" }}
+          </p>
         </div>
       </template>
       <template v-slot:item.action="{ item }">
         <v-btn
+        v-if="(role as any)?.[0]?.View_Detail === 0 && item.is_active === 'N'"
+          small
+          flat
+          class="text-primary"
+          icon="mdi-toggle-switch-off-outline"
+          @click="goPath(`#`)"
+        />
+        <v-btn
+        v-if="(role as any)?.[0]?.View_Detail === 1"
           small
           flat
           class="text-primary"
           icon="mdi-eye-outline"
-          @click="goPath(`/submenu/detail?id=${item.sub_menu_id}`)"
+          @click="goPath(`/submenu/detail?sub_menu_id=${item.sub_menu_id}`)"
         />
         <v-btn
+        v-if="(role as any)?.[0]?.Edit_Detail === 1"
           small
           flat
           class="text-info"
           icon="mdi-pen"
-          @click="goPath(`/submenu/edit?id=${item.sub_menu_id}`)"
+          @click="goPath(`/submenu/edit?sub_menu_id=${item.sub_menu_id}`)"
         />
         <v-btn
+        v-if="(role as any)?.[0]?.Del_Detail === 1"
           small
           flat
           class="text-error"
@@ -231,5 +364,5 @@ defineExpose({
         />
       </template>
     </v-data-table>
-  </v-container>
+  </v-col>
 </template>

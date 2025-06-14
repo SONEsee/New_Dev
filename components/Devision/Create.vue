@@ -1,9 +1,30 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed, watch } from "vue";
 import { UseCategoryStore } from "~/stores/category";
 import { CallSwal } from "~/composables/global";
+
 const title = "ເພີ່ມຂໍ້ມູນພະແນກ";
+const devisionStore = UseCategoryStore();
 const categoryStore = UseCategoryStore();
+
+const suggestedId = computed(() => {
+  const categories = categoryStore.categories || [];
+
+  if (categories.length === 0) return "D001";
+
+  const validIds = categories
+    .map((item) => item.div_id)
+    .filter((id) => /^D\d+$/.test(id))
+    .map((id) => parseInt(id.slice(1)))
+    .filter((num) => !isNaN(num))
+    .sort((a, b) => b - a);
+
+  if (validIds.length === 0) return "D001";
+
+  const lastNumber = validIds[0];
+  const nextNumber = lastNumber + 1;
+  return "D" + nextNumber.toString().padStart(3, "0");
+});
 
 const form = ref<any>(null);
 
@@ -13,6 +34,14 @@ const rules = {
     (v: string) => v.length >= 2 || "ຊື່ປະເພດຕ້ອງມີຢ່າງໜ້ອຍ 2 ຕົວອັກສອນ",
   ],
 };
+
+onMounted(async () => {
+  await devisionStore.GetListData();
+
+  if (!categoryStore.form_create_data.div_id) {
+    categoryStore.form_create_data.div_id = suggestedId.value;
+  }
+});
 
 const onSubmit = async () => {
   if (!categoryStore.form_create_data.div_id) {
@@ -35,6 +64,11 @@ const onSubmit = async () => {
   <v-container>
     <v-section style="height: 100vh" class="">
       <GlobalTextTitleLine :title="title" />
+
+      <v-alert color="info" variant="tonal" class="mb-4" density="compact">
+        <strong>ID ແນະນຳ:</strong> {{ suggestedId }}
+      </v-alert>
+
       <v-form ref="form" @submit.prevent="onSubmit" class="">
         <v-col cols="12">
           <v-row>
@@ -44,9 +78,11 @@ const onSubmit = async () => {
                 density="compact"
                 v-model="categoryStore.form_create_data.div_id"
                 :rules="[(v) => !!v || 'ກະລຸນາປອ້ນ ID!']"
+                :placeholder="suggestedId"
                 label="ເພິ່ມ ID"
                 variant="outlined"
-                required />
+                required
+              />
               <v-text-field
                 class="mt-4"
                 density="compact"
@@ -55,7 +91,8 @@ const onSubmit = async () => {
                 label="ເພີ່ມຊື່ພາສາລາວ"
                 variant="outlined"
                 required
-            /></v-col>
+              />
+            </v-col>
 
             <v-col cols="12" md="6">
               <v-text-field
@@ -66,75 +103,27 @@ const onSubmit = async () => {
                 label="ຊື່ພາສາອັງກິດ"
                 variant="outlined"
                 required
-            /></v-col>
-            <!-- <v-col cols="12" md="6">
-              <v-autocomplete
-                :items="[
-                  { title: 'ເປິດ', value: 'O' },
-                  { title: 'ປິດ', value: 'C' },
-                ]"
-                item-title="title"
-                item-value="value"
-                class="mt-4"
-                density="compact"
-                v-model="categoryStore.form_create_data.record_Status"
-                :rules="[(v) => !!v || 'ສະຖານະໃຊ້ງານ!']"
-                label="ເລືອກສະຖານະໃຊ້ງານ"
-                variant="outlined"
-                required
-            /></v-col>
-            <v-col cols="12" md="6">
-              <v-autocomplete
-                :items="[
-                  { title: 'Authorized', value: 'A' },
-                  { title: 'Unauthorized', value: 'U' },
-                ]"
-                item-title="title"
-                item-value="value"
-                class="mt-4"
-                density="compact"
-                v-model="categoryStore.form_create_data.Auth_Status"
-                :rules="[(v) => !!v || 'ສະຖານະອະນຸມັດ!']"
-                label="ເລືອກສະຖານະອະນຸມັດ"
-                variant="outlined"
-                required
-            /></v-col>
-            <v-col cols="12" md="6">
-              <v-autocomplete
-                :items="[
-                  { title: 'Yes ', value: 'Y' },
-                  { title: 'No', value: 'N' },
-                ]"
-                item-title="title"
-                item-value="value"
-                class="mt-4"
-                density="compact"
-                v-model="categoryStore.form_create_data.Once_Auth"
-                :rules="[(v) => !!v || 'ສະຖານະເຄີຍຖືກອະນຸມັດ !']"
-                label="ເລືອກສະຖານະເຄີຍຖືກອະນຸມັດ "
-                variant="outlined"
-                required
-            /></v-col> -->
+              />
+            </v-col>
           </v-row>
         </v-col>
+
         <v-col cols="12">
           <v-row>
-            <v-row>
-              <v-col cols="12" class="text-center">
-                <v-btn
-                  type="submit"
-                  color="primary"
-                  class="mt-4 mr-3"
-                  text="ບັນທຶກ"
-                />
-                <v-btn @click="goPath('/devision')" color="error" class="mt-4">
-                  ຍົກເລີກ
-                </v-btn>
-              </v-col>
-            </v-row>
+            <v-col cols="12" class="text-center">
+              <v-btn
+                type="submit"
+                color="primary"
+                class="mt-4 mr-3"
+                text="ບັນທຶກ"
+              />
+              <v-btn @click="goPath('/devision')" color="error" class="mt-4">
+                ຍົກເລີກ
+              </v-btn>
+            </v-col>
           </v-row>
         </v-col>
       </v-form>
-    </v-section></v-container
-  >
+    </v-section>
+  </v-container>
 </template>
