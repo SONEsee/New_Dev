@@ -28,6 +28,7 @@ export interface Items {
     Maker_Id:         null;
     Maker_DT_Stamp:   null;
     Checker_Id:       null;
+    Record_Status:    string;
     Checker_DT_Stamp: null;
     Auth_Status:      string;
     Once_Auth:        null;

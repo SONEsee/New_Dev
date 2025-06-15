@@ -8,6 +8,8 @@ export interface RolePermissions {
   Del_Detail: number;
   Auth_Detail: number;
   New_Detail?: number;
+  Auth_Status?: string;
+  Record_Status: string;
   [key: string]: any;
 }
 
@@ -39,13 +41,15 @@ export const useRolePermissions = () => {
   const canDelete = computed(() => permissions.value?.Del_Detail === 1);
   const canAuthorize = computed(() => permissions.value?.Auth_Detail === 1);
   const canAdd = computed(() => permissions.value?.New_Detail === 1);
+  const canAuthStatus = computed(() => permissions.value?.Auth_Status === 'U');
+  const canRecordStatus = computed(() => permissions.value?.Record_Status === 'O');
 
-  // Generic permission checker
+  
   const hasPermission = (permissionKey: keyof RolePermissions): boolean => {
     return permissions.value?.[permissionKey] === 1;
   };
 
-  // Check multiple permissions
+  
   const hasAnyPermission = (permissionKeys: (keyof RolePermissions)[]): boolean => {
     return permissionKeys.some(key => hasPermission(key));
   };
@@ -55,22 +59,24 @@ export const useRolePermissions = () => {
   };
 
   return {
-    // Data
+    
     roleStore,
     roleData,
     permissions,
     
-    // Methods
+    
     initializeRole,
     hasPermission,
     hasAnyPermission,
     hasAllPermissions,
     
-    // Specific permissions
+   
     canView,
     canEdit,
     canDelete,
     canAuthorize,
     canAdd,
+    canAuthStatus,
+    canRecordStatus
   };
 };

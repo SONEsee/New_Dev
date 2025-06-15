@@ -1,11 +1,11 @@
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { computed } from "vue";
 
 interface Props {
   item: {
     user_id: string;
     user_name: string;
-    Auth_Status: 'A' | 'U' | string;
+    Auth_Status: "A" | "U" | string;
   };
   rolePermissions?: any;
   loading?: boolean;
@@ -15,16 +15,14 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   loading: false,
   rolePermissions: null,
-  onApprove: undefined
+  onApprove: undefined,
 });
 
-// Emits
 const emit = defineEmits<{
   approve: [item: any];
 }>();
 
-// Computed properties
-const isApproved = computed(() => props.item.Auth_Status === 'A');
+const isApproved = computed(() => props.item.Auth_Status === "A");
 
 const hasPermission = computed(() => {
   if (!props.rolePermissions) return true;
@@ -32,17 +30,18 @@ const hasPermission = computed(() => {
 });
 
 const buttonColor = computed(() => {
-  return isApproved.value ? 'success' : 'warning';
+  return isApproved.value ? "success" : "warning";
 });
 
 const buttonIcon = computed(() => {
-  return isApproved.value 
-    ? 'mdi-check-circle' 
-    : 'mdi-toggle-switch-off-outline';
+  if (!isApproved.value) {
+    return "mdi-toggle-switch-off-outline";
+  }
+  // return isApproved.value
 });
 
 const buttonTitle = computed(() => {
-  return isApproved.value ? 'ອະນຸມັດແລ້ວ' : 'ຄລິກເພື່ອອະນຸມັດ';
+  return isApproved.value ? "ອະນຸມັດແລ້ວ" : "ຄລິກເພື່ອອະນຸມັດ";
 });
 
 // Methods
@@ -50,39 +49,31 @@ const handleApproval = async () => {
   if (props.onApprove) {
     await props.onApprove(props.item);
   } else {
-    emit('approve', props.item);
+    emit("approve", props.item);
   }
 };
 </script>
 
 <template>
-  <div class="d-flex align-center">
-    <v-btn
-      v-if="hasPermission"
-      :color="buttonColor"
-      :icon="buttonIcon"
-      variant="text"
-      size="small"
-      :loading="loading"
-      :disabled="isApproved"
-      @click="handleApproval"
-      :class="{
-        'disabled-btn': isApproved
-      }"
-      :title="buttonTitle"
-    />
-    
-    <v-fade-transition>
-      <v-icon
-        v-if="isApproved"
-        color="success"
-        size="small"
-        class="ml-2"
-      >
-        mdi-shield-check
-      </v-icon>
-    </v-fade-transition>
-  </div>
+  <v-btn
+  class="d-flex align-center"
+    v-if="hasPermission"
+    :color="buttonColor"
+    :icon="buttonIcon"
+    variant="text"
+    size="small"
+    :loading="loading"
+    :disabled="isApproved"
+    @click="handleApproval"
+    :class="{
+      'disabled-btn': isApproved,
+    }"
+    :title="buttonTitle"
+  />
+
+  <v-icon v-if="isApproved" color="success" size="small" class="d-flex ml-3 align-center">
+    mdi-toggle-switch
+  </v-icon>
 </template>
 
 <style scoped>

@@ -9,7 +9,7 @@ const updateAdproveStatus = async (id: string) => {
     isUpdatingStatus.value = true;
 
     const res = await axios.post(
-      `api/users/${id}/authorize/`,
+      `api/sub-menus/${id}/set_stt_submenu/`,
       {},
       {
         // ເພີ່ມ {} ສຳລັບ body
