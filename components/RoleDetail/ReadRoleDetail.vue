@@ -4,7 +4,9 @@
       <v-card-title class="pa-6 pb-4">
         <GlobalTextTitleLine :title="title" />
       </v-card-title>
-
+<!-- <pre>
+  {{ menuItems }}
+</pre> -->
       <!-- Filter and Add Button Section -->
       <v-card-text class="pa-6 pt-0">
         <v-row align="center" class="mb-4">
@@ -25,9 +27,9 @@
           <v-col cols="12" md="3">
             <v-select
               v-model="selectedMenuId"
-              :items="menuOptions"
-              item-title="text"
-              item-value="value"
+              :items="menuItems"
+              item-title="menu_name_la"
+              item-value="menu_id"
               label="ກັ່ນຕອງຕາມເມນູຫຼັກ"
               variant="outlined"
               density="compact"
@@ -39,10 +41,10 @@
             >
               <template #item="{ props, item }">
                 <v-list-item v-bind="props">
-                  <!-- <v-list-item-title>{{ item.raw.text }}</v-list-item-title>
+                  <v-list-item-title>{{ item.value}}</v-list-item-title>
                   <v-list-item-subtitle v-if="item.raw.subtitle">
                     {{ item.raw.subtitle }}
-                  </v-list-item-subtitle> -->
+                  </v-list-item-subtitle>
                 </v-list-item>
               </template>
             </v-select>
@@ -54,7 +56,7 @@
               :items="roleOptions"
               item-title="text"
               item-value="value"
-              label="ກັ່ນ�ຕອງຕາມບົດບາດ"
+              label="ກັ່ນຕອງຕາມບົດບາດ"
               variant="outlined"
               density="compact"
               prepend-inner-icon="mdi-filter-variant"
@@ -465,9 +467,16 @@
 import { ref, onMounted, computed } from 'vue'
 import axios from '@/helpers/axios'
 import { RoleDetailModel } from '~/models'
+const menuStore = useMenuStore();
 
+const menuItems = computed(() => {
+  return menuStore.respone_main_menu_data || [];
+});
 import { useRouter } from 'vue-router'
-
+const mainmenu = useMenuStore();
+const menufilter = computed(()=>{
+  return mainmenu.respone_menu_data
+})
 // Define Role interface for the API response
 interface Role {
     role_id:          string;
@@ -674,7 +683,7 @@ const fetchRoleOptions = async () => {
       // Sort by role_id
       options.sort((a, b) => a.value.localeCompare(b.value))
       
-      // Add "All" option at the beginning
+     
       roleOptions.value = [
         {
           text: "ທັງໝົດ",
@@ -873,6 +882,7 @@ const deleteItem = async () => {
 
 // Initialize data on component mount
 onMounted(async () => {
+  mainmenu.GetMainMenu();
   // Fetch role details data first, then fetch options
   await fetchData();
   // Fetch both role and menu options
