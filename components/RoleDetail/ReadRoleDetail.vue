@@ -582,10 +582,10 @@ const filteredItems = computed(() => {
     filtered = filtered.filter(item => item.role_id === selectedRoleId.value);
   }
   
-  // Filter by menu if selected
+  // Filter by menu if selected  
   if (selectedMenuId.value) {
     filtered = filtered.filter(item => 
-      item.fuu_details?.menu?.menu_id === selectedMenuId.value
+      String(item.fuu_details?.menu?.menu_id) === String(selectedMenuId.value)
     );
   }
   
@@ -871,11 +871,11 @@ const deleteItem = async () => {
   }
 };
 
-// Initialize data on component mount
+
 onMounted(async () => {
-  // Fetch role details data first, then fetch options
+  
   await fetchData();
-  // Fetch both role and menu options
+ 
   await Promise.all([fetchRoleOptions(), fetchMenuOptions()]);
 });
 </script>
