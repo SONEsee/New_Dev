@@ -164,7 +164,8 @@ const fetchMenuOptions = async () => {
       const options = Array.from(uniqueMenusMap.values()).map((menu) => ({
         text: `${menu.menu_id} - ${menu.menu_name_la}`,
         value: String(menu.menu_id),
-        subtitle: `ລະຫັດ: ${menu.menu_id}`
+        subtitle: `ລະຫັດ: ${menu.menu_id}
+        `
       }));
       
       // Sort by menu_id
@@ -450,8 +451,8 @@ onMounted(async () => {
             </v-btn>
           </v-col>
           <v-spacer />
-          <!-- Menu Filter Dropdown -->
-          <v-col cols="12" md="3">
+         
+           <v-col cols="12" md="3">
             <v-select
               v-model="selectedMenuId"
               :items="menuItems"
@@ -466,17 +467,20 @@ onMounted(async () => {
               @update:model-value="filterByMenu"
               class="justify-end"
             >
-              <template #item="{ props, item }">
-                <v-list-item v-bind="props">
-                  <v-list-item-title>{{ item.value}}</v-list-item-title>
-                  <v-list-item-subtitle v-if="item.raw.subtitle">
-                    {{ item.raw.subtitle }}
-                  </v-list-item-subtitle>
-                </v-list-item>
-              </template>
+             <template v-slot:selection="{ item }">
+            {{ item.raw.menu_name_la }}({{ item.raw.module_Id }})
+          </template>
+
+          <template v-slot:item="{ props, item }">
+            <v-list-item
+              v-bind="props"
+              :title="`${item.raw.menu_name_la}(${item.raw.menu_id})`"
+             
+            />
+          </template>
             </v-select>
           </v-col>
-          <!-- Move Filter Dropdown to the right -->
+          
           <v-col cols="12" md="3">
             <v-select
               v-model="selectedRoleId"
