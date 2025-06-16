@@ -1,7 +1,6 @@
 import axios from "@/helpers/axios";
 import { MenuModel } from "~/models";
 
-
 export const useMenuStore = defineStore("menu", {
   state() {
     return {
@@ -73,7 +72,7 @@ export const useMenuStore = defineStore("menu", {
       respons_function_menu_data: null as MenuModel.Function | null,
       respons_function_menu_detail_data: null as MenuModel.Function | null,
       respons_menu_id: null as MenuModel.MenuIDCountRespons | null,
-    
+
       isloading: false,
       query_menu_filter: {
         data: {
@@ -96,24 +95,38 @@ export const useMenuStore = defineStore("menu", {
     };
   },
   actions: {
-    async getMenuIDCount(menu_id: string) {
-this.isloading = true;
-try {
-  const res= await axios.get<MenuModel.MenuIDCountRespons>(`api/count-sub-menus/?menu_id=${menu_id}`, {
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    async updateAdproveStatus(id: string) {
+      try {
+        const res = await axios.post(`api/users/${id}/authorize/`, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+      } catch (error) {
+        console.error("Error updating approve status:", error);
+      }
     },
-  });
-  if(res.status ===200){
-    this.respons_menu_id = res.data
-  }
-} catch (error) {
-  console.error("Error fetching menu ID count:", error);
-  
-}finally{
-  this.isloading = false;
-}
+    async getMenuIDCount(menu_id: string) {
+      this.isloading = true;
+      try {
+        const res = await axios.get<MenuModel.MenuIDCountRespons>(
+          `api/count-sub-menus/?menu_id=${menu_id}`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+        if (res.status === 200) {
+          this.respons_menu_id = res.data;
+        }
+      } catch (error) {
+        console.error("Error fetching menu ID count:", error);
+      } finally {
+        this.isloading = false;
+      }
     },
     async Getmenu(users_code: string) {
       if (!users_code) {
@@ -195,8 +208,8 @@ try {
             text: "ສຳເລັດການສ້າງຂໍ້ມູນເມນູຫຼັກ",
             icon: "success",
             showCancelButton: false,
-            showConfirmButton:false,
-          })
+            showConfirmButton: false,
+          });
           setTimeout(() => {
             goPath("/menu");
           }, 1500);
@@ -271,8 +284,7 @@ try {
             });
             setTimeout(() => {
               goPath("/menu");
-            },  1500);
-            
+            }, 1500);
           }
         }
       } catch (error) {
@@ -322,8 +334,7 @@ try {
             });
             setTimeout(() => {
               goPath("/menu");
-            }, );
-            
+            });
           }
         }
       } catch (error) {
@@ -454,7 +465,7 @@ try {
               title: "ສຳເລັດ",
               text: "ສຳເລັດການແກ້ໄຂເມນູຍ່ອຍ",
               icon: "success",
-              showConfirmButton:false,
+              showConfirmButton: false,
               showCancelButton: false,
             });
             setTimeout(() => {

@@ -23,6 +23,7 @@ import * as HolidayModel from "./holiday";
 import * as FinCycleModel from "./fincycle";
 import * as GLMasterModel from "./glmaster";
 import * as CerrencyModel from "./currency";
+import * as PropertyTypeModel from "./property";
 
 // import *as GlModel from './gl';
 
@@ -56,7 +57,7 @@ export {
   FinCycleModel,
   GLMasterModel,
   CerrencyModel,
-
+PropertyTypeModel,
 
   GlModel,
   RoleMasterModel,
