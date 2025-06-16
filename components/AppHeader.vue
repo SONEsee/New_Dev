@@ -158,18 +158,21 @@
              
                 <template v-if="!rail">
                   <v-list-item 
-                    v-for="(subMenu, subMenuIndex) in mainMenu.sub_menus"
-                    :key="`sub-${module.module_Id}-${mainMenu.menu_id}-${subMenu.sub_menu_id}`"
-                    :value="subMenu.sub_menu_id"
-                    :title="subMenu.sub_menu_name_la"
-                    :prepend-icon="convertIcon(subMenu.sub_menu_icon)"
-                    :to="cleanUrl(subMenu.sub_menu_urls)"
-                    :active="route.path === cleanUrl(subMenu.sub_menu_urls)"
-                    variant="plain"
-                    color="accent"
-                    style="margin-bottom: 2px; background-color: #CFD8DC;"
-                    class="sub-menu-item"
-                  ></v-list-item>
+  v-for="(subMenu, subMenuIndex) in mainMenu.sub_menus"
+  :key="`sub-${module.module_Id}-${mainMenu.menu_id}-${subMenu.sub_menu_id}`"
+  :value="subMenu.sub_menu_id"
+  :title="subMenu.sub_menu_name_la"
+  :prepend-icon="convertIcon(subMenu.sub_menu_icon)"
+  :to="{
+    path: cleanUrl(subMenu.sub_menu_urls),
+    query: { sub_menu_id: subMenu.sub_menu_id }
+  }"
+  :active="route.path === cleanUrl(subMenu.sub_menu_urls)"
+  variant="plain"
+  color="accent"
+  style="margin-bottom: 2px; background-color: #CFD8DC;"
+  class="sub-menu-item"
+/>
                 </template>
               </v-list-group>
             </template>
@@ -218,6 +221,8 @@
 import { useRoute, useRouter } from "vue-router";
 import { computed, onMounted, ref } from "vue";
 import { useMenuStore } from "~/stores/menu";
+const roleStore = RoleStore()
+
 
 const menuStore = useMenuStore();
 const route = useRoute();
@@ -226,7 +231,7 @@ const drawer = ref(true);
 const rail = ref(false);
 const error = ref(false);
 const user = localStorage.getItem("user")
-console.log("ຂໍ້ມູນຜູ້ໃຊ້:", user);
+const sub_menu_id = route.query.sub_menu_id as string;
 const username = user ? JSON.parse(user).user_name : "ບໍ່ພົບຂໍ້ມູນ";
 const email = user ? JSON.parse(user).user_email : "ບໍ່ພົບຂໍ້ມູນ";
 const department = user ? 
@@ -237,7 +242,9 @@ const role = user ?
   "ບໍ່ພົບຂໍ້ມູນ";
 // const role = user ? JSON.parse(user).role.role_name_la : "ບໍ່ພົບຂໍ້ມູນ";
  
-
+onMounted(()=>{
+  roleStore.filter_role_id.query.sub_menu_id = sub_menu_id || "";
+})
 
 const getUserIdFromLocalStorage = () => {
   if (typeof window === "undefined") return null;

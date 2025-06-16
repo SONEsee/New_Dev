@@ -2,7 +2,7 @@
 import { useRoute } from "vue-router";
 import dayjs from 'dayjs';
 const route = useRoute();
-const id = route.query.id as string | undefined;
+const id = route.query.sub_menu_id as string | undefined;
 const moduleStore = useMenuStore();
 
 const moduleDetail = computed(() => {
@@ -51,7 +51,7 @@ onMounted(() => {
            
             <v-col cols="12" md="6">
   <GlobalCardTitle 
-    :text="moduleDetail?.created_by? dayjs(moduleDetail.created_by).format('DD/MM/YYYY') : 'N/A'"
+    :text="moduleDetail?.created_date? dayjs(moduleDetail?.created_date).format('DD/MM/YYYY') : 'N/A'"
     :title="'ສ້າງວັນເດືອນປີ'" 
   />
 </v-col>

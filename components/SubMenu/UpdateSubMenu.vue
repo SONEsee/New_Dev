@@ -1,24 +1,27 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
-
+const roleStore = RoleStore();
+const role = computed(() => {
+  return roleStore.responst_data_detail;
+});
 const menuStore = useMenuStore();
 const route = useRoute();
 const router = useRouter();
 
-const id = computed(() => route.query.id as string);
+const id = computed(() => route.query.sub_menu_id as string);
 
 const valid = ref(false);
 const form = ref();
 const title = "ແກ້ໄຂຂໍ້ມູນເມນູຍ່ອຍ";
 const errorMessage = ref("");
 
-// ຂໍ້ມູນເມນູຫຼັກ
+
 const menuItems = computed(() => {
   return menuStore.respone_main_menu_data || [];
 });
 
-// ຈັດການຟອມ
+
 const request = computed({
   get: () => menuStore.update_form_submenu,
   set: (value) => {
@@ -26,9 +29,9 @@ const request = computed({
   },
 });
 
-// ໂຫຼດຂໍ້ມູນເບື້ອງຕົ້ນ
+
 onMounted(async () => {
-  // ດຶງຂໍ້ມູນເມນູຫຼັກ
+ roleStore.GetRoleDetail();
   await menuStore.GetMainMenu();
 
   if (id.value) {
@@ -99,6 +102,7 @@ const cancelUpdate = () => {
 
     <v-form ref="form" @submit.prevent="updateSubMenu">
       <v-row>
+
         <v-col cols="12" md="4">
           <v-text-field
             density="compact"

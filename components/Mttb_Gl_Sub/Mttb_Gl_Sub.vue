@@ -3,6 +3,9 @@ interface GLAccount {
   gl_code: string;
   gl_Desc_la: string;
   gl_Desc_en: string;
+  glType: string;
+  ccy_Res?: string;
+  glCategory?: string;
   children: GLAccount[];
 }
 
@@ -10,7 +13,10 @@ interface TreeGLAccount {
   gl_code: string;
   gl_Desc_la: string;
   gl_Desc_en: string;
+  glType: string;
+  glCategory?: string;
   level: number;
+  ccy_Res?: string;
   parent_code?: string;
   has_children: boolean;
   children: TreeGLAccount[];
@@ -82,6 +88,18 @@ const headers = ref<Header[]>([
     align: "start",
   },
   {
+    title: "ປະເພດບັນຊີ",
+    key: "glCategory",
+    sortable: false,
+    align: "start",
+  },
+  {
+    title: "ສາມາດໃຊ້ສະກຸນ",
+    key: "ccy_Res",
+    sortable: false,
+    align: "start",
+  },
+  {
     title: "ຂັ້ນບັນຊີ (Level)",
     key: "level",
     sortable: false,
@@ -104,6 +122,9 @@ const buildTreeData = (
     gl_code: account.gl_code,
     gl_Desc_la: account.gl_Desc_la,
     gl_Desc_en: account.gl_Desc_en,
+    glType: account.glType,
+    ccy_Res: account.ccy_Res,
+    glCategory: account.glCategory || getCategoryByGLCode(account.gl_code),
     level: level,
     parent_code: parentCode,
     has_children: account.children && account.children.length > 0,
@@ -527,6 +548,43 @@ const title = "ຈັດການຂໍ້ມູນບັນຊີ";
         <span :class="getDescClass(item.level)">
           {{ item.gl_Desc_en }}
         </span>
+      </template>
+      <template v-slot:item.glCategory="{ item }">
+        <!-- <span :class="getDescClass(item.glType)">
+          {{ item.glType }}
+        </span> -->
+        <v-chip class="text-primary" size="small" >
+        {{ item.glCategory === "1"
+          ? "ຊັບສິນ"
+          : item.glCategory === "2"
+          ? "ໜີ້ສິນ"
+          : item.glCategory === "3"
+          ? "ທືນ"
+          : item.glCategory === "4"
+          ? "ລາຍຈ່າຍ"
+          : item.glCategory === "5"
+          ? "ລາຍຮັບ"
+          : item.glCategory === "6"
+          ? "ນອກຝັງ"
+          : item.glCategory === "7"
+          ? "ບັນຊີເງົາ"
+          : item.glCategory === "8"
+          ? "ບັນຊີນອກພັງ"
+          : "" }}</v-chip>
+      </template>
+      <template v-slot:item.ccy_Res="{ item }">
+        <!-- <span :class="getDescClass(item.glType)">
+          {{ item.glType }}
+        </span> -->
+        <v-chip class="text-primary" size="small" >
+        {{ item.ccy_Res === "S"
+          ? "Single Currency"
+          : item.ccy_Res === "F"
+          ? " All Foreign Currencies"
+          : item.ccy_Res === "A"
+          ? "All Currencies"
+          
+          : "" }}</v-chip>
       </template>
 
       <template v-slot:item.level="{ item }">

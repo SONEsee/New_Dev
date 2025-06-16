@@ -3,26 +3,25 @@ import { useRoute } from "vue-router";
 
 const store = DevisionStore();
 const route = useRoute();
-const id = route.query.id as string;
+const div_id = route.query.div_id as string;
 onMounted(() => {
-  return store.GetDataDetail(id);
+  return store.GetDataDetail(div_id);
 });
 const res = computed(() => {
   return store.respons_detail_query_data;
 });
 onMounted(() => {
-  store.GetDataDetail(id);
+  store.GetDataDetail(div_id);
 });
 const title = ref("ລາຍລະອຽດພະແນກ / Detail of Division");
 </script>
 <template>
-  <section class="pa-6">
+  <v-col cols="12">
+    <GlobalTextTitleLine :title="title" />
+  </v-col>
+  <section class="">
     <v-form ref="form">
       <v-row>
-        <v-col cols="12">
-          <GlobalTextTitleLine :title="title" />
-        </v-col>
-
         <v-col cols="12" class="pt-12">
           <v-row>
             <v-col cols="12">

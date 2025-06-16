@@ -73,6 +73,7 @@ export const useMenuStore = defineStore("menu", {
       respons_function_menu_data: null as MenuModel.Function | null,
       respons_function_menu_detail_data: null as MenuModel.Function | null,
       respons_menu_id: null as MenuModel.MenuIDCountRespons | null,
+    
       isloading: false,
       query_menu_filter: {
         data: {
@@ -266,8 +267,12 @@ try {
               text: "ສຳເລັດການແກ້ໄຂເມນູ",
               icon: "success",
               showCancelButton: false,
+              showConfirmButton: false,
             });
-            goPath("/menu");
+            setTimeout(() => {
+              goPath("/menu");
+            },  1500);
+            
           }
         }
       } catch (error) {
@@ -307,14 +312,18 @@ try {
               },
             }
           );
-          if (res.status === 200) {
+          if (res.status === 204) {
             CallSwal({
               title: "ສຳເລັດ",
               text: "ສຳເລັດການລົບເມນູ",
               icon: "success",
               showCancelButton: false,
+              showConfirmButton: false,
             });
-            goPath("/menu");
+            setTimeout(() => {
+              goPath("/menu");
+            }, );
+            
           }
         }
       } catch (error) {
