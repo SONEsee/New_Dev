@@ -547,11 +547,6 @@ const headers = [
     align: "center" as const,
     width: "80px",
   },{
-    title: "ເມນູຍ່ອຍ",
-    key: "sub_menu_id",
-    align: "start" as const,
-    width: "200px",
-  },{
     title: "ບົດບາດ",
     key: "role_id",
     align: "start" as const,
@@ -562,6 +557,11 @@ const headers = [
     title: "ເມນູຫຼັກ",
     key: "fuu_details",
     align: "center" as const,
+    width: "200px",
+  },{
+    title: "ເມນູຍ່ອຍ",
+    key: "sub_menu_id",
+    align: "start" as const,
     width: "200px",
   },
   {
@@ -871,11 +871,11 @@ const deleteItem = async () => {
   }
 };
 
-
+// Initialize data on component mount
 onMounted(async () => {
-  
+  // Fetch role details data first, then fetch options
   await fetchData();
- 
+  // Fetch both role and menu options
   await Promise.all([fetchRoleOptions(), fetchMenuOptions()]);
 });
 </script>
