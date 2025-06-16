@@ -1,10 +1,89 @@
 <script setup lang="ts">
 import dayjs from "#build/dayjs.imports.mjs";
 import { ref, computed, onMounted, watch } from "vue";
+import { useRolePermissions } from "@/composables/useRolePermissions";
+
+const isUpdatingStatus = ref(false);
+const updateAdproveStatus = async (id: string) => {
+  try {
+    isUpdatingStatus.value = true;
+
+    const res = await axios.post(
+      `api/sub-menus/${id}/set_stt_submenu/`,
+      {},
+      {
+        // ເພີ່ມ {} ສຳລັບ body
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
+
+    if (res.status === 200) {
+      // ສຳເລັດ - refresh data
+      await subMenuStore.GetMenuSubMenu();
+
+      await CallSwal({
+        icon: "success",
+        title: "ສຳເລັດ",
+        text: "ອະນຸມັດຜູ້ໃຊ້ງານແລ້ວ",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+    }
+  } catch (error) {
+    console.error("Error updating approve status:", error);
+
+    await CallSwal({
+      icon: "error",
+      title: "ເກີດຂໍ້ຜິດພາດ",
+      text: "ບໍ່ສາມາດອະນຸມັດຜູ້ໃຊ້ງານໄດ້",
+    });
+  } finally {
+    isUpdatingStatus.value = false;
+  }
+};
+
+// ຫຼື ຖ້າຢາກໃຫ້ມີ confirmation dialog
+const toggleUserStatus = async (res: any) => {
+  try {
+    const result = await CallSwal({
+      icon: "question",
+      title: "ຢືນຢັນການອະນຸມັດ",
+      text: `ທ່ານຕ້ອງການອະນຸມັດຜູ້ໃຊ້ງານ "${res.sub_menu_name_la}" ບໍ?`,
+      showCancelButton: true,
+      confirmButtonText: "ອະນຸມັດ",
+      cancelButtonText: "ຍົກເລີກ",
+      confirmButtonColor: "#4CAF50",
+    });
+
+    if (result.isConfirmed) {
+      await updateAdproveStatus(user.user_id);
+    }
+  } catch (error) {
+    console.error("Error in toggleUserStatus:", error);
+  }
+};
+const {
+  canEdit,
+  canDelete,
+  canView,
+  canAdd,
+  canAuthorize,
+  hasPermission,
+  initializeRole,
+
+} = useRolePermissions();
+
 const roleStore = RoleStore();
+const role1 = computed(() => {
+  return roleStore.responst_data_detail;
+});
 const role = computed(() => {
   return roleStore.responst_data_detail;
 });
+
 const selecteMainMenu = ref<any | null>(null);
 
 const SELECTED_MAINMENU_KEY = "selected_mainmenu_filter";
@@ -88,8 +167,10 @@ const loadDataAndApplyFilter = async () => {
 };
 
 onMounted(async () => {
-  await loadDataAndApplyFilter();
+  initializeRole();
   roleStore.GetRoleDetail();
+  await loadDataAndApplyFilter();
+  
 });
 
 const onDeleteType = async (sub_menu_id: string) => {
@@ -189,6 +270,17 @@ const header = [
   },
 
   {
+    title: "ອະນຸມັດ",
+    value: "confirm",
+    align: "center",
+    sortable: false,
+    filterable: false,
+
+    class: "text-center",
+    cellClass: "text-center",
+    fixed: true,
+  },
+  {
     title: "ຈັດການ",
     value: "action",
     align: "center",
@@ -197,7 +289,7 @@ const header = [
 
     class: "text-center",
     cellClass: "text-center",
-    fixed: true, // Fix column
+    fixed: true,
   },
 ];
 
@@ -227,8 +319,7 @@ defineExpose({
     <v-row>
       <v-col cols="12" md="3">
         <div class="d-flex">
-          <v-btn color="primary" @click="goToCreateSubMenu()"
-          v-if="(role as any)?.[0]?.New_Detail === 1"
+          <v-btn color="primary" @click="goToCreateSubMenu()" v-if="canAdd"
             ><v-icon icon="mdi-plus"></v-icon> ເພີ່ມປະເພດ</v-btn
           >
         </div>
@@ -277,7 +368,10 @@ defineExpose({
       </v-col>
     </v-row>
 
-    <v-data-table :headers="header" :items="res || []">
+    <v-data-table :headers="header" :items="res || []" class="text-no-wrap">
+      <template v-slot:header.confirm="{ column }">
+        <b> {{ column.title }}</b>
+      </template>
       <template v-slot:header.sub_menu_id="{ column }">
         <v-icon start>mdi-identifier</v-icon>
         <b>{{ column.title }}</b>
@@ -322,16 +416,55 @@ defineExpose({
       </template>
       <template v-slot:item.menu_id="item" class="text-center">
         <div class="text-center">
-          <h3>{{ item.item.menu?.menu_name_la || "No Data" }}</h3>
+          <p>{{ item.item.menu?.menu_name_la || "No Data" }}</p>
 
           <p>
             {{ item.item.menu?.menu_id || "ບໍ່ມີຂໍ້ມູນ" }}
           </p>
         </div>
       </template>
+
+
+
+      <template v-slot:item.confirm="{ item }">
+  <div class="d-flex align-center">
+    <v-btn
+      v-if="(role1 as any)?.[0]?.Auth_Detail === 1"
+      :color="item.is_active === 'Y' ? 'success' : 'warning'"
+      :icon="
+        item.is_active === 'Y'
+          ? 'mdi-check-circle'
+          : 'mdi-toggle-switch-off-outline'
+      "
+      variant="text"
+      size="small"
+      :loading="isUpdatingStatus"
+      :disabled="item.is_active === 'Y'"
+      @click="updateAdproveStatus(item.sub_menu_id)"
+      :class="{
+        'disabled-btn': item.is_active === 'Y'
+      }"
+      :title="item.is_active === 'Y' ? 'ອະນຸມັດແລ້ວ' : 'ຄລິກເພື່ອອະນຸມັດ'"
+    />
+    
+    <v-fade-transition>
+      <v-icon
+        v-if="item.is_active === 'Y'"
+        color="success"
+        size="small"
+        class="ml-2"
+      >
+        mdi-shield-check
+      </v-icon>
+    </v-fade-transition>
+  </div>
+</template>
+
+
+
       <template v-slot:item.action="{ item }">
         <v-btn
-        v-if="(role as any)?.[0]?.View_Detail === 0 && item.is_active === 'N'"
+          v-if="(role as any)?.[0]?.View_Detail === 0 && item.is_active === 'N'"
           small
           flat
           class="text-primary"
@@ -339,7 +472,7 @@ defineExpose({
           @click="goPath(`#`)"
         />
         <v-btn
-        v-if="(role as any)?.[0]?.View_Detail === 1"
+          v-if="canView"
           small
           flat
           class="text-primary"
@@ -347,7 +480,7 @@ defineExpose({
           @click="goPath(`/submenu/detail?sub_menu_id=${item.sub_menu_id}`)"
         />
         <v-btn
-        v-if="(role as any)?.[0]?.Edit_Detail === 1"
+          v-if="canEdit"
           small
           flat
           class="text-info"
@@ -355,7 +488,7 @@ defineExpose({
           @click="goPath(`/submenu/edit?sub_menu_id=${item.sub_menu_id}`)"
         />
         <v-btn
-        v-if="(role as any)?.[0]?.Del_Detail === 1"
+          v-if="canDelete"
           small
           flat
           class="text-error"
