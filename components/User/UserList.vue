@@ -6,11 +6,11 @@ const {
   canEdit,
   canDelete,
   canView,
-  camAdd,
+  canAdd,
+  canRecordStatus,
   canAuthorize,
   hasPermission,
   initializeRole,
-  
 } = useRolePermissions();
 interface Userparam {
   div_id: string;
@@ -23,6 +23,64 @@ const devision = UseCategoryStore();
 const role = computed(() => roleStore.respons_data_role || []);
 const userItems = computed(() => devision.categories || []);
 const isUpdatingStatus = ref(false);
+const isUpdateinRecordStatus = ref(false);
+const updaterecordstatus = async (id: string) => {
+  isUpdateinRecordStatus.value = true;
+  try {
+    const notification = await CallSwal({
+      icon: "question",
+      title: "ບໍ່ທັນໄດ້ຕໍ່ api ກັບ backend ເທື່ອ",
+      text: `ໄປຕໍ່ api ກອ່ນເພືອ່ໃຫ້ສາມາດໃຊ້ງານໄດ້`,
+      showCancelButton: true,
+      confirmButtonText: "ຕົກລົງ",
+      cancelButtonText: "ຍົກເລີກ",
+      confirmButtonColor: "#4CAF50",
+    });
+    if (notification.isConfirmed) {
+      await CallSwal({
+        icon: "info",
+        title: "ໄປແປງສາເດີ້",
+        text: `5555555555`,
+        timer: 2000,
+        showConfirmButton: false,
+      });
+    }
+    // const req = await axios.post(`api/users/${id}/record-status/`, {}, {
+    //   headers: {
+    //     "Content-Type": "application/json",
+    //     Authorization: `Bearer ${localStorage.getItem("token")}`,
+    //   },
+    // });if(req.status ===200){
+    //   await agencyStore.GetUser();
+    //   await CallSwal({
+    //     icon: "success",
+    //     title: "ສຳເລັດ",
+    //     text: "ປ່ອນສະຖານະຜູ້ໃຊ້ງານແລ້ວ",
+    //     timer: 2000,
+    //     showConfirmButton: false,
+    //   });
+    // }
+  } catch (error) {}
+};
+const handleApproval = async (user: any) => {
+  try {
+    const notification = await CallSwal({
+      icon: "question",
+      title: "ຢືນຢັນການປຽ່ນສະຖານະ",
+      text: `ທ່ານຕ້ອງການປຽ່ນສະຖານະຜູ້ໃຊ້ "${user.user_name}" ບໍ?`,
+      showCancelButton: true,
+      confirmButtonText: "ອະນຸມັດ",
+      cancelButtonText: "ຍົກເລີກ",
+      confirmButtonColor: "#4CAF50",
+    });
+    if (notification.isConfirmed) {
+      await updaterecordstatus(user.user_id);
+    }
+  } catch (error) {
+    console.error("Error in handleApproval:", error);
+  }
+};
+
 const updateAdproveStatus = async (id: string) => {
   try {
     isUpdatingStatus.value = true;
@@ -31,7 +89,6 @@ const updateAdproveStatus = async (id: string) => {
       `api/users/${id}/authorize/`,
       {},
       {
-        // ເພີ່ມ {} ສຳລັບ body
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -40,7 +97,6 @@ const updateAdproveStatus = async (id: string) => {
     );
 
     if (res.status === 200) {
-      // ສຳເລັດ - refresh data
       await agencyStore.GetUser();
 
       await CallSwal({
@@ -64,7 +120,6 @@ const updateAdproveStatus = async (id: string) => {
   }
 };
 
-// ຫຼື ຖ້າຢາກໃຫ້ມີ confirmation dialog
 const toggleUserStatus = async (user: any) => {
   try {
     const result = await CallSwal({
@@ -113,9 +168,10 @@ onMounted(() => {
   roleStore.GetRole();
 });
 
-const headers = ref([
-  { title: "ລຳດັບຜູ້ໃຊ້ງານ", key: "user_id", sortable: false },
+import { computed, ref } from "vue";
 
+const headers = computed((any) => [
+  { title: "ລຳດັບຜູ້ໃຊ້ງານ", key: "user_id", sortable: false },
   { title: "ຊື່ຜູ້ໃຊ້ງານ", key: "user_name", sortable: false },
   { title: "ອີເມວ", key: "user_email", sortable: false },
   { title: "ເບີ້ໂທ", key: "user_mobile", sortable: false },
@@ -126,9 +182,22 @@ const headers = ref([
     sortable: false,
     align: "center",
   },
-  { title: "ສະຖານະ", key: "Auth_Status", sortable: false },
-  { title: "ອານຸມັດ", key: "consfirm", sortable: false, align: "center" },
-  { title: "ຈັດການ", key: "actions", sortable: false, align: "center" },
+
+  ...(canView.value
+    ? [{ title: "ເບິ່ງ", key: "detail", sortable: false, align: "center" }]
+    : []),
+  ...(canEdit.value
+    ? [{ title: "ແກ້ໄຂ", key: "edit", sortable: false, align: "center" }]
+    : []),
+  ...(canDelete.value
+    ? [{ title: "ລົບ", key: "delete", sortable: false, align: "center" }]
+    : []),
+  ...(canAuthorize.value
+    ? [{ title: "ອານຸມັດ", key: "consfirm", sortable: false, align: "center" }]
+    : []),
+  ...(canRecordStatus.value
+    ? [{ title: "ສະຖານະ", key: "Record_Status", sortable: false }]
+    : []),
 ]);
 
 const onDeleteUser = async (user_id: string) => {
@@ -178,7 +247,7 @@ const clearFilters = () => {
             <v-col cols="12">
               <div class="d-flex flex-wrap align-center">
                 <v-btn
-                  v-if="camAdd"
+                  v-if="canAdd"
                   color="primary"
                   elevation="0"
                   @click="goPath('/user/create')"
@@ -286,17 +355,104 @@ const clearFilters = () => {
           <v-data-table
             :headers="headers"
             :items="response_data"
-            class="text-no-wrap"
+            class="text-no-wrap  "
           >
+            <template v-slot:header.user_id="{ column }">
+              <span class="text-uppercase text-primary">{{
+                column.title
+              }}</span>
+            </template>
+            <template v-slot:header.user_name="{ column }">
+              <span class="text-uppercase text-primary">{{
+                column.title
+              }}</span>
+            </template>
+            <template v-slot:header.user_email="{ column }">
+              <span class="text-uppercase text-primary">{{
+                column.title
+              }}</span>
+            </template>
+            <template v-slot:header.user_mobile="{ column }">
+              <span class="text-uppercase text-primary">{{
+                column.title
+              }}</span>
+            </template>
+            <template v-slot:header.division="{ column }">
+              <span class="text-uppercase text-primary">{{
+                column.title
+              }}</span>
+            </template>
+            <template v-slot:header.role="{ column }">
+              <span class="text-uppercase text-primary">{{
+                column.title
+              }}</span>
+            </template>
+            <template v-slot:header.Record_Status="{ column }">
+              <span class="text-uppercase text-primary">{{
+                column.title
+              }}</span>
+            </template>
+
+            <template v-slot:header.detail="{ column }">
+              <span class="text-uppercase text-primary">{{
+                column.title
+              }}</span>
+            </template>
+            <template v-slot:header.edit="{ column }">
+              <span class="text-uppercase text-primary">{{
+                column.title
+              }}</span>
+            </template>
+            <template v-slot:header.delete="{ column }">
+              <span class="text-uppercase text-primary">{{
+                column.title
+              }}</span>
+            </template>
+            <template v-slot:header.consfirm="{ column }">
+              <span class="text-uppercase text-primary">{{
+                column.title
+              }}</span>
+            </template>
+
             <template v-slot:item.no="{ item, index }">
               {{ index + 1 }}
             </template>
-            <template v-slot:item.Auth_Status="{ item }">
-              <div v-if="item.Auth_Status === 'A'">
-                <v-chip color="green"><p>ເປີດໃຊ້ງານ</p> </v-chip>
+            <template v-slot:item.Record_Status="{ item }">
+              <div v-if="canRecordStatus">
+                <v-btn
+                  flat
+                  size="small"
+                  @click="handleApproval(item)"
+                  v-if="canRecordStatus && item.Record_Status === 'O'"
+                >
+                  <v-icon icon="mdi-toggle-switch" color="info"></v-icon>
+                </v-btn>
+                <v-btn
+                  flat
+                  size="small"
+                  @click="handleApproval(item)"
+                  v-if="canRecordStatus && item.Record_Status === 'C'"
+                >
+                  <v-icon
+                    icon="mdi-toggle-switch-off-outline"
+                    color="error"
+                  ></v-icon>
+                </v-btn>
               </div>
-              <div v-else-if="item.Auth_Status === 'U'">
-                <v-chip color="red"><p>ປິດໃຊ້ງານ</p> </v-chip>
+              <div v-else>
+                <div v-if="item.Record_Status === 'O'">
+                  <v-chip color="info">
+                    <v-icon icon="mdi-check-decagra" color="info"></v-icon>
+                  </v-chip>
+                </div>
+                <div v-else="item.Record_Status === 'C'">
+                  <v-chip color="error">
+                    <v-icon
+                      icon="mdi-file-excel-box-outline"
+                      color="error"
+                    ></v-icon>
+                  </v-chip>
+                </div>
               </div>
             </template>
             <template v-slot:item.division="item" class="text-center">
@@ -359,11 +515,20 @@ const clearFilters = () => {
 </template> -->
             <template v-slot:item.consfirm="{ item }">
               <GlobalUserApproval
+                v-if="canAuthorize"
                 :item="item"
                 :role-permissions="role1"
                 :loading="isUpdatingStatus"
                 @approve="toggleUserStatus"
               />
+              <div v-else>
+                <v-chip v-if="item.Auth_Status === 'A'" color="info">
+                  <v-icon icon="mdi-toggle-switch" color="info"></v-icon>
+                </v-chip>
+                <v-chip v-else color="error">
+                  <v-icon icon="mdi-toggle-switch" color="error"></v-icon>
+                </v-chip>
+              </div>
             </template>
             <!-- <template v-slot:item.consfirm="{ item }">
              
@@ -416,15 +581,15 @@ const clearFilters = () => {
               </v-tooltip>
             </template> -->
 
-            <template v-slot:item.actions="{ item }">
-              <v-btn
+            <template v-slot:item.detail="{ item }">
+              <!-- <v-btn
                 v-if="canEdit"
                 color="primary"
                 icon="mdi-pencil"
                 variant="text"
                 @click="goPath(`/user/edit?user_id=${item.user_id}`)"
                 size="small"
-              ></v-btn>
+              ></v-btn> -->
 
               <v-btn
                 v-if="canView"
@@ -435,6 +600,26 @@ const clearFilters = () => {
                 size="small"
               ></v-btn>
 
+              <!-- <v-btn
+                v-if="canDelete"
+                color="error"
+                icon="mdi-delete"
+                variant="text"
+                size="small"
+                @click="onDeleteUser(item.user_id)"
+              ></v-btn> -->
+            </template>
+            <template v-slot:item.edit="{ item }">
+              <v-btn
+                v-if="canEdit"
+                color="primary"
+                icon="mdi-pencil"
+                variant="text"
+                @click="goPath(`/user/edit?user_id=${item.user_id}`)"
+                size="small"
+              ></v-btn>
+            </template>
+            <template v-slot:item.delete="{ item }">
               <v-btn
                 v-if="canDelete"
                 color="error"
@@ -455,5 +640,28 @@ const clearFilters = () => {
   opacity: 0.6;
   pointer-events: none;
   filter: grayscale(20%);
+}
+
+.v-data-table thead th {
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%) !important;
+  color: #1976d2 !important;
+  font-weight: 600 !important;
+  border-bottom: 2px solid #2196f3 !important;
+  position: relative;
+}
+
+.v-data-table thead th::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #2196f3, #21cbf3, #2196f3);
+}
+
+.v-data-table thead th .text-uppercase {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  letter-spacing: 0.5px;
 }
 </style>
