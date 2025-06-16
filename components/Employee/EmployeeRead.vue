@@ -8,8 +8,8 @@
             <div class="d-flex align-center">
               <v-icon color="primary" class="mr-3" size="28">mdi-account-group</v-icon>
               <div>
-                <h2 class="text-h5 font-weight-bold mb-1 text-styles">
-                  ຈັດການພະນັກງານ
+                <h2 class="text-h5 font-weight-bold mb-1 text-styles pb-2">
+                  ຈັດກາຂໍ້ມູນນພະນັກງານ
                 </h2>
                 <p class="text-body-2 text-medium-emphasis mb-0 text-styles">
                   ສະແດງຂໍ້ມູນພະນັກງານໃນລະບົບ

@@ -8,7 +8,17 @@
       </h2>
       <p class="page-subtitle">ຈັດການ ແລະ ກວດສອບລາຍການບັນທຶກບັນຊີ</p>
     </div>
-
+    <div class="top-left-action mb-2 py-2">
+      <v-btn
+        color="primary"
+        variant="flat"
+        @click="$router.push('/glcapture/create')"
+        prepend-icon="mdi-plus"
+        class="mr-2"
+      >
+        ເພີ່ມບັນທຶກໃໝ່
+      </v-btn>
+    </div>
     <!-- Filters Card -->
     <v-card class="filters-card mb-4" elevation="1">
       <v-card-text class="pa-4">
@@ -172,7 +182,7 @@
           <!-- Custom slots for table content -->
           <template v-slot:item.Reference_No="{ item }">
             <div class="reference-cell">
-              <strong>{{ item.Reference_No }}</strong>
+              {{ item.Reference_No }}
               <v-chip
                 v-if="getEntriesCountByReference(item.Reference_No) > 1"
                 size="x-small"
@@ -185,11 +195,7 @@
             </div>
           </template>
 
-          <template v-slot:item.Value_date="{ item }">
-            <div class="date-cell">
-              {{ formatDate(item.Value_date) }}
-            </div>
-          </template>
+   
 
           <template v-slot:item.Account="{ item }">
             <div class="account-cell">
@@ -209,7 +215,14 @@
               </div>
             </div>
           </template>
+            
+          <template v-slot:item.Value_date="{ item }">
+              <div class="date-cell">
+                {{ formatDate(item.Value_date) }}
+              </div>
+          </template>
 
+          
           <template v-slot:item.Dr_cr="{ item }">
             <v-chip
               :color="item.Dr_cr === 'D' ? 'primary' : 'success'"
@@ -255,49 +268,7 @@
               >
                 <v-icon size="small">mdi-eye</v-icon>
               </v-btn>
-              
-              <v-btn
-                v-if="item.Auth_Status === 'U'"
-                icon
-                size="small"
-                color="warning"
-                @click="editEntry(item)"
-                :title="'ແກ້ໄຂ'"
-              >
-                <v-icon size="small">mdi-pencil</v-icon>
-              </v-btn>
-              
-              <v-btn
-                v-if="item.Auth_Status === 'U'"
-                icon
-                size="small"
-                color="success"
-                @click="authorizeEntry(item)"
-                :title="'ອະນຸມັດ'"
-              >
-                <v-icon size="small">mdi-check</v-icon>
-              </v-btn>
-              
-              <v-btn
-                icon
-                size="small"
-                color="secondary"
-                @click="checkBalance(item.Reference_No)"
-                :title="'ກວດສອບຍອດ'"
-              >
-                <v-icon size="small">mdi-scale-balance</v-icon>
-              </v-btn>
-              
-              <v-btn
-                v-if="item.Auth_Status === 'U'"
-                icon
-                size="small"
-                color="error"
-                @click="deleteEntry(item)"
-                :title="'ລຶບ'"
-              >
-                <v-icon size="small">mdi-delete</v-icon>
-              </v-btn>
+
             </div>
           </template>
 
@@ -510,10 +481,11 @@ const summaryStats = reactive({
 // Table configuration
 const tableHeaders = [
   { title: 'ເລກອ້າງອີງ', key: 'Reference_No', sortable: true, width: '150px' },
-  { title: 'ວັນທີ', key: 'Value_date', sortable: true, width: '120px' },
-  { title: 'ບັນຊີ', key: 'Account', sortable: false, width: '200px' },
+  { title: 'ບັນຊີ', key: 'Account', sortable: false, width: '160px' },
   { title: 'ຈຳນວນເງິນ', key: 'amounts', sortable: false, width: '150px' },
+  { title: 'ເນື້ອໃນ', key: 'Addl_sub_text', sortable: true, width: '120px' },
   { title: 'ປະເພດ', key: 'Dr_cr', sortable: true, width: '100px' },
+  { title: 'ວັນທີ', key: 'Value_date', sortable: true, width: '120px' },
   { title: 'ສະຖານະ', key: 'Auth_Status', sortable: true, width: '120px' },
   { title: 'ຜູ້ສ້າງ', key: 'audit', sortable: false, width: '150px' },
   { title: 'ການດຳເນີນການ', key: 'actions', sortable: false, width: '200px' }
@@ -970,7 +942,7 @@ onMounted(() => {
 
 <style scoped>
 .journal-list-container {
-  max-width: 1800px;
+  max-width: 2200px;
   margin: 0 auto;
   padding: 16px;
 }
@@ -1025,14 +997,29 @@ onMounted(() => {
   gap: 8px;
 }
 
-.table-card {
+/* .table-card {
   border-radius: 12px;
 }
 
 .journal-table :deep(.v-data-table__wrapper) {
   border-radius: 12px;
+} */
+
+.table-card {
+  border-radius: 12px;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
 }
 
+.journal-table {
+  min-width: 1600px; /* or any width you want for your columns */
+  width: 100%;
+}
+.journal-table :deep(.v-data-table__wrapper) {
+  border-radius: 12px;
+  min-width: 1200px; /* adjust as needed */
+}
 .reference-cell {
   display: flex;
   align-items: center;
