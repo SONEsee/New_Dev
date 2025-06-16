@@ -7,82 +7,87 @@
 
       <!-- Filter and Add Button Section -->
       <v-card-text class="pa-6 pt-0">
-        <v-row align="center" class="mb-4">
-          <!-- Move Add Button to the left -->
-          <v-col cols="12" md="3">
-            <v-btn
-              @click="goToCreateRoleDetail"
-              color="primary"
-              variant="elevated"
-              prepend-icon="mdi-plus"
-              class="text-none font-weight-medium mb-2 mb-md-0 add-role-btn"
-            >
-              ເພີ່ມສິດຜູ້ນໍາໃຊ້
-            </v-btn>
-          </v-col>
-          <v-spacer />
-          <!-- Menu Filter Dropdown -->
-          <v-col cols="12" md="3">
-            <v-select
-              v-model="selectedMenuId"
-              :items="menuOptions"
-              item-title="text"
-              item-value="value"
-              label="ກັ່ນຕອງຕາມເມນູຫຼັກ"
-              variant="outlined"
-              density="compact"
-              prepend-inner-icon="mdi-view-dashboard"
-              clearable
-              :loading="menuOptionsLoading"
-              @update:model-value="filterByMenu"
-              class="justify-end"
-            >
-              <template #item="{ props, item }">
-                <v-list-item v-bind="props">
-                  <!-- <v-list-item-title>{{ item.raw.text }}</v-list-item-title>
-                  <v-list-item-subtitle v-if="item.raw.subtitle">
-                    {{ item.raw.subtitle }}
-                  </v-list-item-subtitle> -->
-                </v-list-item>
-              </template>
-            </v-select>
-          </v-col>
-          <!-- Move Filter Dropdown to the right -->
-          <v-col cols="12" md="3">
-            <v-select
-              v-model="selectedRoleId"
-              :items="roleOptions"
-              item-title="text"
-              item-value="value"
-              label="ກັ່ນ�ຕອງຕາມບົດບາດ"
-              variant="outlined"
-              density="compact"
-              prepend-inner-icon="mdi-filter-variant"
-              clearable
-              :loading="roleOptionsLoading"
-              @update:model-value="filterByRole"
-              class="justify-end"
-            >
-              <template #item="{ props, item }">
-                <v-list-item v-bind="props">
-                  <!-- <v-list-item-title>{{ item.raw.text }}</v-list-item-title>
-                  <v-list-item-subtitle v-if="item.raw.subtitle">
-                    {{ item.raw.subtitle }}
-                  </v-list-item-subtitle> -->
-                </v-list-item>
-              </template>
-            </v-select>
-          </v-col>
-        </v-row>
+        <v-row align="center" justify="space-between" class="mb-4 filter-row">
+        <!-- Add Button -->
+        <v-col cols="12" md="3">
+          <v-btn
+            @click="goToCreateRoleDetail"
+            color="primary"
+            variant="elevated"
+            prepend-icon="mdi-plus"
+            class="text-none font-weight-medium add-role-btn"
+            block
+          >
+            ເພີ່ມສິດຜູ້ນໍາໃຊ້
+          </v-btn>
+        </v-col>
+
+        <!-- Search Input -->
+        <v-col cols="12" md="3">
+          <v-text-field
+            v-model="searchQuery"
+            label="ຄົ້ນຫາ"
+            variant="outlined"
+            density="compact"
+            prepend-inner-icon="mdi-magnify"
+            clearable
+            @input="debounceSearch"
+            @clear="clearSearch"
+            class="filter-input"
+            hide-details="auto"
+          />
+        </v-col>
+
+        <!-- Role Filter Dropdown -->
+        <v-col cols="12" md="3">
+          <v-select
+            v-model="selectedRoleId"
+            :items="roleOptions"
+            item-title="text"
+            item-value="value"
+            label="ກັ່ນຕອງຕາມບົດບາດ"
+            variant="outlined"
+            density="compact"
+            prepend-inner-icon="mdi-account-key"
+            clearable
+            :loading="roleOptionsLoading"
+            @update:model-value="applyFilters"
+            class="filter-input"
+            hide-details="auto"
+          />
+        </v-col>
+
+        <!-- Menu Filter Dropdown -->
+        <v-col cols="12" md="3">
+          <v-select
+            v-model="selectedMenuId"
+            :items="menuOptions"
+            item-title="text"
+            item-value="value"
+            label="ກັ່ນຕອງຕາມເມນູຫຼັກ"
+            variant="outlined"
+            density="compact"
+            prepend-inner-icon="mdi-view-dashboard"
+            clearable
+            :loading="menuOptionsLoading"
+            @update:model-value="applyFilters"
+            class="filter-input"
+            hide-details="auto"
+          />
+        </v-col>
+      </v-row>
 
         <!-- Data Table -->
         <v-data-table
           :headers="headers"
-          :items="filteredItems"
+          :items="items"
           class="elevation-0 rounded-lg"
           item-value="role_id"
           :loading="loading"
           hover
+          :items-per-page="20"
+          :server-items-length="totalItems"
+          @update:options="handlePagination"
         >
           <template #item.role_id="{ item }">
             <div>
@@ -98,14 +103,10 @@
           <template #item.sub_menu_id="{ item }">
             <div>
               <div class="font-weight-bold">
-                {{ item.fuu_details?.sub_menu?.sub_menu_name_la || item.fuu_details?.sub_menu_name_la || '-' }}
+                {{ item.sub_menu_info?.sub_menu_name_la || '-' }}
               </div>
               <div class="text-caption text-grey text-styles">
-                {{
-                  item.sub_menu_id ||
-                  item.fuu_details?.sub_menu?.sub_menu_id ||
-                  "-"
-                }}
+                {{ item.sub_menu_id || "-" }}
               </div>
             </div>
           </template>
@@ -196,6 +197,17 @@
             </v-chip>
           </template>
 
+          <template #item.main_menu="{ item }">
+            <div class="text-center">
+              <div class="font-weight-bold">
+                {{ item.menu_info?.menu_name_la || "ບໍ່ມີຂໍ້ມູນ" }}
+              </div>
+              <div class="text-caption text-grey">
+                {{ item.menu_info?.menu_id || "-" }}
+              </div>
+            </div>
+          </template>
+
           <!-- Actions Slot -->
           <template #item.actions="{ item }">
             <div class="d-flex gap-2">
@@ -204,17 +216,10 @@
                 variant="text"
                 size="small"
                 icon="mdi-pencil"
-                @click="
-                  goPath(
-                    `/roledetail/update?role_id=${item.role_id}&sub_menu_id=${
-                      item.sub_menu_id ||
-                      item.fuu_details?.sub_menu?.sub_menu_id
-                    }`
-                  )
-                "
+                @click="goToEdit(item)"
               >
                 <v-icon>mdi-pencil</v-icon>
-                <v-tooltip activator="parent" location="top"> ແກ້ໄຂ </v-tooltip>
+                <v-tooltip activator="parent" location="top">ແກ້ໄຂ</v-tooltip>
               </v-btn>
 
               <v-btn
@@ -225,7 +230,7 @@
                 @click="confirmDelete(item)"
               >
                 <v-icon>mdi-delete</v-icon>
-                <v-tooltip activator="parent" location="top"> ລົບ </v-tooltip>
+                <v-tooltip activator="parent" location="top">ລົບ</v-tooltip>
               </v-btn>
 
               <v-btn
@@ -236,9 +241,7 @@
                 @click="viewDetails(item)"
               >
                 <v-icon>mdi-eye</v-icon>
-                <v-tooltip activator="parent" location="top">
-                  ເບິ່ງລາຍລະອຽດ
-                </v-tooltip>
+                <v-tooltip activator="parent" location="top">ເບິ່ງລາຍລະອຽດ</v-tooltip>
               </v-btn>
             </div>
           </template>
@@ -247,14 +250,7 @@
           <template #loading>
             <v-skeleton-loader type="table-row@7" />
           </template>
-          <template v-slot:item.fuu_details="{ item }">
-            <div class="text-center">
-              <p>
-                {{ item.fuu_details?.menu.menu_name_la || "ບໍ່ມີຂໍ້ມູນ" }}
-              </p>
-              <p>{{ item.fuu_details?.menu.menu_id }}</p>
-            </div>
-          </template>
+
           <!-- No Data Slot -->
           <template #no-data>
             <div class="text-center pa-8">
@@ -278,9 +274,7 @@
       <v-card class="rounded-lg">
         <v-card-title class="text-h6 pa-6 pb-4">
           <div class="d-flex align-center">
-            <v-icon color="error" size="28" class="mr-3"
-              >mdi-alert-circle</v-icon
-            >
+            <v-icon color="error" size="28" class="mr-3">mdi-alert-circle</v-icon>
             <span>ຢືນຢັນການລົບ</span>
           </div>
         </v-card-title>
@@ -290,21 +284,14 @@
             <div class="text-body-2 text-grey-darken-1 mb-2">ລາຍລະອຽດ:</div>
             <div class="text-body-2">
               <strong>ບົດບາດ:</strong>
-              {{ itemToDelete.role_detail?.role_name_la }} ({{
-                itemToDelete.role_id
-              }})
+              {{ itemToDelete.role_detail?.role_name_la }} ({{ itemToDelete.role_id }})
             </div>
             <div class="text-body-2">
               <strong>ເມນູ:</strong>
-              {{ itemToDelete.fuu_details?.sub_menu?.sub_menu_name_la }}
+              {{ itemToDelete.sub_menu_info?.sub_menu_name_la }}
             </div>
           </div>
-          <v-alert
-            type="warning"
-            variant="tonal"
-            class="mb-0"
-            icon="mdi-information"
-          >
+          <v-alert type="warning" variant="tonal" class="mb-0" icon="mdi-information">
             ການກະທຳນີ້ບໍ່ສາມາດຍົກເລີກໄດ້
           </v-alert>
         </v-card-text>
@@ -344,11 +331,9 @@
                     <v-icon color="primary">mdi-account-key</v-icon>
                   </template>
                   <v-list-item-title>ບົດບາດ</v-list-item-title>
-                  <v-list-item-subtitle
-                    >{{ selectedItem.role_detail?.role_name_la }} ({{
-                      selectedItem.role_id
-                    }})</v-list-item-subtitle
-                  >
+                  <v-list-item-subtitle>
+                    {{ selectedItem.role_detail?.role_name_la }} ({{ selectedItem.role_id }})
+                  </v-list-item-subtitle>
                 </v-list-item>
 
                 <v-list-item class="px-0">
@@ -356,9 +341,9 @@
                     <v-icon color="info">mdi-menu</v-icon>
                   </template>
                   <v-list-item-title>ເມນູຍ່ອຍ</v-list-item-title>
-                  <v-list-item-subtitle>{{
-                    selectedItem.fuu_details?.sub_menu?.sub_menu_name_la
-                  }}</v-list-item-subtitle>
+                  <v-list-item-subtitle>
+                    {{ selectedItem.sub_menu_info?.sub_menu_name_la }}
+                  </v-list-item-subtitle>
                 </v-list-item>
 
                 <v-list-item class="px-0">
@@ -366,10 +351,7 @@
                     <v-icon color="success">mdi-identifier</v-icon>
                   </template>
                   <v-list-item-title>ລະຫັດເມນູຍ່ອຍ</v-list-item-title>
-                  <v-list-item-subtitle>{{
-                    selectedItem.sub_menu_id ||
-                    selectedItem.fuu_details?.sub_menu?.sub_menu_id
-                  }}</v-list-item-subtitle>
+                  <v-list-item-subtitle>{{ selectedItem.sub_menu_id }}</v-list-item-subtitle>
                 </v-list-item>
               </v-list>
             </v-col>
@@ -377,47 +359,38 @@
               <v-list class="pa-0">
                 <v-list-item class="px-0">
                   <template #prepend>
-                    <v-icon
-                      :color="
-                        selectedItem.New_Detail === 1 ? 'success' : 'error'
-                      "
-                      >mdi-plus</v-icon
-                    >
+                    <v-icon :color="selectedItem.New_Detail === 1 ? 'success' : 'error'">
+                      mdi-plus
+                    </v-icon>
                   </template>
                   <v-list-item-title>ສິດເພີ່ມ</v-list-item-title>
-                  <v-list-item-subtitle>{{
-                    selectedItem.New_Detail === 1 ? "ອະນຸຍາດ" : "ບໍ່ອະນຸຍາດ"
-                  }}</v-list-item-subtitle>
+                  <v-list-item-subtitle>
+                    {{ selectedItem.New_Detail === 1 ? "ອະນຸຍາດ" : "ບໍ່ອະນຸຍາດ" }}
+                  </v-list-item-subtitle>
                 </v-list-item>
 
                 <v-list-item class="px-0">
                   <template #prepend>
-                    <v-icon
-                      :color="
-                        selectedItem.Edit_Detail === 1 ? 'success' : 'error'
-                      "
-                      >mdi-pencil</v-icon
-                    >
+                    <v-icon :color="selectedItem.Edit_Detail === 1 ? 'success' : 'error'">
+                      mdi-pencil
+                    </v-icon>
                   </template>
                   <v-list-item-title>ສິດແກ້ໄຂ</v-list-item-title>
-                  <v-list-item-subtitle>{{
-                    selectedItem.Edit_Detail === 1 ? "ອະນຸຍາດ" : "ບໍ່ອະນຸຍາດ"
-                  }}</v-list-item-subtitle>
+                  <v-list-item-subtitle>
+                    {{ selectedItem.Edit_Detail === 1 ? "ອະນຸຍາດ" : "ບໍ່ອະນຸຍາດ" }}
+                  </v-list-item-subtitle>
                 </v-list-item>
 
                 <v-list-item class="px-0">
                   <template #prepend>
-                    <v-icon
-                      :color="
-                        selectedItem.Del_Detail === 1 ? 'success' : 'error'
-                      "
-                      >mdi-delete</v-icon
-                    >
+                    <v-icon :color="selectedItem.Del_Detail === 1 ? 'success' : 'error'">
+                      mdi-delete
+                    </v-icon>
                   </template>
                   <v-list-item-title>ສິດລົບ</v-list-item-title>
-                  <v-list-item-subtitle>{{
-                    selectedItem.Del_Detail === 1 ? "ອະນຸຍາດ" : "ບໍ່ອະນຸຍາດ"
-                  }}</v-list-item-subtitle>
+                  <v-list-item-subtitle>
+                    {{ selectedItem.Del_Detail === 1 ? "ອະນຸຍາດ" : "ບໍ່ອະນຸຍາດ" }}
+                  </v-list-item-subtitle>
                 </v-list-item>
               </v-list>
             </v-col>
@@ -425,26 +398,13 @@
         </v-card-text>
         <v-card-actions class="pa-6 pt-0">
           <v-spacer />
-          <v-btn
-            variant="text"
-            @click="detailsDialog = false"
-            class="text-none"
-          >
+          <v-btn variant="text" @click="detailsDialog = false" class="text-none">
             ປິດ
           </v-btn>
           <v-btn
             color="primary"
             variant="elevated"
-            @click="
-              goPath(
-                `/roledetail/update?role_id=${
-                  selectedItem?.role_id
-                }&sub_menu_id=${
-                  selectedItem?.sub_menu_id ||
-                  selectedItem?.fuu_details?.sub_menu?.sub_menu_id
-                }`
-              )
-            "
+            @click="goToEdit(selectedItem)"
             class="text-none font-weight-medium"
           >
             ແກ້ໄຂ
@@ -452,6 +412,12 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Success Snackbar -->
+    <v-snackbar v-model="showSuccess" color="success" timeout="3000" location="top">
+      <v-icon class="mr-2">mdi-check-circle</v-icon>
+      {{ successMessage }}
+    </v-snackbar>
 
     <!-- Error Snackbar -->
     <v-snackbar v-model="showError" color="error" timeout="5000" location="top">
@@ -463,60 +429,133 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import axios from '@/helpers/axios'
-import { RoleDetailModel } from '~/models'
-
 import { useRouter } from 'vue-router'
+import axios from '@/helpers/axios'
 
-// Define Role interface for the API response
+// Types/Interfaces
+interface RoleDetailResponse {
+  role_id: string
+  sub_menu_id: string
+  New_Detail: number
+  Del_Detail: number
+  Edit_Detail: number
+  View_Detail: number
+  Auth_Detail: number
+  Record_Status?: string
+  Auth_Status?: string
+  role_detail?: {
+    role_name_la: string
+    role_name_en?: string
+  }
+  sub_menu_info?: {
+    sub_menu_id: string
+    sub_menu_name_la: string
+    sub_menu_name_en?: string
+    sub_menu_urls?: string
+  }
+  menu_info?: {
+    menu_id: string
+    menu_name_la: string
+    menu_name_en?: string
+  }
+}
+
 interface Role {
-    role_id:          string;
-    role_name_la:     string;
-    role_name_en:     string;
-    record_Status:    string;
-    Maker_DT_Stamp:   Date;
-    Checker_DT_Stamp: Date;
-    Auth_Status:      string;
-    Once_Auth:        string;
-    Maker_Id:         null;
-    Checker_Id:       null;
+  role_id: string
+  role_name_la: string
+  role_name_en: string
+  Record_Status: string
+  Auth_Status: string
 }
 
-// Define Menu interface for the API response
-interface Menu {
-    menu_id:        string;
-    menu_name_la:   string;
-    menu_name_en:   string;
-    menu_url:       string;
-    menu_icon:      string;
-    menu_order:     number;
-    record_Status:  string;
-    // Add other menu properties as needed
+interface MainMenu {
+  menu_id: string
+  menu_name_la: string
+  menu_name_en: string
+  menu_icon?: string
+  menu_order?: number
+  Record_Status: string
+  Auth_Status: string
 }
 
+// Composables
 const router = useRouter()
-const items = ref<RoleDetailModel.RoleDetailResponse[]>([])
-const originalItems = ref<RoleDetailModel.RoleDetailResponse[]>([])
+
+// Reactive data
+const items = ref<RoleDetailResponse[]>([])
 const selectedRoleId = ref<string | null>(null)
 const selectedMenuId = ref<string | null>(null)
-const roleOptions = ref<Array<{ text: string; value: string | null; subtitle?: string }>>([])
-const menuOptions = ref<Array<{ text: string; value: string | null; subtitle?: string }>>([])
+const selectedAuthStatus = ref<string | null>(null)
+const selectedRecordStatus = ref<string | null>(null)
+const searchQuery = ref('')
+const searchTimeout = ref<NodeJS.Timeout | null>(null)
 
+// Options for dropdowns
+const roleOptions = ref<Array<{ text: string; value: string | null }>>([])
+const menuOptions = ref<Array<{ text: string; value: string | null }>>([])
+
+// Loading states
 const loading = ref(false)
 const deleteLoading = ref(false)
 const roleOptionsLoading = ref(false)
 const menuOptionsLoading = ref(false)
+
+// Dialog states
 const deleteDialog = ref(false)
 const detailsDialog = ref(false)
+
+// Messages
 const showError = ref(false)
+const showSuccess = ref(false)
 const errorMessage = ref('')
-const itemToDelete = ref<RoleDetailModel.RoleDetailResponse | null>(null)
-const selectedItem = ref<RoleDetailModel.RoleDetailResponse | null>(null)
+const successMessage = ref('')
 
-const title = "ຈັດການສິດຜູ້ນໍາໃຊ້ລະບົບ";
+// Selected items
+const itemToDelete = ref<RoleDetailResponse | null>(null)
+const selectedItem = ref<RoleDetailResponse | null>(null)
 
+// Pagination
+const totalItems = ref(0)
+const currentPage = ref(1)
+const itemsPerPage = ref(20)
+
+// Constants
+const title = "ຈັດການສິດຜູ້ນໍາໃຊ້ລະບົບ"
+
+// Static options
+const authStatusOptions = [
+  { text: "ທັງໝົດ", value: null },
+  { text: "ຍັງບໍ່ອະນຸມັດ", value: "U" },
+  { text: "ອະນຸມັດແລ້ວ", value: "A" },
+  { text: "ປະຕິເສດ", value: "R" }
+]
+
+const recordStatusOptions = [
+  { text: "ທັງໝົດ", value: null },
+  { text: "ເປີດໃຊ້ງານ", value: "C" },
+  { text: "ປິດໃຊ້ງານ", value: "D" }
+]
+
+// Table headers
 const headers = [
-  
+  {
+    title: "ບົດບາດ",
+    key: "role_id",
+    align: "start" as const,
+    width: "180px",
+  },
+  {
+    title: "ເມນູຍ່ອຍ",
+    key: "sub_menu_id",
+    align: "start" as const,
+    width: "200px",
+  },
+  {
+    title: "ເມນູຫຼັກ",
+    key: "main_menu",
+    align: "center" as const,
+    width: "200px",
+  },
   {
     title: "ເພີ່ມ",
     key: "New_Detail",
@@ -524,14 +563,14 @@ const headers = [
     width: "80px",
   },
   {
-    title: "ລົບ",
-    key: "Del_Detail",
+    title: "ແກ້ໄຂ",
+    key: "Edit_Detail",
     align: "center" as const,
     width: "80px",
   },
   {
-    title: "ແກ້ໄຂ",
-    key: "Edit_Detail",
+    title: "ລົບ",
+    key: "Del_Detail",
     align: "center" as const,
     width: "80px",
   },
@@ -546,23 +585,6 @@ const headers = [
     key: "Auth_Detail",
     align: "center" as const,
     width: "80px",
-  },{
-    title: "ເມນູຍ່ອຍ",
-    key: "sub_menu_id",
-    align: "start" as const,
-    width: "200px",
-  },{
-    title: "ບົດບາດ",
-    key: "role_id",
-    align: "start" as const,
-    width: "180px",
-  },
-  
-  {
-    title: "ເມນູຫຼັກ",
-    key: "fuu_details",
-    align: "center" as const,
-    width: "200px",
   },
   {
     title: "ການປະຕິບັດ",
@@ -571,311 +593,243 @@ const headers = [
     align: "center" as const,
     width: "150px",
   },
-];
+]
 
-// Computed property for filtered items
-const filteredItems = computed(() => {
-  let filtered = [...originalItems.value];
-  
-  // Filter by role if selected
-  if (selectedRoleId.value) {
-    filtered = filtered.filter(item => item.role_id === selectedRoleId.value);
-  }
-  
-  // Filter by menu if selected  
-  if (selectedMenuId.value) {
-    filtered = filtered.filter(item => 
-      String(item.fuu_details?.menu?.menu_id) === String(selectedMenuId.value)
-    );
-  }
-  
-  return filtered;
-});
+// Computed properties
+const hasActiveFilters = computed(() => {
+  return !!(selectedRoleId.value || selectedMenuId.value || selectedAuthStatus.value || 
+           selectedRecordStatus.value || searchQuery.value)
+})
 
-// Fetch menu options
-const fetchMenuOptions = async () => {
-  menuOptionsLoading.value = true;
+// Methods
+const fetchRoleDetails = async () => {
+  loading.value = true
   try {
-    const res = await axios.get<Menu[]>("api/menus/", {
+    // Build query parameters
+    const params = new URLSearchParams()
+    
+    if (selectedRoleId.value) params.append('role_id', selectedRoleId.value)
+    if (selectedMenuId.value) params.append('menu_id', selectedMenuId.value)
+    if (selectedAuthStatus.value) params.append('Auth_Status', selectedAuthStatus.value)
+    if (selectedRecordStatus.value) params.append('Record_Status', selectedRecordStatus.value)
+    if (searchQuery.value) params.append('search', searchQuery.value)
+    
+    // Add pagination
+    params.append('page', currentPage.value.toString())
+    params.append('page_size', itemsPerPage.value.toString())
+
+    const response = await axios.get<RoleDetailResponse[]>(`/api/role-details/?${params}`, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
-    });
+    })
 
-    if (res.status === 200) {
-      // Remove duplicates using Map to ensure unique menu_id
-      const uniqueMenusMap = new Map<string, Menu>();
-      
-      res.data.forEach(menu => {
-        const menuId = String(menu.menu_id);
-        if (menuId && !uniqueMenusMap.has(menuId)) {
-          uniqueMenusMap.set(menuId, menu);
-        }
-      });
-
-      // Create dropdown options from unique menus
-      const options = Array.from(uniqueMenusMap.values()).map((menu) => ({
-        text: `${menu.menu_id} - ${menu.menu_name_la}`,
-        value: String(menu.menu_id),
-        subtitle: `ລະຫັດ: ${menu.menu_id}`
-      }));
-      
-      // Sort by menu_id
-      options.sort((a, b) => a.value.localeCompare(b.value));
-      
-      // Add "All" option at the beginning
-      menuOptions.value = [
-        {
-          text: "ທັງໝົດ",
-          value: null,
-          subtitle: "ສະແດງທຸກເມນູ",
-        },
-        ...options
-      ];
+    if (response.status === 200) {
+      items.value = response.data
+      // If your API returns pagination info, update totalItems
+      // totalItems.value = response.data.count || response.data.length
     }
   } catch (error: any) {
-    console.error("Error fetching menu options:", error);
-    // Generate menu options from existing items if API fails
-    generateMenuOptionsFromItems();
+    console.error("Error fetching role details:", error)
+    showError.value = true
+    errorMessage.value = error.response?.data?.detail || "ເກີດຂໍ້ຜິດພາດໃນການໂຫຼດຂໍ້ມູນ"
   } finally {
-    menuOptionsLoading.value = false;
+    loading.value = false
   }
-};
+}
 
 const fetchRoleOptions = async () => {
-  roleOptionsLoading.value = true;
+  roleOptionsLoading.value = true
   try {
-    const res = await axios.get<Role[]>("api/roles/", {
+    const response = await axios.get<Role[]>("/api/roles/", {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
-    });
+    })
 
-    if (res.status === 200) {
-      // Remove duplicates using Map to ensure unique role_id (as string)
-      const uniqueRolesMap = new Map<string, Role>()
-      
-      res.data.forEach(role => {
-        const roleId = String(role.role_id)
-        if (roleId && !uniqueRolesMap.has(roleId)) {
-          uniqueRolesMap.set(roleId, role)
-        }
-      });
-
-      // Create dropdown options from unique roles
-      const options = Array.from(uniqueRolesMap.values()).map((role) => ({
+    if (response.status === 200) {
+      const options = response.data.map((role) => ({
         text: `${role.role_id} - ${role.role_name_la}`,
-        value: String(role.role_id),
-        subtitle: `ລະຫັດ: ${role.role_id}`
+        value: role.role_id,
       }))
       
-      // Sort by role_id
-      options.sort((a, b) => a.value.localeCompare(b.value))
-      
-      // Add "All" option at the beginning
       roleOptions.value = [
-        {
-          text: "ທັງໝົດ",
-          value: null,
-          subtitle: "ສະແດງທຸກບົດບາດ",
-        },
-        ...options
+        { text: "ທັງໝົດ", value: null },
+        ...options.sort((a, b) => a.value.localeCompare(b.value))
       ]
     }
   } catch (error: any) {
-    console.error("Error fetching role options:", error);
-    generateRoleOptionsFromItems()
+    console.error("Error fetching role options:", error)
   } finally {
-    roleOptionsLoading.value = false;
-  }
-};
-
-const goToCreateRoleDetail = () => {
-  if (selectedRoleId.value) {
-    router.push({ path: '/roledetail/create', query: { role_id: selectedRoleId.value } })
-  } else {
-    router.push({ path: '/roledetail/create' })
+    roleOptionsLoading.value = false
   }
 }
 
-const generateMenuOptionsFromItems = () => {
-  const menuMap = new Map<string, { menu_id: string, menu_name_la: string }>();
-  
-  originalItems.value.forEach(item => {
-    const menuId = item.fuu_details?.menu?.menu_id;
-    const menuName = item.fuu_details?.menu?.menu_name_la;
-    if (menuId && !menuMap.has(String(menuId))) {
-      menuMap.set(String(menuId), {
-        menu_id: String(menuId),
-        menu_name_la: menuName || `ເມນູ ${menuId}`,
-      });
-    }
-  });
-
-  const options = Array.from(menuMap.values()).map((menu) => ({
-    text: menu.menu_name_la
-      ? `${menu.menu_id} - ${menu.menu_name_la}`
-      : `ເມນູ ${menu.menu_id}`,
-    value: menu.menu_id,
-    subtitle: menu.menu_name_la ? `ລະຫັດ: ${menu.menu_id}` : undefined
-  }));
-  
-  options.sort((a, b) => a.value.localeCompare(b.value));
-  
-  menuOptions.value = [
-    {
-      text: "ທັງໝົດ",
-      value: null,
-      subtitle: "ສະແດງທຸກເມນູ",
-    },
-    ...options
-  ];
-};
-
-const generateRoleOptionsFromItems = () => {
-  const roleMap = new Map<string, { role_id: string, role_name_la: string }>()
-  
-  originalItems.value.forEach(item => {
-    const roleId = String(item.role_id)
-    const roleName = item.role_detail?.role_name_la
-    if (roleId && !roleMap.has(roleId)) {
-      roleMap.set(roleId, {
-        role_id: roleId,
-        role_name_la: roleName,
-      });
-    }
-  });
-
-  const options = Array.from(roleMap.values()).map((role) => ({
-    text: role.role_name_la
-      ? `${role.role_id} - ${role.role_name_la}`
-      : `ບົດບາດ ${role.role_id}`,
-    value: role.role_id,
-    subtitle: role.role_name_la ? `ລະຫັດ: ${role.role_id}` : undefined
-  }))
-  
-  options.sort((a, b) => a.value.localeCompare(b.value))
-  
-  roleOptions.value = [
-    {
-      text: "ທັງໝົດ",
-      value: null,
-      subtitle: "ສະແດງທຸກບົດບາດ",
-    },
-    ...options
-  ]
-}
-
-
-// Fetch main role details data
-const fetchData = async () => {
-  loading.value = true;
+const fetchMenuOptions = async () => {
+  menuOptionsLoading.value = true
   try {
-    const res = await axios.get<RoleDetailModel.RoleDetailResponse[]>(
-      "api/role-details",
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      }
-    );
-    if (res.status === 200) {
-      originalItems.value = res.data;
-      items.value = res.data;
+    const response = await axios.get<MainMenu[]>("/api/main-menus/", {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    })
+
+    if (response.status === 200) {
+      const options = response.data.map((menu) => ({
+        text: `${menu.menu_id} - ${menu.menu_name_la}`,
+        value: menu.menu_id,
+      }))
+      
+      menuOptions.value = [
+        { text: "ທັງໝົດ", value: null },
+        ...options.sort((a, b) => a.value.localeCompare(b.value))
+      ]
     }
   } catch (error: any) {
-    console.error("Error fetching data:", error);
-    showError.value = true;
-    errorMessage.value =
-      error.response?.data?.message || "ເກີດຂໍ້ຜິດພາດໃນການໂຫຼດຂໍ້ມູນ";
+    console.error("Error fetching menu options:", error)
   } finally {
-    loading.value = false;
+    menuOptionsLoading.value = false
   }
-};
+}
 
-// Filter by role
-const filterByRole = () => {
-  // The filtering logic is handled by the computed property filteredItems
-  // No need for additional API calls since we have all data in originalItems
-};
+const applyFilters = () => {
+  currentPage.value = 1
+  fetchRoleDetails()
+}
 
-// Filter by menu
-const filterByMenu = () => {
-  // The filtering logic is handled by the computed property filteredItems
-  // No need for additional API calls since we have all data in originalItems
-};
+const resetFilters = () => {
+  selectedRoleId.value = null
+  selectedMenuId.value = null
+  selectedAuthStatus.value = null
+  selectedRecordStatus.value = null
+  searchQuery.value = ''
+  currentPage.value = 1
+  fetchRoleDetails()
+}
 
-// Navigation
-const goPath = (path: string) => {
-  router.push(path);
-};
+const debounceSearch = () => {
+  if (searchTimeout.value) {
+    clearTimeout(searchTimeout.value)
+  }
+  searchTimeout.value = setTimeout(() => {
+    applyFilters()
+  }, 500)
+}
 
-// Delete confirmation
-const confirmDelete = (item: RoleDetailModel.RoleDetailResponse) => {
-  itemToDelete.value = item;
-  deleteDialog.value = true;
-};
+const clearSearch = () => {
+  searchQuery.value = ''
+  applyFilters()
+}
 
-// View details
-const viewDetails = (item: RoleDetailModel.RoleDetailResponse) => {
-  selectedItem.value = item;
-  detailsDialog.value = true;
-};
+const handlePagination = (options: any) => {
+  currentPage.value = options.page
+  itemsPerPage.value = options.itemsPerPage
+  fetchRoleDetails()
+}
 
-// Delete item
-const deleteItem = async () => {
-  if (itemToDelete.value) {
-    deleteLoading.value = true;
-    try {
-      // Use both role_id and sub_menu_id as query params
-      const roleId = itemToDelete.value.role_id
-      const subMenuId = itemToDelete.value.sub_menu_id || itemToDelete.value.fuu_details?.sub_menu?.sub_menu_id
-      await axios.delete(`api/roledetail-delete/?role_id=${roleId}&sub_menu_id=${subMenuId}`, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      })
+const goToCreateRoleDetail = () => {
+  const query: any = {}
+  if (selectedRoleId.value) query.role_id = selectedRoleId.value
+  router.push({ path: '/roledetail/create', query })
+}
 
-      // Remove item from both original and filtered arrays
-      const index = originalItems.value.findIndex(item =>
-        item.role_id === roleId &&
-        (item.sub_menu_id === subMenuId ||
-          item.fuu_details?.sub_menu?.sub_menu_id === subMenuId)
-      )
-      if (index > -1) {
-        originalItems.value.splice(index, 1);
-      }
-
-      const itemsIndex = items.value.findIndex(item =>
-        item.role_id === roleId &&
-        (item.sub_menu_id === subMenuId ||
-          item.fuu_details?.sub_menu?.sub_menu_id === subMenuId)
-      )
-      if (itemsIndex > -1) {
-        items.value.splice(itemsIndex, 1);
-      }
-
-      deleteDialog.value = false
-      itemToDelete.value = null
-    } catch (error: any) {
-      console.error('Error deleting item:', error)
-      showError.value = true
-      errorMessage.value = error.response?.data?.detail || 'ເກີດຂໍ້ຜິດພາດໃນການລົບ'
-    } finally {
-      deleteLoading.value = false;
+const goToEdit = (item: RoleDetailResponse) => {
+  router.push({
+    path: '/roledetail/update',
+    query: {
+      role_id: item.role_id,
+      sub_menu_id: item.sub_menu_id
     }
+  })
+}
+
+const confirmDelete = (item: RoleDetailResponse) => {
+  itemToDelete.value = item
+  deleteDialog.value = true
+}
+
+const viewDetails = (item: RoleDetailResponse) => {
+  selectedItem.value = item
+  detailsDialog.value = true
+}
+
+const deleteItem = async () => {
+  if (!itemToDelete.value) return
+
+  deleteLoading.value = true
+  try {
+    const roleId = itemToDelete.value.role_id
+    const subMenuId = itemToDelete.value.sub_menu_id
+
+    await axios.delete(`/api/role-details/delete/?role_id=${roleId}&sub_menu_id=${subMenuId}`, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    })
+
+    deleteDialog.value = false
+    itemToDelete.value = null
+    successMessage.value = "ລົບສິດຜູ້ນໍາໃຊ້ສຳເລັດແລ້ວ"
+    showSuccess.value = true
+    
+    // Refresh data
+    await fetchRoleDetails()
+  } catch (error: any) {
+    console.error('Error deleting item:', error)
+    showError.value = true
+    errorMessage.value = error.response?.data?.detail || 'ເກີດຂໍ້ຜິດພາດໃນການລົບ'
+  } finally {
+    deleteLoading.value = false
   }
-};
+}
 
-
+// Lifecycle
 onMounted(async () => {
-  
-  await fetchData();
- 
-  await Promise.all([fetchRoleOptions(), fetchMenuOptions()]);
-});
+  await Promise.all([
+    fetchRoleOptions(),
+    fetchMenuOptions(),
+    fetchRoleDetails()
+  ])
+})
 </script>
+
+<style scoped>
+.text-styles {
+  font-size: 11px;
+}
+
+.add-role-btn {
+  min-width: 160px;
+}
+
+.v-data-table {
+  border: 1px solid #e0e0e0;
+}
+
+.v-data-table-header {
+  background-color: #f5f5f5;
+}
+
+.v-data-table .v-data-table__td {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.v-chip {
+  font-size: 11px;
+}
+.filter-row .v-col {
+  display: flex;
+  align-items: center;
+}
+
+.filter-input,
+.add-role-btn {
+  width: 100%;
+  min-height: 40px;
+  margin-bottom: 0 !important;
+}
+</style>
