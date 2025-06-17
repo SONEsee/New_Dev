@@ -1414,6 +1414,7 @@ const submitJournal = async () => {
 
     console.log('Batch create response:', response.data)
 
+    
     // Success message with detailed information
     await Swal.fire({
       icon: 'success',
