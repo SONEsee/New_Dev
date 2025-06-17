@@ -123,7 +123,30 @@ const role = computed(() => {
 const selecteMainMenu = ref<any | null>(null);
 
 const SELECTED_MAINMENU_KEY = "selected_mainmenu_filter";
-
+const updatRecodeStatus = async (sub_menu_id: string) => {
+  try {
+   await subMenuStore.updateAdproveStatus(sub_menu_id)
+  } catch (error) {
+    console.error("Error updating record status:", error);
+    await CallSwal({
+      icon: "error",
+      title: "ເກີດຂໍ້ຜິດພາດ",
+      text: "ບໍ່ສາມາດແກ້ໄຂໄດ້",
+    });
+  }
+};
+const updatRecodeStatusof = async (sub_menu_id: string) => {
+  try {
+   await subMenuStore.updateAdproveStatusof(sub_menu_id)
+  } catch (error) {
+    console.error("Error updating record status:", error);
+    await CallSwal({
+      icon: "error",
+      title: "ເກີດຂໍ້ຜິດພາດ",
+      text: "ບໍ່ສາມາດແກ້ໄຂໄດ້",
+    });
+  }
+};
 const loadSavedMainMenuSelection = () => {
   try {
     const saved = localStorage.getItem(SELECTED_MAINMENU_KEY);
@@ -458,10 +481,10 @@ defineExpose({
         {{ dayjs(item.created_date).format("DD/MM/YYYY") }}
       </template>
       <template v-slot:item.Record_Status="{ item }">
-        <v-btn v-if="item.Record_Status==='O'" flat>
+        <v-btn v-if="item.Record_Status==='O'" flat  @click="updatRecodeStatusof(item.sub_menu_id)">
           <v-icon color="info">mdi-toggle-switch</v-icon>
         </v-btn>
-        <v-btn v-if="item.Record_Status==='C'" flat>
+        <v-btn v-if="item.Record_Status==='C'" flat @click="updatRecodeStatus(item.sub_menu_id)">
           <v-icon color="error">mdi-toggle-switch-off-outline</v-icon>
         </v-btn>
         <!-- <v-chip

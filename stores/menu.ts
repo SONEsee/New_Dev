@@ -120,7 +120,43 @@ export const useMenuStore = defineStore("menu", {
         }
       
       } catch (error) {
-        console.error("Error updating approve status:", error);
+        CallSwal({
+          title: "ບໍ່ສຳເລັດ",
+          text: "ບໍ່ສາມາດແກ້ໄຂເມນູ " + error,
+          icon: "error",
+        });
+      }
+    },
+    async updateAdproveStatusof(id: string) {
+      try {
+        const notification = await CallSwal({
+          title: "ຄຳເຕືອນ",
+          text: "ທ່ານຕ້ອງການປີດໃຊ້ງານສະຖານະ ຫຼື ບໍ່?",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonText: "ປີດ",
+          cancelButtonText: "ບໍ່ປີດ",
+        });if(notification.isConfirmed){
+            const res = await axios.post(`api/users/${id}/authorize/`, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });if(res.status ===200){
+          CallSwal({
+            title: "ສຳເລັດ",
+            text: "ສຳເລັດການເປີດໃຊ້ງານສະຖານະ.",
+            icon: "success",
+          })
+        }
+        }
+      
+      } catch (error) {
+        CallSwal({
+          title: "ບໍ່ສຳເລັດ",
+          text: "ບໍ່ສາມາດແກ້ໄຂເມນູ " + error,
+          icon: "error",
+        });
       }
     },
     async getMenuIDCount(menu_id: string) {
