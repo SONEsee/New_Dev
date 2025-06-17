@@ -1,5 +1,6 @@
 import axios from "@/helpers/axios";
 import { PropertyTypeModel } from "~/models";
+
 export const propertyStore = defineStore("propertycategory", {
   state() {
     return {
@@ -13,10 +14,16 @@ export const propertyStore = defineStore("propertycategory", {
         type_name: "",
         description: "",
       },
+      
+      form_update_property_category: {
+        type_id: "" as string | number,
+        type_code: "",
+        type_name: "",
+        description: "",
+      },
     };
   },
   actions: {
-
     async GetPropertyCategoryById() {
       this.isloading = true;
       try {
@@ -38,6 +45,7 @@ export const propertyStore = defineStore("propertycategory", {
         this.isloading = false;
       }
     },
+
     async CreatePropertyType() {
       this.isloading = true;
       try {
@@ -69,23 +77,119 @@ export const propertyStore = defineStore("propertycategory", {
         this.isloading = false;
       }
     },
-    async GetPropertyDetail(id:string){
-        this.isloading = true;  
-        try {
-            const res = await axios.get<PropertyTypeModel.PropertyType>(`property/${id}`, {
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
-                },
-            });if(res.status === 200){
-                this.respons_detail_property_category = res.data
-            }
-        } catch (error) {
-            console.error("Error fetching property detail:", error);
-            
-        }finally{
-            this.isloading = false;
+
+    async GetPropertyDetail(id: string) {
+      this.isloading = true;
+      try {
+        const res = await axios.get<PropertyTypeModel.PropertyType>(
+          `property/${id}`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+        if (res.status === 200) {
+          this.respons_detail_property_category = res.data;
         }
-    }
+      } catch (error) {
+        console.error("Error fetching property detail:", error);
+      } finally {
+        this.isloading = false;
+      }
+    },
+
+    
+    async UpdatePropertyType(id: string) {
+      this.isloading = true;
+      try {
+        const res = await axios.put<PropertyTypeModel.PropertyType>(
+          `property/${id}`,
+          this.form_update_property_category,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+        if (res.status === 200) {
+          CallSwal({
+            title: "ສຳເລັດ",
+            text: "ສຳເລັດການແກ້ໄຂປະເພດຊັບສິນ",
+            icon: "success",
+            showCancelButton: false,
+            showConfirmButton: false,
+          });
+          setTimeout(() => {
+            goPath("/property/propertytype");
+          }, 1500);
+          
+        
+          this.form_update_property_category = {
+            type_id: "" as string | number,
+            type_code: "",
+            type_name: "",
+            description: "",
+          };
+        }
+      } catch (error) {
+        console.error("Error updating property type:", error);
+        CallSwal({
+          title: "ຜິດພາດ",
+          text: "ມີຂໍ້ຜິດພາດໃນການແກ້ໄຂຂໍ້ມູນ",
+          icon: "error",
+          showCancelButton: false,
+          confirmButtonText: "ຕົກລົງ",
+        });
+      } finally {
+        this.isloading = false;
+      }
+    },
+
+    
+    async DeletePropertyType(id: string) {
+      this.isloading = true;
+      try {
+        const notification = await CallSwal({
+          title: "ກຳລັງລຶບ",
+          text: "ທ່ານຕອ້ງການລົບຂໍ້ມູນນີ້ແທ້ບໍ...?",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonText: "ແນ່ໃຈ",
+          cancelButtonText: "ຍົກເລີກ",
+        });if(notification.isConfirmed) {
+          const res = await axios.delete(`property/${id}`, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+        if (res.status === 200 || res.status === 204) {
+          CallSwal({
+            title: "ສຳເລັດ",
+            text: "ສຳເລັດການລຶບປະເພດຊັບສິນ",
+            icon: "success",
+            showCancelButton: false,
+            showConfirmButton: false,
+          });
+         
+          await this.GetPropertyCategoryById();
+        }}
+        
+      } catch (error) {
+        console.error("Error deleting property type:", error);
+        CallSwal({
+          title: "ຜິດພາດ",
+          text: "ມີຂໍ້ຜິດພາດໃນການລຶບຂໍ້ມູນ",
+          icon: "error",
+          showCancelButton: false,
+          confirmButtonText: "ຕົກລົງ",
+        });
+      } finally {
+        this.isloading = false;
+      }
+    },
   },
 });

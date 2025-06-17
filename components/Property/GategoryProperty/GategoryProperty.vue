@@ -193,9 +193,12 @@ const editFromView = () => {
   editItem(selectedItem.value);
 };
 
-const confirmDelete = (item: any) => {
-  itemToDelete.value = item;
-  deleteDialog.value = true;
+const confirmDelete = async (item: any) => {
+  try {
+    await proppertyStore.DeletePropertyType(item.type_id);
+  } catch (error) {
+    console.error("Error confirming delete:", error);
+  }
 };
 
 onMounted(async () => {
@@ -300,18 +303,6 @@ onMounted(async () => {
               size="small"
             ></v-icon>
           </v-btn>
-          <!-- <v-chip
-            :color="item.is_active ? 'success' : 'error'"
-            variant="tonal"
-            size="small"
-            class="font-weight-medium"
-          >
-            <v-icon
-              :icon="item.is_active ? 'mdi-check' : 'mdi-close'"
-              size="16"
-            />
-            {{ item.is_active ? "ເປີດໃຊ້" : "ປິດໃຊ້" }}
-          </v-chip> -->
         </template>
 
         <template #item.created_at="{ item }">
@@ -328,7 +319,9 @@ onMounted(async () => {
             variant="text"
             size="small"
             icon="mdi-pencil"
-            @click="editItem(item)"
+            @click="
+              goPath(`/property/propertytype/edit/?type_id=${item.type_id}`)
+            "
           >
             <v-icon>mdi-pencil</v-icon>
             <v-tooltip activator="parent" location="top">ແກ້ໄຂ</v-tooltip>
@@ -341,7 +334,9 @@ onMounted(async () => {
               variant="text"
               size="small"
               icon="mdi-eye"
-              @click="goPath(`/property/propertytype/detail/?type_id=${item.type_id}`)"
+              @click="
+                goPath(`/property/propertytype/detail/?type_id=${item.type_id}`)
+              "
             >
               <v-icon>mdi-eye</v-icon>
               <v-tooltip activator="parent" location="top"
@@ -381,216 +376,6 @@ onMounted(async () => {
       </v-data-table>
     </div>
 
-    <!-- Create/Edit Dialog -->
-    <!-- <v-dialog v-model="dialog" max-width="600">
-      <v-card class="rounded-lg">
-        <v-card-title class="pa-6 pb-4">
-          <div class="d-flex align-center">
-            <v-icon 
-              :color="editMode ? 'warning' : 'primary'" 
-              size="28" 
-              class="mr-3"
-            >
-              {{ editMode ? 'mdi-pencil' : 'mdi-plus' }}
-            </v-icon>
-            <span class="text-h6 font-weight-bold">
-              {{ editMode ? 'ແກ້ໄຂປະເພດຊັບສິນ' : 'ເພີ່ມປະເພດຊັບສິນໃໝ່' }}
-            </span>
-          </div>
-        </v-card-title>
-        
-        <v-card-text class="pa-6 pt-0">
-          <v-form ref="form" v-model="valid">
-            <v-row>
-              <v-col cols="12" md="6">
-                <v-text-field
-                  v-model="formData.type_code"
-                  label="ລະຫັດປະເພດ"
-                  variant="outlined"
-                  :rules="[rules.required]"
-                  prepend-inner-icon="mdi-identifier"
-                />
-              </v-col>
-              <v-col cols="12" md="6">
-                <v-text-field
-                  v-model="formData.type_name"
-                  label="ຊື່ປະເພດ"
-                  variant="outlined"
-                  :rules="[rules.required]"
-                  prepend-inner-icon="mdi-tag"
-                />
-              </v-col>
-              <v-col cols="12">
-                <v-textarea
-                  v-model="formData.description"
-                  label="ຄຳອະທິບາຍ"
-                  variant="outlined"
-                  rows="3"
-                  prepend-inner-icon="mdi-text"
-                />
-              </v-col>
-              <v-col cols="12">
-                <v-switch
-                  v-model="formData.is_active"
-                  label="ເປີດໃຊ້ງານ"
-                  color="primary"
-                  inset
-                />
-              </v-col>
-            </v-row>
-          </v-form>
-        </v-card-text>
-
-        <v-card-actions class="pa-6 pt-0">
-          <v-spacer />
-          <v-btn
-            variant="text"
-            @click="closeDialog"
-            class="text-none"
-          >
-            ຍົກເລີກ
-          </v-btn>
-          <v-btn
-            color="primary"
-            variant="elevated"
-            @click="saveItem"
-            :loading="saving"
-            :disabled="!valid"
-            class="text-none font-weight-medium"
-          >
-            {{ editMode ? 'ອັບເດດ' : 'ບັນທຶກ' }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog> -->
-
-    <!-- Delete Confirmation Dialog -->
-    <!-- <v-dialog v-model="deleteDialog" max-width="420">
-      <v-card class="rounded-lg">
-        <v-card-title class="text-h6 pa-6 pb-4">
-          <div class="d-flex align-center">
-            <v-icon color="error" size="28" class="mr-3">mdi-alert-circle</v-icon>
-            <span>ຢືນຢັນການລົບ</span>
-          </div>
-        </v-card-title>
-        <v-card-text class="pa-6 pt-0">
-          <p class="text-body-1 mb-4">ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການລົບປະເພດຊັບສິນນີ້?</p>
-          <div v-if="itemToDelete" class="mb-4">
-            <div class="text-body-2 text-grey-darken-1 mb-2">ລາຍລະອຽດ:</div>
-            <div class="text-body-2">
-              <strong>ລະຫັດ:</strong> {{ itemToDelete.type_code }}
-            </div>
-            <div class="text-body-2">
-              <strong>ຊື່:</strong> {{ itemToDelete.type_name }}
-            </div>
-          </div>
-          <v-alert
-            type="warning"
-            variant="tonal"
-            class="mb-0"
-            icon="mdi-information"
-          >
-            ການກະທຳນີ້ບໍ່ສາມາດຍົກເລີກໄດ້
-          </v-alert>
-        </v-card-text>
-        <v-card-actions class="pa-6 pt-0">
-          <v-spacer />
-          <v-btn variant="text" @click="deleteDialog = false" class="text-none">
-            ຍົກເລີກ
-          </v-btn>
-          <v-btn
-            color="error"
-            variant="elevated"
-            @click="deleteItem"
-            :loading="deleting"
-            class="text-none"
-          >
-            ລົບ
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog> -->
-
-    <!-- View Details Dialog -->
-    <!-- <v-dialog v-model="viewDialog" max-width="500">
-      <v-card class="rounded-lg">
-        <v-card-title class="pa-6 pb-4">
-          <div class="d-flex align-center">
-            <v-icon color="info" size="28" class="mr-3">mdi-information</v-icon>
-            <span class="text-h6 font-weight-bold">ລາຍລະອຽດປະເພດຊັບສິນ</span>
-          </div>
-        </v-card-title>
-        <v-card-text class="pa-6 pt-0" v-if="selectedItem">
-          <v-list class="pa-0">
-            <v-list-item class="px-0">
-              <template #prepend>
-                <v-icon color="primary">mdi-identifier</v-icon>
-              </template>
-              <v-list-item-title>ລະຫັດປະເພດ</v-list-item-title>
-              <v-list-item-subtitle>{{ selectedItem.type_code }}</v-list-item-subtitle>
-            </v-list-item>
-
-            <v-list-item class="px-0">
-              <template #prepend>
-                <v-icon color="success">mdi-tag</v-icon>
-              </template>
-              <v-list-item-title>ຊື່ປະເພດ</v-list-item-title>
-              <v-list-item-subtitle>{{ selectedItem.type_name }}</v-list-item-subtitle>
-            </v-list-item>
-
-            <v-list-item class="px-0">
-              <template #prepend>
-                <v-icon color="info">mdi-text</v-icon>
-              </template>
-              <v-list-item-title>ຄຳອະທິບາຍ</v-list-item-title>
-              <v-list-item-subtitle>{{ selectedItem.description || '-' }}</v-list-item-subtitle>
-            </v-list-item>
-
-            <v-list-item class="px-0">
-              <template #prepend>
-                <v-icon :color="selectedItem.is_active ? 'success' : 'error'">
-                  {{ selectedItem.is_active ? 'mdi-check-circle' : 'mdi-close-circle' }}
-                </v-icon>
-              </template>
-              <v-list-item-title>ສະຖານະ</v-list-item-title>
-              <v-list-item-subtitle>{{ selectedItem.is_active ? 'ເປີດໃຊ້' : 'ປິດໃຊ້' }}</v-list-item-subtitle>
-            </v-list-item>
-
-            <v-list-item class="px-0">
-              <template #prepend>
-                <v-icon color="warning">mdi-calendar-plus</v-icon>
-              </template>
-              <v-list-item-title>ເວລາເພີ່ມ</v-list-item-title>
-              <v-list-item-subtitle>{{ formatDate(selectedItem.created_at) }}</v-list-item-subtitle>
-            </v-list-item>
-
-            <v-list-item class="px-0">
-              <template #prepend>
-                <v-icon color="orange">mdi-calendar-edit</v-icon>
-              </template>
-              <v-list-item-title>ເວລາແກ້ໄຂ</v-list-item-title>
-              <v-list-item-subtitle>{{ formatDate(selectedItem.updated_at) }}</v-list-item-subtitle>
-            </v-list-item>
-          </v-list>
-        </v-card-text>
-        <v-card-actions class="pa-6 pt-0">
-          <v-spacer />
-          <v-btn variant="text" @click="viewDialog = false" class="text-none">
-            ປິດ
-          </v-btn>
-          <v-btn
-            color="primary"
-            variant="elevated"
-            @click="editFromView"
-            class="text-none font-weight-medium"
-          >
-            ແກ້ໄຂ
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog> -->
-
-    <!-- Success Snackbar -->
     <v-snackbar
       v-model="showSuccess"
       color="success"
@@ -601,7 +386,6 @@ onMounted(async () => {
       {{ successMessage }}
     </v-snackbar>
 
-    <!-- Error Snackbar -->
     <v-snackbar v-model="showError" color="error" timeout="5000" location="top">
       <v-icon class="mr-2">mdi-alert-circle</v-icon>
       {{ errorMessage }}

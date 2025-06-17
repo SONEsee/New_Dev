@@ -97,12 +97,28 @@ export const useMenuStore = defineStore("menu", {
   actions: {
     async updateAdproveStatus(id: string) {
       try {
-        const res = await axios.post(`api/users/${id}/authorize/`, {
+        const notification = await CallSwal({
+          title: "ຄຳເຕືອນ",
+          text: "ທ່ານຕ້ອງການເປີດໃຊ້ງານສະຖານະ ຫຼື ບໍ່?",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonText: "ເປີດ",
+          cancelButtonText: "ບໍ່ເປີດ",
+        });if(notification.isConfirmed){
+            const res = await axios.post(`api/users/${id}/authorize/`, {
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
-        });
+        });if(res.status ===200){
+          CallSwal({
+            title: "ສຳເລັດ",
+            text: "ສຳເລັດການເປີດໃຊ້ງານສະຖານະ.",
+            icon: "success",
+          })
+        }
+        }
+      
       } catch (error) {
         console.error("Error updating approve status:", error);
       }

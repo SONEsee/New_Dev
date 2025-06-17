@@ -31,6 +31,7 @@ import * as PropertyTypeModel from "./property";
 
 import * as RoleMasterModel from "./rolemaster";
 import *as GlModel from './gl';
+import * as SupplierModel from "./suppliers";
 
 export {
   UserModel,
@@ -58,7 +59,7 @@ export {
   GLMasterModel,
   CerrencyModel,
 PropertyTypeModel,
-
+SupplierModel,
   GlModel,
   RoleMasterModel,
   
