@@ -42,7 +42,7 @@ export const useRolePermissions = () => {
   const canAuthorize = computed(() => permissions.value?.Auth_Detail === 1);
   const canAdd = computed(() => permissions.value?.New_Detail === 1);
   const canAuthStatus = computed(() => permissions.value?.Auth_Status === 'U');
-  const canRecordStatus = computed(() => permissions.value?.Record_Status === 'O');
+  const canRecordStatus = computed(() => permissions.value?.Record_Status === 'C');
 
   
   const hasPermission = (permissionKey: keyof RolePermissions): boolean => {
