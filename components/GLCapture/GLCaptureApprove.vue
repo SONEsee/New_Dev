@@ -295,225 +295,232 @@
     </v-card>
 
     <!-- Details Dialog -->
-    <v-dialog v-model="detailsDialog" max-width="900px">
-      <v-card>
-        <v-card-title class="d-flex justify-space-between align-center">
-          <span>ລາຍລະອຽດລາຍການບັນທຶກ</span>
-          <v-btn icon variant="text" @click="detailsDialog = false">
-            <v-icon>mdi-close</v-icon>
-          </v-btn>
-        </v-card-title>
-        
-        <v-card-text v-if="selectedItem">
-          <v-row dense>
-            <v-col cols="12" md="6">
-              <v-list density="compact">
-                <v-list-item>
-                  <template v-slot:prepend>
-                    <v-icon size="small">mdi-identifier</v-icon>
-                  </template>
-                  <v-list-item-title>ເລກອ້າງອີງ</v-list-item-title>
-                  <v-list-item-subtitle>{{ selectedItem.Reference_No }}</v-list-item-subtitle>
-                </v-list-item>
-                
-                <v-list-item>
-                  <template v-slot:prepend>
-                    <v-icon size="small">mdi-cube-outline</v-icon>
-                  </template>
-                  <v-list-item-title>ໂມດູນ</v-list-item-title>
-                  <v-list-item-subtitle>{{ getModuleName(selectedItem.module_id) }}</v-list-item-subtitle>
-                </v-list-item>
-                
-                <v-list-item>
-                  <template v-slot:prepend>
-                    <v-icon size="small">mdi-currency-usd</v-icon>
-                  </template>
-                  <v-list-item-title>ຈຳນວນເງິນ</v-list-item-title>
-                  <v-list-item-subtitle>
-                    {{ formatNumber(selectedItem.Fcy_Amount) }} {{ selectedItem.Ccy_cd?.ccy_code || 'LAK' }}
-                    ({{ formatNumber(selectedItem.Lcy_Amount) }} LAK)
-                  </v-list-item-subtitle>
-                </v-list-item>
-                
-                <v-list-item>
-                  <template v-slot:prepend>
-                    <v-icon size="small">mdi-swap-horizontal</v-icon>
-                  </template>
-                  <v-list-item-title>ອັດຕາແລກປ່ຽນ</v-list-item-title>
-                  <v-list-item-subtitle>{{ formatNumber(selectedItem.Exch_rate, 6) }}</v-list-item-subtitle>
-                </v-list-item>
-              </v-list>
-            </v-col>
-            
-            <v-col cols="12" md="6">
-              <v-list density="compact">
-                <v-list-item>
-                  <template v-slot:prepend>
-                    <v-icon size="small">mdi-calendar</v-icon>
-                  </template>
-                  <v-list-item-title>ວັນທີມູນຄ່າ</v-list-item-title>
-                  <v-list-item-subtitle>{{ formatDate(selectedItem.Value_date) }}</v-list-item-subtitle>
-                </v-list-item>
-                
-                <v-list-item>
-                  <template v-slot:prepend>
-                    <v-icon size="small">mdi-code-tags</v-icon>
-                  </template>
-                  <v-list-item-title>ລະຫັດການເຄື່ອນໄຫວ</v-list-item-title>
-                  <v-list-item-subtitle>{{ selectedItem.Txn_code?.trn_code }} - {{ selectedItem.Txn_code?.trn_Desc_la }}</v-list-item-subtitle>
-                </v-list-item>
-                
-                <v-list-item>
-                  <template v-slot:prepend>
-                    <v-icon size="small">mdi-calendar-range</v-icon>
-                  </template>
-                  <v-list-item-title>ຮອບການເງິນ / ໄລຍະ</v-list-item-title>
-                  <v-list-item-subtitle>
-                    {{ selectedItem.fin_cycle?.fin_cycle || '-' }} / {{ selectedItem.Period_code?.period_code || '-' }}
-                  </v-list-item-subtitle>
-                </v-list-item>
-                
-                <v-list-item>
-                  <template v-slot:prepend>
-                    <v-icon size="small">mdi-shield-check</v-icon>
-                  </template>
-                  <v-list-item-title>ສະຖານະອະນຸມັດ</v-list-item-title>
-                  <v-list-item-subtitle>
-                    <v-chip
-                      :color="getStatusColor(selectedItem.Auth_Status)"
-                      size="small"
-                      variant="flat"
-                    >
-                      {{ getStatusText(selectedItem.Auth_Status) }}
-                    </v-chip>
-                  </v-list-item-subtitle>
-                </v-list-item>
-              </v-list>
-            </v-col>
-          </v-row>
-          
-          <v-divider class="my-4"></v-divider>
-          
-          <!-- Additional Text -->
-          <div v-if="selectedItem.Addl_text" class="mb-4">
-            <h4 class="text-subtitle-2 mb-2">
-              <v-icon size="small" class="mr-1">mdi-text</v-icon>
-              ຂໍ້ຄວາມເພີ່ມເຕີມ
-            </h4>
-            <v-card variant="outlined" class="pa-3">
-              <p class="text-body-2 mb-0">{{ selectedItem.Addl_text }}</p>
-            </v-card>
-          </div>
-          
-          <!-- Maker/Checker Info -->
-          <v-row dense>
-            <v-col cols="12" md="6">
-              <h4 class="text-subtitle-2 mb-2">
-                <v-icon size="small" class="mr-1">mdi-account-edit</v-icon>
+    <v-dialog v-model="detailsDialog" max-width="1000px" scrollable>
+  <v-card class="elevation-0 rounded-lg">
+    <!-- Header -->
+    <v-card-title class="px-6 py-4 bg-grey-lighten-5">
+      <div class="d-flex align-center justify-space-between w-100">
+        <div class="text-h6 font-weight-medium text-styles">ລາຍລະອຽດລາຍການບັນທຶກ</div>
+        <v-btn 
+          icon="mdi-close" 
+          variant="text" 
+          size="small"
+          @click="detailsDialog = false"
+        ></v-btn>
+      </div>
+    </v-card-title>
+    
+    <v-divider></v-divider>
+    
+    <v-card-text v-if="selectedItem" class="px-6 py-6">
+      <!-- Main Information Grid -->
+      <div class="mb-8">
+        <div class="text-subtitle-1 font-weight-medium mb-4 text-primary text-styles">ຂໍ້ມູນຫຼັກ</div>
+        <v-row dense>
+          <v-col cols="12" sm="6" md="4">
+            <div class="info-item">
+              <div class="info-label">ເລກອ້າງອີງ</div>
+              <div class="info-value">{{ selectedItem.Reference_No }}</div>
+            </div>
+          </v-col>
+          <v-col cols="12" sm="6" md="4">
+            <div class="info-item">
+              <div class="info-label">ໂມດູນ</div>
+              <div class="info-value">{{ getModuleName(selectedItem.module_id) }}</div>
+            </div>
+          </v-col>
+          <v-col cols="12" sm="6" md="4">
+            <div class="info-item">
+              <div class="info-label">ວັນທີມູນຄ່າ</div>
+              <div class="info-value">{{ formatDate(selectedItem.Value_date) }}</div>
+            </div>
+          </v-col>
+          <v-col cols="12" sm="6" md="4">
+            <div class="info-item">
+              <div class="info-label">ລະຫັດການເຄື່ອນໄຫວ</div>
+              <div class="info-value">{{ selectedItem.Txn_code?.trn_code }}</div>
+              <div class="info-sub">{{ selectedItem.Txn_code?.trn_Desc_la }}</div>
+            </div>
+          </v-col>
+          <v-col cols="12" sm="6" md="4">
+            <div class="info-item">
+              <div class="info-label">ຮອບການເງິນ / ໄລຍະ</div>
+              <div class="info-value">
+                {{ selectedItem.fin_cycle?.fin_cycle || '-' }} / {{ selectedItem.Period_code?.period_code || '-' }}
+              </div>
+            </div>
+          </v-col>
+          <v-col cols="12" sm="6" md="4">
+            <div class="info-item">
+              <div class="info-label">ສະຖານະ</div>
+              <v-chip
+                :color="getStatusColor(selectedItem.Auth_Status)"
+                size="small"
+                variant="flat"
+                class="rounded-pill"
+              >
+                {{ getStatusText(selectedItem.Auth_Status) }}
+              </v-chip>
+            </div>
+          </v-col>
+        </v-row>
+      </div>
+
+      <!-- Financial Information -->
+      <div class="mb-8">
+        <div class="text-subtitle-1 font-weight-medium mb-4 text-primary text-styles">ຂໍ້ມູນການເງິນ</div>
+        <v-row dense>
+          <v-col cols="12" sm="6" md="4">
+            <div class="amount-card">
+              <div class="amount-label">ຈຳນວນເງິນຕ່າງປະເທດ</div>
+              <div class="amount-value text-h6">
+                {{ formatNumber(selectedItem.Fcy_Amount) }} {{ selectedItem.Ccy_cd?.ccy_code || 'LAK' }}
+              </div>
+            </div>
+          </v-col>
+          <v-col cols="12" sm="6" md="4">
+            <div class="amount-card">
+              <div class="amount-label">ຈຳນວນເງິນໃນປະເທດ</div>
+              <div class="amount-value text-h6">
+                {{ formatNumber(selectedItem.Lcy_Amount) }} LAK
+              </div>
+            </div>
+          </v-col>
+          <v-col cols="12" sm="6" md="4">
+            <div class="amount-card">
+              <div class="amount-label">ອັດຕາແລກປ່ຽນ</div>
+              <div class="amount-value text-h6">
+                {{ formatNumber(selectedItem.Exch_rate, 6) }}
+              </div>
+            </div>
+          </v-col>
+        </v-row>
+      </div>
+
+      <!-- Additional Text -->
+      <div v-if="selectedItem.Addl_text" class="mb-8">
+        <div class="text-subtitle-1 font-weight-medium mb-3 text-primary text-styles">ຂໍ້ຄວາມເພີ່ມເຕີມ</div>
+        <div class="additional-text">
+          {{ selectedItem.Addl_text }}
+        </div>
+      </div>
+
+      <!-- User Information -->
+      <div class="mb-8">
+        <div class="text-subtitle-1 font-weight-medium mb-4 text-primary text-styles">ຂໍ້ມູນຜູ້ໃຊ້</div>
+        <v-row dense>
+          <v-col cols="12" md="6">
+            <div class="user-card">
+              <div class="user-title">
+                <v-icon size="16" class="mr-2">mdi-account-edit</v-icon>
                 ຜູ້ສ້າງ
-              </h4>
-              <v-card variant="outlined" class="pa-3">
-                <div class="text-body-2">
-                  <strong>ຊື່ຜູ້ໃຊ້:</strong> {{ selectedItem.Maker_Id?.Username || '-' }}<br>
-                  <strong>ວັນທີ:</strong> {{ formatDateTime(selectedItem.Maker_DT_Stamp) }}
-                </div>
-              </v-card>
-            </v-col>
-            
-            <v-col cols="12" md="6">
-              <h4 class="text-subtitle-2 mb-2">
-                <v-icon size="small" class="mr-1">mdi-account-check</v-icon>
+              </div>
+              <div class="user-name">{{ selectedItem.maker_name || selectedItem.Maker_Id }}</div>
+              <div class="user-date">{{ formatDateTime(selectedItem.Maker_DT_Stamp) }}</div>
+            </div>
+          </v-col>
+          <v-col cols="12" md="6">
+            <div class="user-card">
+              <div class="user-title">
+                <v-icon size="16" class="mr-2">mdi-account-check</v-icon>
                 ຜູ້ອະນຸມັດ
-              </h4>
-              <v-card variant="outlined" class="pa-3">
-                <div class="text-body-2">
-                  <strong>ຊື່ຜູ້ໃຊ້:</strong> {{ selectedItem.Checker_Id?.Username || '-' }}<br>
-                  <strong>ວັນທີ:</strong> {{ formatDateTime(selectedItem.Checker_DT_Stamp) }}
-                </div>
-              </v-card>
-            </v-col>
-          </v-row>
-          
-          <!-- Journal Entries -->
-          <div class="mt-4">
-            <h4 class="text-subtitle-2 mb-2">
-              <v-icon size="small" class="mr-1">mdi-table</v-icon>
-              ລາຍການບັນທຶກ ({{ journalEntries.length }} ລາຍການ)
-            </h4>
-            <v-simple-table density="compact">
-              <template v-slot:default>
-                <thead>
-                  <tr>
-                    <th>ລຳດັບ</th>
-                    <th>ບັນຊີ</th>
-                    <th>ຊື່ບັນຊີ</th>
-                    <th class="text-right">ເດບິດ</th>
-                    <th class="text-right">ເຄຣດິດ</th>
-                    <th>ໝາຍເຫດ</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="(entry, index) in journalEntries" :key="entry.JRNLentry_Id">
-                    <td>{{ index + 1 }}</td>
-                    <td>{{ entry.Account?.glsub_code }}</td>
-                    <td>{{ entry.Account?.glsub_Desc_la }}</td>
-                    <td class="text-right">
-                      <span v-if="entry.Dr_cr === 'D'">{{ formatNumber(entry.Fcy_Amount) }}</span>
-                    </td>
-                    <td class="text-right">
-                      <span v-if="entry.Dr_cr === 'C'">{{ formatNumber(entry.Fcy_Amount) }}</span>
-                    </td>
-                    <td>{{ entry.Addl_sub_text || '-' }}</td>
-                  </tr>
-                  <tr class="font-weight-bold">
-                    <td colspan="3" class="text-right">ລວມ:</td>
-                    <td class="text-right">{{ formatNumber(totalDebit) }}</td>
-                    <td class="text-right">{{ formatNumber(totalCredit) }}</td>
-                    <td>
-                      <v-chip 
-                        size="x-small" 
-                        :color="isBalanced ? 'success' : 'error'"
-                        variant="flat"
-                      >
-                        {{ isBalanced ? 'ສົມດຸນ' : 'ບໍ່ສົມດຸນ' }}
-                      </v-chip>
-                    </td>
-                  </tr>
-                </tbody>
-              </template>
-            </v-simple-table>
-          </div>
-        </v-card-text>
-        
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn
-            v-if="selectedItem?.Auth_Status === 'U' && canApprove"
-            color="success"
-            variant="flat"
-            @click="approveItem(selectedItem)"
-          >
-            <v-icon left>mdi-check</v-icon>
-            ອະນຸມັດ
-          </v-btn>
-          <v-btn
-            v-if="selectedItem?.Auth_Status === 'U' && canApprove"
-            color="error"
-            variant="flat"
-            @click="rejectItem(selectedItem)"
-          >
-            <v-icon left>mdi-close</v-icon>
-            ປະຕິເສດ
-          </v-btn>
-          <v-btn
-            variant="text"
-            @click="detailsDialog = false"
-          >
-            ປິດ
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+              </div>
+              <div class="user-name">{{ selectedItem.Checker_Id?.Username || '-' }}</div>
+              <div class="user-date">{{ formatDateTime(selectedItem.Checker_DT_Stamp) }}</div>
+            </div>
+          </v-col>
+        </v-row>
+      </div>
+
+      <!-- Journal Entries -->
+      <div>
+        <div class="text-subtitle-1 font-weight-medium mb-4 text-primary text-styles">
+          ລາຍການບັນທຶກ ({{ journalEntries.length }} ລາຍການ)
+        </div>
+        <v-table class="journal-table rounded-lg">
+          <thead>
+            <tr class="bg-grey-lighten-4">
+              <th class="text-center" width="60">ລຳດັບ</th>
+              <th width="120">ບັນຊີ</th>
+              <th>ຊື່ບັນຊີ</th>
+              <th class="text-right" width="120">ເດບິດ</th>
+              <th class="text-right" width="120">ເຄຣດິດ</th>
+              <th width="150">ໝາຍເຫດ</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(entry, index) in journalEntries" :key="entry.JRNLentry_Id" class="journal-row">
+              <td class="text-center text-body-2">{{ index + 1 }}</td>
+              <td class="text-body-2 font-weight-medium">{{ entry.Account?.glsub_code }}</td>
+              <td class="text-body-2">{{ entry.Account?.glsub_Desc_la }}</td>
+              <td class="text-right text-body-2">
+                <span v-if="entry.Dr_cr === 'D'" class="font-weight-medium">{{ formatNumber(entry.Fcy_Amount) }}</span>
+                <span v-else class="text-grey">-</span>
+              </td>
+              <td class="text-right text-body-2">
+                <span v-if="entry.Dr_cr === 'C'" class="font-weight-medium">{{ formatNumber(entry.Fcy_Amount) }}</span>
+                <span v-else class="text-grey">-</span>
+              </td>
+              <td class="text-body-2 text-grey-darken-1">{{ entry.Addl_sub_text || '-' }}</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr class="bg-grey-lighten-3">
+              <td colspan="3" class="text-right font-weight-bold">ລວມ:</td>
+              <td class="text-right font-weight-bold">{{ formatNumber(totalDebit) }}</td>
+              <td class="text-right font-weight-bold">{{ formatNumber(totalCredit) }}</td>
+              <td>
+                <v-chip 
+                  size="small" 
+                  :color="isBalanced ? 'success' : 'error'"
+                  variant="flat"
+                  class="rounded-pill"
+                >
+                  <v-icon size="14" class="mr-1">{{ isBalanced ? 'mdi-check' : 'mdi-alert' }}</v-icon>
+                  {{ isBalanced ? 'ສົມດຸນ' : 'ບໍ່ສົມດຸນ' }}
+                </v-chip>
+              </td>
+            </tr>
+          </tfoot>
+        </v-table>
+      </div>
+    </v-card-text>
+    
+    <!-- Actions -->
+    <v-divider></v-divider>
+    <v-card-actions class="px-6 py-4">
+      <v-spacer></v-spacer>
+      <v-btn
+        v-if="selectedItem?.Auth_Status === 'U' && canApprove"
+        color="success"
+        variant="flat"
+        class="rounded-pill px-6"
+        @click="approveItem(selectedItem)"
+      >
+        <v-icon start>mdi-check</v-icon>
+        ອະນຸມັດ
+      </v-btn>
+      <v-btn
+        v-if="selectedItem?.Auth_Status === 'U' && canApprove"
+        color="error"
+        variant="flat"
+        class="rounded-pill px-6 ml-2"
+        @click="rejectItem(selectedItem)"
+      >
+        <v-icon start>mdi-close</v-icon>
+        ປະຕິເສດ
+      </v-btn>
+      <v-btn
+        variant="outlined"
+        class="rounded-pill px-6 ml-2"
+        @click="detailsDialog = false"
+      >
+        ປິດ
+      </v-btn>
+    </v-card-actions>
+  </v-card>
+</v-dialog>
+
   </div>
 </template>
 
@@ -991,5 +998,133 @@ onMounted(() => {
   .summary-value {
     font-size: 1.5rem;
   }
+}
+.info-item {
+  margin-bottom: 16px;
+}
+
+.info-label {
+  font-size: 12px;
+  color: #666;
+  font-weight: 500;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+  line-height: 1.2;
+}
+
+.info-sub {
+  font-size: 12px;
+  color: #888;
+  margin-top: 2px;
+}
+
+.amount-card {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  padding: 16px;
+  border-radius: 12px;
+  text-align: center;
+  border: 1px solid #e0e0e0;
+}
+
+.amount-label {
+  font-size: 11px;
+  color: #666;
+  font-weight: 600;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.amount-value {
+  color: #1976d2;
+  font-weight: 700;
+}
+
+.additional-text {
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 16px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #333;
+}
+
+.user-card {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.user-title {
+  font-size: 12px;
+  color: #666;
+  font-weight: 600;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.user-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 4px;
+}
+
+.user-date {
+  font-size: 12px;
+  color: #888;
+}
+
+.journal-table {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.journal-table th {
+  font-size: 12px;
+  font-weight: 700;
+  color: #333;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e0e0e0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.journal-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.journal-row:hover {
+  background-color: #f8f9fa;
+}
+
+.journal-row:last-child td {
+  border-bottom: none;
+}
+
+.journal-table tfoot td {
+  padding: 12px 16px;
+  font-size: 13px;
+}
+
+/* Remove default table styling */
+.v-table > .v-table__wrapper > table > tbody > tr > td,
+.v-table > .v-table__wrapper > table > thead > tr > th,
+.v-table > .v-table__wrapper > table > tfoot > tr > td {
+  border-bottom: none !important;
 }
 </style>

@@ -111,7 +111,7 @@
     </v-card>
 
     <!-- Action Bar -->
-    <div class="action-bar mb-4">
+    <!-- <div class="action-bar mb-4">
       <div class="action-left">
         <v-chip
           v-if="selectedEntries.length > 0"
@@ -161,8 +161,48 @@
           ສາຍງານ
         </v-btn>
       </div>
+    </div> -->
+   <!-- Summary Cards -->
+    <div class="summary-cards mt-4 pb-4">
+      <v-row>
+        <v-col cols="12" md="3">
+          <v-card class="summary-card" elevation="1">
+            <v-card-text class="pa-3 text-center">
+              <v-icon color="primary" size="large" class="mb-2">mdi-format-list-numbered</v-icon>
+              <div class="summary-title">ລາຍການທັງໝົດ</div>
+              <div class="summary-value text-primary">{{ pagination.totalItems }}</div>
+            </v-card-text>
+          </v-card>
+        </v-col>
+        <v-col cols="12" md="3">
+          <v-card class="summary-card" elevation="1">
+            <v-card-text class="pa-3 text-center">
+              <v-icon color="success" size="large" class="mb-2">mdi-check-decagram</v-icon>
+              <div class="summary-title">ອະນຸມັດແລ້ວ</div>
+              <div class="summary-value text-success">{{ summaryStats.authorized }}</div>
+            </v-card-text>
+          </v-card>
+        </v-col>
+        <v-col cols="12" md="3">
+          <v-card class="summary-card" elevation="1">
+            <v-card-text class="pa-3 text-center">
+              <v-icon color="warning" size="large" class="mb-2">mdi-clock-outline</v-icon>
+              <div class="summary-title">ລໍຖ້າອະນຸມັດ</div>
+              <div class="summary-value text-warning">{{ summaryStats.pending }}</div>
+            </v-card-text>
+          </v-card>
+        </v-col>
+        <v-col cols="12" md="3">
+          <v-card class="summary-card" elevation="1">
+            <v-card-text class="pa-3 text-center">
+              <v-icon color="info" size="large" class="mb-2">mdi-calendar-today</v-icon>
+              <div class="summary-title">ມື້ນີ້</div>
+              <div class="summary-value text-info">{{ summaryStats.today }}</div>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
     </div>
-
     <!-- Main Data Table -->
     <v-card class="table-card" elevation="2">
       <v-card-text class="pa-0">
@@ -292,47 +332,7 @@
       </v-card-text>
     </v-card>
 
-    <!-- Summary Cards -->
-    <div class="summary-cards mt-4">
-      <v-row>
-        <v-col cols="12" md="3">
-          <v-card class="summary-card" elevation="1">
-            <v-card-text class="pa-3 text-center">
-              <v-icon color="primary" size="large" class="mb-2">mdi-format-list-numbered</v-icon>
-              <div class="summary-title">ລາຍການທັງໝົດ</div>
-              <div class="summary-value text-primary">{{ pagination.totalItems }}</div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-        <v-col cols="12" md="3">
-          <v-card class="summary-card" elevation="1">
-            <v-card-text class="pa-3 text-center">
-              <v-icon color="success" size="large" class="mb-2">mdi-check-decagram</v-icon>
-              <div class="summary-title">ອະນຸມັດແລ້ວ</div>
-              <div class="summary-value text-success">{{ summaryStats.authorized }}</div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-        <v-col cols="12" md="3">
-          <v-card class="summary-card" elevation="1">
-            <v-card-text class="pa-3 text-center">
-              <v-icon color="warning" size="large" class="mb-2">mdi-clock-outline</v-icon>
-              <div class="summary-title">ລໍຖ້າອະນຸມັດ</div>
-              <div class="summary-value text-warning">{{ summaryStats.pending }}</div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-        <v-col cols="12" md="3">
-          <v-card class="summary-card" elevation="1">
-            <v-card-text class="pa-3 text-center">
-              <v-icon color="info" size="large" class="mb-2">mdi-calendar-today</v-icon>
-              <div class="summary-title">ມື້ນີ້</div>
-              <div class="summary-value text-info">{{ summaryStats.today }}</div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-      </v-row>
-    </div>
+ 
 
     <!-- View Dialog -->
     <v-dialog v-model="dialogs.view" max-width="800px" scrollable>
