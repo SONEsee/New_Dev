@@ -1,5 +1,8 @@
 <template>
-  <v-app-bar :elevation="2" color="#616161" class="d-flex align-center">
+  <v-app-bar :elevation="2"  class="d-flex align-center" :style="{
+          background: 'linear-gradient(135deg, #c58c20 0%, #616161 100%)',
+          color: 'white'
+        }">
     <v-app-bar-nav-icon
       @click="drawer = !drawer"
       style="color: blue; background-color: blanchedalmond; flex-shrink: 0"

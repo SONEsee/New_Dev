@@ -1,440 +1,10 @@
-
-
-<script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import axios from '@/helpers/axios'
-import { RoleDetailModel } from '~/models'
-const menuStore = useMenuStore();
-
-const menuItems = computed(() => {
-  return menuStore.respone_main_menu_data || [];
-});
-import { useRouter } from 'vue-router'
-const mainmenu = useMenuStore();
-const menufilter = computed(()=>{
-  return mainmenu.respone_menu_data
-})
-// Define Role interface for the API response
-interface Role {
-    role_id:          string;
-    role_name_la:     string;
-    role_name_en:     string;
-    record_Status:    string;
-    Maker_DT_Stamp:   Date;
-    Checker_DT_Stamp: Date;
-    Auth_Status:      string;
-    Once_Auth:        string;
-    Maker_Id:         null;
-    Checker_Id:       null;
-}
-
-// Define Menu interface for the API response
-interface Menu {
-    menu_id:        string;
-    menu_name_la:   string;
-    menu_name_en:   string;
-    menu_url:       string;
-    menu_icon:      string;
-    menu_order:     number;
-    record_Status:  string;
-    // Add other menu properties as needed
-}
-
-const router = useRouter()
-const items = ref<RoleDetailModel.RoleDetailResponse[]>([])
-const originalItems = ref<RoleDetailModel.RoleDetailResponse[]>([])
-const selectedRoleId = ref<string | null>(null)
-const selectedMenuId = ref<string | null>(null)
-const roleOptions = ref<Array<{ text: string; value: string | null; subtitle?: string }>>([])
-const menuOptions = ref<Array<{ text: string; value: string | null; subtitle?: string }>>([])
-
-const loading = ref(false)
-const deleteLoading = ref(false)
-const roleOptionsLoading = ref(false)
-const menuOptionsLoading = ref(false)
-const deleteDialog = ref(false)
-const detailsDialog = ref(false)
-const showError = ref(false)
-const errorMessage = ref('')
-const itemToDelete = ref<RoleDetailModel.RoleDetailResponse | null>(null)
-const selectedItem = ref<RoleDetailModel.RoleDetailResponse | null>(null)
-
-const title = "ຈັດການສິດຜູ້ນໍາໃຊ້ລະບົບ";
-
-const headers = [
-  
-  {
-    title: "ເພີ່ມ",
-    key: "New_Detail",
-    align: "center" as const,
-    width: "80px",
-  },
-  {
-    title: "ລົບ",
-    key: "Del_Detail",
-    align: "center" as const,
-    width: "80px",
-  },
-  {
-    title: "ແກ້ໄຂ",
-    key: "Edit_Detail",
-    align: "center" as const,
-    width: "80px",
-  },
-  {
-    title: "ກວດສອບ",
-    key: "View_Detail",
-    align: "center" as const,
-    width: "80px",
-  },
-  {
-    title: "ອະນຸມັດ",
-    key: "Auth_Detail",
-    align: "center" as const,
-    width: "80px",
-  },{
-    title: "ເມນູຍ່ອຍ",
-    key: "sub_menu_id",
-    align: "start" as const,
-    width: "200px",
-  },{
-    title: "ບົດບາດ",
-    key: "role_id",
-    align: "start" as const,
-    width: "180px",
-  },
-  
-  {
-    title: "ເມນູຫຼັກ",
-    key: "fuu_details",
-    align: "center" as const,
-    width: "200px",
-  },
-  {
-    title: "ການປະຕິບັດ",
-    key: "actions",
-    sortable: false,
-    align: "center" as const,
-    width: "150px",
-  },
-];
-
-// Computed property for filtered items
-const filteredItems = computed(() => {
-  let filtered = [...originalItems.value];
-  
-  // Filter by role if selected
-  if (selectedRoleId.value) {
-    filtered = filtered.filter(item => item.role_id === selectedRoleId.value);
-  }
-  
-  // Filter by menu if selected  
-  if (selectedMenuId.value) {
-    filtered = filtered.filter(item => 
-      String(item.fuu_details?.menu?.menu_id) === String(selectedMenuId.value)
-    );
-  }
-  
-  return filtered;
-});
-
-// Fetch menu options
-const fetchMenuOptions = async () => {
-  menuOptionsLoading.value = true;
-  try {
-    const res = await axios.get<Menu[]>("api/menus/", {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    });
-
-    if (res.status === 200) {
-      // Remove duplicates using Map to ensure unique menu_id
-      const uniqueMenusMap = new Map<string, Menu>();
-      
-      res.data.forEach(menu => {
-        const menuId = String(menu.menu_id);
-        if (menuId && !uniqueMenusMap.has(menuId)) {
-          uniqueMenusMap.set(menuId, menu);
-        }
-      });
-
-      // Create dropdown options from unique menus
-      const options = Array.from(uniqueMenusMap.values()).map((menu) => ({
-        text: `${menu.menu_id} - ${menu.menu_name_la}`,
-        value: String(menu.menu_id),
-        subtitle: `ລະຫັດ: ${menu.menu_id}
-        `
-      }));
-      
-      // Sort by menu_id
-      options.sort((a, b) => a.value.localeCompare(b.value));
-      
-      // Add "All" option at the beginning
-      menuOptions.value = [
-        {
-          text: "ທັງໝົດ",
-          value: null,
-          subtitle: "ສະແດງທຸກເມນູ",
-        },
-        ...options
-      ];
-    }
-  } catch (error: any) {
-    console.error("Error fetching menu options:", error);
-    // Generate menu options from existing items if API fails
-    generateMenuOptionsFromItems();
-  } finally {
-    menuOptionsLoading.value = false;
-  }
-};
-
-const fetchRoleOptions = async () => {
-  roleOptionsLoading.value = true;
-  try {
-    const res = await axios.get<Role[]>("api/roles/", {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    });
-
-    if (res.status === 200) {
-      // Remove duplicates using Map to ensure unique role_id (as string)
-      const uniqueRolesMap = new Map<string, Role>()
-      
-      res.data.forEach(role => {
-        const roleId = String(role.role_id)
-        if (roleId && !uniqueRolesMap.has(roleId)) {
-          uniqueRolesMap.set(roleId, role)
-        }
-      });
-
-      // Create dropdown options from unique roles
-      const options = Array.from(uniqueRolesMap.values()).map((role) => ({
-        text: `${role.role_id} - ${role.role_name_la}`,
-        value: String(role.role_id),
-        subtitle: `ລະຫັດ: ${role.role_id}`
-      }))
-      
-      // Sort by role_id
-      options.sort((a, b) => a.value.localeCompare(b.value))
-      
-     
-      roleOptions.value = [
-        {
-          text: "ທັງໝົດ",
-          value: null,
-          subtitle: "ສະແດງທຸກບົດບາດ",
-        },
-        ...options
-      ]
-    }
-  } catch (error: any) {
-    console.error("Error fetching role options:", error);
-    generateRoleOptionsFromItems()
-  } finally {
-    roleOptionsLoading.value = false;
-  }
-};
-
-const goToCreateRoleDetail = () => {
-  if (selectedRoleId.value) {
-    router.push({ path: '/roledetail/create', query: { role_id: selectedRoleId.value } })
-  } else {
-    router.push({ path: '/roledetail/create' })
-  }
-}
-
-const generateMenuOptionsFromItems = () => {
-  const menuMap = new Map<string, { menu_id: string, menu_name_la: string }>();
-  
-  originalItems.value.forEach(item => {
-    const menuId = item.fuu_details?.menu?.menu_id;
-    const menuName = item.fuu_details?.menu?.menu_name_la;
-    if (menuId && !menuMap.has(String(menuId))) {
-      menuMap.set(String(menuId), {
-        menu_id: String(menuId),
-        menu_name_la: menuName || `ເມນູ ${menuId}`,
-      });
-    }
-  });
-
-  const options = Array.from(menuMap.values()).map((menu) => ({
-    text: menu.menu_name_la
-      ? `${menu.menu_id} - ${menu.menu_name_la}`
-      : `ເມນູ ${menu.menu_id}`,
-    value: menu.menu_id,
-    subtitle: menu.menu_name_la ? `ລະຫັດ: ${menu.menu_id}` : undefined
-  }));
-  
-  options.sort((a, b) => a.value.localeCompare(b.value));
-  
-  menuOptions.value = [
-    {
-      text: "ທັງໝົດ",
-      value: null,
-      subtitle: "ສະແດງທຸກເມນູ",
-    },
-    ...options
-  ];
-};
-
-const generateRoleOptionsFromItems = () => {
-  const roleMap = new Map<string, { role_id: string, role_name_la: string }>()
-  
-  originalItems.value.forEach(item => {
-    const roleId = String(item.role_id)
-    const roleName = item.role_detail?.role_name_la
-    if (roleId && !roleMap.has(roleId)) {
-      roleMap.set(roleId, {
-        role_id: roleId,
-        role_name_la: roleName,
-      });
-    }
-  });
-
-  const options = Array.from(roleMap.values()).map((role) => ({
-    text: role.role_name_la
-      ? `${role.role_id} - ${role.role_name_la}`
-      : `ບົດບາດ ${role.role_id}`,
-    value: role.role_id,
-    subtitle: role.role_name_la ? `ລະຫັດ: ${role.role_id}` : undefined
-  }))
-  
-  options.sort((a, b) => a.value.localeCompare(b.value))
-  
-  roleOptions.value = [
-    {
-      text: "ທັງໝົດ",
-      value: null,
-      subtitle: "ສະແດງທຸກບົດບາດ",
-    },
-    ...options
-  ]
-}
-
-
-// Fetch main role details data
-const fetchData = async () => {
-  loading.value = true;
-  try {
-    const res = await axios.get<RoleDetailModel.RoleDetailResponse[]>(
-      "api/role-details",
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      }
-    );
-    if (res.status === 200) {
-      originalItems.value = res.data;
-      items.value = res.data;
-    }
-  } catch (error: any) {
-    console.error("Error fetching data:", error);
-    showError.value = true;
-    errorMessage.value =
-      error.response?.data?.message || "ເກີດຂໍ້ຜິດພາດໃນການໂຫຼດຂໍ້ມູນ";
-  } finally {
-    loading.value = false;
-  }
-};
-
-// Filter by role
-const filterByRole = () => {
-  // The filtering logic is handled by the computed property filteredItems
-  // No need for additional API calls since we have all data in originalItems
-};
-
-// Filter by menu
-const filterByMenu = () => {
-  // The filtering logic is handled by the computed property filteredItems
-  // No need for additional API calls since we have all data in originalItems
-};
-
-// Navigation
-const goPath = (path: string) => {
-  router.push(path);
-};
-
-// Delete confirmation
-const confirmDelete = (item: RoleDetailModel.RoleDetailResponse) => {
-  itemToDelete.value = item;
-  deleteDialog.value = true;
-};
-
-// View details
-const viewDetails = (item: RoleDetailModel.RoleDetailResponse) => {
-  selectedItem.value = item;
-  detailsDialog.value = true;
-};
-
-// Delete item
-const deleteItem = async () => {
-  if (itemToDelete.value) {
-    deleteLoading.value = true;
-    try {
-      // Use both role_id and sub_menu_id as query params
-      const roleId = itemToDelete.value.role_id
-      const subMenuId = itemToDelete.value.sub_menu_id || itemToDelete.value.fuu_details?.sub_menu?.sub_menu_id
-      await axios.delete(`api/roledetail-delete/?role_id=${roleId}&sub_menu_id=${subMenuId}`, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      })
-
-      // Remove item from both original and filtered arrays
-      const index = originalItems.value.findIndex(item =>
-        item.role_id === roleId &&
-        (item.sub_menu_id === subMenuId ||
-          item.fuu_details?.sub_menu?.sub_menu_id === subMenuId)
-      )
-      if (index > -1) {
-        originalItems.value.splice(index, 1);
-      }
-
-      const itemsIndex = items.value.findIndex(item =>
-        item.role_id === roleId &&
-        (item.sub_menu_id === subMenuId ||
-          item.fuu_details?.sub_menu?.sub_menu_id === subMenuId)
-      )
-      if (itemsIndex > -1) {
-        items.value.splice(itemsIndex, 1);
-      }
-
-      deleteDialog.value = false
-      itemToDelete.value = null
-    } catch (error: any) {
-      console.error('Error deleting item:', error)
-      showError.value = true
-      errorMessage.value = error.response?.data?.detail || 'ເກີດຂໍ້ຜິດພາດໃນການລົບ'
-    } finally {
-      deleteLoading.value = false;
-    }
-  }
-};
-
-// Initialize data on component mount
-onMounted(async () => {
-  mainmenu.GetMainMenu();
-  // Fetch role details data first, then fetch options
-  await fetchData();
-  // Fetch both role and menu options
-  await Promise.all([fetchRoleOptions(), fetchMenuOptions()]);
-});
-</script><template>
+<template>
   <v-container fluid class="pa-6">
     <v-card elevation="0" class="rounded-lg">
       <v-card-title class="pa-6 pb-4">
         <GlobalTextTitleLine :title="title" />
       </v-card-title>
-<!-- <pre>
-  {{ menuItems }}
-</pre> -->
+
       <!-- Filter and Add Button Section -->
       <v-card-text class="pa-6 pt-0">
         <!-- Single Filter Row with All Controls -->
@@ -452,11 +22,6 @@ onMounted(async () => {
               ເພີ່ມສິດຜູ້ນໍາໃຊ້
             </v-btn>
           </v-col>
-<<<<<<< HEAD
-          <v-spacer />
-         
-           <v-col cols="12" md="3">
-=======
           
           <!-- Search Input -->
           <v-col cols="12" sm="6" md="2">
@@ -491,38 +56,17 @@ onMounted(async () => {
           
           <!-- Menu Filter -->
           <v-col cols="12" sm="6" md="2">
->>>>>>> c10df37f12bad7c02232d730770c32ef4724379f
             <v-select
               v-model="selectedMenuId"
-              :items="menuItems"
-              item-title="menu_name_la"
-              item-value="menu_id"
+              :items="menuOptions"
+              item-title="text"
+              item-value="value"
               label="ກັ່ນຕອງຕາມເມນູຫຼັກ"
               variant="outlined"
               density="compact"
               prepend-inner-icon="mdi-view-dashboard"
               clearable
               :loading="menuOptionsLoading"
-<<<<<<< HEAD
-              @update:model-value="filterByMenu"
-              class="justify-end"
-            >
-             <template v-slot:selection="{ item }">
-            {{ item.raw.menu_name_la }}({{ item.raw.module_Id }})
-          </template>
-
-          <template v-slot:item="{ props, item }">
-            <v-list-item
-              v-bind="props"
-              :title="`${item.raw.menu_name_la}(${item.raw.menu_id})`"
-             
-            />
-          </template>
-            </v-select>
-          </v-col>
-          
-          <v-col cols="12" md="3">
-=======
               :disabled="!selectedModuleId"
               @update:model-value="applyFilters"
             />
@@ -530,7 +74,6 @@ onMounted(async () => {
           
           <!-- Role Filter -->
           <v-col cols="12" sm="6" md="2">
->>>>>>> c10df37f12bad7c02232d730770c32ef4724379f
             <v-select
               v-model="selectedRoleId"
               :items="roleOptions"
@@ -575,7 +118,7 @@ onMounted(async () => {
         >
           <template #item.role_id="{ item }">
             <div>
-              <div class="">
+              <div class="font-weight-bold">
                 {{ item.role_detail?.role_name_la || "-" }}
               </div>
               <div class="text-caption text-grey text-styles">
@@ -586,13 +129,8 @@ onMounted(async () => {
 
           <template #item.sub_menu_id="{ item }">
             <div>
-<<<<<<< HEAD
-              <div class="">
-                {{ item.fuu_details?.sub_menu?.sub_menu_name_la || item.fuu_details?.sub_menu_name_la || '-' }}
-=======
               <div class="font-weight-bold">
                 {{ item.fuu_details?.sub_menu_name_la || '-' }}
->>>>>>> c10df37f12bad7c02232d730770c32ef4724379f
               </div>
               <div class="text-caption text-grey text-styles">
                 {{ item.sub_menu_id || "-" }}
@@ -945,9 +483,6 @@ onMounted(async () => {
       {{ errorMessage }}
     </v-snackbar>
   </v-container>
-<<<<<<< HEAD
-</template>
-=======
 </template>
 
 <script setup lang="ts">
@@ -1554,4 +1089,3 @@ onMounted(async () => {
   font-size: 11px;
 }
 </style>
->>>>>>> c10df37f12bad7c02232d730770c32ef4724379f
