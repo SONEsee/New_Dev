@@ -113,6 +113,8 @@ const {
   canDelete,
   canView,
   canAdd,
+  canRecordStatus,
+  canAuthStatus,
   canAuthorize,
   hasPermission,
   initializeRole,
@@ -245,132 +247,131 @@ const onDeleteType = async (sub_menu_id: string) => {
 };
 
 const title = "ຂໍ້ມູນເມນູຍ່ອຍ";
-const header = [
-  {
-    title: "ລະຫັດ",
-    value: "sub_menu_id",
-    key: "sub_menu_id",
-    align: "start",
-    sortable: true,
-    filterable: true,
-    groupable: false,
-    divider: false,
-    class: "text-primary font-weight-bold",
-    cellClass: "pa-2",
-  },
-
-  {
-    title: "ຊື່ເມນູພາສາລາວ",
-    value: "sub_menu_name_la",
-    align: "start",
-    sortable: true,
-    filterable: true,
-
-    class: "text-h6",
-    cellClass: "text-wrap",
-  },
-
-  {
-    title: "ຊື່ເມນູພາສາອັງກິດ",
-    value: "sub_menu_name_en",
-    align: "start",
-    sortable: true,
-    filterable: true,
-
-    class: "text-subtitle-1",
-  },
-
-  {
-    title: "ລຳດັບ",
-    value: "sub_menu_order",
-    align: "center",
-    sortable: true,
-    filterable: false,
-
-    class: "text-center",
-    cellClass: "text-center font-weight-bold",
-  },
-
-  {
-    title: "ເມນູຫຼັກ",
-    value: "menu_id",
-    align: "center",
-    sortable: true,
-    filterable: true,
-
-    sort: (a, b) => {
-      return a.menu_id.localeCompare(b.menu_id);
+const header = computed(() => {
+  return [
+    {
+      title: "ລະຫັດ",
+      value: "sub_menu_id",
+      key: "sub_menu_id",
+      align: "start",
+      sortable: true,
+      filterable: true,
+      groupable: false,
+      divider: false,
+      class: "text-primary font-weight-bold",
+      cellClass: "pa-2",
     },
-  },
-
-  {
-    title: "ມື້ສ້າງຂໍ້ມູນ",
-    value: "created_date",
-    align: "center",
-    sortable: true,
-    filterable: false,
-
-    class: "text-center",
-  },
-  {
-    title: "ສະຖານະ",
-    value: "Record_Status",
-    align: "center",
-    sortable: true,
-    filterable: true,
-    width: "5px",
-    class: "text-center",
-    cellClass: "text-center",
-
-    filter: (value, query, item) => {
-      if (!query) return true;
-      const statusText = value === "Y" ? "ເປີດໃຊ້ງານ" : "ປິດໃຊ້ງານ";
-      return statusText.includes(query);
+    {
+      title: "ຊື່ເມນູພາສາລາວ",
+      value: "sub_menu_name_la",
+      align: "start",
+      sortable: true,
+      filterable: true,
+      class: "text-h6",
+      cellClass: "text-wrap",
     },
-  },
-  {
-    title: "ເບິ່ງ",
-    value: "weiw",
-    align: "center",
-    sortable: false,
-    filterable: false,
-
-    class: "text-center",
-    cellClass: "text-center",
-    width: "5px",
-  },
-  {
-    title: "ແກ້ໄຂ",
-    value: "edit",
-    align: "center",
-    sortable: false,
-    filterable: false,
-
-    class: "text-center",
-    cellClass: "text-center",
-    width: "5px",
-  },
-  {
-    title: "ລົບ",
-    value: "delete",
-    align: "center",
-    sortable: false,
-    filterable: false,
-
-    class: "text-center",
-    cellClass: "text-center",
-    width: "5px",
-  },
-  {
-    title: "ອະນຸມັດ",
-    value: "confirm",
-    align: "center",
-
-    class: "text-center",
-    cellClass: "text-center",
-    width: "5px",
-  },
-];
+    {
+      title: "ຊື່ເມນູພາສາອັງກິດ",
+      value: "sub_menu_name_en",
+      align: "start",
+      sortable: true,
+      filterable: true,
+      class: "text-subtitle-1",
+    },
+    {
+      title: "ລຳດັບ",
+      value: "sub_menu_order",
+      align: "center",
+      sortable: true,
+      filterable: false,
+      class: "text-center",
+      cellClass: "text-center font-weight-bold",
+    },
+    {
+      title: "ເມນູຫຼັກ",
+      value: "menu_id",
+      align: "center",
+      sortable: true,
+      filterable: true,
+      sort: (a, b) => {
+        return a.menu_id.localeCompare(b.menu_id);
+      },
+    },
+    {
+      title: "ມື້ສ້າງຂໍ້ມູນ",
+      value: "created_date",
+      align: "center",
+      sortable: true,
+      filterable: false,
+      class: "text-center",
+    },
+    
+    ...(canRecordStatus.value? [{
+      title: "ສະຖານະ",
+      value: "Record_Status",
+      align: "center",
+      sortable: true,
+      filterable: true,
+      width: "10px", 
+      class: "text-center",
+      cellClass: "text-center",
+      filter: (value, query, item) => {
+        if (!query) return true;
+        const statusText = value === "Y" ? "ເປີດໃຊ້ງານ" : "ປິດໃຊ້ງານ";
+        return statusText.includes(query);
+      },
+    },]:[]),
+     ...(canView.value
+  ? [
+      {
+        title: "ເບິ່ງ",
+        value: "weiw", 
+        align: "center",
+        sortable: false,
+        filterable: false,
+        class: "text-center",
+        cellClass: "text-center",
+        width: "80px", 
+      },
+    ]
+  : []),
+    {
+      title: "ແກ້ໄຂ",
+      value: "edit",
+      align: "center",
+      sortable: false,
+      filterable: false,
+      class: "text-center",
+      cellClass: "text-center",
+      width: "50px", 
+    },
+    {
+      title: "ລົບ",
+      value: "delete",
+      align: "center",
+      sortable: false,
+      filterable: false,
+      class: "text-center",
+      cellClass: "text-center",
+      width: "10px", 
+    },
+    ...(canAuthorize.value
+      ? [
+          {
+            title: "ອະນຸມັດ",
+            value: "confirm",
+            align: "center",
+            sortable: false,
+            filterable: false,
+            class: "text-center",
+            cellClass: "text-center",
+            width: "10px", 
+          },
+        ]
+      : []),
+   
+  ];
+});
 
 const goToCreateSubMenu = () => {
   if (selecteMainMenu.value && selecteMainMenu.value.menu_id) {
@@ -488,6 +489,7 @@ defineExpose({
         {{ dayjs(item.created_date).format("DD/MM/YYYY") }}
       </template>
       <template v-slot:item.Record_Status="{ item }">
+        <div >
         <v-btn
           v-if="item.Record_Status === 'O'"
           flat
@@ -501,14 +503,8 @@ defineExpose({
           @click="updatRecodeStatus(item.sub_menu_id)"
         >
           <v-icon color="error">mdi-toggle-switch-off-outline</v-icon>
-        </v-btn>
-        <!-- <v-chip
-          :color="item.Record_Status === 'O' ? 'green' : 'red'"
-          size="small"
-          label
-        >
-          {{ item.Record_Status === "O" ? "ໃຊ້ງານ" : "ບໍ່ໃຊ້ງານ" }}
-        </v-chip> -->
+        </v-btn></div>
+        
       </template>
       <template v-slot:item.no="{ item, index }">
         {{ index + 1 }}
@@ -546,7 +542,7 @@ defineExpose({
 
       <template v-slot:item.weiw="{ item }">
         <v-btn
-          v-if="canView"
+          
           small
           flat
           class="text-primary"
@@ -556,7 +552,7 @@ defineExpose({
       </template>
       <template v-slot:item.edit="{ item }">
         <v-btn
-          v-if="canEdit"
+          
           small
           flat
           class="text-info"
@@ -566,7 +562,7 @@ defineExpose({
       </template>
       <template v-slot:item.delete="{ item }">
         <v-btn
-          v-if="canDelete"
+          
           small
           flat
           class="text-error"

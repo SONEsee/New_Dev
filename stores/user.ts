@@ -51,6 +51,98 @@ export const UserStore = defineStore("user", {
     };
   },
   actions: {
+     async updateRecordStatus(id: string) {
+      try {
+        const notification = await CallSwal({
+          title: "ຄຳເຕືອນ",
+          text: "ທ່ານຕ້ອງການເປີດໃຊ້ງານສະຖານະ ຫຼື ບໍ່?",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonText: "ເປີດ",
+          cancelButtonText: "ບໍ່ເປີດ",
+        });if(notification.isConfirmed){
+            const res = await axios.post(`api/sub-menus/${id}/set_open/`, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });if(res.status ===200){
+          CallSwal({
+            title: "ສຳເລັດ",
+            text: "ສຳເລັດການເປີດໃຊ້ງານສະຖານະ.",
+            icon: "success",
+            showConfirmButton: false,
+          });setTimeout(() => {
+            
+          }, 1500);
+          
+        }
+        
+        }
+      
+      } catch (error: any) {
+    
+    if (error.response?.status === 406) {
+      CallSwal({
+        title: "ບໍ່ສຳເລັດ",
+        text: "ບໍ່ສາມາດເປີດໃຊ້ງານ ເນື່ອງຈາກ ບໍ່ໄດ້ການອະນຸມັດ.",
+        icon: "error",
+      });
+    } else {
+      CallSwal({
+        title: "ບໍ່ສຳເລັດ",
+        text: `ບໍ່ສາມາດແກ້ໄຂເມນູ: ${error.message || error}`,
+        icon: "error",
+      });
+    }
+  }
+    },
+    async updateRecordStatusOff(id: string) {
+      try {
+        const notification = await CallSwal({
+          title: "ຄຳເຕືອນ",
+          text: "ທ່ານຕ້ອງການເປີດໃຊ້ງານສະຖານະ ຫຼື ບໍ່?",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonText: "ເປີດ",
+          cancelButtonText: "ບໍ່ເປີດ",
+        });if(notification.isConfirmed){
+            const res = await axios.post(`api/main-menus/${id}/set_open/`, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });if(res.status ===200){
+          CallSwal({
+            title: "ສຳເລັດ",
+            text: "ສຳເລັດການເປີດໃຊ້ງານສະຖານະ.",
+            icon: "success",
+            showConfirmButton: false,
+          });setTimeout(() => {
+            
+          }, 1500);
+          
+        }
+        
+        }
+      
+      } catch (error: any) {
+    
+    if (error.response?.status === 406) {
+      CallSwal({
+        title: "ບໍ່ສຳເລັດ",
+        text: "ບໍ່ສາມາດເປີດໃຊ້ງານ ເນື່ອງຈາກ ບໍ່ໄດ້ການອະນຸມັດ.",
+        icon: "error",
+      });
+    } else {
+      CallSwal({
+        title: "ບໍ່ສຳເລັດ",
+        text: `ບໍ່ສາມາດແກ້ໄຂເມນູ: ${error.message || error}`,
+        icon: "error",
+      });
+    }
+  }
+    },
     async GetUser() {
       this.loading = true;
       this.reqest_get_user.loading = true;

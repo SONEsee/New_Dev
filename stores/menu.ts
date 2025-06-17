@@ -125,7 +125,53 @@ export const useMenuStore = defineStore("menu", {
         }
       
       } catch (error: any) {
-    // Handle different error cases
+    
+    if (error.response?.status === 406) {
+      CallSwal({
+        title: "ບໍ່ສຳເລັດ",
+        text: "ບໍ່ສາມາດເປີດໃຊ້ງານ ເນື່ອງຈາກ ບໍ່ໄດ້ການອະນຸມັດ.",
+        icon: "error",
+      });
+    } else {
+      CallSwal({
+        title: "ບໍ່ສຳເລັດ",
+        text: `ບໍ່ສາມາດແກ້ໄຂເມນູ: ${error.message || error}`,
+        icon: "error",
+      });
+    }
+  }
+    },
+    async updateRecordStatusmain(id: string) {
+      try {
+        const notification = await CallSwal({
+          title: "ຄຳເຕືອນ",
+          text: "ທ່ານຕ້ອງການເປີດໃຊ້ງານສະຖານະ ຫຼື ບໍ່?",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonText: "ເປີດ",
+          cancelButtonText: "ບໍ່ເປີດ",
+        });if(notification.isConfirmed){
+            const res = await axios.post(`api/main-menus/${id}/set_close/`, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });if(res.status ===200){
+          CallSwal({
+            title: "ສຳເລັດ",
+            text: "ສຳເລັດການເປີດໃຊ້ງານສະຖານະ.",
+            icon: "success",
+            showConfirmButton: false,
+          });setTimeout(() => {
+            
+          }, 1500);
+          
+        }
+        
+        }
+      
+      } catch (error: any) {
+    
     if (error.response?.status === 406) {
       CallSwal({
         title: "ບໍ່ສຳເລັດ",
@@ -153,6 +199,39 @@ export const useMenuStore = defineStore("menu", {
           cancelButtonText: "ບໍ່ປີດ",
         });if(notification.isConfirmed){
             const res = await axios.post(`api/sub-menus/${id}/set_close/`, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });if(res.status ===200){
+          CallSwal({
+            title: "ສຳເລັດ",
+            text: "ສຳເລັດການເປີດໃຊ້ງານສະຖານະ.",
+            icon: "success",
+            showConfirmButton: false,
+          });
+        }
+        }
+      
+      } catch (error) {
+        CallSwal({
+          title: "ບໍ່ສຳເລັດ",
+          text: "ບໍ່ສາມາດແກ້ໄຂເມນູ " + error,
+          icon: "error",
+        });
+      }
+    },
+    async updateRecordStatusOffmain(id: string) {
+      try {
+        const notification = await CallSwal({
+          title: "ຄຳເຕືອນ",
+          text: "ທ່ານຕ້ອງການປີດໃຊ້ງານສະຖານະ ຫຼື ບໍ່?",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonText: "ປີດ",
+          cancelButtonText: "ບໍ່ປີດ",
+        });if(notification.isConfirmed){
+            const res = await axios.post(`api/main-menus/${id}/set_close/`, {
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${localStorage.getItem("token")}`,

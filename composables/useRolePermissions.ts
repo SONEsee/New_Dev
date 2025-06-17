@@ -9,7 +9,7 @@ export interface RolePermissions {
   Auth_Detail: number;
   New_Detail?: number;
   Auth_Status?: string;
-  Record_Status: string;
+  Record_Status?: string;
   [key: string]: any;
 }
 
