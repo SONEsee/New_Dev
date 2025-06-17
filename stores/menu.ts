@@ -105,7 +105,7 @@ export const useMenuStore = defineStore("menu", {
           confirmButtonText: "ເປີດ",
           cancelButtonText: "ບໍ່ເປີດ",
         });if(notification.isConfirmed){
-            const res = await axios.post(`api/users/${id}/authorize/`, {
+            const res = await axios.post(`api/sub-menus/${id}/set_open/`, {
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -115,18 +115,33 @@ export const useMenuStore = defineStore("menu", {
             title: "ສຳເລັດ",
             text: "ສຳເລັດການເປີດໃຊ້ງານສະຖານະ.",
             icon: "success",
-          })
+            showConfirmButton: false,
+          });setTimeout(() => {
+            
+          }, 1500);
+          
         }
+        
         }
       
-      } catch (error) {
-        CallSwal({
-          title: "ບໍ່ສຳເລັດ",
-          text: "ບໍ່ສາມາດແກ້ໄຂເມນູ " + error,
-          icon: "error",
-        });
-      }
+      } catch (error: any) {
+    // Handle different error cases
+    if (error.response?.status === 406) {
+      CallSwal({
+        title: "ບໍ່ສຳເລັດ",
+        text: "ບໍ່ສາມາດເປີດໃຊ້ງານ ເນື່ອງຈາກ ບໍ່ໄດ້ການອະນຸມັດ.",
+        icon: "error",
+      });
+    } else {
+      CallSwal({
+        title: "ບໍ່ສຳເລັດ",
+        text: `ບໍ່ສາມາດແກ້ໄຂເມນູ: ${error.message || error}`,
+        icon: "error",
+      });
+    }
+  }
     },
+
     async updateAdproveStatusof(id: string) {
       try {
         const notification = await CallSwal({
@@ -137,7 +152,7 @@ export const useMenuStore = defineStore("menu", {
           confirmButtonText: "ປີດ",
           cancelButtonText: "ບໍ່ປີດ",
         });if(notification.isConfirmed){
-            const res = await axios.post(`api/users/${id}/authorize/`, {
+            const res = await axios.post(`api/sub-menus/${id}/set_close/`, {
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -147,7 +162,8 @@ export const useMenuStore = defineStore("menu", {
             title: "ສຳເລັດ",
             text: "ສຳເລັດການເປີດໃຊ້ງານສະຖານະ.",
             icon: "success",
-          })
+            showConfirmButton: false,
+          });
         }
         }
       

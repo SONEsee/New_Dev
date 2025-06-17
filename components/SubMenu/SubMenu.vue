@@ -39,6 +39,14 @@ const updateAdproveStatus = async (id: string) => {
           showConfirmButton: false,
         });
       }
+      if (res.status === 406) {
+        await CallSwal({
+          icon: "warning",
+          title: "ບໍ່ສາມາດອະນຸມັດໄດ້",
+          text: "ບໍ່ສາມາດເປີດໄດ້ ເນື່ອງຈາກ ຍັງບໍ່ທັນອະນຸມັດ",
+        });
+      } else {
+      }
     }
   } catch (error) {
     console.error("Error updating approve status:", error);
@@ -55,39 +63,38 @@ const updateAdproveStatus = async (id: string) => {
 const unupdateAdproveStatus = async (id: string) => {
   try {
     isUpdatingStatus.value = true;
-const notification = await CallSwal({
-  icon: "warning",
-  title: "ຄຳເຕືອນ",
-  text: `ທ່ານກຳລັງຍົກເລີກອະນຸມັດເມນູ ທ່ານແນ່ໃຈແລ້ວບໍ?`,
-  showCancelButton: true,
-  confirmButtonText: "ຕົກລົງ",
-  cancelButtonText: "ຍົກເລີກ",
+    const notification = await CallSwal({
+      icon: "warning",
+      title: "ຄຳເຕືອນ",
+      text: `ທ່ານກຳລັງຍົກເລີກອະນຸມັດເມນູ ທ່ານແນ່ໃຈແລ້ວບໍ?`,
+      showCancelButton: true,
+      confirmButtonText: "ຕົກລົງ",
+      cancelButtonText: "ຍົກເລີກ",
+    });
+    if (notification.isConfirmed) {
+      const res = await axios.post(
+        `api/sub-menus/${id}/unauthorize/`,
 
-});if(notification.isConfirmed){
-   const res = await axios.post(
-      `api/sub-menus/${id}/unauthorize/`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
 
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
+      if (res.status === 200) {
+        await subMenuStore.GetMenuSubMenu();
+
+        await CallSwal({
+          icon: "success",
+          title: "ສຳເລັດ",
+          text: "ຍົກເລີກອະນຸມັດຜູ້ໃຊ້ງານແລ້ວ",
+          timer: 2000,
+          showConfirmButton: false,
+        });
       }
-    );
-
-    if (res.status === 200) {
-      await subMenuStore.GetMenuSubMenu();
-
-      await CallSwal({
-        icon: "success",
-        title: "ສຳເລັດ",
-        text: "ຍົກເລີກອະນຸມັດຜູ້ໃຊ້ງານແລ້ວ",
-        timer: 2000,
-        showConfirmButton: false,
-      });
     }
-}
-   
   } catch (error) {
     console.error("Error updating approve status:", error);
 
@@ -100,7 +107,6 @@ const notification = await CallSwal({
     isUpdatingStatus.value = false;
   }
 };
-
 
 const {
   canEdit,
@@ -125,7 +131,8 @@ const selecteMainMenu = ref<any | null>(null);
 const SELECTED_MAINMENU_KEY = "selected_mainmenu_filter";
 const updatRecodeStatus = async (sub_menu_id: string) => {
   try {
-   await subMenuStore.updateAdproveStatus(sub_menu_id)
+    await subMenuStore.updateAdproveStatus(sub_menu_id);
+    await subMenuStore.GetMenuSubMenu();
   } catch (error) {
     console.error("Error updating record status:", error);
     await CallSwal({
@@ -137,7 +144,8 @@ const updatRecodeStatus = async (sub_menu_id: string) => {
 };
 const updatRecodeStatusof = async (sub_menu_id: string) => {
   try {
-   await subMenuStore.updateAdproveStatusof(sub_menu_id)
+    await subMenuStore.updateAdproveStatusof(sub_menu_id);
+    await subMenuStore.GetMenuSubMenu();
   } catch (error) {
     console.error("Error updating record status:", error);
     await CallSwal({
@@ -304,7 +312,22 @@ const header = [
 
     class: "text-center",
   },
+  {
+    title: "ສະຖານະ",
+    value: "Record_Status",
+    align: "center",
+    sortable: true,
+    filterable: true,
+    width: "5px",
+    class: "text-center",
+    cellClass: "text-center",
 
+    filter: (value, query, item) => {
+      if (!query) return true;
+      const statusText = value === "Y" ? "ເປີດໃຊ້ງານ" : "ປິດໃຊ້ງານ";
+      return statusText.includes(query);
+    },
+  },
   {
     title: "ເບິ່ງ",
     value: "weiw",
@@ -346,22 +369,6 @@ const header = [
     class: "text-center",
     cellClass: "text-center",
     width: "5px",
-  },
-  {
-    title: "ສະຖານະ",
-    value: "Record_Status",
-    align: "center",
-    sortable: true,
-    filterable: true,
-    width: "5px",
-    class: "text-center",
-    cellClass: "text-center",
-
-    filter: (value, query, item) => {
-      if (!query) return true;
-      const statusText = value === "Y" ? "ເປີດໃຊ້ງານ" : "ປິດໃຊ້ງານ";
-      return statusText.includes(query);
-    },
   },
 ];
 
@@ -481,10 +488,18 @@ defineExpose({
         {{ dayjs(item.created_date).format("DD/MM/YYYY") }}
       </template>
       <template v-slot:item.Record_Status="{ item }">
-        <v-btn v-if="item.Record_Status==='O'" flat  @click="updatRecodeStatusof(item.sub_menu_id)">
+        <v-btn
+          v-if="item.Record_Status === 'O'"
+          flat
+          @click="updatRecodeStatusof(item.sub_menu_id)"
+        >
           <v-icon color="info">mdi-toggle-switch</v-icon>
         </v-btn>
-        <v-btn v-if="item.Record_Status==='C'" flat @click="updatRecodeStatus(item.sub_menu_id)">
+        <v-btn
+          v-if="item.Record_Status === 'C'"
+          flat
+          @click="updatRecodeStatus(item.sub_menu_id)"
+        >
           <v-icon color="error">mdi-toggle-switch-off-outline</v-icon>
         </v-btn>
         <!-- <v-chip
