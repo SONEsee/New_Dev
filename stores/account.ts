@@ -1,39 +1,57 @@
 import axios from "@/helpers/axios";
-import { AssetTypeModel } from "~/models";
+import { AccountModels } from "~/models";
 import { CallSwal, goPath } from "#build/imports";
 
-export const AssetTypeStore = defineStore("AssetType", {
+export const accountStore = defineStore("account", {
   state() {
     return {
-      response_AssetType_data: null as AssetTypeModel.AssetType | null,
-      response_AssetType_list: null as AssetTypeModel.AssetType[] | null,
-      response_AssetType_detail: null as AssetTypeModel.AssetType | null,
-      response_parent_AssetTypes: null as AssetTypeModel.AssetType[] | null,
+      response_account_data: null as AccountModels.AccountModel | null,
+      response_account_list: null as AccountModels.AccountModel[] | null,
+      response_account_detail: null as AccountModels.AccountModel | null,
+      response_parent_accounts: null as AccountModels.AccountModel[] | null,
       isLoading: false,
-      form_create_AssetType: {
-        AssetType_code: "",
-        AssetType_name: "",
-        AssetType_type: "",
-        parent_AssetType_id: null as number | null,
+      form_create_account: {
+        account_code: "",
+        account_name: "",
+        account_type: "",
+        parent_account_id: null as number | null,
         description: "",
       },
-      form_update_AssetType: {
-        AssetType_id: "" as string | number,
-        AssetType_code: "",
-        AssetType_name: "",
-        AssetType_type: "",
-        parent_AssetType_id: null as number | null,
+      form_update_account: {
+        account_id: "" as string | number,
+        account_code: "",
+        account_name: "",
+        account_type: "",
+        parent_account_id: null as number | null,
         description: "",
       },
     };
   },
   actions: {
-    // ດຶງລາຍການບັນຊີທັງໝົດ
-    async GetAssetTypeList() {
+    async GetAccountList() {
       this.isLoading = true;
       try {
-        const res = await axios.get<AssetTypeModel.AssetType[]>(
-          `AssetType`,
+        const res = await axios.get<AccountModels.AccountModel[]>(`account`, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+        if (res.status === 200) {
+          this.response_account_list = res.data;
+        }
+      } catch (error) {
+        console.error("Error fetching account list:", error);
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    async GetParentAccounts() {
+      this.isLoading = true;
+      try {
+        const res = await axios.get<AccountModels.AccountModel[]>(
+          `account/parents`,
           {
             headers: {
               "Content-Type": "application/json",
@@ -42,21 +60,20 @@ export const AssetTypeStore = defineStore("AssetType", {
           }
         );
         if (res.status === 200) {
-          this.response_AssetType_list = res.data;
+          this.response_parent_accounts = res.data;
         }
       } catch (error) {
-        console.error("Error fetching AssetType list:", error);
+        console.error("Error fetching parent accounts:", error);
       } finally {
         this.isLoading = false;
       }
     },
 
-    // ດຶງລາຍການບັນຊີແມ່ (ສຳລັບເລືອກ parent AssetType)
-    async GetParentAssetTypes() {
+    async GetAccountDetail(id: string) {
       this.isLoading = true;
       try {
-        const res = await axios.get<AssetTypeModel.AssetType[]>(
-          `AssetType/parents`,
+        const res = await axios.get<AccountModels.AccountModel>(
+          `account/${id}`,
           {
             headers: {
               "Content-Type": "application/json",
@@ -65,45 +82,21 @@ export const AssetTypeStore = defineStore("AssetType", {
           }
         );
         if (res.status === 200) {
-          this.response_parent_AssetTypes = res.data;
+          this.response_account_detail = res.data;
         }
       } catch (error) {
-        console.error("Error fetching parent AssetTypes:", error);
+        console.error("Error fetching account detail:", error);
       } finally {
         this.isLoading = false;
       }
     },
 
-    // ດຶງລາຍລະອຽດບັນຊີຕາມ ID
-    async GetAssetTypeDetail(id: string) {
+    async CreateAccount() {
       this.isLoading = true;
       try {
-        const res = await axios.get<AssetTypeModel.AssetType>(
-          `AssetType/${id}`,
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          }
-        );
-        if (res.status === 200) {
-          this.response_AssetType_detail = res.data;
-        }
-      } catch (error) {
-        console.error("Error fetching AssetType detail:", error);
-      } finally {
-        this.isLoading = false;
-      }
-    },
-
-    // ສ້າງບັນຊີໃໝ່
-    async CreateAssetType() {
-      this.isLoading = true;
-      try {
-        const res = await axios.post<AssetTypeModel.AssetType>(
-          `AssetType`,
-          this.form_create_AssetType,
+        const res = await axios.post<AccountModels.AccountModel>(
+          `account`,
+          this.form_create_account,
           {
             headers: {
               "Content-Type": "application/json",
@@ -120,20 +113,19 @@ export const AssetTypeStore = defineStore("AssetType", {
             showConfirmButton: false,
           });
           setTimeout(() => {
-            goPath("/AssetType");
+            goPath("/account");
           }, 1500);
 
-          // Reset form
-          this.form_create_AssetType = {
-            AssetType_code: "",
-            AssetType_name: "",
-            AssetType_type: "",
-            parent_AssetType_id: null,
+          this.form_create_account = {
+            account_code: "",
+            account_name: "",
+            account_type: "",
+            parent_account_id: null,
             description: "",
           };
         }
       } catch (error) {
-        console.error("Error creating AssetType:", error);
+        console.error("Error creating account:", error);
         CallSwal({
           title: "ຜິດພາດ",
           text: "ມີຂໍ້ຜິດພາດໃນການເພີ່ມຂໍ້ມູນ",
@@ -146,13 +138,12 @@ export const AssetTypeStore = defineStore("AssetType", {
       }
     },
 
-    // ອັບເດດບັນຊີ
-    async UpdateAssetType(id: string) {
+    async UpdateAccount(id: string) {
       this.isLoading = true;
       try {
-        const res = await axios.put<AssetTypeModel.AssetType>(
-          `AssetType/${id}`,
-          this.form_update_AssetType,
+        const res = await axios.put<AccountModels.AccountModel>(
+          `account/${id}`,
+          this.form_update_account,
           {
             headers: {
               "Content-Type": "application/json",
@@ -169,21 +160,20 @@ export const AssetTypeStore = defineStore("AssetType", {
             showConfirmButton: false,
           });
           setTimeout(() => {
-            goPath("/AssetType");
+            goPath("/account");
           }, 1500);
 
-          // Reset form
-          this.form_update_AssetType = {
-            AssetType_id: "" as string | number,
-            AssetType_code: "",
-            AssetType_name: "",
-            AssetType_type: "",
-            parent_AssetType_id: null,
+          this.form_update_account = {
+            account_id: "" as string | number,
+            account_code: "",
+            account_name: "",
+            account_type: "",
+            parent_account_id: null,
             description: "",
           };
         }
       } catch (error) {
-        console.error("Error updating AssetType:", error);
+        console.error("Error updating account:", error);
         CallSwal({
           title: "ຜິດພາດ",
           text: "ມີຂໍ້ຜິດພາດໃນການແກ້ໄຂຂໍ້ມູນ",
@@ -196,11 +186,10 @@ export const AssetTypeStore = defineStore("AssetType", {
       }
     },
 
-    // ລຶບບັນຊີ
-    async DeleteAssetType(id: string) {
+    async DeleteAccount(id: string) {
       this.isLoading = true;
       try {
-        const res = await axios.delete(`AssetType/${id}`, {
+        const res = await axios.delete(`account/${id}`, {
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -214,11 +203,11 @@ export const AssetTypeStore = defineStore("AssetType", {
             showCancelButton: false,
             showConfirmButton: false,
           });
-          // Refresh data after delete
-          await this.GetAssetTypeList();
+
+          await this.GetAccountList();
         }
       } catch (error) {
-        console.error("Error deleting AssetType:", error);
+        console.error("Error deleting account:", error);
         CallSwal({
           title: "ຜິດພາດ",
           text: "ມີຂໍ້ຜິດພາດໃນການລຶບຂໍ້ມູນ",
@@ -231,12 +220,11 @@ export const AssetTypeStore = defineStore("AssetType", {
       }
     },
 
-    // ອັບເດດສະຖານະບັນຊີ (RECORD_STAT: C-Closed, O-Open)
-    async UpdateAssetTypeStatus(id: string, status: string) {
+    async UpdateAccountStatus(id: string, status: string) {
       this.isLoading = true;
       try {
         const res = await axios.patch(
-          `AssetType/${id}/status`,
+          `account/${id}/status`,
           { RECORD_STAT: status },
           {
             headers: {
@@ -253,11 +241,11 @@ export const AssetTypeStore = defineStore("AssetType", {
             showCancelButton: false,
             showConfirmButton: false,
           });
-          // Refresh data
-          await this.GetAssetTypeList();
+
+          await this.GetAccountList();
         }
       } catch (error) {
-        console.error("Error updating AssetType status:", error);
+        console.error("Error updating account status:", error);
         CallSwal({
           title: "ຜິດພາດ",
           text: "ມີຂໍ້ຜິດພາດໃນການອັບເດດສະຖານະ",
@@ -272,29 +260,30 @@ export const AssetTypeStore = defineStore("AssetType", {
   },
 
   getters: {
-    // ແບ່ງບັນຊີຕາມປະເພດ
-    AssetTypesByType: (state) => {
-      if (!state.response_AssetType_list) return {};
-      
-      return state.response_AssetType_list.reduce((acc, AssetType) => {
-        if (!acc[AssetType.type_code]) {
-          acc[AssetType.type_code] = [];
+    accountsByType: (state) => {
+      if (!state.response_account_list) return {};
+
+      return state.response_account_list.reduce((acc, account) => {
+        if (!acc[account.account_type]) {
+          acc[account.account_type] = [];
         }
-        acc[AssetType.type_code].push(AssetType);
+        acc[account.account_type].push(account);
         return acc;
-      }, {} as Record<string, AssetTypeModel.AssetType[]>);
+      }, {} as Record<string, AccountModels.AccountModel[]>);
     },
 
-    // ບັນຊີຫຼັກ (ບໍ່ມີ parent)
-    mainAssetTypes: (state) => {
-      if (!state.response_AssetType_list) return [];
-      return state.response_AssetType_list.filter(AssetType => !AssetType.type_id);
+    mainAccounts: (state) => {
+      if (!state.response_account_list) return [];
+      return state.response_account_list.filter(
+        (account) => !account.parent_account_id
+      );
     },
 
-    // ບັນຊີຍ່ອຍ (ມີ parent)
-    subAssetTypes: (state) => {
-      if (!state.response_AssetType_list) return [];
-      return state.response_AssetType_list.filter(AssetType => AssetType.type_id);
+    subAccounts: (state) => {
+      if (!state.response_account_list) return [];
+      return state.response_account_list.filter(
+        (account) => account.parent_account_id
+      );
     },
   },
 });
