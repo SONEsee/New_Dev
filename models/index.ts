@@ -24,6 +24,7 @@ import * as FinCycleModel from "./fincycle";
 import * as GLMasterModel from "./glmaster";
 import * as CerrencyModel from "./currency";
 import * as PropertyTypeModel from "./property";
+import * as AssetTypeModel from "./assettype";
 
 // import *as GlModel from './gl';
 
@@ -62,7 +63,7 @@ PropertyTypeModel,
 SupplierModel,
   GlModel,
   RoleMasterModel,
-  
+  AssetTypeModel
 
   // RoleMasterModel
 

@@ -16,7 +16,7 @@ export interface RolePermissions {
 export const useRolePermissions = () => {
   const roleStore = RoleStore();
 
-  // Get role details on mount
+ 
   const initializeRole = async () => {
     try {
       await roleStore.GetRoleDetail();
@@ -25,7 +25,7 @@ export const useRolePermissions = () => {
     }
   };
 
-  // Computed role data
+  
   const roleData = computed(() => {
     return roleStore.responst_data_detail;
   });
@@ -35,14 +35,14 @@ export const useRolePermissions = () => {
     return data?.[0] || null;
   });
 
-  // Permission checkers
+ 
   const canView = computed(() => permissions.value?.View_Detail === 1);
   const canEdit = computed(() => permissions.value?.Edit_Detail === 1);
   const canDelete = computed(() => permissions.value?.Del_Detail === 1);
   const canAuthorize = computed(() => permissions.value?.Auth_Detail === 1);
   const canAdd = computed(() => permissions.value?.New_Detail === 1);
-  const canAuthStatus = computed(() => permissions.value?.Auth_Status === 'U');
-  const canRecordStatus = computed(() => permissions.value?.Record_Status === 'C');
+  const canAuthStatus = computed(() => permissions.value?.Auth_Status === 'A');
+  const canRecordStatus = computed(() => permissions.value?.Record_Status === 'O');
 
   
   const hasPermission = (permissionKey: keyof RolePermissions): boolean => {
