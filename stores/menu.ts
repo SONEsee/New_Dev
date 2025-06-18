@@ -151,7 +151,7 @@ export const useMenuStore = defineStore("menu", {
           confirmButtonText: "ເປີດ",
           cancelButtonText: "ບໍ່ເປີດ",
         });if(notification.isConfirmed){
-            const res = await axios.post(`api/main-menus/${id}/set_close/`, {
+            const res = await axios.post(`api/main-menus/${id}/set_open/`, {
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${localStorage.getItem("token")}`,
