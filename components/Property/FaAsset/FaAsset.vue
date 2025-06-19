@@ -71,7 +71,7 @@ const role1 = computed(() => {
   return roleStore.responst_data_detail;
 });
 
-const title = "ຈັດການຊັບສົມບັດຄົງທີ່";
+const title = "ຈັດການຊັບສົມບັດພວມຊື້ພວມກໍ່ສ້າງ";
 
 const assetStatuses = [
   { title: "ທັງໝົດ", value: "all" },
@@ -735,20 +735,22 @@ onMounted(async () => {
 
       <template v-slot:item.depreciation="{ item }">
         <v-btn
+        
           v-if="item.has_depreciation === 'Y' && item.asset_status === 'ACTIVE'"
           small
-          flat
-          class="text-warning"
+        flat
           icon="mdi-calculator"
           @click="calculateDepreciation(item)"
         >
+        <v-icon icon="mdi-calculator"></v-icon>
           <v-tooltip activator="parent" location="top">ຄິດເສື່ອມລາຄາ</v-tooltip>
         </v-btn>
+      <v-chip v-else color="primary"><p  class="text-primary">ຍັງບໍ່ມີຄ່າເສືອມ</p></v-chip> 
       </template>
     </v-data-table>
   </v-col>
 
-  <!-- Success notification -->
+ 
   <v-snackbar
     v-model="showSuccess"
     color="success"
