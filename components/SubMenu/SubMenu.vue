@@ -2,35 +2,98 @@
 import dayjs from "#build/dayjs.imports.mjs";
 import { ref, computed, onMounted, watch } from "vue";
 import { useRolePermissions } from "@/composables/useRolePermissions";
+import axios from "@/helpers/axios";
 
 const isUpdatingStatus = ref(false);
 const updateAdproveStatus = async (id: string) => {
   try {
     isUpdatingStatus.value = true;
+    const notification = await CallSwal({
+      icon: "warning",
+      title: "ຄຳເຕືອນ",
+      text: `ທ່ານກຳລັງອະນຸມັດເມນູ ທ່ານແນ່ໃຈແລ້ວບໍ?`,
+      showCancelButton: true,
+      confirmButtonText: "ຕົກລົງ",
+      cancelButtonText: "ຍົກເລີກ",
+    });
+    if (notification.isConfirmed) {
+      const res = await axios.post(
+        `api/sub-menus/${id}/authorize/`,
 
-    const res = await axios.post(
-      `api/sub-menus/${id}/set_stt_submenu/`,
-      {},
-      {
-        // ເພີ່ມ {} ສຳລັບ body
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      if (res.status === 200) {
+        await subMenuStore.GetMenuSubMenu();
+
+        await CallSwal({
+          icon: "success",
+          title: "ສຳເລັດ",
+          text: "ອະນຸມັດຜູ້ໃຊ້ງານແລ້ວ",
+          timer: 2000,
+          showConfirmButton: false,
+        });
       }
-    );
+      if (res.status === 406) {
+        await CallSwal({
+          icon: "warning",
+          title: "ບໍ່ສາມາດອະນຸມັດໄດ້",
+          text: "ບໍ່ສາມາດເປີດໄດ້ ເນື່ອງຈາກ ຍັງບໍ່ທັນອະນຸມັດ",
+        });
+      } else {
+      }
+    }
+  } catch (error) {
+    console.error("Error updating approve status:", error);
 
-    if (res.status === 200) {
-      // ສຳເລັດ - refresh data
-      await subMenuStore.GetMenuSubMenu();
+    await CallSwal({
+      icon: "error",
+      title: "ເກີດຂໍ້ຜິດພາດ",
+      text: "ບໍ່ສາມາດອະນຸມັດຜູ້ໃຊ້ງານໄດ້",
+    });
+  } finally {
+    isUpdatingStatus.value = false;
+  }
+};
+const unupdateAdproveStatus = async (id: string) => {
+  try {
+    isUpdatingStatus.value = true;
+    const notification = await CallSwal({
+      icon: "warning",
+      title: "ຄຳເຕືອນ",
+      text: `ທ່ານກຳລັງຍົກເລີກອະນຸມັດເມນູ ທ່ານແນ່ໃຈແລ້ວບໍ?`,
+      showCancelButton: true,
+      confirmButtonText: "ຕົກລົງ",
+      cancelButtonText: "ຍົກເລີກ",
+    });
+    if (notification.isConfirmed) {
+      const res = await axios.post(
+        `api/sub-menus/${id}/unauthorize/`,
 
-      await CallSwal({
-        icon: "success",
-        title: "ສຳເລັດ",
-        text: "ອະນຸມັດຜູ້ໃຊ້ງານແລ້ວ",
-        timer: 2000,
-        showConfirmButton: false,
-      });
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      if (res.status === 200) {
+        await subMenuStore.GetMenuSubMenu();
+
+        await CallSwal({
+          icon: "success",
+          title: "ສຳເລັດ",
+          text: "ຍົກເລີກອະນຸມັດຜູ້ໃຊ້ງານແລ້ວ",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+      }
     }
   } catch (error) {
     console.error("Error updating approve status:", error);
@@ -45,35 +108,16 @@ const updateAdproveStatus = async (id: string) => {
   }
 };
 
-// ຫຼື ຖ້າຢາກໃຫ້ມີ confirmation dialog
-const toggleUserStatus = async (res: any) => {
-  try {
-    const result = await CallSwal({
-      icon: "question",
-      title: "ຢືນຢັນການອະນຸມັດ",
-      text: `ທ່ານຕ້ອງການອະນຸມັດຜູ້ໃຊ້ງານ "${res.sub_menu_name_la}" ບໍ?`,
-      showCancelButton: true,
-      confirmButtonText: "ອະນຸມັດ",
-      cancelButtonText: "ຍົກເລີກ",
-      confirmButtonColor: "#4CAF50",
-    });
-
-    if (result.isConfirmed) {
-      await updateAdproveStatus(user.user_id);
-    }
-  } catch (error) {
-    console.error("Error in toggleUserStatus:", error);
-  }
-};
 const {
   canEdit,
   canDelete,
   canView,
   canAdd,
+  canRecordStatus,
+  canAuthStatus,
   canAuthorize,
   hasPermission,
   initializeRole,
-
 } = useRolePermissions();
 
 const roleStore = RoleStore();
@@ -87,7 +131,32 @@ const role = computed(() => {
 const selecteMainMenu = ref<any | null>(null);
 
 const SELECTED_MAINMENU_KEY = "selected_mainmenu_filter";
-
+const updatRecodeStatus = async (sub_menu_id: string) => {
+  try {
+    await subMenuStore.updateAdproveStatus(sub_menu_id);
+    await subMenuStore.GetMenuSubMenu();
+  } catch (error) {
+    console.error("Error updating record status:", error);
+    await CallSwal({
+      icon: "error",
+      title: "ເກີດຂໍ້ຜິດພາດ",
+      text: "ບໍ່ສາມາດແກ້ໄຂໄດ້",
+    });
+  }
+};
+const updatRecodeStatusof = async (sub_menu_id: string) => {
+  try {
+    await subMenuStore.updateAdproveStatusof(sub_menu_id);
+    await subMenuStore.GetMenuSubMenu();
+  } catch (error) {
+    console.error("Error updating record status:", error);
+    await CallSwal({
+      icon: "error",
+      title: "ເກີດຂໍ້ຜິດພາດ",
+      text: "ບໍ່ສາມາດແກ້ໄຂໄດ້",
+    });
+  }
+};
 const loadSavedMainMenuSelection = () => {
   try {
     const saved = localStorage.getItem(SELECTED_MAINMENU_KEY);
@@ -170,7 +239,6 @@ onMounted(async () => {
   initializeRole();
   roleStore.GetRoleDetail();
   await loadDataAndApplyFilter();
-  
 });
 
 const onDeleteType = async (sub_menu_id: string) => {
@@ -179,119 +247,131 @@ const onDeleteType = async (sub_menu_id: string) => {
 };
 
 const title = "ຂໍ້ມູນເມນູຍ່ອຍ";
-const header = [
-  {
-    title: "ລະຫັດ",
-    value: "sub_menu_id",
-    key: "sub_menu_id",
-    align: "start",
-    sortable: true,
-    filterable: true,
-    groupable: false,
-    divider: false,
-    class: "text-primary font-weight-bold",
-    cellClass: "pa-2",
-  },
-
-  {
-    title: "ຊື່ເມນູພາສາລາວ",
-    value: "sub_menu_name_la",
-    align: "start",
-    sortable: true,
-    filterable: true,
-
-    class: "text-h6",
-    cellClass: "text-wrap",
-  },
-
-  {
-    title: "ຊື່ເມນູພາສາອັງກິດ",
-    value: "sub_menu_name_en",
-    align: "start",
-    sortable: true,
-    filterable: true,
-
-    class: "text-subtitle-1",
-  },
-
-  {
-    title: "ລຳດັບ",
-    value: "sub_menu_order",
-    align: "center",
-    sortable: true,
-    filterable: false,
-
-    class: "text-center",
-    cellClass: "text-center font-weight-bold",
-  },
-
-  {
-    title: "ເມນູຫຼັກ",
-    value: "menu_id",
-    align: "center",
-    sortable: true,
-    filterable: true,
-
-    // Custom sort function
-    sort: (a, b) => {
-      return a.menu_id.localeCompare(b.menu_id);
+const header = computed(() => {
+  return [
+    {
+      title: "ລະຫັດ",
+      value: "sub_menu_id",
+      key: "sub_menu_id",
+      align: "start",
+      sortable: true,
+      filterable: true,
+      groupable: false,
+      divider: false,
+      class: "text-primary font-weight-bold",
+      cellClass: "pa-2",
     },
-  },
-
-  {
-    title: "ສະຖານະການໃຊ້ງານ",
-    value: "is_active",
-    align: "center",
-    sortable: true,
-    filterable: true,
-
-    class: "text-center",
-    cellClass: "text-center",
-    // Custom filter function
-    filter: (value, query, item) => {
-      if (!query) return true;
-      const statusText = value === "Y" ? "ເປີດໃຊ້ງານ" : "ປິດໃຊ້ງານ";
-      return statusText.includes(query);
+    {
+      title: "ຊື່ເມນູພາສາລາວ",
+      value: "sub_menu_name_la",
+      align: "start",
+      sortable: true,
+      filterable: true,
+      class: "text-h6",
+      cellClass: "text-wrap",
     },
-  },
-
-  {
-    title: "ມື້ສ້າງຂໍ້ມູນ",
-    value: "created_date",
-    align: "center",
-    sortable: true,
-    filterable: false,
-
-    class: "text-center",
-    // Custom sort for dates
-    // sort: (a, b) => {
-    //   return new Date(a.created_date) - new Date(b.created_date);
-    // },
-  },
-
-  {
-    title: "ອະນຸມັດ",
-    value: "confirm",
-    align: "center",
-    sortable: false,
-    filterable: false,
-
-    class: "text-center",
-    cellClass: "text-center",
-    fixed: true,
-  },
-  {
-    title: "ຈັດການ",
-    value: "action",
-    align: "center",
-    sortable: false,
-    filterable: false,
-
-    class: "text-center",
-    cellClass: "text-center",
-    fixed: true,
-  },
-];
+    {
+      title: "ຊື່ເມນູພາສາອັງກິດ",
+      value: "sub_menu_name_en",
+      align: "start",
+      sortable: true,
+      filterable: true,
+      class: "text-subtitle-1",
+    },
+    {
+      title: "ລຳດັບ",
+      value: "sub_menu_order",
+      align: "center",
+      sortable: true,
+      filterable: false,
+      class: "text-center",
+      cellClass: "text-center font-weight-bold",
+    },
+    {
+      title: "ເມນູຫຼັກ",
+      value: "menu_id",
+      align: "center",
+      sortable: true,
+      filterable: true,
+      sort: (a, b) => {
+        return a.menu_id.localeCompare(b.menu_id);
+      },
+    },
+    {
+      title: "ມື້ສ້າງຂໍ້ມູນ",
+      value: "created_date",
+      align: "center",
+      sortable: true,
+      filterable: false,
+      class: "text-center",
+    },
+    
+    ...(canRecordStatus.value? [{
+      title: "ສະຖານະ",
+      value: "Record_Status",
+      align: "center",
+      sortable: true,
+      filterable: true,
+      width: "10px", 
+      class: "text-center",
+      cellClass: "text-center",
+      filter: (value, query, item) => {
+        if (!query) return true;
+        const statusText = value === "Y" ? "ເປີດໃຊ້ງານ" : "ປິດໃຊ້ງານ";
+        return statusText.includes(query);
+      },
+    },]:[]),
+     ...(canView.value
+  ? [
+      {
+        title: "ເບິ່ງ",
+        value: "weiw", 
+        align: "center",
+        sortable: false,
+        filterable: false,
+        class: "text-center",
+        cellClass: "text-center",
+        width: "80px", 
+      },
+    ]
+  : []),
+    {
+      title: "ແກ້ໄຂ",
+      value: "edit",
+      align: "center",
+      sortable: false,
+      filterable: false,
+      class: "text-center",
+      cellClass: "text-center",
+      width: "50px", 
+    },
+    {
+      title: "ລົບ",
+      value: "delete",
+      align: "center",
+      sortable: false,
+      filterable: false,
+      class: "text-center",
+      cellClass: "text-center",
+      width: "10px", 
+    },
+    ...(canAuthorize.value
+      ? [
+          {
+            title: "ອະນຸມັດ",
+            value: "confirm",
+            align: "center",
+            sortable: false,
+            filterable: false,
+            class: "text-center",
+            cellClass: "text-center",
+            width: "10px", 
+          },
+        ]
+      : []),
+   
+  ];
+});
 
 const goToCreateSubMenu = () => {
   if (selecteMainMenu.value && selecteMainMenu.value.menu_id) {
@@ -369,47 +449,62 @@ defineExpose({
     </v-row>
 
     <v-data-table :headers="header" :items="res || []" class="text-no-wrap">
-      <template v-slot:header.confirm="{ column }">
-        <b> {{ column.title }}</b>
-      </template>
       <template v-slot:header.sub_menu_id="{ column }">
         <v-icon start>mdi-identifier</v-icon>
-        <b>{{ column.title }}</b>
+        <b style="color: blue">{{ column.title }}</b>
       </template>
 
       <template v-slot:header.sub_menu_name_la="{ column }">
-        <b> {{ column.title }}</b>
+        <b style="color: blue"> {{ column.title }}</b>
       </template>
       <template v-slot:header.sub_menu_name_en="{ column }">
-        <b> {{ column.title }}</b>
+        <b style="color: blue"> {{ column.title }}</b>
       </template>
       <template v-slot:header.sub_menu_order="{ column }">
-        <b> {{ column.title }}</b>
+        <b style="color: blue"> {{ column.title }}</b>
       </template>
       <template v-slot:header.menu_id="{ column }">
-        <b> {{ column.title }}</b>
+        <b style="color: blue"> {{ column.title }}</b>
       </template>
       <template v-slot:header.created_date="{ column }">
-        <b> {{ column.title }}</b>
+        <b style="color: blue"> {{ column.title }}</b>
       </template>
-      <template v-slot:header.is_active="{ column }">
-        <b> {{ column.title }}</b>
+      <template v-slot:header.Record_Status="{ column }">
+        <b style="color: blue"> {{ column.title }}</b>
       </template>
-      <template v-slot:header.action="{ column }">
-        <b> {{ column.title }}</b>
+      <template v-slot:header.edit="{ column }">
+        <b style="color: blue"> {{ column.title }}</b>
+      </template>
+      <template v-slot:header.weiw="{ column }">
+        <b style="color: blue"> {{ column.title }}</b>
+      </template>
+      <template v-slot:header.delete="{ column }">
+        <b style="color: blue"> {{ column.title }}</b>
+      </template>
+      <template v-slot:header.confirm="{ column }">
+        <b style="color: blue"> {{ column.title }}</b>
       </template>
 
       <template v-slot:item.created_date="{ item }">
         {{ dayjs(item.created_date).format("DD/MM/YYYY") }}
       </template>
-      <template v-slot:item.is_active="{ item }">
-        <v-chip
-          :color="item.is_active === 'Y' ? 'green' : 'red'"
-          size="small"
-          label
+      <template v-slot:item.Record_Status="{ item }">
+        <div >
+        <v-btn
+          v-if="item.Record_Status === 'O'"
+          flat
+          @click="updatRecodeStatusof(item.sub_menu_id)"
         >
-          {{ item.is_active === "Y" ? "ໃຊ້ງານ" : "ບໍ່ໃຊ້ງານ" }}
-        </v-chip>
+          <v-icon color="info">mdi-toggle-switch</v-icon>
+        </v-btn>
+        <v-btn
+          v-if="item.Record_Status === 'C'"
+          flat
+          @click="updatRecodeStatus(item.sub_menu_id)"
+        >
+          <v-icon color="error">mdi-toggle-switch-off-outline</v-icon>
+        </v-btn></div>
+        
       </template>
       <template v-slot:item.no="{ item, index }">
         {{ index + 1 }}
@@ -424,71 +519,50 @@ defineExpose({
         </div>
       </template>
 
-
-
       <template v-slot:item.confirm="{ item }">
-  <div class="d-flex align-center">
-    <v-btn
-      v-if="(role1 as any)?.[0]?.Auth_Detail === 1"
-      :color="item.is_active === 'Y' ? 'success' : 'warning'"
-      :icon="
-        item.is_active === 'Y'
-          ? 'mdi-check-circle'
-          : 'mdi-toggle-switch-off-outline'
-      "
-      variant="text"
-      size="small"
-      :loading="isUpdatingStatus"
-      :disabled="item.is_active === 'Y'"
-      @click="updateAdproveStatus(item.sub_menu_id)"
-      :class="{
-        'disabled-btn': item.is_active === 'Y'
-      }"
-      :title="item.is_active === 'Y' ? 'ອະນຸມັດແລ້ວ' : 'ຄລິກເພື່ອອະນຸມັດ'"
-    />
-    
-    <v-fade-transition>
-      <v-icon
-        v-if="item.is_active === 'Y'"
-        color="success"
-        size="small"
-        class="ml-2"
-      >
-        mdi-shield-check
-      </v-icon>
-    </v-fade-transition>
-  </div>
-</template>
+        <div class="d-flex align-center">
+          <v-btn
+            @click="unupdateAdproveStatus(item.sub_menu_id)"
+            class="text-primary"
+            v-if="item.Auth_Status === 'A'"
+            flat
+          >
+            <v-icon icon="mdi-toggle-switch" color="primary"></v-icon>
+          </v-btn>
+          <v-btn
+            @click="updateAdproveStatus(item.sub_menu_id)"
+            class="text-error"
+            v-if="item.Auth_Status === 'U'"
+            flat
+          >
+            <v-icon icon="mdi-toggle-switch-off-outline" color="error"></v-icon>
+          </v-btn>
+        </div>
+      </template>
 
-
-
-      <template v-slot:item.action="{ item }">
+      <template v-slot:item.weiw="{ item }">
         <v-btn
-          v-if="(role as any)?.[0]?.View_Detail === 0 && item.is_active === 'N'"
-          small
-          flat
-          class="text-primary"
-          icon="mdi-toggle-switch-off-outline"
-          @click="goPath(`#`)"
-        />
-        <v-btn
-          v-if="canView"
+          
           small
           flat
           class="text-primary"
           icon="mdi-eye-outline"
           @click="goPath(`/submenu/detail?sub_menu_id=${item.sub_menu_id}`)"
         />
+      </template>
+      <template v-slot:item.edit="{ item }">
         <v-btn
-          v-if="canEdit"
+          
           small
           flat
           class="text-info"
           icon="mdi-pen"
           @click="goPath(`/submenu/edit?sub_menu_id=${item.sub_menu_id}`)"
         />
+      </template>
+      <template v-slot:item.delete="{ item }">
         <v-btn
-          v-if="canDelete"
+          
           small
           flat
           class="text-error"

@@ -1,7 +1,6 @@
 import axios from "@/helpers/axios";
 import { MenuModel } from "~/models";
 
-
 export const useMenuStore = defineStore("menu", {
   state() {
     return {
@@ -73,7 +72,7 @@ export const useMenuStore = defineStore("menu", {
       respons_function_menu_data: null as MenuModel.Function | null,
       respons_function_menu_detail_data: null as MenuModel.Function | null,
       respons_menu_id: null as MenuModel.MenuIDCountRespons | null,
-    
+
       isloading: false,
       query_menu_filter: {
         data: {
@@ -96,24 +95,185 @@ export const useMenuStore = defineStore("menu", {
     };
   },
   actions: {
-    async getMenuIDCount(menu_id: string) {
-this.isloading = true;
-try {
-  const res= await axios.get<MenuModel.MenuIDCountRespons>(`api/count-sub-menus/?menu_id=${menu_id}`, {
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${localStorage.getItem("token")}`,
-    },
-  });
-  if(res.status ===200){
-    this.respons_menu_id = res.data
+    async updateAdproveStatus(id: string) {
+      try {
+        const notification = await CallSwal({
+          title: "ຄຳເຕືອນ",
+          text: "ທ່ານຕ້ອງການເປີດໃຊ້ງານສະຖານະ ຫຼື ບໍ່?",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonText: "ເປີດ",
+          cancelButtonText: "ບໍ່ເປີດ",
+        });if(notification.isConfirmed){
+            const res = await axios.post(`api/sub-menus/${id}/set_open/`, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });if(res.status ===200){
+          CallSwal({
+            title: "ສຳເລັດ",
+            text: "ສຳເລັດການເປີດໃຊ້ງານສະຖານະ.",
+            icon: "success",
+            showConfirmButton: false,
+          });setTimeout(() => {
+            
+          }, 1500);
+          
+        }
+        
+        }
+      
+      } catch (error: any) {
+    
+    if (error.response?.status === 406) {
+      CallSwal({
+        title: "ບໍ່ສຳເລັດ",
+        text: "ບໍ່ສາມາດເປີດໃຊ້ງານ ເນື່ອງຈາກ ບໍ່ໄດ້ການອະນຸມັດ.",
+        icon: "error",
+      });
+    } else {
+      CallSwal({
+        title: "ບໍ່ສຳເລັດ",
+        text: `ບໍ່ສາມາດແກ້ໄຂເມນູ: ${error.message || error}`,
+        icon: "error",
+      });
+    }
   }
-} catch (error) {
-  console.error("Error fetching menu ID count:", error);
-  
-}finally{
-  this.isloading = false;
-}
+    },
+    async updateRecordStatusmain(id: string) {
+      try {
+        const notification = await CallSwal({
+          title: "ຄຳເຕືອນ",
+          text: "ທ່ານຕ້ອງການເປີດໃຊ້ງານສະຖານະ ຫຼື ບໍ່?",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonText: "ເປີດ",
+          cancelButtonText: "ບໍ່ເປີດ",
+        });if(notification.isConfirmed){
+            const res = await axios.post(`api/main-menus/${id}/set_open/`, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });if(res.status ===200){
+          CallSwal({
+            title: "ສຳເລັດ",
+            text: "ສຳເລັດການເປີດໃຊ້ງານສະຖານະ.",
+            icon: "success",
+            showConfirmButton: false,
+          });setTimeout(() => {
+            
+          }, 1500);
+          
+        }
+        
+        }
+      
+      } catch (error: any) {
+    
+    if (error.response?.status === 406) {
+      CallSwal({
+        title: "ບໍ່ສຳເລັດ",
+        text: "ບໍ່ສາມາດເປີດໃຊ້ງານ ເນື່ອງຈາກ ບໍ່ໄດ້ການອະນຸມັດ.",
+        icon: "error",
+      });
+    } else {
+      CallSwal({
+        title: "ບໍ່ສຳເລັດ",
+        text: `ບໍ່ສາມາດແກ້ໄຂເມນູ: ${error.message || error}`,
+        icon: "error",
+      });
+    }
+  }
+    },
+
+    async updateAdproveStatusof(id: string) {
+      try {
+        const notification = await CallSwal({
+          title: "ຄຳເຕືອນ",
+          text: "ທ່ານຕ້ອງການປີດໃຊ້ງານສະຖານະ ຫຼື ບໍ່?",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonText: "ປີດ",
+          cancelButtonText: "ບໍ່ປີດ",
+        });if(notification.isConfirmed){
+            const res = await axios.post(`api/sub-menus/${id}/set_close/`, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });if(res.status ===200){
+          CallSwal({
+            title: "ສຳເລັດ",
+            text: "ສຳເລັດການເປີດໃຊ້ງານສະຖານະ.",
+            icon: "success",
+            showConfirmButton: false,
+          });
+        }
+        }
+      
+      } catch (error) {
+        CallSwal({
+          title: "ບໍ່ສຳເລັດ",
+          text: "ບໍ່ສາມາດແກ້ໄຂເມນູ " + error,
+          icon: "error",
+        });
+      }
+    },
+    async updateRecordStatusOffmain(id: string) {
+      try {
+        const notification = await CallSwal({
+          title: "ຄຳເຕືອນ",
+          text: "ທ່ານຕ້ອງການປີດໃຊ້ງານສະຖານະ ຫຼື ບໍ່?",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonText: "ປີດ",
+          cancelButtonText: "ບໍ່ປີດ",
+        });if(notification.isConfirmed){
+            const res = await axios.post(`api/main-menus/${id}/set_close/`, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });if(res.status ===200){
+          CallSwal({
+            title: "ສຳເລັດ",
+            text: "ສຳເລັດການເປີດໃຊ້ງານສະຖານະ.",
+            icon: "success",
+            showConfirmButton: false,
+          });
+        }
+        }
+      
+      } catch (error) {
+        CallSwal({
+          title: "ບໍ່ສຳເລັດ",
+          text: "ບໍ່ສາມາດແກ້ໄຂເມນູ " + error,
+          icon: "error",
+        });
+      }
+    },
+    async getMenuIDCount(menu_id: string) {
+      this.isloading = true;
+      try {
+        const res = await axios.get<MenuModel.MenuIDCountRespons>(
+          `api/count-sub-menus/?menu_id=${menu_id}`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+        if (res.status === 200) {
+          this.respons_menu_id = res.data;
+        }
+      } catch (error) {
+        console.error("Error fetching menu ID count:", error);
+      } finally {
+        this.isloading = false;
+      }
     },
     async Getmenu(users_code: string) {
       if (!users_code) {
@@ -195,8 +355,8 @@ try {
             text: "ສຳເລັດການສ້າງຂໍ້ມູນເມນູຫຼັກ",
             icon: "success",
             showCancelButton: false,
-            showConfirmButton:false,
-          })
+            showConfirmButton: false,
+          });
           setTimeout(() => {
             goPath("/menu");
           }, 1500);
@@ -271,8 +431,7 @@ try {
             });
             setTimeout(() => {
               goPath("/menu");
-            },  1500);
-            
+            }, 1500);
           }
         }
       } catch (error) {
@@ -322,8 +481,7 @@ try {
             });
             setTimeout(() => {
               goPath("/menu");
-            }, );
-            
+            });
           }
         }
       } catch (error) {
@@ -454,7 +612,7 @@ try {
               title: "ສຳເລັດ",
               text: "ສຳເລັດການແກ້ໄຂເມນູຍ່ອຍ",
               icon: "success",
-              showConfirmButton:false,
+              showConfirmButton: false,
               showCancelButton: false,
             });
             setTimeout(() => {

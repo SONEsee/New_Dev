@@ -1,4 +1,3 @@
-
 import * as UserModel from "./users";
 import * as UsermeModel from "./usersme";
 import * as ExpenseCreateModel from "./expensecreate";
@@ -13,7 +12,7 @@ import * as IdentitiesModel from "./identities";
 import * as DeviceDetailModels from "./devicedetail";
 import * as ProductModel from "./product";
 import * as CategoryModel from "./category";
-import *as RoleModel from "./role";
+import * as RoleModel from "./role";
 import * as MenuModel from "./menu";
 import * as ModuleModel from "./module";
 import * as RoleDetailModel from "./roledetail";
@@ -23,13 +22,20 @@ import * as HolidayModel from "./holiday";
 import * as FinCycleModel from "./fincycle";
 import * as GLMasterModel from "./glmaster";
 import * as CerrencyModel from "./currency";
-
+import * as PropertyTypeModel from "./property";
+import * as AssetTypeModel from "./assettype";
+import * as AccountModels from "./accounts";
+import * as TansectionTypeModel from "./transectiontype";
+import * as FaAssetModel from "./faasset";
+import * as AccountsModel from "./accountmethod";
+import * as LocationModel from "./locations";
 // import *as GlModel from './gl';
 
 // import * as RoleMasterModel from "./rolemaster";
 
 import * as RoleMasterModel from "./rolemaster";
-import *as GlModel from './gl';
+import * as GlModel from "./gl";
+import * as SupplierModel from "./suppliers";
 
 export {
   UserModel,
@@ -56,12 +62,15 @@ export {
   FinCycleModel,
   GLMasterModel,
   CerrencyModel,
-
-
+  PropertyTypeModel,
+  SupplierModel,
   GlModel,
   RoleMasterModel,
-  
-
+  AssetTypeModel,
+  AccountModels,
+  TansectionTypeModel,
+  FaAssetModel,
+  AccountsModel,
+  LocationModel,
   // RoleMasterModel
-
 };

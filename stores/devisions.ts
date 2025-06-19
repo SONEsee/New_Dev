@@ -22,6 +22,7 @@ export const DevisionStore = defineStore("devision", {
     };
   },
   actions: {
+    
     async GetDataDetail(id: string) {
       this.isloading = true;
       try {

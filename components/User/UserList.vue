@@ -1,115 +1,57 @@
-<script lang="ts" setup>
+<script setup lang="ts">
+import dayjs from "#build/dayjs.imports.mjs";
+import { ref, computed, onMounted, watch } from "vue";
 import { useRoute } from "vue-router";
-import axios from "@/helpers/axios";
 import { useRolePermissions } from "@/composables/useRolePermissions";
-const {
-  canEdit,
-  canDelete,
-  canView,
-  canAdd,
-  canRecordStatus,
-  canAuthorize,
-  hasPermission,
-  initializeRole,
-} = useRolePermissions();
-interface Userparam {
-  div_id: string;
-  role_id: string;
-}
-const selectedDivision = ref<any | null>(null);
-const selectedRole = ref<any | null>(null);
-const roleStore = RoleStore();
-const devision = UseCategoryStore();
-const role = computed(() => roleStore.respons_data_role || []);
-const userItems = computed(() => devision.categories || []);
+import axios from "@/helpers/axios";
+
 const isUpdatingStatus = ref(false);
-const isUpdateinRecordStatus = ref(false);
-const updaterecordstatus = async (id: string) => {
-  isUpdateinRecordStatus.value = true;
-  try {
-    const notification = await CallSwal({
-      icon: "question",
-      title: "ບໍ່ທັນໄດ້ຕໍ່ api ກັບ backend ເທື່ອ",
-      text: `ໄປຕໍ່ api ກອ່ນເພືອ່ໃຫ້ສາມາດໃຊ້ງານໄດ້`,
-      showCancelButton: true,
-      confirmButtonText: "ຕົກລົງ",
-      cancelButtonText: "ຍົກເລີກ",
-      confirmButtonColor: "#4CAF50",
-    });
-    if (notification.isConfirmed) {
-      await CallSwal({
-        icon: "info",
-        title: "ໄປແປງສາເດີ້",
-        text: `5555555555`,
-        timer: 2000,
-        showConfirmButton: false,
-      });
-    }
-    // const req = await axios.post(`api/users/${id}/record-status/`, {}, {
-    //   headers: {
-    //     "Content-Type": "application/json",
-    //     Authorization: `Bearer ${localStorage.getItem("token")}`,
-    //   },
-    // });if(req.status ===200){
-    //   await agencyStore.GetUser();
-    //   await CallSwal({
-    //     icon: "success",
-    //     title: "ສຳເລັດ",
-    //     text: "ປ່ອນສະຖານະຜູ້ໃຊ້ງານແລ້ວ",
-    //     timer: 2000,
-    //     showConfirmButton: false,
-    //   });
-    // }
-  } catch (error) {}
-};
-const handleApproval = async (user: any) => {
-  try {
-    const notification = await CallSwal({
-      icon: "question",
-      title: "ຢືນຢັນການປຽ່ນສະຖານະ",
-      text: `ທ່ານຕ້ອງການປຽ່ນສະຖານະຜູ້ໃຊ້ "${user.user_name}" ບໍ?`,
-      showCancelButton: true,
-      confirmButtonText: "ອະນຸມັດ",
-      cancelButtonText: "ຍົກເລີກ",
-      confirmButtonColor: "#4CAF50",
-    });
-    if (notification.isConfirmed) {
-      await updaterecordstatus(user.user_id);
-    }
-  } catch (error) {
-    console.error("Error in handleApproval:", error);
-  }
-};
+
 
 const updateAdproveStatus = async (id: string) => {
   try {
     isUpdatingStatus.value = true;
+    const notification = await CallSwal({
+      icon: "warning",
+      title: "ຄຳເຕືອນ",
+      text: `ທ່ານກຳລັງອະນຸມັດຜູ້ໃຊ້ງານ ທ່ານແນ່ໃຈແລ້ວບໍ?`,
+      showCancelButton: true,
+      confirmButtonText: "ຕົກລົງ",
+      cancelButtonText: "ຍົກເລີກ",
+    });
+    
+    if (notification.isConfirmed) {
+      const res = await axios.post(
+        `api/users/${id}/authorize/`,
+        {},
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
 
-    const res = await axios.post(
-      `api/users/${id}/authorize/`,
-      {},
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
+      if (res.status === 200) {
+        await agencyStore.GetUser();
+        await CallSwal({
+          icon: "success",
+          title: "ສຳເລັດ",
+          text: "ອະນຸມັດຜູ້ໃຊ້ງານແລ້ວ",
+          timer: 2000,
+          showConfirmButton: false,
+        });
       }
-    );
-
-    if (res.status === 200) {
-      await agencyStore.GetUser();
-
-      await CallSwal({
-        icon: "success",
-        title: "ສຳເລັດ",
-        text: "ອະນຸມັດຜູ້ໃຊ້ງານແລ້ວ",
-        timer: 2000,
-        showConfirmButton: false,
-      });
+      if (res.status === 406) {
+        await CallSwal({
+          icon: "warning",
+          title: "ບໍ່ສາມາດອະນຸມັດໄດ້",
+          text: "ບໍ່ສາມາດເປີດໄດ້ ເນື່ອງຈາກ ຍັງບໍ່ທັນອະນຸມັດ",
+        });
+      }
     }
   } catch (error) {
     console.error("Error updating approve status:", error);
-
     await CallSwal({
       icon: "error",
       title: "ເກີດຂໍ້ຜິດພາດ",
@@ -120,85 +62,224 @@ const updateAdproveStatus = async (id: string) => {
   }
 };
 
-const toggleUserStatus = async (user: any) => {
-  try {
-    const result = await CallSwal({
-      icon: "question",
-      title: "ຢືນຢັນການອະນຸມັດ",
-      text: `ທ່ານຕ້ອງການອະນຸມັດຜູ້ໃຊ້ງານ "${user.user_name}" ບໍ?`,
-      showCancelButton: true,
-      confirmButtonText: "ອະນຸມັດ",
-      cancelButtonText: "ຍົກເລີກ",
-      confirmButtonColor: "#4CAF50",
-    });
 
-    if (result.isConfirmed) {
-      await updateAdproveStatus(user.user_id);
+const unupdateAdproveStatus = async (id: string) => {
+  try {
+    isUpdatingStatus.value = true;
+    const notification = await CallSwal({
+      icon: "warning",
+      title: "ຄຳເຕືອນ",
+      text: `ທ່ານກຳລັງຍົກເລີກອະນຸມັດຜູ້ໃຊ້ງານ ທ່ານແນ່ໃຈແລ້ວບໍ?`,
+      showCancelButton: true,
+      confirmButtonText: "ຕົກລົງ",
+      cancelButtonText: "ຍົກເລີກ",
+    });
+    
+    if (notification.isConfirmed) {
+      const res = await axios.post(
+        `api/users/${id}/unauthorize/`,
+        {},
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      if (res.status === 200) {
+        await agencyStore.GetUser();
+        await CallSwal({
+          icon: "success",
+          title: "ສຳເລັດ",
+          text: "ຍົກເລີກອະນຸມັດຜູ້ໃຊ້ງານແລ້ວ",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+      }
     }
   } catch (error) {
-    console.error("Error in toggleUserStatus:", error);
+    console.error("Error updating approve status:", error);
+    await CallSwal({
+      icon: "error",
+      title: "ເກີດຂໍ້ຜິດພາດ",
+      text: "ບໍ່ສາມາດຍົກເລີກອະນຸມັດຜູ້ໃຊ້ງານໄດ້",
+    });
+  } finally {
+    isUpdatingStatus.value = false;
   }
 };
+
+const {
+  canEdit,
+  canDelete,
+  canView,
+  canAdd,
+  canRecordStatus,
+  canAuthStatus,
+  canAuthorize,
+  hasPermission,
+  initializeRole,
+} = useRolePermissions();
+
+const roleStore = RoleStore();
+const role = computed(() => {
+  return roleStore.responst_data_detail;
+});
+
+const selectedDivision = ref<any | null>(null);
+const selectedRole = ref<any | null>(null);
+
+const SELECTED_DIVISION_KEY = "selected_division_filter";
+const SELECTED_ROLE_KEY = "selected_role_filter";
+
+
+const updatRecodeStatus = async (user_id: string) => {
+  try {
+    await agencyStore.updateRecordStatus(user_id);
+    await agencyStore.GetUser();
+  } catch (error) {
+    console.error("Error updating record status:", error);
+    await CallSwal({
+      icon: "error",
+      title: "ເກີດຂໍ້ຜິດພາດ",
+      text: "ບໍ່ສາມາດແກ້ໄຂໄດ້",
+    });
+  }
+};
+
+const updatRecodeStatusof = async (user_id: string) => {
+  try {
+    await agencyStore.updateRecordStatusOff(user_id);
+    await agencyStore.GetUser();
+  } catch (error) {
+    console.error("Error updating record status:", error);
+    await CallSwal({
+      icon: "error",
+      title: "ເກີດຂໍ້ຜິດພາດ",
+      text: "ບໍ່ສາມາດແກ້ໄຂໄດ້",
+    });
+  }
+};
+
+const loadSavedDivisionSelection = () => {
+  try {
+    const saved = localStorage.getItem(SELECTED_DIVISION_KEY);
+    if (saved) {
+      const parsedDivision = JSON.parse(saved);
+      selectedDivision.value = parsedDivision;
+    }
+  } catch (error) {
+    console.error("Failed to load saved division selection:", error);
+  }
+};
+
+const loadSavedRoleSelection = () => {
+  try {
+    const saved = localStorage.getItem(SELECTED_ROLE_KEY);
+    if (saved) {
+      const parsedRole = JSON.parse(saved);
+      selectedRole.value = parsedRole;
+    }
+  } catch (error) {
+    console.error("Failed to load saved role selection:", error);
+  }
+};
+
+const saveDivisionSelection = (division: any) => {
+  try {
+    if (division) {
+      localStorage.setItem(SELECTED_DIVISION_KEY, JSON.stringify(division));
+    } else {
+      localStorage.removeItem(SELECTED_DIVISION_KEY);
+    }
+  } catch (error) {
+    console.error("Failed to save division selection:", error);
+  }
+};
+
+const saveRoleSelection = (role: any) => {
+  try {
+    if (role) {
+      localStorage.setItem(SELECTED_ROLE_KEY, JSON.stringify(role));
+    } else {
+      localStorage.removeItem(SELECTED_ROLE_KEY);
+    }
+  } catch (error) {
+    console.error("Failed to save role selection:", error);
+  }
+};
+
+watch(
+  [selectedDivision, selectedRole],
+  async ([newDivision, newRole]) => {
+    saveDivisionSelection(newDivision);
+    saveRoleSelection(newRole);
+    
+    try {
+      agencyStore.reqest_get_user.query.div_id = newDivision?.div_id || null;
+      agencyStore.reqest_get_user.query.role_id = newRole?.role_id || null;
+      await agencyStore.GetUser();
+    } catch (error) {
+      console.error("Failed to auto search users:", error);
+    }
+  },
+  { deep: true }
+);
+
+const clearFilters = async () => {
+  selectedDivision.value = null;
+  selectedRole.value = null;
+  agencyStore.reqest_get_user.query.div_id = null;
+  agencyStore.reqest_get_user.query.role_id = null;
+  await agencyStore.GetUser();
+};
+
+const loadDataAndApplyFilter = async () => {
+  try {
+    await Promise.all([
+      agencyStore.GetUser(),
+      devision.GetListData(),
+      roleStore.GetRole(),
+    ]);
+
+    loadSavedDivisionSelection();
+    loadSavedRoleSelection();
+
+    if (selectedDivision.value || selectedRole.value) {
+      agencyStore.reqest_get_user.query.div_id = selectedDivision.value?.div_id || null;
+      agencyStore.reqest_get_user.query.role_id = selectedRole.value?.role_id || null;
+      await agencyStore.GetUser();
+    }
+  } catch (error) {
+    console.error("Failed to load initial data:", error);
+  }
+};
+
 const route = useRoute();
 const user_id = route.query.user_id as string;
 const agencyStore = UserStore();
+const devision = UseCategoryStore();
+
 const response_data = computed(() => {
-  return agencyStore.userList || [];
+  const data = agencyStore.userList || null;
+  if (!data) return [];
+  if (Array.isArray(data)) return data;
+  return [data];
 });
 
-const searchUsers = () => {
-  agencyStore.reqest_get_user.query.div_id =
-    selectedDivision.value?.div_id || null;
-  agencyStore.reqest_get_user.query.role_id =
-    selectedRole.value?.role_id || null;
+const roleData = computed(() => roleStore.respons_data_role || []);
+const userItems = computed(() => devision.categories || []);
 
-  agencyStore.GetUser();
-};
-const role1 = computed(() => {
-  return roleStore.responst_data_detail;
-});
-onMounted(() => {
+onMounted(async () => {
   initializeRole();
   roleStore.GetRoleDetail();
-  agencyStore.GetUser();
+  await loadDataAndApplyFilter();
+  
   if (user_id) {
     agencyStore.DeleteUser(user_id);
   }
-  devision.GetListData();
-  roleStore.GetRole();
 });
-
-import { computed, ref } from "vue";
-
-const headers = computed((any) => [
-  { title: "ລຳດັບຜູ້ໃຊ້ງານ", key: "user_id", sortable: false },
-  { title: "ຊື່ຜູ້ໃຊ້ງານ", key: "user_name", sortable: false },
-  { title: "ອີເມວ", key: "user_email", sortable: false },
-  { title: "ເບີ້ໂທ", key: "user_mobile", sortable: false },
-  { title: "ພະແນກ", key: "division", sortable: false, align: "center" },
-  {
-    title: "ສິດເຂົ້ານຳໃຊ້ລະບົບ",
-    key: "role",
-    sortable: false,
-    align: "center",
-  },
-
-  ...(canView.value
-    ? [{ title: "ເບິ່ງ", key: "detail", sortable: false, align: "center" }]
-    : []),
-  ...(canEdit.value
-    ? [{ title: "ແກ້ໄຂ", key: "edit", sortable: false, align: "center" }]
-    : []),
-  ...(canDelete.value
-    ? [{ title: "ລົບ", key: "delete", sortable: false, align: "center" }]
-    : []),
-  ...(canAuthorize.value
-    ? [{ title: "ອານຸມັດ", key: "consfirm", sortable: false, align: "center" }]
-    : []),
-  ...(canRecordStatus.value
-    ? [{ title: "ສະຖານະ", key: "Record_Status", sortable: false }]
-    : []),
-]);
 
 const onDeleteUser = async (user_id: string) => {
   const confirmation = await CallSwal({
@@ -217,451 +298,388 @@ const onDeleteUser = async (user_id: string) => {
     }
   }
 };
-const clearFilters = () => {
+
+const title = "ຂໍ້ມູນຜູ້ໃຊ້ງານ";
+
+
+const header = computed(() => {
+  return [
+    {
+      title: "ລະຫັດ",
+      value: "user_id",
+      key: "user_id",
+      align: "start",
+      sortable: true,
+      filterable: true,
+      groupable: false,
+      divider: false,
+      class: "text-primary font-weight-bold",
+      cellClass: "pa-2",
+    },
+    {
+      title: "ຊື່ຜູ້ໃຊ້ງານ",
+      value: "user_name",
+      align: "start",
+      sortable: true,
+      filterable: true,
+      class: "text-h6",
+      cellClass: "text-wrap",
+    },
+    {
+      title: "ອີເມວ",
+      value: "user_email",
+      align: "start",
+      sortable: true,
+      filterable: true,
+      class: "text-subtitle-1",
+    },
+    {
+      title: "ເບີ້ໂທ",
+      value: "user_mobile",
+      align: "center",
+      sortable: true,
+      filterable: true,
+      class: "text-center",
+      cellClass: "text-center font-weight-bold",
+    },
+    {
+      title: "ພະແນກ",
+      value: "division",
+      align: "center",
+      sortable: true,
+      filterable: true,
+      sort: (a, b) => {
+        return a.division?.div_id.localeCompare(b.division?.div_id) || 0;
+      },
+    },
+    {
+      title: "ສິດເຂົ້ານຳໃຊ້ລະບົບ",
+      value: "role",
+      align: "center",
+      sortable: true,
+      filterable: true,
+      class: "text-center",
+    },
+    {
+      title: "ມື້ສ້າງຂໍ້ມູນ",
+      value: "created_date",
+      align: "center",
+      sortable: true,
+      filterable: false,
+      class: "text-center",
+    },
+    ...(canRecordStatus.value ? [{
+      title: "ສະຖານະ",
+      value: "Record_Status",
+      align: "center",
+      sortable: true,
+      filterable: true,
+      width: "120px",
+      class: "text-center",
+      cellClass: "text-center",
+      filter: (value, query, item) => {
+        if (!query) return true;
+        const statusText = value === "Y" ? "ເປີດໃຊ້ງານ" : "ປິດໃຊ້ງານ";
+        return statusText.includes(query);
+      },
+    }] : []),
+    ...(canView.value ? [{
+      title: "ເບິ່ງ",
+      value: "view",
+      align: "center",
+      sortable: false,
+      filterable: false,
+      class: "text-center",
+      cellClass: "text-center",
+      width: "80px",
+    }] : []),
+    ...(canEdit.value ? [{
+      title: "ແກ້ໄຂ",
+      value: "edit",
+      align: "center",
+      sortable: false,
+      filterable: false,
+      class: "text-center",
+      cellClass: "text-center",
+      width: "80px",
+    }] : []),
+    // {
+    ...(canDelete.value ? [
+      {
+      title: "ລົບ",
+      value: "delete",
+      align: "center",
+      sortable: false,
+      filterable: false,
+      class: "text-center",
+      cellClass: "text-center",
+      width: "80px",
+    },
+    ] : []),
+    // {
+    //   title: "ແກ້ໄຂ",
+    //   value: "edit",
+    //   align: "center",
+    //   sortable: false,
+    //   filterable: false,
+    //   class: "text-center",
+    //   cellClass: "text-center",
+    //   width: "80px",
+    // },
+    
+    
+    
+    ...(canAuthorize.value ? [{
+      title: "ອະນຸມັດ",
+      value: "confirm",
+      align: "center",
+      sortable: false,
+      filterable: false,
+      class: "text-center",
+      cellClass: "text-center",
+      width: "80px",
+    }] : []),
+  ];
+});
+
+const clearSavedSelection = () => {
+  localStorage.removeItem(SELECTED_DIVISION_KEY);
+  localStorage.removeItem(SELECTED_ROLE_KEY);
   selectedDivision.value = null;
   selectedRole.value = null;
-
   agencyStore.reqest_get_user.query.div_id = null;
   agencyStore.reqest_get_user.query.role_id = null;
-  agencyStore.GetUser();
 };
+
+defineExpose({
+  clearSavedSelection,
+});
 </script>
 
 <template>
-  <div class="pa-4">
-    <v-card elevation="0" tile width="100%" min-height="95vh" class="">
-      <v-row>
-        <v-col cols="12">
-          <GlobalTextTitleLine
-            :title="`ໜ້າຈັດການຂໍ້ມູນຜູ້ໃຊ້ງານ / Manage User (${formatnumber(
-              response_data?.length ?? 0
-            )})`"
-          />
-        </v-col>
+  <GlobalTextTitleLine :title="`${title} (${formatnumber(response_data?.length ?? 0)})`" />
 
-        <v-col
-          cols="12"
-          class="d-flex flex-wrap justify-space-between align-center"
+  <v-col cols="12">
+    <v-row>
+      <v-col cols="12" md="3">
+        <div class="d-flex">
+          <v-btn color="primary" @click="goPath('/user/create')" v-if="canAdd">
+            <v-icon icon="mdi-plus"></v-icon> ເພີ່ມຜູ້ໃຊ້ງານ
+          </v-btn>
+        </div>
+      </v-col>
+
+      <v-col cols="12" md="4" class="text-no-wrap">
+        <v-autocomplete
+          v-model="selectedDivision"
+          density="compact"
+          label="ເລືອກພະແນກ"
+          :items="userItems"
+          item-value="div_id"
+          item-title="division_name_la"
+          variant="outlined"
+          clearable
+          placeholder="ເລືອກພະແນກ"
+          return-object
+          :loading="agencyStore.loading"
         >
-          <v-row>
-            <v-col cols="12">
-              <div class="d-flex flex-wrap align-center">
-                <v-btn
-                  v-if="canAdd"
-                  color="primary"
-                  elevation="0"
-                  @click="goPath('/user/create')"
-                >
-                  <v-icon class="mr-2">mdi-plus</v-icon>
-                  ເພີ່ມຂໍ້ມູນຜູ້ໃຊ້ງານ
-                </v-btn>
-              </div>
-            </v-col>
-            <v-col cols="12">
-              <v-row>
-                <v-col cols="12" md="5" style="font-size: 80%">
-                  <!-- <v-autocomplete
-                    v-model="selectedDivision"
-                    density="compact"
-                    label="ເລືອກພະແນກ"
-                    :items="userItems"
-                    item-value="div_id"
-                    item-title="division_name_la"
-                    variant="outlined"
-                    clearable
-                    placeholder="ເລືອກພະແນກເພື່ອກັ່ນຕອງຂໍ້ມູນ"
-                    return-object
-                  ></v-autocomplete> -->
-                  <v-autocomplete
-                    style="font-size: 80%"
-                    v-model="selectedDivision"
-                    density="compact"
-                    label="ເລືອກພະແນກ"
-                    :items="userItems"
-                    item-value="div_id"
-                    item-title="division_name_la"
-                    variant="outlined"
-                    clearable
-                    placeholder="ເລືອກພະແນກເພື່ອກັ່ນຕອງຂໍ້ມູນ"
-                    return-object
-                  >
-                    <template v-slot:selection="{ item }">
-                      {{ item.raw.division_name_la }}-{{ item.raw.div_id }}
-                    </template>
+          <template v-slot:selection="{ item }">
+            {{ item.raw.division_name_la }}-{{ item.raw.div_id }}
+          </template>
 
-                    <template v-slot:item="{ props, item }">
-                      <v-list-item
-                        v-bind="props"
-                        :subtitle="`ID: ${item.raw.div_id}`"
-                        :title="item.raw.division_name_la"
-                      />
-                    </template>
-                  </v-autocomplete>
-                </v-col>
+          <template v-slot:item="{ props, item }">
+            <v-list-item
+              v-bind="props"
+              :subtitle="`ID: ${item.raw.div_id}`"
+              :title="item.raw.division_name_la"
+            />
+          </template>
+        </v-autocomplete>
+      </v-col>
 
-                <v-col cols="12" md="4">
-                  <v-autocomplete
-                    v-model="selectedRole"
-                    density="compact"
-                    label="ເລືອກສິດການນຳໃຊ້ລະບົບ"
-                    :items="role"
-                    item-value="role_id"
-                    item-title="role_name_la"
-                    variant="outlined"
-                    clearable
-                    placeholder="ເລືອກສິດການນຳໃຊ້ລະບົບ"
-                    return-object
-                  >
-                    <template v-slot:selection="{ item }">
-                      {{ item.raw.role_name_la }}-{{ item.raw.role_id }}
-                    </template>
+      <v-col cols="12" md="3" class="text-no-wrap">
+        <v-autocomplete
+          v-model="selectedRole"
+          density="compact"
+          label="ເລືອກສິດການນຳໃຊ້ລະບົບ"
+          :items="roleData"
+          item-value="role_id"
+          item-title="role_name_la"
+          variant="outlined"
+          clearable
+          placeholder="ເລືອກສິດການນຳໃຊ້ລະບົບ"
+          return-object
+          :loading="agencyStore.loading"
+        >
+          <template v-slot:selection="{ item }">
+            {{ item.raw.role_name_la }}-{{ item.raw.role_id }}
+          </template>
 
-                    <template v-slot:item="{ props, item }">
-                      <v-list-item
-                        v-bind="props"
-                        :subtitle="`ID: ${item.raw.role_id}`"
-                        :title="item.raw.role_name_la"
-                      />
-                    </template>
-                  </v-autocomplete>
-                </v-col>
-                <v-col cols="12" md="2">
-                  <div class="d-flex gap-2">
-                    <v-btn
-                      color="primary"
-                      variant="flat"
-                      @click="searchUsers"
-                      :loading="agencyStore.loading"
-                    >
-                      <v-icon class="mr-2">mdi-magnify</v-icon>
-                      ຄົ້ນຫາ
-                    </v-btn>
-                    <v-btn
-                      color="secondary"
-                      variant="outlined"
-                      @click="clearFilters"
-                    >
-                      <v-icon class="mr-2">mdi-filter-remove</v-icon>
-                      ລຶບຕົວກັ່ນ
-                    </v-btn>
-                  </div>
-                </v-col>
-              </v-row>
-            </v-col>
-          </v-row>
-        </v-col>
+          <template v-slot:item="{ props, item }">
+            <v-list-item
+              v-bind="props"
+              :subtitle="`ID: ${item.raw.role_id}`"
+              :title="item.raw.role_name_la"
+            />
+          </template>
+        </v-autocomplete>
+      </v-col>
 
-        <v-col cols="12">
-          <v-data-table
-            :headers="headers"
-            :items="response_data"
-            class="text-no-wrap  "
+      <v-col cols="12" md="2">
+        <v-btn
+          color="secondary"
+          variant="outlined"
+          @click="clearFilters"
+          :loading="agencyStore.loading"
+          block
+        >
+          <v-icon class="mr-2">mdi-filter-remove</v-icon>
+          ເຄລຍການກັ່ນຕອງ
+        </v-btn>
+      </v-col>
+    </v-row>
+
+    <v-data-table :headers="header" :items="response_data || []" class="text-no-wrap">
+      <template v-slot:header.user_id="{ column }">
+        <v-icon start>mdi-identifier</v-icon>
+        <b style="color: blue">{{ column.title }}</b>
+      </template>
+
+      <template v-slot:header.user_name="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
+      </template>
+      
+      <template v-slot:header.user_email="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
+      </template>
+      
+      <template v-slot:header.user_mobile="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
+      </template>
+      
+      <template v-slot:header.division="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
+      </template>
+      
+      <template v-slot:header.role="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
+      </template>
+      
+      <template v-slot:header.created_date="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
+      </template>
+      
+      <template v-slot:header.Record_Status="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
+      </template>
+      
+      <template v-slot:header.edit="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
+      </template>
+      
+      <template v-slot:header.view="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
+      </template>
+      
+      <template v-slot:header.delete="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
+      </template>
+      
+      <template v-slot:header.confirm="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
+      </template>
+
+      <template v-slot:item.created_date="{ item }">
+        {{ dayjs(item.created_date).format("DD/MM/YYYY") }}
+      </template>
+
+      <template v-slot:item.Record_Status="{ item }">
+        <div>
+          <v-btn
+            v-if="item.Record_Status === 'O'"
+            flat
+            @click="updatRecodeStatusof(item.user_id)"
           >
-            <template v-slot:header.user_id="{ column }">
-              <span class="text-uppercase text-primary">{{
-                column.title
-              }}</span>
-            </template>
-            <template v-slot:header.user_name="{ column }">
-              <span class="text-uppercase text-primary">{{
-                column.title
-              }}</span>
-            </template>
-            <template v-slot:header.user_email="{ column }">
-              <span class="text-uppercase text-primary">{{
-                column.title
-              }}</span>
-            </template>
-            <template v-slot:header.user_mobile="{ column }">
-              <span class="text-uppercase text-primary">{{
-                column.title
-              }}</span>
-            </template>
-            <template v-slot:header.division="{ column }">
-              <span class="text-uppercase text-primary">{{
-                column.title
-              }}</span>
-            </template>
-            <template v-slot:header.role="{ column }">
-              <span class="text-uppercase text-primary">{{
-                column.title
-              }}</span>
-            </template>
-            <template v-slot:header.Record_Status="{ column }">
-              <span class="text-uppercase text-primary">{{
-                column.title
-              }}</span>
-            </template>
+            <v-icon color="info">mdi-toggle-switch</v-icon>
+          </v-btn>
+          <v-btn
+            v-if="item.Record_Status === 'C'"
+            flat
+            @click="updatRecodeStatus(item.user_id)"
+          >
+            <v-icon color="error">mdi-toggle-switch-off-outline</v-icon>
+          </v-btn>
+        </div>
+      </template>
 
-            <template v-slot:header.detail="{ column }">
-              <span class="text-uppercase text-primary">{{
-                column.title
-              }}</span>
-            </template>
-            <template v-slot:header.edit="{ column }">
-              <span class="text-uppercase text-primary">{{
-                column.title
-              }}</span>
-            </template>
-            <template v-slot:header.delete="{ column }">
-              <span class="text-uppercase text-primary">{{
-                column.title
-              }}</span>
-            </template>
-            <template v-slot:header.consfirm="{ column }">
-              <span class="text-uppercase text-primary">{{
-                column.title
-              }}</span>
-            </template>
+      <template v-slot:item.no="{ item, index }">
+        {{ index + 1 }}
+      </template>
 
-            <template v-slot:item.no="{ item, index }">
-              {{ index + 1 }}
-            </template>
-            <template v-slot:item.Record_Status="{ item }">
-              <div v-if="canRecordStatus">
-                <v-btn
-                  flat
-                  size="small"
-                  @click="handleApproval(item)"
-                  v-if="canRecordStatus && item.Record_Status === 'O'"
-                >
-                  <v-icon icon="mdi-toggle-switch" color="info"></v-icon>
-                </v-btn>
-                <v-btn
-                  flat
-                  size="small"
-                  @click="handleApproval(item)"
-                  v-if="canRecordStatus && item.Record_Status === 'C'"
-                >
-                  <v-icon
-                    icon="mdi-toggle-switch-off-outline"
-                    color="error"
-                  ></v-icon>
-                </v-btn>
-              </div>
-              <div v-else>
-                <div v-if="item.Record_Status === 'O'">
-                  <v-chip color="info">
-                    <v-icon icon="mdi-check-decagra" color="info"></v-icon>
-                  </v-chip>
-                </div>
-                <div v-else="item.Record_Status === 'C'">
-                  <v-chip color="error">
-                    <v-icon
-                      icon="mdi-file-excel-box-outline"
-                      color="error"
-                    ></v-icon>
-                  </v-chip>
-                </div>
-              </div>
-            </template>
-            <template v-slot:item.division="item" class="text-center">
-              <div class="text-center">
-                <p>{{ item.item.division?.div_id || "No Data" }}</p>
+      <template v-slot:item.division="item" class="text-center">
+        <div class="text-center">
+          <p>{{ item.item.division?.division_name_la || "No Data" }}</p>
+          <p>{{ item.item.division?.div_id || "ບໍ່ມີຂໍ້ມູນ" }}</p>
+        </div>
+      </template>
 
-                <p>
-                  {{ item.item.division?.division_name_la || "ບໍ່ມີຂໍ້ມູນ" }}
-                </p>
-              </div>
-            </template>
-            <template v-slot:item.role="item" class="text-center">
-              <div class="text-center">
-                <p>{{ item.item.role?.role_id || "No Data" }}</p>
+      <template v-slot:item.role="item" class="text-center">
+        <div class="text-center">
+          <p>{{ item.item.role?.role_name_la || "No Data" }}</p>
+          <p>{{ item.item.role?.role_id || "ບໍ່ມີຂໍ້ມູນ" }}</p>
+        </div>
+      </template>
 
-                <p>
-                  {{ item.item.role?.role_name_la || "ບໍ່ມີຂໍ້ມູນ" }}
-                </p>
-              </div>
-            </template>
+      <template v-slot:item.confirm="{ item }">
+        <div class="d-flex align-center">
+          <v-btn
+            @click="unupdateAdproveStatus(item.user_id)"
+            class="text-primary"
+            v-if="item.Auth_Status === 'A'"
+            flat
+          >
+            <v-icon icon="mdi-toggle-switch" color="primary"></v-icon>
+          </v-btn>
+          <v-btn
+            @click="updateAdproveStatus(item.user_id)"
+            class="text-error"
+            v-if="item.Auth_Status === 'U'"
+            flat
+          >
+            <v-icon icon="mdi-toggle-switch-off-outline" color="error"></v-icon>
+          </v-btn>
+        </div>
+      </template>
 
-            <!-- <template v-slot:item.image="{ item }">
-              <div class="pa-2">
-                <GlobalMenuSpanImage :image="item.profile_image" />
-              </div>
-            </template> -->
-            <!-- <template v-slot:item.consfirm="{ item }">
-  <div class="d-flex align-center">
-    <v-btn
-      v-if="(role1 as any)?.[0]?.Auth_Detail === 1"
-      :color="item.Auth_Status === 'A' ? 'success' : 'warning'"
-      :icon="
-        item.Auth_Status === 'A'
-          ? 'mdi-check-circle'
-          : 'mdi-toggle-switch-off-outline'
-      "
-      variant="text"
-      size="small"
-      :loading="isUpdatingStatus"
-      :disabled="item.Auth_Status === 'A'"
-      @click="toggleUserStatus(item)"
-      :class="{
-        'disabled-btn': item.Auth_Status === 'A'
-      }"
-      :title="item.Auth_Status === 'A' ? 'ອະນຸມັດແລ້ວ' : 'ຄລິກເພື່ອອະນຸມັດ'"
-    />
-    
-  
-    <v-fade-transition>
-      <v-icon
-        v-if="item.Auth_Status === 'A'"
-        color="success"
-        size="small"
-        class="ml-2"
-      >
-        mdi-shield-check
-      </v-icon>
-    </v-fade-transition>
-  </div>
-</template> -->
-            <template v-slot:item.consfirm="{ item }">
-              <GlobalUserApproval
-                v-if="canAuthorize"
-                :item="item"
-                :role-permissions="role1"
-                :loading="isUpdatingStatus"
-                @approve="toggleUserStatus"
-              />
-              <div v-else>
-                <v-chip v-if="item.Auth_Status === 'A'" color="info">
-                  <v-icon icon="mdi-toggle-switch" color="info"></v-icon>
-                </v-chip>
-                <v-chip v-else color="error">
-                  <v-icon icon="mdi-toggle-switch" color="error"></v-icon>
-                </v-chip>
-              </div>
-            </template>
-            <!-- <template v-slot:item.consfirm="{ item }">
-             
-              <v-btn
-                v-if="(role1 as any)?.[0]?.Auth_Detail === 1 "
-                color="success"
-                icon="mdi-check-circle"
-                variant="text"
-                size="small"
-                :loading="isUpdatingStatus"
-                @click="approveUser(item)"
-                title="ອະນຸມັດຢູ້ໃຊ້ງານ"
-              />
+      <template v-slot:item.view="{ item }">
+        <v-btn
+          small
+          flat
+          class="text-primary"
+          icon="mdi-eye-outline"
+          @click="goPath(`/user/detail?user_id=${item.user_id}`)"
+        />
+      </template>
 
-              
-              <v-btn
-                v-if="(role1 as any)?.[0]?.Auth_Detail === 1"
-                :color="item.Auth_Status === 'A' ? 'error' : 'primary'"
-                :icon="
-                  item.Auth_Status === 'A'
-                    ? 'mdi-toggle-switch'
-                    : 'mdi-toggle-switch-off-outline'
-                "
-                variant="text"
-                size="small"
-                :loading="isUpdatingStatus"
-                @click="toggleUserStatus(item)"
-                :title="item.Auth_Status === 'A' ? 'ປິດໃຊ້ງານ' : 'ເປີດໃຊ້ງານ'"
-              />
+      <template v-slot:item.edit="{ item }">
+        <v-btn
+          small
+          flat
+          class="text-info"
+          icon="mdi-pen"
+          @click="goPath(`/user/edit?user_id=${item.user_id}`)"
+        />
+      </template>
 
-             
-              <v-tooltip bottom>
-                <template v-slot:activator="{ props }">
-                  <v-chip
-                    v-bind="props"
-                    :color="item.Auth_Status === 'A' ? 'success' : 'warning'"
-                    size="small"
-                    variant="flat"
-                  >
-                    {{
-                      item.Auth_Status === "A" ? "ອະນຸມັດແລ້ວ" : "ລໍຖ້າອະນຸມັດ"
-                    }}
-                  </v-chip>
-                </template>
-                <span>{{
-                  item.Auth_Status === "A"
-                    ? "ຜູ້ໃຊ້ງານນີ້ໄດ້ຮັບການອະນຸມັດແລ້ວ"
-                    : "ຜູ້ໃຊ້ງານນີ້ລໍຖ້າການອະນຸມັດ"
-                }}</span>
-              </v-tooltip>
-            </template> -->
-
-            <template v-slot:item.detail="{ item }">
-              <!-- <v-btn
-                v-if="canEdit"
-                color="primary"
-                icon="mdi-pencil"
-                variant="text"
-                @click="goPath(`/user/edit?user_id=${item.user_id}`)"
-                size="small"
-              ></v-btn> -->
-
-              <v-btn
-                v-if="canView"
-                color="primary"
-                icon="mdi-eye"
-                variant="text"
-                @click="goPath(`/user/detail?user_id=${item.user_id}`)"
-                size="small"
-              ></v-btn>
-
-              <!-- <v-btn
-                v-if="canDelete"
-                color="error"
-                icon="mdi-delete"
-                variant="text"
-                size="small"
-                @click="onDeleteUser(item.user_id)"
-              ></v-btn> -->
-            </template>
-            <template v-slot:item.edit="{ item }">
-              <v-btn
-                v-if="canEdit"
-                color="primary"
-                icon="mdi-pencil"
-                variant="text"
-                @click="goPath(`/user/edit?user_id=${item.user_id}`)"
-                size="small"
-              ></v-btn>
-            </template>
-            <template v-slot:item.delete="{ item }">
-              <v-btn
-                v-if="canDelete"
-                color="error"
-                icon="mdi-delete"
-                variant="text"
-                size="small"
-                @click="onDeleteUser(item.user_id)"
-              ></v-btn>
-            </template>
-          </v-data-table>
-        </v-col>
-      </v-row>
-    </v-card>
-  </div>
+      <template v-slot:item.delete="{ item }">
+        <v-btn
+          small
+          flat
+          class="text-error"
+          icon="mdi-delete-outline"
+          @click="onDeleteUser(item.user_id)"
+        />
+      </template>
+    </v-data-table>
+  </v-col>
 </template>
-<style scoped>
-.disabled-btn {
-  opacity: 0.6;
-  pointer-events: none;
-  filter: grayscale(20%);
-}
-
-.v-data-table thead th {
-  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%) !important;
-  color: #1976d2 !important;
-  font-weight: 600 !important;
-  border-bottom: 2px solid #2196f3 !important;
-  position: relative;
-}
-
-.v-data-table thead th::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #2196f3, #21cbf3, #2196f3);
-}
-
-.v-data-table thead th .text-uppercase {
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-  letter-spacing: 0.5px;
-}
-</style>

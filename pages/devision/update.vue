@@ -6,7 +6,11 @@ import { UseCategoryStore } from "~/stores/category";
 const categoryStore = UseCategoryStore();
 const route = useRoute();
 
-
+definePageMeta({
+  middleware: ['auth'],
+  requiresPermission: true,
+  subMenuId: 5
+})
 onMounted(() => {
   
   

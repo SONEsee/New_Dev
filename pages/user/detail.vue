@@ -1,6 +1,10 @@
 <script setup lang="ts">
-import DetailUser from '~/components/User/DetailUser.vue';
 
+definePageMeta({
+  middleware: ['auth'],
+  requiresPermission: true,
+  subMenuId: 5
+})
 </script>
 <template>
     <DetailUser />

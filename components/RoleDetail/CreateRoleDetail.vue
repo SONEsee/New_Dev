@@ -50,13 +50,6 @@
                       >
                         <template #item="{ props, item }">
                           <v-list-item v-bind="props">
-                            <!-- <template #prepend>
-                              <v-avatar size="32" color="info" variant="tonal">
-                                <v-icon>{{ item.raw.module_icon || 'mdi-view-module' }}</v-icon>
-                              </v-avatar>
-                            </template>
-                            <v-list-item-title>{{ item.raw.display }}</v-list-item-title>
-                            <v-list-item-subtitle>{{ item.raw.module_name_en }}</v-list-item-subtitle> -->
                           </v-list-item>
                         </template>
                       </v-select>

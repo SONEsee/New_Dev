@@ -1,107 +1,178 @@
 <script setup lang="ts">
+import dayjs from "#build/dayjs.imports.mjs";
+import { ref, computed, onMounted, watch } from "vue";
+import { useRolePermissions } from "@/composables/useRolePermissions";
 import { UseCategoryStore } from "~/stores/category";
-import { onMounted } from "vue";
-import { goPath } from "~/composables/global";
-import { CallSwal } from "~/composables/global";
-import { DefaultSwalError } from "~/composables/global";
-const Headers = [
-  { title: "ລຳດັບ", value: "index" },
-  { title: "ລະຫັດພະແນກ", value: "div_id" },
-  { title: "ຊື່ພາສາລາວ", value: "division_name_la" },
-  { title: "ຊື່ພາສາອັງກິດ", value: "division_name_en" },
-  { title: "ສະຖານະການໃຊ້ງານ", value: "Once_Auth" },
-  // { title: "ສະຖານະການອານຸມັດ", value: "Auth_Status" },
-  { title: "ອະນຸມັດ", value: "confirm", align: "center" },
-  { title: "ຈັດການ", value: "Actions", align: "center" },
-];
-const {
-  canEdit,
-  canDelete,
-  canView,
-  canAdd,
-  canAuthorize,
-  hasPermission,
-  initializeRole,
+import axios from "@/helpers/axios";
 
-} = useRolePermissions();
 const isUpdatingStatus = ref(false);
+
+
 const updateAdproveStatus = async (id: string) => {
   try {
     isUpdatingStatus.value = true;
+    const notification = await CallSwal({
+      icon: "warning",
+      title: "ຄຳເຕືອນ",
+      text: `ທ່ານກຳລັງອະນຸມັດພະແນກ ທ່ານແນ່ໃຈແລ້ວບໍ?`,
+      showCancelButton: true,
+      confirmButtonText: "ຕົກລົງ",
+      cancelButtonText: "ຍົກເລີກ",
+    });
+    
+    if (notification.isConfirmed) {
+      const res = await axios.post(
+        `api/divisions/${id}/authorize/`,
+        {},
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
 
-    const res = await axios.post(
-      `api/users/${id}/authorize/`,
-      {},
-      {
-        // ເພີ່ມ {} ສຳລັບ body
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
+      if (res.status === 200) {
+        await categories.GetListData();
+        await CallSwal({
+          icon: "success",
+          title: "ສຳເລັດ",
+          text: "ອະນຸມັດພະແນກແລ້ວ",
+          timer: 2000,
+          showConfirmButton: false,
+        });
       }
-    );
-
-    if (res.status === 200) {
-      // ສຳເລັດ - refresh data
-      await agencyStore.GetUser();
-
-      await CallSwal({
-        icon: "success",
-        title: "ສຳເລັດ",
-        text: "ອະນຸມັດຜູ້ໃຊ້ງານແລ້ວ",
-        timer: 2000,
-        showConfirmButton: false,
-      });
+      if (res.status === 406) {
+        await CallSwal({
+          icon: "warning",
+          title: "ບໍ່ສາມາດອະນຸມັດໄດ້",
+          text: "ບໍ່ສາມາດເປີດໄດ້ ເນື່ອງຈາກ ຍັງບໍ່ທັນອະນຸມັດ",
+        });
+      }
     }
   } catch (error) {
     console.error("Error updating approve status:", error);
-
     await CallSwal({
       icon: "error",
       title: "ເກີດຂໍ້ຜິດພາດ",
-      text: "ບໍ່ສາມາດອະນຸມັດຜູ້ໃຊ້ງານໄດ້",
+      text: "ບໍ່ສາມາດອະນຸມັດພະແນກໄດ້",
     });
   } finally {
     isUpdatingStatus.value = false;
   }
 };
 
-// ຫຼື ຖ້າຢາກໃຫ້ມີ confirmation dialog
-const toggleUserStatus = async (user: any) => {
-  try {
-    const result = await CallSwal({
-      icon: "question",
-      title: "ຢືນຢັນການອະນຸມັດ",
-      text: `ທ່ານຕ້ອງການອະນຸມັດຜູ້ໃຊ້ງານ "${user.user_name}" ບໍ?`,
-      showCancelButton: true,
-      confirmButtonText: "ອະນຸມັດ",
-      cancelButtonText: "ຍົກເລີກ",
-      confirmButtonColor: "#4CAF50",
-    });
 
-    if (result.isConfirmed) {
-      await updateAdproveStatus(user.user_id);
+const unupdateAdproveStatus = async (id: string) => {
+  try {
+    isUpdatingStatus.value = true;
+    const notification = await CallSwal({
+      icon: "warning",
+      title: "ຄຳເຕືອນ",
+      text: `ທ່ານກຳລັງຍົກເລີກອະນຸມັດພະແນກ ທ່ານແນ່ໃຈແລ້ວບໍ?`,
+      showCancelButton: true,
+      confirmButtonText: "ຕົກລົງ",
+      cancelButtonText: "ຍົກເລີກ",
+    });
+    
+    if (notification.isConfirmed) {
+      const res = await axios.post(
+        `api/divisions/${id}/unauthorize/`,
+        {},
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      if (res.status === 200) {
+        await categories.GetListData();
+        await CallSwal({
+          icon: "success",
+          title: "ສຳເລັດ",
+          text: "ຍົກເລີກອະນຸມັດພະແນກແລ້ວ",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+      }
     }
   } catch (error) {
-    console.error("Error in toggleUserStatus:", error);
+    console.error("Error updating approve status:", error);
+    await CallSwal({
+      icon: "error",
+      title: "ເກີດຂໍ້ຜິດພາດ",
+      text: "ບໍ່ສາມາດຍົກເລີກອະນຸມັດພະແນກໄດ້",
+    });
+  } finally {
+    isUpdatingStatus.value = false;
   }
 };
+
+const {
+  canEdit,
+  canDelete,
+  canView,
+  canAdd,
+  canRecordStatus,
+  canAuthStatus,
+  canAuthorize,
+  hasPermission,
+  initializeRole,
+} = useRolePermissions();
+
 const roleStore = RoleStore();
-const role1 = computed(() => {
+const role = computed(() => {
   return roleStore.responst_data_detail;
 });
-const categories = UseCategoryStore();
-const response_data = computed(() => categories.categories);
-console.log(response_data.value, "response_data");
 
-onMounted(() => {
+
+const updatRecodeStatus = async (div_id: string) => {
+  try {
+    await categories.updateAdproveStatus(div_id);
+    await categories.GetListData();
+  } catch (error) {
+    console.error("Error updating record status:", error);
+    await CallSwal({
+      icon: "error",
+      title: "ເກີດຂໍ້ຜິດພາດ",
+      text: "ບໍ່ສາມາດແກ້ໄຂໄດ້",
+    });
+  }
+};
+
+const updatRecodeStatusof = async (div_id: string) => {
+  try {
+    await categories.updateRecordStatusOff(div_id);
+    await categories.GetListData();
+  } catch (error) {
+    console.error("Error updating record status:", error);
+    await CallSwal({
+      icon: "error",
+      title: "ເກີດຂໍ້ຜິດພາດ",
+      text: "ບໍ່ສາມາດແກ້ໄຂໄດ້",
+    });
+  }
+};
+
+const categories = UseCategoryStore();
+
+const response_data = computed(() => {
+  const data = categories.categories || null;
+  if (!data) return [];
+  if (Array.isArray(data)) return data;
+  return [data];
+});
+
+onMounted(async () => {
   initializeRole();
   roleStore.GetRoleDetail();
-  categories.GetListData();
+  await categories.GetListData();
 });
-const onDeleteType = async (Div_Id: string) => {
-  const result = await categories.DeleteCategory(Div_Id);
 
+const onDeleteType = async (div_id: string) => {
+  const result = await categories.DeleteCategory(div_id);
   if (result) {
     await CallSwal({
       icon: "success",
@@ -110,108 +181,255 @@ const onDeleteType = async (Div_Id: string) => {
       showConfirmButton: false,
       timer: 1500,
     });
-    goPath("/devision");
+    await categories.GetListData();
   }
 };
+
 const title = "ຂໍ້ມູນພະແນກ";
+
+
+const header = computed(() => {
+  return [
+    {
+      title: "ລະຫັດ",
+      value: "div_id",
+      key: "div_id",
+      align: "start",
+      sortable: true,
+      filterable: true,
+      groupable: false,
+      divider: false,
+      class: "text-primary font-weight-bold",
+      cellClass: "pa-2",
+    },
+    {
+      title: "ຊື່ພະແນກພາສາລາວ",
+      value: "division_name_la",
+      align: "start",
+      sortable: true,
+      filterable: true,
+      class: "text-h6",
+      cellClass: "text-wrap",
+    },
+    {
+      title: "ຊື່ພະແນກພາສາອັງກິດ",
+      value: "division_name_en",
+      align: "start",
+      sortable: true,
+      filterable: true,
+      class: "text-subtitle-1",
+    },
+    // {
+    //   title: "ລຳດັບ",
+    //   value: "division_order",
+    //   align: "center",
+    //   sortable: true,
+    //   filterable: false,
+    //   class: "text-center",
+    //   cellClass: "text-center font-weight-bold",
+    // },
+    {
+      title: "ມື້ສ້າງຂໍ້ມູນ",
+      value: "created_date",
+      align: "center",
+      sortable: true,
+      filterable: false,
+      class: "text-center",
+    },
+    ...(canRecordStatus.value ? [{
+      title: "ສະຖານະ",
+      value: "Record_Status",
+      align: "center",
+      sortable: true,
+      filterable: true,
+      width: "120px",
+      class: "text-center",
+      cellClass: "text-center",
+      filter: (value, query, item) => {
+        if (!query) return true;
+        const statusText = value === "Y" ? "ເປີດໃຊ້ງານ" : "ປິດໃຊ້ງານ";
+        return statusText.includes(query);
+      },
+    }] : []),
+    ...(canView.value ? [{
+      title: "ເບິ່ງ",
+      value: "view",
+      align: "center",
+      sortable: false,
+      filterable: false,
+      class: "text-center",
+      cellClass: "text-center",
+      width: "80px",
+    }] : []),
+    ...(canEdit.value ? [{
+      title: "ແກ້ໄຂ",
+      value: "edit",
+      align: "center",
+      sortable: false,
+      filterable: false,
+      class: "text-center",
+      cellClass: "text-center",
+      width: "80px",
+    }] : []),
+    ...(canEdit.value ? [{
+      title: "ລົບ",
+      value: "delete",
+      align: "center",
+      sortable: false,
+      filterable: false,
+      class: "text-center",
+      cellClass: "text-center",
+      width: "80px",
+    }] : []),
+    
+    
+    ...(canAuthorize.value ? [{
+      title: "ອະນຸມັດ",
+      value: "confirm",
+      align: "center",
+      sortable: false,
+      filterable: false,
+      class: "text-center",
+      cellClass: "text-center",
+      width: "80px",
+    }] : []),
+  ];
+});
 </script>
 
 <template>
-  <div class="pa-4">
-  <v-col cols="12" class="pt-5">
-    <global-text-title-line
-      :title="`ໜ້າຈັດການຂໍ້ມູນພະແນກ / Manage Department(${formatnumber(
-        response_data?.length ?? 0
-      )})`"
-    />
-    <div class="d-flex mt-2">
-      <v-btn color="primary" @click="goPath('/devision/create')"
-      v-if="canAdd"
-        ><v-icon icon="mdi-plus"></v-icon> ເພີ່ມປະເພດ</v-btn
-      >
-    </div>
+  <GlobalTextTitleLine :title="`${title} (${formatnumber(response_data?.length ?? 0)})`" />
+
+  <v-col cols="12">
+    <v-row>
+      <v-col cols="12" md="3">
+        <div class="d-flex">
+          <v-btn color="primary" @click="goPath('/devision/create')" v-if="canAdd">
+            <v-icon icon="mdi-plus"></v-icon> ເພີ່ມພະແນກ
+          </v-btn>
+        </div>
+      </v-col>
+    </v-row>
+
+    <v-data-table :headers="header" :items="response_data || []" class="text-no-wrap">
+      <template v-slot:header.div_id="{ column }">
+        <v-icon start>mdi-identifier</v-icon>
+        <b style="color: blue">{{ column.title }}</b>
+      </template>
+
+      <template v-slot:header.division_name_la="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
+      </template>
+      
+      <template v-slot:header.division_name_en="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
+      </template>
+      
+      <template v-slot:header.division_order="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
+      </template>
+      
+      <template v-slot:header.created_date="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
+      </template>
+      
+      <template v-slot:header.Record_Status="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
+      </template>
+      
+      <template v-slot:header.edit="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
+      </template>
+      
+      <template v-slot:header.view="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
+      </template>
+      
+      <template v-slot:header.delete="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
+      </template>
+      
+      <template v-slot:header.confirm="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
+      </template>
+
+      <template v-slot:item.created_date="{ item }">
+        {{ dayjs(item.created_date).format("DD/MM/YYYY") }}
+      </template>
+
+      <template v-slot:item.Record_Status="{ item }">
+        <div>
+          <v-btn
+            v-if="item.Record_Status === 'O'"
+            flat
+            @click="updatRecodeStatusof(item.div_id)"
+          >
+            <v-icon color="info">mdi-toggle-switch</v-icon>
+          </v-btn>
+          <v-btn
+            v-if="item.Record_Status === 'C'"
+            flat
+            @click="updatRecodeStatus(item.div_id)"
+          >
+            <v-icon color="error">mdi-toggle-switch-off-outline</v-icon>
+          </v-btn>
+        </div>
+      </template>
+
+      <template v-slot:item.index="{ item, index }">
+        {{ index + 1 }}
+      </template>
+
+      <template v-slot:item.confirm="{ item }">
+        <div class="d-flex align-center">
+          <v-btn
+            @click="unupdateAdproveStatus(item.div_id)"
+            class="text-primary"
+            v-if="item.Auth_Status === 'A'"
+            flat
+          >
+            <v-icon icon="mdi-toggle-switch" color="primary"></v-icon>
+          </v-btn>
+          <v-btn
+            @click="updateAdproveStatus(item.div_id)"
+            class="text-error"
+            v-if="item.Auth_Status === 'U'"
+            flat
+          >
+            <v-icon icon="mdi-toggle-switch-off-outline" color="error"></v-icon>
+          </v-btn>
+        </div>
+      </template>
+
+      <template v-slot:item.view="{ item }">
+        <v-btn
+          small
+          flat
+          class="text-primary"
+          icon="mdi-eye-outline"
+          @click="goPath(`/devision/detail?div_id=${item.div_id}`)"
+        />
+      </template>
+
+      <template v-slot:item.edit="{ item }">
+        <v-btn
+          small
+          flat
+          class="text-info"
+          icon="mdi-pen"
+          @click="goPath(`/devision/update?div_id=${item.div_id}`)"
+        />
+      </template>
+
+      <template v-slot:item.delete="{ item }">
+        <v-btn
+          small
+          flat
+          class="text-error"
+          icon="mdi-delete-outline"
+          @click="onDeleteType(item.div_id)"
+        />
+      </template>
+    </v-data-table>
   </v-col>
-  <v-data-table :items="response_data" :headers="Headers" class="text-no-wrap">
-    <template v-slot:item.index="{ item, index }">
-      {{ index + 1 }}
-    </template>
- <template v-slot:item.confirm="{ item }">
-  <div class="d-flex align-center">
-    <v-btn
-      v-if="(role1 as any)?.[0]?.Auth_Detail === 1"
-      :color="item.Once_Auth === 'A' ? 'success' : 'warning'"
-      :icon="
-        item.Once_Auth === 'A'
-          ? 'mdi-check-circle'
-          : 'mdi-toggle-switch-off-outline'
-      "
-      variant="text"
-      size="small"
-      :loading="isUpdatingStatus"
-      :disabled="item.Once_Auth === 'A'"
-      @click="updateAdproveStatus(item.sub_menu_id)"
-      :class="{
-        'disabled-btn': item.Once_Auth === 'A'
-      }"
-      :title="item.Once_Auth === 'A' ? 'ອະນຸມັດແລ້ວ' : 'ຄລິກເພື່ອອະນຸມັດ'"
-    />
-    
-    <v-fade-transition>
-      <v-icon
-        v-if="item.Once_Auth === 'A'"
-        color="success"
-        size="small"
-        class="ml-2"
-      >
-        mdi-shield-check
-      </v-icon>
-    </v-fade-transition>
-  </div>
-</template>
-
-
-    <template v-slot:item.Once_Auth="{ item }">
-      <div v-if="item.Once_Auth === 'A'">
-        <v-chip color="green"><p>ເປີດໃຊ້ງານ</p> </v-chip>
-      </div>
-      <div v-else="item.Once_Auth === 'U'">
-        <v-chip color="red"><p>ປີດໃຊ້ງານ</p> </v-chip>
-      </div>
-    </template>
-    <template v-slot:item.Auth_Status="{ item }">
-      <div v-if="item.Auth_Status === 'A'">
-        <v-chip color="green"><p>ອານຸມັດແລ້ວ</p> </v-chip>
-      </div>
-      <div v-else="item.Auth_Status === 'U'">
-        <v-chip color="yellow"><p>ຍັງບໍ່ທັນອານຸມັດ</p> </v-chip>
-      </div>
-    </template>
-
-    <template v-slot:item.Actions="{ item }">
-      <v-btn
-      v-if="canView"
-        small
-        flat
-        class="text-primary"
-        icon="mdi-eye-outline"
-        @click="goPath(`/devision/detail?div_id=${item.div_id}`)"
-      />
-      <v-btn
-      v-if="canEdit"
-        small
-        flat
-        class="text-info"
-        icon="mdi-pen"
-        @click="goPath(`/devision/update?div_id=${item.div_id}`)"
-      />
-      <v-btn
-      v-if="canDelete"
-        small
-        flat
-        class="text-error"
-        icon="mdi-delete-outline"
-        @click="onDeleteType(item.div_id)"
-      />
-    </template>
-  </v-data-table></div>
 </template>

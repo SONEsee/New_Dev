@@ -14,7 +14,7 @@ const valid = ref(false);
 const title = "ອັບເດດຂໍ້ມູນເມນູຫຼັກ";
 
 const id = computed(() => {
-  const queryId = route.query.id;
+  const queryId = route.query.menu_id;
   return Array.isArray(queryId) ? queryId[0] : queryId || "";
 });
 
@@ -97,17 +97,7 @@ const cancelUpdate = () => {
               :rules="[(v) => !!v || 'ກະລຸນາປ້ອນ ID ເມນູ']"
               required
             />
-            <v-autocomplete
-              :items="modules"
-              item-title="module_name_la"
-              item-value="module_Id"
-              density="compact"
-              v-model="menuStore.update_form_mainmenu.module_Id"
-              :rules="[(v) => !!v || 'ກະລຸນາເລືອກເມນູສາຂາ']"
-              label="ເລືອກເມນູສາຂາ"
-              variant="outlined"
-              required
-            />
+           
           </v-col>
           <v-col cols="12" md="4">
             <v-text-field
@@ -136,8 +126,18 @@ const cancelUpdate = () => {
               variant="outlined"
               :rules="[(v) => !!v || 'ກະລຸນາປ້ອນໄອຄອນ']"
               required
+            /> <v-autocomplete
+              :items="modules"
+              item-title="module_name_la"
+              item-value="module_Id"
+              density="compact"
+              v-model="menuStore.update_form_mainmenu.module_Id"
+              :rules="[(v) => !!v || 'ກະລຸນາເລືອກເມນູສາຂາ']"
+              label="ເລືອກເມນູສາຂາ"
+              variant="outlined"
+              required
             />
-            <v-autocomplete
+            <!-- <v-autocomplete
               :items="[
                 { title: 'ເປີດໃຊ້ງານ', value: 'Y' },
                 { title: 'ປິດໃຊ້ງານ', value: 'N' },
@@ -150,7 +150,7 @@ const cancelUpdate = () => {
               label="ເລືອກສະຖານະໃຊ້ງານ"
               variant="outlined"
               required
-            />
+            /> -->
           </v-col>
           <v-col cols="12" class="d-flex justify-center">
             <v-btn type="submit" color="primary" class="mr-2"> ບັນທຶກ </v-btn>

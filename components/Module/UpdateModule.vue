@@ -6,7 +6,7 @@ const moduleStore = ModulesStore();
 const route = useRoute();
 const router = useRouter();
 
-const id = computed(() => route.query.id as string | undefined);
+const id = computed(() => route.query.module_id as string | undefined);
 
 const errorMessage = ref("");
 
@@ -107,7 +107,7 @@ const cancelUpdate = () => {
               required
             />
           </v-col>
-          <v-col cols="12" md="6">
+          <!-- <v-col cols="12" md="6">
             <v-autocomplete
               :items="[
                 { title: 'ເປີດໃຊ້ງານ', value: 'Y' },
@@ -122,7 +122,7 @@ const cancelUpdate = () => {
               variant="outlined"
               required
             />
-          </v-col>
+          </v-col> -->
         </v-row>
 
         <v-col cols="12" class="d-flex justify-center">

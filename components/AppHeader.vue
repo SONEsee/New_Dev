@@ -1,5 +1,13 @@
 <template>
-  <v-app-bar :elevation="2" color="#616161" class="d-flex align-center">
+  <v-app-bar
+    :elevation="2"
+    class="d-flex align-center"
+    :style="{
+      background: 'linear-gradient(135deg, #c58c20 0%, #616161 100%)',
+      color: 'white',
+      height: '70px',
+    }"
+  >
     <v-app-bar-nav-icon
       @click="drawer = !drawer"
       style="color: blue; background-color: blanchedalmond; flex-shrink: 0"
@@ -11,8 +19,10 @@
     </v-app-bar-title>
 
     <v-spacer></v-spacer>
-    <v-chip color="#ECEFF1"><h5 class="mr-5">ສິດການເຂົ້ານຳໃຊ້: {{ role }}</h5></v-chip>
-    
+    <v-chip color="#ECEFF1"
+      ><h5 class="mr-5">ສິດການເຂົ້ານຳໃຊ້: {{ role }}</h5></v-chip
+    >
+
     <v-menu min-width="200px" rounded>
       <template v-slot:activator="{ props }">
         <v-btn icon v-bind="props" style="flex-shrink: 0">
@@ -33,29 +43,23 @@
         </v-btn>
       </template>
       <v-card>
-        
         <v-card-text>
-         
           <div class="mx-auto text-center">
             <v-avatar color="brown">
-              <span class="text-h5" v-if="user">{{
-                user
-              }}</span>
+              <span class="text-h5" v-if="user">{{ user }}</span>
               <span class="text-h5" v-else>
                 <v-icon icon="mdi-account-circle-outline"></v-icon>
               </span>
             </v-avatar>
-            <h3> ຊື່ຜູ້ໃຊ້ :{{ username }}</h3>
-            <p class="text-caption mt-1">
-            ອີເມວ: {{ email }}
-            </p>
-            <p class="text-caption mt-1">
-            ພະແນກ: {{ department }}
-            </p>
+            <h3>ຊື່ຜູ້ໃຊ້ :{{ username }}</h3>
+            <p class="text-caption mt-1">ອີເມວ: {{ email }}</p>
+            <p class="text-caption mt-1">ພະແນກ: {{ department }}</p>
             <v-divider class="my-3"></v-divider>
             <v-btn variant="text" rounded> ແກ້ໄຂຂໍ້ມູນສວນຕົວ </v-btn>
             <v-divider class="my-3" color="#c58c20"></v-divider>
-            <v-btn variant="text" rounded @click="onLogout"> ອອກຈາກລະບົບ </v-btn>
+            <v-btn variant="text" rounded @click="onLogout">
+              ອອກຈາກລະບົບ
+            </v-btn>
           </div>
         </v-card-text>
       </v-card>
@@ -63,7 +67,7 @@
   </v-app-bar>
 
   <v-navigation-drawer
-  class="mt-1"
+    class="mt-1"
     v-model="drawer"
     permanent
     :rail="rail"
@@ -73,7 +77,7 @@
     <v-list nav density="comfortable" style="color: #c58c20; padding: 0">
       <template v-if="isLoading">
         <v-list-subheader
-          style="color: #CFD8DC; padding-left: 0px"
+          style="color: #cfd8dc; padding-left: 0px"
           v-show="!rail"
           >ກຳລັງໂຫຼດ...</v-list-subheader
         >
@@ -109,9 +113,7 @@
         ></v-list-item>
       </template>
 
-      
       <template v-else-if="responeMenuData && responeMenuData.length > 0">
-        
         <template
           v-for="(module, moduleIndex) in responeMenuData"
           :key="`module-${module.module_Id}`"
@@ -133,16 +135,17 @@
             {{ module.module_name_la }}
           </v-list-subheader>
 
-         
           <template
             v-for="(mainMenu, mainMenuIndex) in module.main_menus"
             :key="`main-${module.module_Id}-${mainMenu.menu_id}`"
           >
-            
             <template
               v-if="mainMenu.sub_menus && mainMenu.sub_menus.length > 0"
             >
-              <v-list-group :value="mainMenu.menu_id" style="background-color: #616161;">
+              <v-list-group
+                :value="mainMenu.menu_id"
+                style="background-color: #616161"
+              >
                 <template v-slot:activator="{ props }">
                   <v-list-item
                     v-bind="props"
@@ -155,24 +158,23 @@
                   ></v-list-item>
                 </template>
 
-             
                 <template v-if="!rail">
-                  <v-list-item 
-  v-for="(subMenu, subMenuIndex) in mainMenu.sub_menus"
-  :key="`sub-${module.module_Id}-${mainMenu.menu_id}-${subMenu.sub_menu_id}`"
-  :value="subMenu.sub_menu_id"
-  :title="subMenu.sub_menu_name_la"
-  :prepend-icon="convertIcon(subMenu.sub_menu_icon)"
-  :to="{
-    path: cleanUrl(subMenu.sub_menu_urls),
-    query: { sub_menu_id: subMenu.sub_menu_id }
-  }"
-  :active="route.path === cleanUrl(subMenu.sub_menu_urls)"
-  variant="plain"
-  color="accent"
-  style="margin-bottom: 2px; background-color: #CFD8DC;"
-  class="sub-menu-item"
-/>
+                  <v-list-item
+                    v-for="(subMenu, subMenuIndex) in mainMenu.sub_menus"
+                    :key="`sub-${module.module_Id}-${mainMenu.menu_id}-${subMenu.sub_menu_id}`"
+                    :value="subMenu.sub_menu_id"
+                    :title="subMenu.sub_menu_name_la"
+                    :prepend-icon="convertIcon(subMenu.sub_menu_icon)"
+                    :to="{
+                      path: cleanUrl(subMenu.sub_menu_urls),
+                      query: { sub_menu_id: subMenu.sub_menu_id },
+                    }"
+                    :active="route.path === cleanUrl(subMenu.sub_menu_urls)"
+                    variant="plain"
+                    color="accent"
+                    style="margin-bottom: 2px; background-color: #cfd8dc"
+                    class="sub-menu-item"
+                  />
                 </template>
               </v-list-group>
             </template>
@@ -221,8 +223,8 @@
 import { useRoute, useRouter } from "vue-router";
 import { computed, onMounted, ref } from "vue";
 import { useMenuStore } from "~/stores/menu";
-const roleStore = RoleStore()
-
+import axios from "@/helpers/axios";
+const roleStore = RoleStore();
 
 const menuStore = useMenuStore();
 const route = useRoute();
@@ -230,21 +232,21 @@ const router = useRouter();
 const drawer = ref(true);
 const rail = ref(false);
 const error = ref(false);
-const user = localStorage.getItem("user")
+const user = localStorage.getItem("user");
 const sub_menu_id = route.query.sub_menu_id as string;
 const username = user ? JSON.parse(user).user_name : "ບໍ່ພົບຂໍ້ມູນ";
 const email = user ? JSON.parse(user).user_email : "ບໍ່ພົບຂໍ້ມູນ";
-const department = user ? 
-  (JSON.parse(user).division?.division_name_la || "ບໍ່ພົບຂໍ້ມູນ") : 
-  "ບໍ່ພົບຂໍ້ມູນ";
-const role = user ? 
-  (JSON.parse(user).role?.role_name_la || "ບໍ່ພົບຂໍ້ມູນ") : 
-  "ບໍ່ພົບຂໍ້ມູນ";
+const department = user
+  ? JSON.parse(user).division?.division_name_la || "ບໍ່ພົບຂໍ້ມູນ"
+  : "ບໍ່ພົບຂໍ້ມູນ";
+const role = user
+  ? JSON.parse(user).role?.role_name_la || "ບໍ່ພົບຂໍ້ມູນ"
+  : "ບໍ່ພົບຂໍ້ມູນ";
 // const role = user ? JSON.parse(user).role.role_name_la : "ບໍ່ພົບຂໍ້ມູນ";
- 
-onMounted(()=>{
+
+onMounted(() => {
   roleStore.filter_role_id.query.sub_menu_id = sub_menu_id || "";
-})
+});
 
 const getUserIdFromLocalStorage = () => {
   if (typeof window === "undefined") return null;
@@ -261,28 +263,22 @@ const getUserIdFromLocalStorage = () => {
   }
 };
 
-
 const convertIcon = (icon: string): string => {
   if (!icon) return "mdi-circle-small";
 
-  
   if (icon.startsWith("mdi-")) return icon;
 
-
   const iconMap: Record<string, string> = {
-    
     "mdi-home": "mdi-home",
     "fa-users-cog": "mdi-account-cog",
     "fa-chart-bar": "mdi-chart-bar",
     "fa-cogs": "mdi-cog-transfer",
-
 
     "mdi-user": "mdi-account",
     "fa-edit": "mdi-pencil",
     "fa-file-alt": "mdi-file-document",
     "fa-database": "mdi-database",
 
-  
     "fa-sign-in-alt": "mdi-login",
     "fa-key": "mdi-key",
     "fa-upload": "mdi-upload",
@@ -303,19 +299,15 @@ const convertIcon = (icon: string): string => {
   return iconMap[icon] || "mdi-circle-small";
 };
 
-
 const cleanUrl = (url: string): string => {
   if (!url) return "/";
 
- 
   if (url.includes("/module/user-rule/functions/module/user-rule/functions")) {
     return "/module/user-rule/functions";
   }
 
-  
   return url.replace(/[\r\n\s]+/g, "").trim();
 };
-
 
 const responeMenuData = computed(() => {
   return menuStore.respone_menu_data;
@@ -325,14 +317,12 @@ const isLoading = computed(() => {
   return menuStore.isloading;
 });
 
-
 const loadMenu = async (userId: string) => {
   try {
     error.value = false;
     console.log("ກຳລັງດຶງຂໍ້ມູນເມນູສຳລັບຜູ້ໃຊ້:", userId);
     await menuStore.Getmenu(userId);
 
-  
     if (
       !responeMenuData.value ||
       (Array.isArray(responeMenuData.value) &&
@@ -346,7 +336,6 @@ const loadMenu = async (userId: string) => {
     error.value = true;
   }
 };
-
 
 const retryLoadMenu = async () => {
   const user_id = getUserIdFromLocalStorage();
@@ -373,30 +362,52 @@ onMounted(async () => {
     error.value = true;
   }
 });
-const onLogout = () => {
+const onLogout = async () => {
   try {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      
-      // ເຄລຍ filter ທັງໝົດທີ່ມີຄຳວ່າ "filter"
-      Object.keys(localStorage).forEach(key => {
-        if (key.includes('filter')) {
-          localStorage.removeItem(key);
-        }
-      });
+    let refreshToken =
+      localStorage.getItem("refresh") ||
+      localStorage.getItem("refreshToken") ||
+      localStorage.getItem("refresh_token");
+
+    if (!refreshToken) {
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        refreshToken = user.refresh || user.refreshToken || user.refresh_token;
+      }
     }
+
+    console.log("Found refresh token:", refreshToken);
+
+    if (refreshToken) {
+      await axios.post(
+        `/api/logout/`,
+        {
+          refresh: refreshToken,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    }
+
+    clearLocalStorage();
     router.push("/login");
   } catch (err) {
-    console.error("Error during logout:", err);
-    
-    if (typeof window !== "undefined") {
-      window.location.href = "/login";
-    }
+    console.error("Error during logout:", err.response?.data);
+    clearLocalStorage();
+    window.location.href = "/login";
+  }
+};
+
+const clearLocalStorage = () => {
+  if (typeof window !== "undefined") {
+    localStorage.clear();
   }
 };
 </script>
-
 <style>
 .v-list-item--active {
   flex: auto;
@@ -415,7 +426,6 @@ const onLogout = () => {
   font-weight: bold !important;
 }
 
-
 .mdi-spin {
   animation: spin 1s linear infinite;
 }
@@ -429,7 +439,6 @@ const onLogout = () => {
   }
 }
 
-
 .v-list-item:hover {
   background-color: rgba(197, 140, 32, 0.08) !important;
 }
@@ -437,7 +446,6 @@ const onLogout = () => {
 .v-list-item[variant="tonal"]:hover {
   background-color: rgba(197, 140, 32, 0.15) !important;
 }
-
 
 .v-list-group {
   --v-list-group-background-color: transparent;
@@ -470,7 +478,6 @@ const onLogout = () => {
 .v-list-item__content {
   margin-left: 0 !important;
 }
-
 
 .sub-menu-item {
   border-left: 2px solid rgba(41, 34, 24, 0.425) !important;
