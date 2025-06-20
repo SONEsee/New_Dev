@@ -30,14 +30,14 @@ const depreciationOptions = [
   { title: "ບໍ່ມີ", value: "N" },
 ];
 
-// Depreciation Type Options
+
 const depreciationTypeOptions = [
   { title: "ເສັ້ນກົງ", value: "Straight-line" },
   { title: "ລົດລົງ", value: "Declining" },
   { title: "ຫົວໜ່ວຍຜະລິດ", value: "ProductionUnit" },
 ];
 
-// Mock Data for dropdowns
+
 const assetCharts = ref([
   { id: 1, name: "ອາຄານ", code: "BUILD" },
   { id: 2, name: "ເຄື່ອງຈັກ", code: "MACH" },
@@ -83,7 +83,7 @@ const submitForm = async () => {
   }
 };
 
-// Watch depreciation setting to show/hide related fields
+
 watch(
   () => faAssetStoreInstance.form_create_fa_asset.has_depreciation,
   (newVal) => {
@@ -97,7 +97,7 @@ watch(
   }
 );
 
-// Auto calculate end date when start date and useful life are set
+
 watch(
   [
     () => faAssetStoreInstance.form_create_fa_asset.dpca_start_date,
@@ -139,7 +139,7 @@ const rules = {
 };
 
 onMounted(async () => {
-  // Load reference data
+
   loading.value = true;
   try {
     await Promise.all([
@@ -165,7 +165,7 @@ onMounted(async () => {
 
         <v-col cols="12" class="pt-12">
           <v-row>
-            <!-- Basic Information -->
+       
             <v-col cols="12">
               <h3 class="text-h6 mb-4 d-flex align-center">
                 <v-icon class="mr-2" color="primary">mdi-information</v-icon>

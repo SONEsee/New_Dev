@@ -61,7 +61,7 @@ export const faAssetStore = defineStore("faAsset", {
       this.isLoading = true;
       try {
         const res = await axios.get<FaAssetModel.FaAsset[]>(
-          `fa-assets`,
+          `/api/asset_list/`,
           {
             headers: {
               "Content-Type": "application/json",
@@ -83,7 +83,7 @@ export const faAssetStore = defineStore("faAsset", {
     async GetAssetCharts() {
       this.isLoading = true;
       try {
-        const res = await axios.get(`fa-chart-of-assets`, {
+        const res = await axios.get(`/api/asset_list/`, {
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -103,7 +103,7 @@ export const faAssetStore = defineStore("faAsset", {
     async GetLocations() {
       this.isLoading = true;
       try {
-        const res = await axios.get(`fa-locations`, {
+        const res = await axios.get(`/api/asset_list/`, {
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -167,7 +167,7 @@ export const faAssetStore = defineStore("faAsset", {
       this.isLoading = true;
       try {
         const res = await axios.post<FaAssetModel.FaAsset>(
-          `fa-assets`,
+          `/api/asset_list/`,
           this.form_create_fa_asset,
           {
             headers: {
