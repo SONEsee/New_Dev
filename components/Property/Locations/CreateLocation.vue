@@ -84,7 +84,7 @@ const submitForm = async () => {
   }
 };
 
-// Computed for filtering parent locations based on selected type
+
 const filteredParentLocations = computed(() => {
   const selectedType = locationStoreInstance.form_create_location.location_type;
   if (!selectedType) return parentLocations.value;
@@ -268,7 +268,7 @@ onMounted(async () => {
               <label>ລະຫັດສະຖານທີ່ <span class="text-error">*</span></label>
               <v-text-field
                 v-model="locationStoreInstance.form_create_location.location_code"
-                :rules="[rules.required, rules.locationCode, rules.maxLength20]"
+                
                 placeholder="ເຊັ່ນ: HQ-001, WH-001"
                 density="compact"
                 variant="outlined"

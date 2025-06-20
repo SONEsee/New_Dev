@@ -130,7 +130,7 @@ export const locationStore = defineStore("location", {
             showConfirmButton: false,
           });
           setTimeout(() => {
-            goPath("/fa-locations");
+            goPath("/property/locations/");
           }, 1500);
 
      
@@ -173,7 +173,7 @@ export const locationStore = defineStore("location", {
             showConfirmButton: false,
           });
           setTimeout(() => {
-            goPath("/fa-locations");
+            goPath("/property/locations/");
           }, 1500);
 
         
