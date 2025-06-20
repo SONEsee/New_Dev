@@ -43,7 +43,7 @@ export const locationStore = defineStore("location", {
       this.isLoading = true;
       try {
         const res = await axios.get<LocationModel.Location[]>(
-          `fa-locations`,
+          `/api/asset_location/`,
           {
             headers: {
               "Content-Type": "application/json",
@@ -66,7 +66,7 @@ export const locationStore = defineStore("location", {
       this.isLoading = true;
       try {
         const res = await axios.get<LocationModel.Location[]>(
-          `fa-locations/parents`,
+          `/api/asset_location/`,
           {
             headers: {
               "Content-Type": "application/json",
