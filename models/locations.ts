@@ -1,5 +1,5 @@
 export interface Location {
-  id: number; 
+  location_id: number; 
   location_code: string; 
   location_name_la: string; 
   location_name_en: string; 

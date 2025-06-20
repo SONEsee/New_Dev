@@ -112,7 +112,7 @@ export const locationStore = defineStore("location", {
       this.isLoading = true;
       try {
         const res = await axios.post<LocationModel.Location>(
-          `fa-locations`,
+          `/api/asset_location/`,
           this.form_create_location,
           {
             headers: {
@@ -373,7 +373,7 @@ export const locationStore = defineStore("location", {
           .filter(location => location.parent_location_id === parentId)
           .map(location => ({
             ...location,
-            children: buildTree(location.id)
+            children: buildTree(location.location_id)
           }));
       };
       

@@ -3,7 +3,9 @@ import { ref, onMounted, computed } from "vue";
 import { CallSwal } from "#build/imports";
 
 const locationStoreInstance = locationStore();
-
+const mockData = computed(()=>{
+  return locationStoreInstance.response_location_list || [];
+})
 const handleSubmit = async (item: any) => {
   try {
     const newStatus = item.record_stat === "O" ? "C" : "O";
@@ -176,93 +178,95 @@ const headers = computed(() => [
       ]
     : []),
 ]);
-
-const mockData = ref([
-  {
-    id: 1,
-    location_code: "HQ-001",
-    location_name_la: "ສຳນັກງານໃຫຍ່",
-    location_name_en: "Head Office",
-    parent_location_id: null,
-    parent_location: null,
-    location_type: "BUILDING",
-    address: "ນະຄອນຫຼວງວຽງຈັນ, ລາວ",
-    responsible_person: "ທ່ານ ສົມສີ ວົງເວືອງ",
-    phone: "021-123456",
-    remarks: "ອາຄານສຳນັກງານຫຼັກ",
-    record_stat: "O",
-  },
-  {
-    id: 2,
-    location_code: "HQ-F01",
-    location_name_la: "ຊັ້ນທີ 1",
-    location_name_en: "1st Floor",
-    parent_location_id: 1,
-    parent_location: { location_code: "HQ-001", location_name_la: "ສຳນັກງານໃຫຍ່" },
-    location_type: "FLOOR",
-    address: null,
-    responsible_person: "ທ່ານ ສົມພົງ ແກ້ວມະນີ",
-    phone: "021-123457",
-    remarks: "ຊັ້ນທີ 1 ສຳນັກງານໃຫຍ່",
-    record_stat: "O",
-  },
-  {
-    id: 3,
-    location_code: "HQ-R101",
-    location_name_la: "ຫ້ອງບັນຊີ",
-    location_name_en: "Accounting Room",
-    parent_location_id: 2,
-    parent_location: { location_code: "HQ-F01", location_name_la: "ຊັ້ນທີ 1" },
-    location_type: "ROOM",
-    address: null,
-    responsible_person: "ທ່ານ ມານີ ລາວົງ",
-    phone: "021-123458",
-    remarks: "ຫ້ອງແຜນກບັນຊີ",
-    record_stat: "O",
-  },
-  {
-    id: 4,
-    location_code: "WH-001",
-    location_name_la: "ໂກດັງທີ 1",
-    location_name_en: "Warehouse 1",
-    parent_location_id: null,
-    parent_location: null,
-    location_type: "WAREHOUSE",
-    address: "ເຂດອຸດສາຫະກຳ, ວຽງຈັນ",
-    responsible_person: "ທ່ານ ບຸນມີ ສີຫາ",
-    phone: "021-987654",
-    remarks: "ໂກດັງເກັບສິນຄ້າຫຼັກ",
-    record_stat: "O",
-  },
-  {
-    id: 5,
-    location_code: "BR-LPB",
-    location_name_la: "ສາຂາຫຼວງພະບາງ",
-    location_name_en: "Luang Prabang Branch",
-    parent_location_id: null,
-    parent_location: null,
-    location_type: "BUILDING",
-    address: "ເມືອງຫຼວງພະບາງ, ແຂວງຫຼວງພະບາງ",
-    responsible_person: "ທ່ານ ກຳພອນ ວົງໄຊ",
-    phone: "071-555123",
-    remarks: "ສາຂາເຂດພາກເໜືອ",
-    record_stat: "C",
-  },
-  {
-    id: 6,
-    location_code: "AREA-P01",
-    location_name_la: "ພື້ນທີ່ຈອດລົດ",
-    location_name_en: "Parking Area",
-    parent_location_id: 1,
-    parent_location: { location_code: "HQ-001", location_name_la: "ສຳນັກງານໃຫຍ່" },
-    location_type: "AREA",
-    address: null,
-    responsible_person: "ທ່ານ ຄຳມູນ ທອງ",
-    phone: "021-123459",
-    remarks: "ພື້ນທີ່ຈອດລົດພະນັກງານ",
-    record_stat: "O",
-  },
-]);
+onMounted(()=>{
+  locationStoreInstance.GetLocationList();
+})
+// const mockData = ref([
+//   {
+//     id: 1,
+//     location_code: "HQ-001",
+//     location_name_la: "ສຳນັກງານໃຫຍ່",
+//     location_name_en: "Head Office",
+//     parent_location_id: null,
+//     parent_location: null,
+//     location_type: "BUILDING",
+//     address: "ນະຄອນຫຼວງວຽງຈັນ, ລາວ",
+//     responsible_person: "ທ່ານ ສົມສີ ວົງເວືອງ",
+//     phone: "021-123456",
+//     remarks: "ອາຄານສຳນັກງານຫຼັກ",
+//     record_stat: "O",
+//   },
+//   {
+//     id: 2,
+//     location_code: "HQ-F01",
+//     location_name_la: "ຊັ້ນທີ 1",
+//     location_name_en: "1st Floor",
+//     parent_location_id: 1,
+//     parent_location: { location_code: "HQ-001", location_name_la: "ສຳນັກງານໃຫຍ່" },
+//     location_type: "FLOOR",
+//     address: null,
+//     responsible_person: "ທ່ານ ສົມພົງ ແກ້ວມະນີ",
+//     phone: "021-123457",
+//     remarks: "ຊັ້ນທີ 1 ສຳນັກງານໃຫຍ່",
+//     record_stat: "O",
+//   },
+//   {
+//     id: 3,
+//     location_code: "HQ-R101",
+//     location_name_la: "ຫ້ອງບັນຊີ",
+//     location_name_en: "Accounting Room",
+//     parent_location_id: 2,
+//     parent_location: { location_code: "HQ-F01", location_name_la: "ຊັ້ນທີ 1" },
+//     location_type: "ROOM",
+//     address: null,
+//     responsible_person: "ທ່ານ ມານີ ລາວົງ",
+//     phone: "021-123458",
+//     remarks: "ຫ້ອງແຜນກບັນຊີ",
+//     record_stat: "O",
+//   },
+//   {
+//     id: 4,
+//     location_code: "WH-001",
+//     location_name_la: "ໂກດັງທີ 1",
+//     location_name_en: "Warehouse 1",
+//     parent_location_id: null,
+//     parent_location: null,
+//     location_type: "WAREHOUSE",
+//     address: "ເຂດອຸດສາຫະກຳ, ວຽງຈັນ",
+//     responsible_person: "ທ່ານ ບຸນມີ ສີຫາ",
+//     phone: "021-987654",
+//     remarks: "ໂກດັງເກັບສິນຄ້າຫຼັກ",
+//     record_stat: "O",
+//   },
+//   {
+//     id: 5,
+//     location_code: "BR-LPB",
+//     location_name_la: "ສາຂາຫຼວງພະບາງ",
+//     location_name_en: "Luang Prabang Branch",
+//     parent_location_id: null,
+//     parent_location: null,
+//     location_type: "BUILDING",
+//     address: "ເມືອງຫຼວງພະບາງ, ແຂວງຫຼວງພະບາງ",
+//     responsible_person: "ທ່ານ ກຳພອນ ວົງໄຊ",
+//     phone: "071-555123",
+//     remarks: "ສາຂາເຂດພາກເໜືອ",
+//     record_stat: "C",
+//   },
+//   {
+//     id: 6,
+//     location_code: "AREA-P01",
+//     location_name_la: "ພື້ນທີ່ຈອດລົດ",
+//     location_name_en: "Parking Area",
+//     parent_location_id: 1,
+//     parent_location: { location_code: "HQ-001", location_name_la: "ສຳນັກງານໃຫຍ່" },
+//     location_type: "AREA",
+//     address: null,
+//     responsible_person: "ທ່ານ ຄຳມູນ ທອງ",
+//     phone: "021-123459",
+//     remarks: "ພື້ນທີ່ຈອດລົດພະນັກງານ",
+//     record_stat: "O",
+//   },
+// ]);
 
 const filteredData = computed(() => {
   let data = mockData.value;
@@ -677,7 +681,7 @@ onMounted(async () => {
           flat
           class="text-primary"
           icon="mdi-eye-outline"
-          @click="goPath(`/property/locations/detail?id=${item.id}`)"
+          @click="goPath(`/property/locations/detail?location=${item.location_id}`)"
         />
       </template>
 
@@ -687,7 +691,7 @@ onMounted(async () => {
           flat
           class="text-info"
           icon="mdi-pen"
-          @click="goPath(`/property/locations/edit?id=${item.id}`)"
+          @click="goPath(`/property/locations/edit?locaton=${item.location_id}`)"
         />
       </template>
 

@@ -9,7 +9,7 @@ const title = ref("ເພີ່ມສະຖານທີ່ໃໝ່");
 const loading = ref(false);
 const form = ref();
 
-// Location Type Options
+
 const locationTypeOptions = [
   { 
     title: "ອາຄານ", 
@@ -48,13 +48,13 @@ const locationTypeOptions = [
   },
 ];
 
-// Record Status Options
+
 const recordStatusOptions = [
   { title: "ເປີດໃຊ້ງານ", value: "O" },
   { title: "ປິດໃຊ້ງານ", value: "C" },
 ];
 
-// Mock Data for parent locations
+
 const parentLocations = ref([
   { id: 1, location_code: "HQ-001", location_name_la: "ສຳນັກງານໃຫຍ່", location_type: "BUILDING" },
   { id: 2, location_code: "HQ-F01", location_name_la: "ຊັ້ນທີ 1", location_type: "FLOOR" },
@@ -89,20 +89,20 @@ const filteredParentLocations = computed(() => {
   const selectedType = locationStoreInstance.form_create_location.location_type;
   if (!selectedType) return parentLocations.value;
   
-  // Define logical parent-child relationships
+  
   const parentTypeMap = {
-    'BUILDING': [], // Buildings have no parents typically
-    'FLOOR': ['BUILDING'], // Floors can be under buildings
-    'ROOM': ['BUILDING', 'FLOOR'], // Rooms can be under buildings or floors
-    'AREA': ['BUILDING', 'FLOOR'], // Areas can be under buildings or floors
-    'WAREHOUSE': [], // Warehouses are typically standalone
+    'BUILDING': [], 
+    'FLOOR': ['BUILDING'], 
+    'ROOM': ['BUILDING', 'FLOOR'], 
+    'AREA': ['BUILDING', 'FLOOR'], 
+    'WAREHOUSE': [], 
   };
   
   const allowedParentTypes = parentTypeMap[selectedType] || [];
   return parentLocations.value.filter(loc => allowedParentTypes.includes(loc.location_type));
 });
 
-// Auto-generate location code based on type and parent
+
 const generateLocationCode = () => {
   const type = locationStoreInstance.form_create_location.location_type;
   const parent = parentLocations.value.find(p => 
@@ -129,7 +129,7 @@ const generateLocationCode = () => {
   }
 };
 
-// Watch for type changes to auto-generate code
+
 watch(
   [
     () => locationStoreInstance.form_create_location.location_type,
@@ -142,7 +142,7 @@ watch(
   }
 );
 
-// Watch location type to clear parent if not applicable
+
 watch(
   () => locationStoreInstance.form_create_location.location_type,
   (newType) => {
@@ -184,7 +184,7 @@ const rules = {
 };
 
 onMounted(async () => {
-  // Load reference data
+
   loading.value = true;
   try {
     await Promise.all([
@@ -206,16 +206,16 @@ onMounted(async () => {
           <GlobalTextTitleLine :title="title" />
         </v-col>
 
-        <v-col cols="12" class="pt-12">
+        <v-col cols="12" >
           <v-row>
-            <!-- Location Type Selection -->
+        
             <v-col cols="12">
-              <h3 class="text-h6 mb-4 d-flex align-center">
+              <!-- <h3 class="text-h6 mb-4 d-flex align-center">
                 <v-icon class="mr-2" color="primary">mdi-format-list-bulleted-type</v-icon>
                 ປະເພດສະຖານທີ່
-              </h3>
+              </h3> -->
               
-              <v-radio-group 
+              <!-- <v-radio-group 
                 v-model="locationStoreInstance.form_create_location.location_type"
                 :rules="[rules.requiredSelect]"
                 class="mb-6"
@@ -253,16 +253,16 @@ onMounted(async () => {
                     </v-card>
                   </v-col>
                 </v-row>
-              </v-radio-group>
+              </v-radio-group> -->
             </v-col>
 
-            <!-- Basic Information -->
-            <v-col cols="12">
+          
+            <!-- <v-col cols="12">
               <h3 class="text-h6 mb-4 d-flex align-center">
                 <v-icon class="mr-2" color="primary">mdi-information</v-icon>
                 ຂໍ້ມູນພື້ນຖານ
               </h3>
-            </v-col>
+            </v-col> -->
 
             <v-col cols="12" md="6">
               <label>ລະຫັດສະຖານທີ່ <span class="text-error">*</span></label>
@@ -329,7 +329,7 @@ onMounted(async () => {
                 </template>
               </v-select>
 
-              <label>ສະຖານະເລຄອດ <span class="text-error">*</span></label>
+              <!-- <label>ສະຖານະເລຄອດ <span class="text-error">*</span></label>
               <v-select
                 v-model="locationStoreInstance.form_create_location.record_stat"
                 :rules="[rules.requiredSelect]"
@@ -341,7 +341,7 @@ onMounted(async () => {
                 variant="outlined"
                 hide-details="auto"
                 class="pb-6"
-              ></v-select>
+              ></v-select> -->
             </v-col>
 
             <v-col cols="12" md="6">
@@ -498,7 +498,7 @@ onMounted(async () => {
                 </v-row>
 
                 <!-- Location Hierarchy Preview -->
-                <v-row class="mt-4" v-if="locationStoreInstance.form_create_location.parent_location_id">
+                <!-- <v-row class="mt-4" v-if="locationStoreInstance.form_create_location.parent_location_id">
                   <v-col cols="12">
                     <v-card variant="outlined" color="warning">
                       <v-card-title class="text-h6 pb-2">
@@ -536,12 +536,12 @@ onMounted(async () => {
                       </v-card-text>
                     </v-card>
                   </v-col>
-                </v-row>
+                </v-row> -->
               </v-card>
             </v-col>
 
             <!-- Information Card -->
-            <v-col cols="12" class="mt-4">
+            <!-- <v-col cols="12" class="mt-4">
               <v-card variant="outlined" color="info">
                 <v-card-title class="text-h6 pb-2">
                   <v-icon class="mr-2">mdi-lightbulb-outline</v-icon>
@@ -564,10 +564,10 @@ onMounted(async () => {
                   </v-list>
                 </v-card-text>
               </v-card>
-            </v-col>
+            </v-col> -->
 
             <!-- Action Buttons -->
-            <v-col cols="12" class="d-flex flex-wrap justify-center mt-6">
+            <v-col cols="12" class="d-flex flex-wrap justify-center ">
               <v-btn 
                 color="error" 
                 variant="outlined"
