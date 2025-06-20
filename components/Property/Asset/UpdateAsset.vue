@@ -26,7 +26,7 @@ const details = computed(() => {
   return assetStoreInstance.response_asset_detail;
 });
 
-const title = ref("ແກ້ໄຂຊັບສິນ"); // ✅ ແກ້ໄຂຊື່ title
+const title = ref("ແກ້ໄຂຊັບສິນ"); 
 const loading = ref(false);
 const form = ref();
 
@@ -120,7 +120,7 @@ onMounted(async () => {
 
 <template>
   <section class="pa-6">
-    <!-- ✅ ລົບ debug output ອອກ -->
+
     <v-form ref="form" @submit.prevent="submitForm">
       <v-row>
         <v-col cols="12">
@@ -136,14 +136,14 @@ onMounted(async () => {
               </label>
               <v-text-field
                 v-model="request.asset_code"
-                :rules="[rules.required, rules.assetCode]"
+               
                 placeholder="ເຊັ່ນ: AST001001, AST002001"
                 density="compact"
                 variant="outlined"
                 hide-details="auto"
                 class="pb-6"
                 maxlength="20"
-                disabled
+                
               ></v-text-field>
 
               <label>
@@ -162,22 +162,7 @@ onMounted(async () => {
               ></v-text-field>
             </v-col>
 
-            <v-col cols="12" md="6">
-              <label>
-                ຊື່ຊັບສິນ (ອັງກິດ) / Asset Name (English)
-                <span class="text-error">*</span>
-              </label>
-              <v-text-field
-                v-model="request.asset_name_en"
-                :rules="[rules.required, rules.maxLength100]"
-                placeholder="Please enter asset name in English"
-                density="compact"
-                variant="outlined"
-                hide-details="auto"
-                class="pb-6"
-                maxlength="100"
-              ></v-text-field>
-
+            <v-col cols="12" md="6"> 
               <label>
                 ປະເພດຊັບສິນ / Asset Type
                 <span class="text-error">*</span>
@@ -194,6 +179,22 @@ onMounted(async () => {
                 hide-details="auto"
                 class="pb-6"
               ></v-select>
+              <label>
+                ຊື່ຊັບສິນ (ອັງກິດ) / Asset Name (English)
+                <span class="text-error">*</span>
+              </label>
+              <v-text-field
+                v-model="request.asset_name_en"
+                :rules="[rules.required, rules.maxLength100]"
+                placeholder="Please enter asset name in English"
+                density="compact"
+                variant="outlined"
+                hide-details="auto"
+                class="pb-6"
+                maxlength="100"
+              ></v-text-field>
+
+             
             </v-col>
 
             <v-col cols="12" class="d-flex flex-wrap justify-center">

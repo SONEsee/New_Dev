@@ -1,32 +1,24 @@
 // Asset Models Interface
 
   export interface AssetModel {
-    asset_id: number;
-    coa_id?: number;
-    asset_code: string;
-    asset_name_la: string;
-    asset_name_en: string;
-    asset_type_id: string;
-    asset_type?: AssetTypeModel;
-    value: number;
-    location?: string;
-    description?: string;
-    start_date?: string | Date;
-    purchase_date?: string | Date;
-    warranty_date?: string | Date;
-    supplier?: string;
-    serial_number?: string;
-    model?: string;
-    condition?: 'excellent' | 'good' | 'fair' | 'poor';
-    depreciation_rate?: number;
-    current_value?: number;
-    RECORD_STAT: 'O' | 'C'; // O = Open/Active, C = Closed/Inactive
-    created_at: string | Date;
-    updated_at: string | Date;
-    created_by?: number;
-    updated_by?: number;
+     coa_id:            number;
+    asset_type_detail: AssetTypeDetail;
+    asset_code:        string;
+    asset_name_la:     string;
+    asset_name_en:     string;
+    Record_Status:     string;
+    Maker_DT_Stamp:    Date;
+    Checker_DT_Stamp:  Date;
+    asset_type_id:     number;
+    Maker_Id:          string;
+    Checker_Id:        string;
   }
-
+export interface AssetTypeDetail {
+    type_id:      number;
+    type_code:    string;
+    type_name_en: string;
+    type_name_la: string;
+}
   export interface AssetTypeModel {
     asset_type_id: number;
     type_code: string;

@@ -1,9 +1,17 @@
 <script lang="ts" setup>
 import { CallSwal } from "#build/imports";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
+import { ref, computed, onMounted, watch } from "vue";
+
 const locationStores = locationStore();
 const assetStoreInstance = assetStore();
 const router = useRouter();
+const route = useRoute();
+
+// ດຶງ asset_type_id ແລະ asset_type_name ຈາກ URL parameter
+const asset_type_id = route.query.asset_type_id as string;
+const asset_type_name = route.query.asset_type_name as string;
+
 const locations= computed(()=>{
     return locationStores.response_location_list
 })
@@ -11,10 +19,15 @@ const title = ref("ເພີ່ມຊັບສິນໃໝ່");
 const loading = ref(false);
 const form = ref();
 const proppertyStore = propertyStore();
+
 const mockData1 =  computed(()=>{
   return proppertyStore.respons_data_property_category || []
 })
 
+// ສຳລັບເກັບຂໍ້ມູນ response ທີ່ໃຊ້ສ້າງ asset_code
+const assetResponse = computed(() => {
+  return assetStoreInstance.response_asset_by_type || [];
+});
 
 const assetTypes = [
   { title: "ເຄື່ອງຈັກ", value: "1" },
@@ -24,35 +37,41 @@ const assetTypes = [
   { title: "ອາຄານ", value: "5" },
 ];
 
-// const locations = ref([
-//   "ຫ້ອງການ A",
-//   "ຫ້ອງການ B", 
-//   "ຫ້ອງການ C",
-//   "ໂຮງງານ 1",
-//   "ໂຮງງານ 2",
-//   "ລານຈອດລົດ",
-//   "ຄັງເກັບຂອງ",
-// ]);
-
 const goBack = () => {
   router.go(-1);
 };
 
 const submitForm = async () => {
-  const isValid = await form.value.validate();
-  if (isValid) {
-    const notification = await CallSwal({
-      icon: "warning",
-      title: "ຄຳເຕືອນ",
-      text: `ທ່ານກຳລັງເພີ່ມຊັບສິນໃໝ່ ທ່ານແນ່ໃຈແລ້ວບໍ່?`,
-      showCancelButton: true,
-      confirmButtonText: "ຕົກລົງ",
-      cancelButtonText: "ຍົກເລີກ",
-    });
+  try {
+    console.log('Form data before validation:', assetStoreInstance.form_create_asset);
     
-    if (notification.isConfirmed) {
-      await assetStoreInstance.CreateAsset();
+    const { valid: isValid } = await form.value.validate();
+    
+    if (isValid) {
+      console.log('Form is valid, showing confirmation');
+      
+      const notification = await CallSwal({
+        icon: "warning",
+        title: "ຄຳເຕືອນ",
+        text: `ທ່ານກຳລັງເພີ່ມຊັບສິນໃໝ່ ທ່ານແນ່ໃຈແລ້ວບໍ່?`,
+        showCancelButton: true,
+        confirmButtonText: "ຕົກລົງ",
+        cancelButtonText: "ຍົກເລີກ",
+      });
+      
+      if (notification.isConfirmed) {
+        console.log('User confirmed, creating asset...');
+        console.log('Data to send:', assetStoreInstance.form_create_asset);
+        
+        await assetStoreInstance.CreateAsset();
+        
+        console.log('Asset creation completed');
+      }
+    } else {
+      console.log('Form validation failed');
     }
+  } catch (error) {
+    console.error("Asset creation failed:", error);
   }
 };
 
@@ -72,8 +91,8 @@ const rules = {
   },
   assetCode: (value: string) => {
     if (!value) return "ກະລຸນາປ້ອນລະຫັດຊັບສິນ";
-    const pattern = /^AST[0-9]{6}$/;
-    return pattern.test(value) || "ຮູບແບບຕ້ອງເປັນ AST123456 (AST + 6 ຕົວເລກ)";
+    const pattern = /^[A-Z]{3}[0-9]{6}$/;
+    return pattern.test(value) || "ຮູບແບບຕ້ອງເປັນ ABC123456 (3 ຕົວອັກສອນ + 6 ຕົວເລກ)";
   },
   positiveNumber: (value: string | number) => {
     if (!value) return "ກະລຸນາປ້ອນມູນຄ່າ";
@@ -82,16 +101,40 @@ const rules = {
   },
 };
 
+// Watch ສຳລັບສ້າງ asset_code ອັດຕະໂນມັດ (ໃຊ້ asset_type_id ຈາກ URL)
+watch(assetResponse, (newRes) => {
+  if (asset_type_id) {
+    if (newRes && newRes.length > 0) {
+      const resData = newRes[0];
+      const nextId = resData.count + 1;
+      const paddedId = nextId.toString().padStart(6, '0');
+      assetStoreInstance.form_create_asset.asset_code = `${asset_type_id}${paddedId}`;
+    } else {
+      // ຖ້າບໍ່ມີ response ແຕ່ມີ asset_type_id ຈາກ URL parameter
+      // ໃຊ້ຄ່າເລີ່ມຕົ້ນ 000001
+      assetStoreInstance.form_create_asset.asset_code = `${asset_type_id}000001`;
+    }
+  }
+}, { immediate: true });
+
 onMounted(async () => {
-  locationStores.GetLocationList();
-   proppertyStore.GetPropertyCategoryById();
+  await locationStores.GetLocationList();
+  await proppertyStore.GetPropertyCategoryById();
+  
+  // Set asset_type_id ຈາກ URL parameter ກ່ອນ
+  if (asset_type_id) {
+    assetStoreInstance.form_create_asset.asset_type_id = asset_type_id;
+  }
+  
+  // ດຶງຂໍ້ມູນຊັບສິນທີ່ມີຢູ່ແລ້ວຕາມ asset_type_id ເພື່ອສ້າງລະຫັດໃໝ່
+  if (asset_type_id) {
+    await assetStoreInstance.GetAssetByTypeId(asset_type_id);
+  }
 });
 </script>
 
 <template>
   <section class="pa-6">
-
-    
     <v-form ref="form" @submit.prevent="submitForm">
       <v-row>
         <v-col cols="12">
@@ -104,14 +147,14 @@ onMounted(async () => {
               <label>ລະຫັດຊັບສິນ / Asset Code <span class="text-error">*</span></label>
               <v-text-field
                 v-model="assetStoreInstance.form_create_asset.asset_code"
-                
-                placeholder="ເຊັ່ນ: AST001001, AST002001"
+                :rules="[rules.required, rules.assetCode]"
+                placeholder="ເຊັ່ນ: FIX000001, MOB000001"
                 density="compact"
                 variant="outlined"
                 hide-details="auto"
                 class="pb-6"
                 maxlength="20"
-                
+                readonly
               ></v-text-field>
 
               <label>ຊື່ຊັບສິນ (ລາວ) / Asset Name (Lao) <span class="text-error">*</span></label>
@@ -125,12 +168,10 @@ onMounted(async () => {
                 class="pb-6"
                 maxlength="100"
               ></v-text-field>
-
-             
             </v-col>
 
             <v-col cols="12" md="6">
-                 <label>ຊື່ຊັບສິນ (ອັງກິດ) / Asset Name (English) <span class="text-error">*</span></label>
+              <label>ຊື່ຊັບສິນ (ອັງກິດ) / Asset Name (English) <span class="text-error">*</span></label>
               <v-text-field
                 v-model="assetStoreInstance.form_create_asset.asset_name_en"
                 :rules="[rules.required, rules.maxLength100]"
@@ -143,101 +184,21 @@ onMounted(async () => {
               ></v-text-field>
 
               <label>ປະເພດຊັບສິນ / Asset Type <span class="text-error">*</span></label>
-              <v-select
+              <v-text-field
+                :value="asset_type_name ? decodeURIComponent(asset_type_name) : ''"
+                density="compact"
+                variant="outlined"
+                hide-details="auto"
+                class="pb-6"
+                readonly
+                placeholder="ປະເພດຊັບສິນຈາກການເລືອກ"
+              ></v-text-field>
+              
+              <!-- Hidden field ສຳລັບເກັບ asset_type_id -->
+              <input 
+                type="hidden" 
                 v-model="assetStoreInstance.form_create_asset.asset_type_id"
-                :rules="[rules.required]"
-                :items="mockData1"
-                item-title="type_name_la"
-                item-value="type_id"
-                placeholder="ກະລຸນາເລືອກປະເພດຊັບສິນ"
-                density="compact"
-                
-                variant="outlined"
-                hide-details="auto"
-                class="pb-6"
-              ></v-select>
-              <!-- <label>ມູນຄ່າຊັບສິນ / Asset Value (ກີບ) <span class="text-error">*</span></label>
-              <v-text-field
-                v-model="assetStoreInstance.form_create_asset.value"
-                :rules="[rules.required, rules.positiveNumber]"
-                placeholder="ປ້ອນມູນຄ່າເປັນກີບ"
-                density="compact"
-                variant="outlined"
-                hide-details="auto"
-                class="pb-6"
-                type="number"
-                prefix="₭"
-              ></v-text-field> -->
-
-              <!-- <label>ສະຖານທີ່ / Location</label>
-              <v-autocomplete
-                v-model="assetStoreInstance.form_create_asset.location"
-                :items="locations || []"
-                placeholder="ເລືອກຫຼືປ້ອນສະຖານທີ່"
-                density="compact"
-                variant="outlined"
-                hide-details="auto"
-                item-title="location_name_la"
-                item-value="location_id"
-                class="pb-6"
-                clearable
-              ></v-autocomplete> -->
-
-             
-
-              <!-- <label>ວັນທີເລີ່ມໃຊ້ງານ / Start Date</label>
-              <v-text-field
-                v-model="assetStoreInstance.form_create_asset.start_date"
-                type="date"
-                density="compact"
-                variant="outlined"
-                hide-details="auto"
-                class="pb-6"
-              ></v-text-field> -->
- <!-- <label>ຄຳອະທິບາຍ / Description</label>
-              <v-textarea
-                v-model="assetStoreInstance.form_create_asset.description"
-                placeholder="ກະລຸນາປ້ອນຄຳອະທິບາຍຊັບສິນ"
-                density="compact"
-                variant="outlined"
-                hide-details="auto"
-                class="pb-6"
-                rows="4"
-                maxlength="500"
-                counter
-                :rules="[rules.maxLength200]"
-              ></v-textarea> -->
-              <!-- Example Card -->
-              <!-- <v-card variant="outlined" class="mt-4">
-                <v-card-title class="text-h6 pb-2">
-                  <v-icon class="mr-2">mdi-lightbulb-outline</v-icon>
-                  ຕົວຢ່າງລະຫັດຊັບສິນ
-                </v-card-title>
-                <v-card-text class="pt-0">
-                  <v-list density="compact">
-                    <v-list-item>
-                      <v-list-item-title class="text-subtitle-2">ເຄື່ອງຈັກ:</v-list-item-title>
-                      <v-list-item-subtitle>AST001001 - AST001999</v-list-item-subtitle>
-                    </v-list-item>
-                    <v-list-item>
-                      <v-list-item-title class="text-subtitle-2">ພາຫານະ:</v-list-item-title>
-                      <v-list-item-subtitle>AST002001 - AST002999</v-list-item-subtitle>
-                    </v-list-item>
-                    <v-list-item>
-                      <v-list-item-title class="text-subtitle-2">ອຸປະກອນ IT:</v-list-item-title>
-                      <v-list-item-subtitle>AST003001 - AST003999</v-list-item-subtitle>
-                    </v-list-item>
-                    <v-list-item>
-                      <v-list-item-title class="text-subtitle-2">ເຟີນິເຈີ:</v-list-item-title>
-                      <v-list-item-subtitle>AST004001 - AST004999</v-list-item-subtitle>
-                    </v-list-item>
-                    <v-list-item>
-                      <v-list-item-title class="text-subtitle-2">ອາຄານ:</v-list-item-title>
-                      <v-list-item-subtitle>AST005001 - AST005999</v-list-item-subtitle>
-                    </v-list-item>
-                  </v-list>
-                </v-card-text>
-              </v-card> -->
+              />
             </v-col>
             
             <v-col cols="12" class="d-flex flex-wrap justify-center">

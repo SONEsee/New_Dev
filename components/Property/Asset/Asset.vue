@@ -1,10 +1,18 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, watch } from "vue";
 import { CallSwal } from "#build/imports";
+import { useRouter } from "vue-router";
+
+// ⭐ ເພີ່ມ router
+const router = useRouter();
 
 const assetStoreInstance = assetStore();
 const mockData =  computed(()=>{
     return assetStoreInstance.response_asset_list;
+})
+const proppertyStore = propertyStore();
+const mockData1 =  computed(()=>{
+  return proppertyStore.respons_data_property_category || []
 })
 
 const handleSubmit = async (item: any) => {
@@ -39,6 +47,9 @@ const successMessage = ref("");
 const errorMessage = ref("");
 const selectedAssetType = ref("all");
 
+// ⭐ ເພີ່ມ localStorage key
+const SELECTED_ASSET_TYPE_KEY = "selected_asset_type_filter";
+
 const {
   canEdit,
   canDelete,
@@ -56,15 +67,6 @@ const role1 = computed(() => {
 });
 
 const title = "ຈັດການຊັບສິນ";
-
-const assetTypes = [
-  { title: "ທັງໝົດ", value: "all" },
-  { title: "ເຄື່ອງຈັກ", value: "1" },
-  { title: "ພາຫານະ", value: "2" },
-  { title: "ອຸປະກອນ IT", value: "3" },
-  { title: "ເຟີນິເຈີ", value: "4" },
-  { title: "ອາຄານ", value: "5" },
-];
 
 const headers = computed(() => [
   {
@@ -96,7 +98,7 @@ const headers = computed(() => [
   },
   {
     title: "ປະເພດຊັບສິນ",
-    value: "asset_type",
+    value: "asset_type_detail",
     align: "center",
     sortable: true,
     filterable: true,
@@ -193,94 +195,21 @@ const headers = computed(() => [
     : []),
 ]);
 
-// const mockData = ref([
-//   {
-//     asset_id: 1,
-//     asset_code: "AST001001",
-//     asset_name_la: "ເຄື່ອງພິມ HP LaserJet",
-//     asset_name_en: "HP LaserJet Printer",
-//     asset_type_id: "3",
-//     asset_type: { type_name_la: "ອຸປະກອນ IT", type_name_en: "IT Equipment" },
-//     value: 1200000,
-//     location: "ຫ້ອງການ A",
-//     description: "ເຄື່ອງພິມເລເຊີສຳລັບຫ້ອງການ",
-//     RECORD_STAT: "O",
-//     created_at: new Date("2025-06-16T13:13:00+07:00"),
-//     updated_at: new Date("2025-06-16T13:13:00+07:00"),
-//   },
-//   {
-//     asset_id: 2,
-//     asset_code: "AST002001",
-//     asset_name_la: "ລົດກະບະ Toyota",
-//     asset_name_en: "Toyota Pickup Truck",
-//     asset_type_id: "2",
-//     asset_type: { type_name_la: "ພາຫານະ", type_name_en: "Vehicle" },
-//     value: 250000000,
-//     location: "ລານຈອດລົດ",
-//     description: "ລົດກະບະສຳລັບການຂົນສົ່ງ",
-//     RECORD_STAT: "O",
-//     created_at: new Date("2025-06-15T09:00:00+07:00"),
-//     updated_at: new Date("2025-06-16T10:30:00+07:00"),
-//   },
-//   {
-//     asset_id: 3,
-//     asset_code: "AST001002",
-//     asset_name_la: "ຄອມພິວເຕີ Dell",
-//     asset_name_en: "Dell Desktop Computer",
-//     asset_type_id: "3",
-//     asset_type: { type_name_la: "ອຸປະກອນ IT", type_name_en: "IT Equipment" },
-//     value: 8500000,
-//     location: "ຫ້ອງການ B",
-//     description: "ຄອມພິວເຕີສຳນັກງານ",
-//     RECORD_STAT: "O",
-//     created_at: new Date("2025-06-14T14:45:00+07:00"),
-//     updated_at: new Date("2025-06-15T16:20:00+07:00"),
-//   },
-//   {
-//     asset_id: 4,
-//     asset_code: "AST004001",
-//     asset_name_la: "ໂຕະເຮັດວຽກ",
-//     asset_name_en: "Office Desk",
-//     asset_type_id: "4",
-//     asset_type: { type_name_la: "ເຟີນິເຈີ", type_name_en: "Furniture" },
-//     value: 1500000,
-//     location: "ຫ້ອງການ A",
-//     description: "ໂຕະເຮັດວຽກສຳລັບພະນັກງານ",
-//     RECORD_STAT: "C",
-//     created_at: new Date("2025-06-13T11:10:00+07:00"),
-//     updated_at: new Date("2025-06-14T12:00:00+07:00"),
-//   },
-//   {
-//     asset_id: 5,
-//     asset_code: "AST001003",
-//     asset_name_la: "ເຄື່ອງຈັກຕັດໄມ້",
-//     asset_name_en: "Wood Cutting Machine",
-//     asset_type_id: "1",
-//     asset_type: { type_name_la: "ເຄື່ອງຈັກ", type_name_en: "Machinery" },
-//     value: 45000000,
-//     location: "ໂຮງງານ 1",
-//     description: "ເຄື່ອງຈັກຕັດໄມ້ອັດຕະໂນມັດ",
-//     RECORD_STAT: "O",
-//     created_at: new Date("2025-06-12T08:30:00+07:00"),
-//     updated_at: new Date("2025-06-13T09:15:00+07:00"),
-//   },
-// ]);
-
 const filteredData = computed(() => {
-  let data = mockData.value;
+  let data = mockData.value || [];
 
   if (selectedAssetType.value !== "all") {
     data = data.filter(
-      (item) => item.asset_type_id === selectedAssetType.value
+      (item) => item.asset_type_detail?.type_code === selectedAssetType.value // ⭐ ປ່ຽນເປັນ type_code
     );
   }
 
   if (search.value) {
     data = data.filter(
       (item) =>
-        item.asset_name_la.toLowerCase().includes(search.value.toLowerCase()) ||
-        item.asset_name_en.toLowerCase().includes(search.value.toLowerCase()) ||
-        item.asset_code.toLowerCase().includes(search.value.toLowerCase()) ||
+        item.asset_name_la?.toLowerCase().includes(search.value.toLowerCase()) ||
+        item.asset_name_en?.toLowerCase().includes(search.value.toLowerCase()) ||
+        item.asset_code?.toLowerCase().includes(search.value.toLowerCase()) ||
         item.description?.toLowerCase().includes(search.value.toLowerCase())
     );
   }
@@ -338,14 +267,75 @@ const confirmDelete = async (item: any) => {
 const clearFilters = async () => {
   selectedAssetType.value = "all";
   search.value = "";
+  
+  localStorage.removeItem(SELECTED_ASSET_TYPE_KEY);
 };
 
+
+const loadSavedAssetTypeSelection = () => {
+  try {
+    const saved = localStorage.getItem(SELECTED_ASSET_TYPE_KEY);
+    if (saved) {
+      selectedAssetType.value = saved;
+    }
+  } catch (error) {
+    console.error("Failed to load saved asset type selection:", error);
+  }
+};
+
+
+const saveAssetTypeSelection = (assetType: string) => {
+  try {
+    if (assetType && assetType !== "all") {
+      localStorage.setItem(SELECTED_ASSET_TYPE_KEY, assetType);
+    } else {
+      localStorage.removeItem(SELECTED_ASSET_TYPE_KEY);
+    }
+  } catch (error) {
+    console.error("Failed to save asset type selection:", error);
+  }
+};
+
+
+const goToCreateAssetWithType = () => {
+  if (selectedAssetType.value && selectedAssetType.value !== "all") {
+    const assetTypes = mockData1.value || []; 
+    const selectedType = assetTypes.find(
+      (type) => type.type_code === selectedAssetType.value
+    );
+    
+    router.push({
+      path: "/property/asset/create",
+      query: {
+        asset_type_id: selectedAssetType.value,
+        asset_type_name: selectedType ? selectedType.type_id : "",
+      },
+    });
+  } else {
+
+    goPath(`/property/asset/create`);
+  }
+};
+
+
+watch(
+  selectedAssetType,
+  (newValue) => {
+    saveAssetTypeSelection(newValue);
+  }
+);
+
 onMounted(async () => {
+   proppertyStore.GetPropertyCategoryById();
     assetStoreInstance.GetAssetList()
   loading.value = true;
   try {
     initializeRole();
     roleStore.GetRoleDetail();
+    
+    
+    loadSavedAssetTypeSelection();
+    
     await new Promise((resolve) => setTimeout(resolve, 500));
   } catch (error) {
     errorMessage.value = "ເກີດຂໍ້ຜິດພາດໃນການໂຫຼດຂໍ້ມູນ";
@@ -358,14 +348,15 @@ onMounted(async () => {
 
 <template>
   <GlobalTextTitleLine :title="title" />
-
+{{ mockData1 }}
   <v-col cols="12">
     <v-row>
       <v-col cols="12" md="3">
         <div class="d-flex">
+     
           <v-btn
             color="primary"
-            @click="goPath(`/property/asset/create`)"
+            @click="goToCreateAssetWithType()"
             v-if="canAdd"
           >
             <v-icon icon="mdi-plus"></v-icon> ເພີ່ມຊັບສິນໃໝ່
@@ -376,9 +367,9 @@ onMounted(async () => {
       <v-col cols="12" md="3" class="text-no-wrap">
         <v-select
           v-model="selectedAssetType"
-          :items="assetTypes"
-          item-title="title"
-          item-value="value"
+          :items="[{ type_id: 'all', type_name_la: 'ທັງໝົດ' }, ...(mockData1 || [])]"
+          item-title="type_name_la"
+          item-value="type_code"
           label="ປະເພດຊັບສິນ"
           variant="outlined"
           density="compact"
@@ -432,7 +423,7 @@ onMounted(async () => {
         <b style="color: blue">{{ column.title }}</b>
       </template>
 
-      <template v-slot:header.asset_type="{ column }">
+      <template v-slot:header.asset_type_detail="{ column }">
         <b style="color: blue">{{ column.title }}</b>
       </template>
 
@@ -485,14 +476,14 @@ onMounted(async () => {
         <span class="text-grey-darken-1">{{ item.asset_name_en }}</span>
       </template>
 
-      <template v-slot:item.asset_type="{ item }">
+      <template v-slot:item.asset_type_detail="{ item }">
         <div class="text-center">
           <v-chip
-            :color="getAssetTypeColor(item.asset_type_id)"
+            :color="getAssetTypeColor(item.asset_type_detail.type_name_la)"
             variant="flat"
             size="small"
           >
-            {{ item.asset_type?.type_name_la || "ບໍ່ມີຂໍ້ມູນ" }}
+            {{ item.asset_type_detail?.type_name_la || "ບໍ່ມີຂໍ້ມູນ" }}
           </v-chip>
         </div>
       </template>
