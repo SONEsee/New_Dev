@@ -149,14 +149,7 @@ const cancelUpdate = () => {
             :rules="[(v) => !!v || 'ລຳດັບເມນູຕ້ອງບໍ່ຫວ່າງ']"
             required
           />
-          <v-text-field
-            density="compact"
-            v-model="request.sub_menu_urls"
-            label="URL ເມນູຍ່ອຍ"
-            variant="outlined"
-            :rules="[(v) => !!v || 'URL ຕ້ອງບໍ່ຫວ່າງ']"
-            required
-          />
+        
         </v-col>
         <v-col cols="12" md="4">
           <v-text-field
@@ -167,7 +160,15 @@ const cancelUpdate = () => {
             :rules="[(v) => !!v || 'ໄອຄອນຕ້ອງບໍ່ຫວ່າງ']"
             required
           />
-          <v-autocomplete
+          <v-text-field
+            density="compact"
+            v-model="request.sub_menu_urls"
+            label="URL ເມນູຍ່ອຍ"
+            variant="outlined"
+            :rules="[(v) => !!v || 'URL ຕ້ອງບໍ່ຫວ່າງ']"
+            required
+          />
+          <!-- <v-autocomplete
             :items="[
               { title: 'ເປີດໃຊ້ງານ', value: 'Y' },
               { title: 'ປິດໃຊ້ງານ', value: 'N' },
@@ -180,7 +181,7 @@ const cancelUpdate = () => {
             label="ເລືອກສະຖານະໃຊ້ງານ"
             variant="outlined"
             required
-          />
+          /> -->
         </v-col>
       </v-row>
 

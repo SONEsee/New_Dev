@@ -2,7 +2,7 @@
 import { useRoute } from "vue-router";
 import dayjs from 'dayjs';
 const route = useRoute();
-const id = route.query.id as string | undefined;
+const id = route.query.module_id as string | undefined;
 const moduleStore = ModulesStore();
 
 const moduleDetail = computed(() => {

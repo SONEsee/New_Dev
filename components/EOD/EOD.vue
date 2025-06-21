@@ -234,94 +234,6 @@
 
       <!-- Validation Tables -->
       <v-row>
-        <!-- Pending Approvals -->
-        <v-col cols="12" lg="6">
-          <v-card 
-            elevation="6" 
-            rounded="xl" 
-            class="h-100 validation-card" 
-            :color="hasPendingApprovals ? 'error-lighten-5' : 'success-lighten-5'"
-          >
-            <v-card-title class="pa-6 pb-0">
-              <div class="d-flex align-center justify-space-between w-100">
-                <div class="d-flex align-center">
-                  <v-avatar 
-                    size="56" 
-                    :color="hasPendingApprovals ? 'error-lighten-4' : 'success-lighten-4'" 
-                    class="mr-3 section-avatar"
-                  >
-                    <v-icon :color="hasPendingApprovals ? 'error-darken-2' : 'success-darken-2'" size="28">
-                      {{ hasPendingApprovals ? 'mdi-alert-circle' : 'mdi-check-circle' }}
-                    </v-icon>
-                  </v-avatar>
-                  <div>
-                    <h2 class="text-h5 font-weight-bold section-title">ຕັ້ງຄ່າທີ່ຍັງບໍ່ໄດ້ອະນຸມັດ</h2>
-                    <p class="text-body-2 text-medium-emphasis">Pending Settings Approval</p>
-                  </div>
-                </div>
-                <div class="d-flex align-center ga-3">
-                  <v-chip 
-                    :color="hasPendingApprovals ? 'error' : 'success'" 
-                    variant="flat" 
-                    size="small"
-                    :prepend-icon="hasPendingApprovals ? 'mdi-alert' : 'mdi-check'"
-                    class="count-chip"
-                  >
-                    {{ pendingApprovalsCount }} ລາຍການ
-                  </v-chip>
-                  <v-btn
-                    :color="showApprovalDetails ? 'primary' : 'grey'"
-                    :variant="showApprovalDetails ? 'flat' : 'outlined'"
-                    size="small"
-                    @click="toggleApprovalDetails"
-                    :prepend-icon="showApprovalDetails ? 'mdi-eye-off' : 'mdi-eye'"
-                    rounded="lg"
-                    class="toggle-button"
-                  >
-                    {{ showApprovalDetails ? 'ເຊື່ອງ' : 'ເບິ່ງ' }}
-                  </v-btn>
-                </div>
-              </div>
-            </v-card-title>
-            
-            <v-card-text class="pa-6">
-              <v-expand-transition>
-                <div v-show="showApprovalDetails">
-                  <v-data-table
-                    :headers="pendingApprovalHeaders"
-                    :items="pendingApprovals"
-                    class="elevation-2 rounded-lg data-table"
-                    hide-default-footer
-                    no-data-text="ບໍ່ມີຂໍ້ມູນທີ່ລໍຖ້າອະນຸມັດ"
-                  >
-                    <template v-slot:item.status="{ item }">
-                      <v-chip
-                        :color="getStatusColor(item.status)"
-                        :prepend-icon="getStatusIcon(item.status)"
-                        variant="flat"
-                        size="small"
-                        class="status-chip"
-                      >
-                        {{ item.status === 'pending' ? 'ລໍຖ້າອະນຸມັດ' : 'ອະນຸມັດແລ້ວ' }}
-                      </v-chip>
-                    </template>
-                  </v-data-table>
-                </div>
-              </v-expand-transition>
-              <v-expand-transition>
-                <div v-show="!showApprovalDetails" class="text-center py-4">
-                  <v-icon :color="hasPendingApprovals ? 'error' : 'success'" size="48" class="mb-2">
-                    {{ hasPendingApprovals ? 'mdi-alert-circle' : 'mdi-check-circle' }}
-                  </v-icon>
-                  <p class="text-h6 font-weight-medium">
-                    {{ hasPendingApprovals ? `${pendingApprovalsCount} ລາຍການລໍຖ້າອະນຸມັດ` : 'ທັງໝົດອະນຸມັດແລ້ວ' }}
-                  </p>
-                </div>
-              </v-expand-transition>
-            </v-card-text>
-          </v-card>
-        </v-col>
-
         <!-- Pending Journals -->
         <v-col cols="12" lg="6">
           <v-card 
@@ -358,6 +270,18 @@
                     {{ pendingJournalsCount }} ລາຍການ
                   </v-chip>
                   <v-btn
+                    color="primary"
+                    variant="outlined"
+                    size="small"
+                    @click="refreshPendingJournals"
+                    prepend-icon="mdi-refresh"
+                    rounded="lg"
+                    class="refresh-btn"
+                    :loading="loadingJournals"
+                  >
+                    ອັບເດດ
+                  </v-btn>
+                  <v-btn
                     :color="showJournalDetails ? 'primary' : 'grey'"
                     :variant="showJournalDetails ? 'flat' : 'outlined'"
                     size="small"
@@ -380,21 +304,65 @@
                     :items="pendingJournals"
                     class="elevation-2 rounded-lg data-table"
                     hide-default-footer
+                    :loading="loadingJournals"
                     no-data-text="ບໍ່ມີລາຍການທີ່ລໍຖ້າອະນຸມັດ"
                   >
-                    <template v-slot:item.amount="{ item }">
-                      <span class="font-weight-medium number-text">{{ formatNumber(item.amount) }}</span>
+                    <template v-slot:loading>
+                      <v-skeleton-loader type="table-row@3" />
                     </template>
-                    <template v-slot:item.status="{ item }">
+                    <template v-slot:item.Fcy_Amount="{ item }">
+                      <div class="text-right">
+                        <span class="font-weight-medium number-text">{{ formatNumber(parseFloat(item.Fcy_Amount)) }}</span>
+                        <div class="text-caption text-grey">{{ item.Ccy_cd }}</div>
+                      </div>
+                    </template>
+                    <template v-slot:item.Value_date="{ item }">
+                      <span class="time-text">{{ formatDate(item.Value_date) }}</span>
+                    </template>
+                    <template v-slot:item.Auth_Status="{ item }">
                       <v-chip
-                        :color="getStatusColor(item.status)"
-                        :prepend-icon="getStatusIcon(item.status)"
+                        :color="getJournalStatusColor(item.Auth_Status)"
+                        :prepend-icon="getJournalStatusIcon(item.Auth_Status)"
                         variant="flat"
                         size="small"
                         class="status-chip"
                       >
-                        {{ item.status === 'pending' ? 'ລໍຖ້າອະນຸມັດ' : 'ອະນຸມັດແລ້ວ' }}
+                        {{ getJournalStatusText(item.Auth_Status) }}
                       </v-chip>
+                    </template>
+                    <template v-slot:item.Maker_DT_Stamp="{ item }">
+                      <span class="time-text">{{ formatDateTime(item.Maker_DT_Stamp) }}</span>
+                    </template>
+                    <template v-slot:item.actions="{ item }">
+                      <div class="d-flex ga-1">
+                        <v-btn
+                          color="success"
+                          variant="text"
+                          size="small"
+                          icon="mdi-check"
+                          @click="approveJournal(item)"
+                          title="ອະນຸມັດ"
+                          class="action-button"
+                        ></v-btn>
+                        <v-btn
+                          color="error"
+                          variant="text"
+                          size="small"
+                          icon="mdi-close"
+                          @click="rejectJournal(item)"
+                          title="ປະຕິເສດ"
+                          class="action-button"
+                        ></v-btn>
+                        <v-btn
+                          color="info"
+                          variant="text"
+                          size="small"
+                          icon="mdi-eye"
+                          @click="viewJournalDetails(item)"
+                          title="ເບິ່ງລາຍລະອຽດ"
+                          class="action-button"
+                        ></v-btn>
+                      </div>
                     </template>
                   </v-data-table>
                 </div>
@@ -407,6 +375,9 @@
                   <p class="text-h6 font-weight-medium">
                     {{ hasPendingJournals ? `${pendingJournalsCount} ລາຍການລໍຖ້າອະນຸມັດ` : 'ທັງໝົດອະນຸມັດແລ້ວ' }}
                   </p>
+                  <p v-if="hasPendingJournals" class="text-body-2 text-grey mt-1">
+                    ມູນຄ່າລວມ: {{ formatNumber(totalPendingAmount) }} LAK
+                  </p>
                 </div>
               </v-expand-transition>
             </v-card-text>
@@ -414,7 +385,7 @@
         </v-col>
 
         <!-- Active Users -->
-        <v-col cols="12">
+        <v-col cols="6">
           <v-card 
             elevation="6" 
             rounded="xl" 
@@ -545,6 +516,7 @@
               rounded="lg"
               @click="refreshData"
               class="refresh-button"
+              :loading="isRefreshing"
             >
               ອັບເດດຂໍ້ມູນ
             </v-btn>
@@ -564,10 +536,24 @@
         </div>
       </v-card>
     </v-container>
+
+    <!-- Snackbars for notifications -->
+    <v-snackbar v-model="showSuccess" color="success" timeout="3000" location="top">
+      <v-icon class="mr-2">mdi-check-circle</v-icon>
+      {{ successMessage }}
+    </v-snackbar>
+
+    <v-snackbar v-model="showError" color="error" timeout="5000" location="top">
+      <v-icon class="mr-2">mdi-alert-circle</v-icon>
+      {{ errorMessage }}
+    </v-snackbar>
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted, computed } from 'vue'
+import axios from '@/helpers/axios'
+
 // Types
 interface EODStatus {
   id: number
@@ -582,13 +568,25 @@ interface EODStatus {
 }
 
 interface PendingJournal {
-  id: number
-  journal_no: string
-  amount: number
-  currency: string
-  date: string
-  user: string
-  status: 'pending' | 'approved'
+  JRNLLog_id: number
+  Reference_No: string
+  Fcy_Amount: string
+  Lcy_Amount: string
+  Value_date: string
+  Exch_rate: string
+  Addl_text: string
+  Maker_DT_Stamp: string
+  Checker_DT_Stamp?: string
+  Auth_Status: string
+  entry_seq_no: number
+  delete_stat?: string
+  module_id: string
+  Ccy_cd: string
+  Txn_code: string
+  fin_cycle: string
+  Period_code: string
+  Maker_Id: string
+  Checker_Id?: string
 }
 
 interface ActiveUser {
@@ -602,16 +600,26 @@ interface ActiveUser {
 }
 
 // Reactive data
-const selectedDate = ref('27/04/2022')
+const selectedDate = ref(new Date().toLocaleDateString('lo-LA'))
 const isProcessing = ref(false)
+const isRefreshing = ref(false)
+const loadingJournals = ref(false)
 const lastUpdate = ref(new Date().toLocaleString('lo-LA'))
 const currentUser = ref('ADMIN')
 const showEodDetails = ref(false)
-const showApprovalDetails = ref(false)
 const showJournalDetails = ref(false)
 const showUserDetails = ref(false)
 
-// Sample data
+// Notification states
+const showSuccess = ref(false)
+const showError = ref(false)
+const successMessage = ref('')
+const errorMessage = ref('')
+
+// API Data
+const pendingJournals = ref<PendingJournal[]>([])
+
+// Sample data for EOD Status and Active Users (you can replace with API calls)
 const eodStatusHistory = ref<EODStatus[]>([
   { 
     id: 1, 
@@ -652,16 +660,6 @@ const eodStatusHistory = ref<EODStatus[]>([
   }
 ])
 
-const pendingApprovals = ref<PendingApproval[]>([
-  { id: 1, table_name: 'ຕັ້ງຄ່າອັດຕາດອກເບຍ', record_count: 3, last_update: '27/04/2022 14:30', status: 'pending' },
-  { id: 2, table_name: 'ຕັ້ງຄ່າຄ່າທຳນຽມ', record_count: 1, last_update: '27/04/2022 15:20', status: 'pending' }
-])
-
-const pendingJournals = ref<PendingJournal[]>([
-  { id: 1, journal_no: 'JV202204270001', amount: 1500000, currency: 'LAK', date: '27/04/2022', user: 'USER01', status: 'pending' },
-  { id: 2, journal_no: 'JV202204270002', amount: 500000, currency: 'LAK', date: '27/04/2022', user: 'USER02', status: 'pending' }
-])
-
 const activeUsers = ref<ActiveUser[]>([
   { id: 1, user_id: 'USER01', user_name: 'ນາງສອນ ວົງສີ', login_time: '08:30', last_activity: '16:45', ip_address: '192.168.1.101', status: 'online' },
   { id: 2, user_id: 'USER02', user_name: 'ທ້າວບຸນມີ ລາວົງ', login_time: '09:00', last_activity: '16:30', ip_address: '192.168.1.102', status: 'idle' },
@@ -681,22 +679,15 @@ const eodStatusHeaders = [
   { title: 'ລາຍລະອຽດ', key: 'actions', width: '100px', sortable: false }
 ]
 
-const pendingApprovalHeaders = [
-  { title: 'ລຳດັບ', key: 'id', width: '80px' },
-  { title: 'ຕາຕະລາງ', key: 'table_name' },
-  { title: 'ຈຳນວນ', key: 'record_count', width: '100px' },
-  { title: 'ວັນທີອັບເດດ', key: 'last_update', width: '150px' },
-  { title: 'ສະຖານະ', key: 'status', width: '120px' }
-]
-
 const pendingJournalHeaders = [
-  { title: 'ລຳດັບ', key: 'id', width: '80px' },
-  { title: 'ເລກທີລາຍການ', key: 'journal_no' },
-  { title: 'ຈຳນວນເງິນ', key: 'amount', width: '120px' },
-  { title: 'ສະກຸນເງິນ', key: 'currency', width: '80px' },
-  { title: 'ວັນທີ', key: 'date', width: '120px' },
-  { title: 'ຜູ້ບັນທຶກ', key: 'user', width: '100px' },
-  { title: 'ສະຖານະ', key: 'status', width: '120px' }
+  { title: 'ລຳດັບ', key: 'JRNLLog_id', width: '80px' },
+  { title: 'ເລກທີອ້າງອີງ', key: 'Reference_No', width: '180px' },
+  { title: 'ຈຳນວນເງິນ', key: 'Fcy_Amount', width: '140px' },
+  { title: 'ວັນທີ', key: 'Value_date', width: '120px' },
+  { title: 'ຜູ້ບັນທຶກ', key: 'Maker_Id', width: '100px' },
+  { title: 'ເວລາບັນທຶກ', key: 'Maker_DT_Stamp', width: '150px' },
+  { title: 'ສະຖານະ', key: 'Auth_Status', width: '120px' },
+  { title: 'ການດຳເນີນການ', key: 'actions', width: '120px', sortable: false }
 ]
 
 const activeUserHeaders = [
@@ -712,21 +703,17 @@ const activeUserHeaders = [
 
 // Computed properties
 const canStartEOD = computed((): boolean => {
-  const hasPendingApprovals = pendingApprovals.value.some(item => item.status === 'pending')
-  const hasPendingJournals = pendingJournals.value.some(item => item.status === 'pending')
+  const hasPendingJournals = pendingJournals.value.some(item => item.Auth_Status === 'U')
   const hasOtherActiveUsers = activeUsers.value.some(user => 
     user.user_id !== currentUser.value && user.status === 'online'
   )
   
-  return !hasPendingApprovals && !hasPendingJournals && !hasOtherActiveUsers
+  return !hasPendingJournals && !hasOtherActiveUsers
 })
 
 const pendingIssues = computed(() => {
   const issues = []
-  if (pendingApprovals.value.some(item => item.status === 'pending')) {
-    issues.push('ມີຕັ້ງຄ່າທີ່ຍັງບໍ່ໄດ້ອະນຸມັດ')
-  }
-  if (pendingJournals.value.some(item => item.status === 'pending')) {
+  if (pendingJournals.value.some(item => item.Auth_Status === 'U')) {
     issues.push('ມີລາຍການບັນຊີທີ່ຍັງບໍ່ໄດ້ອະນຸມັດ')
   }
   if (activeUsers.value.some(user => user.user_id !== currentUser.value && user.status === 'online')) {
@@ -735,28 +722,26 @@ const pendingIssues = computed(() => {
   return issues
 })
 
-const hasPendingApprovals = computed(() => {
-  return pendingApprovals.value.some(item => item.status === 'pending')
-})
-
 const hasPendingJournals = computed(() => {
-  return pendingJournals.value.some(item => item.status === 'pending')
+  return pendingJournals.value.some(item => item.Auth_Status === 'U')
 })
 
 const hasOtherActiveUsers = computed(() => {
   return activeUsers.value.some(user => user.user_id !== currentUser.value && user.status === 'online')
 })
 
-const pendingApprovalsCount = computed(() => {
-  return pendingApprovals.value.filter(item => item.status === 'pending').length
-})
-
 const pendingJournalsCount = computed(() => {
-  return pendingJournals.value.filter(item => item.status === 'pending').length
+  return pendingJournals.value.filter(item => item.Auth_Status === 'U').length
 })
 
 const activeUsersCount = computed(() => {
   return activeUsers.value.filter(user => user.status === 'online').length
+})
+
+const totalPendingAmount = computed(() => {
+  return pendingJournals.value
+    .filter(item => item.Auth_Status === 'U')
+    .reduce((sum, item) => sum + parseFloat(item.Fcy_Amount), 0)
 })
 
 const completedCount = computed(() => {
@@ -771,7 +756,146 @@ const pendingCount = computed(() => {
   return eodStatusHistory.value.filter(item => item.status === 'pending').length
 })
 
-// Methods
+// API Methods
+const fetchPendingJournals = async () => {
+  loadingJournals.value = true
+  try {
+    const response = await axios.get<PendingJournal[]>('/api/journal-log-master?Auth_Status=U', {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    })
+
+    if (response.status === 200) {
+      pendingJournals.value = response.data
+      console.log('Pending journals loaded:', response.data.length)
+    }
+  } catch (error: any) {
+    console.error("Error fetching pending journals:", error)
+    showError.value = true
+    errorMessage.value = error.response?.data?.detail || "ເກີດຂໍ້ຜິດພາດໃນການໂຫຼດຂໍ້ມູນ"
+  } finally {
+    loadingJournals.value = false
+  }
+}
+
+const refreshPendingJournals = async () => {
+  await fetchPendingJournals()
+  lastUpdate.value = new Date().toLocaleString('lo-LA')
+  showSuccess.value = true
+  successMessage.value = 'ອັບເດດຂໍ້ມູນສຳເລັດແລ້ວ'
+}
+
+const approveJournal = async (journal: PendingJournal) => {
+  try {
+    // Call your approve API endpoint
+    const response = await axios.patch(`/api/journal-log-master/${journal.JRNLLog_id}/approve/`, {}, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    })
+
+    if (response.status === 200) {
+      // Update local data
+      const index = pendingJournals.value.findIndex(j => j.JRNLLog_id === journal.JRNLLog_id)
+      if (index !== -1) {
+        pendingJournals.value[index].Auth_Status = 'A'
+        pendingJournals.value[index].Checker_Id = currentUser.value
+        pendingJournals.value[index].Checker_DT_Stamp = new Date().toISOString()
+      }
+      
+      showSuccess.value = true
+      successMessage.value = `ອະນຸມັດລາຍການ ${journal.Reference_No} ສຳເລັດແລ້ວ`
+      
+      // Refresh data
+      await fetchPendingJournals()
+    }
+  } catch (error: any) {
+    console.error('Error approving journal:', error)
+    showError.value = true
+    errorMessage.value = error.response?.data?.detail || 'ເກີດຂໍ້ຜິດພາດໃນການອະນຸມັດ'
+  }
+}
+
+const rejectJournal = async (journal: PendingJournal) => {
+  try {
+    // Call your reject API endpoint
+    const response = await axios.patch(`/api/journal-log-master/${journal.JRNLLog_id}/reject/`, {}, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    })
+
+    if (response.status === 200) {
+      // Update local data
+      const index = pendingJournals.value.findIndex(j => j.JRNLLog_id === journal.JRNLLog_id)
+      if (index !== -1) {
+        pendingJournals.value[index].Auth_Status = 'R'
+        pendingJournals.value[index].Checker_Id = currentUser.value
+        pendingJournals.value[index].Checker_DT_Stamp = new Date().toISOString()
+      }
+      
+      showSuccess.value = true
+      successMessage.value = `ປະຕິເສດລາຍການ ${journal.Reference_No} ສຳເລັດແລ້ວ`
+      
+      // Refresh data
+      await fetchPendingJournals()
+    }
+  } catch (error: any) {
+    console.error('Error rejecting journal:', error)
+    showError.value = true
+    errorMessage.value = error.response?.data?.detail || 'ເກີດຂໍ້ຜິດພາດໃນການປະຕິເສດ'
+  }
+}
+
+const viewJournalDetails = (journal: PendingJournal) => {
+  console.log('View journal details:', journal)
+  // Implement view details dialog or navigation
+}
+
+// Status Helper Methods
+const getJournalStatusColor = (status: string): string => {
+  switch(status) {
+    case 'A':
+      return 'success'
+    case 'U':
+      return 'warning'
+    case 'R':
+      return 'error'
+    default:
+      return 'grey'
+  }
+}
+
+const getJournalStatusIcon = (status: string): string => {
+  switch(status) {
+    case 'A':
+      return 'mdi-check-circle'
+    case 'U':
+      return 'mdi-clock-outline'
+    case 'R':
+      return 'mdi-close-circle'
+    default:
+      return 'mdi-help-circle'
+  }
+}
+
+const getJournalStatusText = (status: string): string => {
+  switch(status) {
+    case 'A':
+      return 'ອະນຸມັດແລ້ວ'
+    case 'U':
+      return 'ລໍຖ້າອະນຸມັດ'
+    case 'R':
+      return 'ປະຕິເສດ'
+    default:
+      return 'ບໍ່ຮູ້ສະຖານະ'
+  }
+}
+
 const getEODStatusColor = (status: string): string => {
   switch(status) {
     case 'completed':
@@ -817,38 +941,22 @@ const getEODStatusText = (status: string): string => {
   }
 }
 
-const getStatusColor = (status: string): string => {
-  switch(status) {
-    case 'approved':
-      return 'success'
-    case 'pending':
-      return 'warning'
-    default:
-      return 'grey'
-  }
-}
-
-const getStatusIcon = (status: string): string => {
-  switch(status) {
-    case 'approved':
-      return 'mdi-check-circle'
-    case 'pending':
-      return 'mdi-clock-outline'
-    default:
-      return 'mdi-help-circle'
-  }
-}
-
+// Utility Methods
 const formatNumber = (num: number): string => {
   return new Intl.NumberFormat('lo-LA').format(num)
 }
 
-const toggleEodDetails = (): void => {
-  showEodDetails.value = !showEodDetails.value
+const formatDate = (dateString: string): string => {
+  return new Date(dateString).toLocaleDateString('lo-LA')
 }
 
-const toggleApprovalDetails = (): void => {
-  showApprovalDetails.value = !showApprovalDetails.value
+const formatDateTime = (dateString: string): string => {
+  return new Date(dateString).toLocaleString('lo-LA')
+}
+
+// Toggle Methods
+const toggleEodDetails = (): void => {
+  showEodDetails.value = !showEodDetails.value
 }
 
 const toggleJournalDetails = (): void => {
@@ -859,6 +967,7 @@ const toggleUserDetails = (): void => {
   showUserDetails.value = !showUserDetails.value
 }
 
+// User Management Methods
 const kickUser = async (userId: string): Promise<void> => {
   try {
     // Simulate API call to kick user
@@ -867,9 +976,12 @@ const kickUser = async (userId: string): Promise<void> => {
     // Remove user from active users list
     activeUsers.value = activeUsers.value.filter(user => user.user_id !== userId)
     
-    console.log(`Kicked user: ${userId}`)
+    showSuccess.value = true
+    successMessage.value = `ເຄື່ອນຜູ້ໃຊ້ ${userId} ອອກຈາກລະບົບແລ້ວ`
   } catch (error) {
     console.error('Error kicking user:', error)
+    showError.value = true
+    errorMessage.value = 'ເກີດຂໍ້ຜິດພາດໃນການເຄື່ອນຜູ້ໃຊ້ອອກ'
   }
 }
 
@@ -881,15 +993,20 @@ const kickAllUsers = async (): Promise<void> => {
       await kickUser(user.user_id)
     }
     
-    console.log('All users kicked successfully')
+    showSuccess.value = true
+    successMessage.value = 'ເຄື່ອນຜູ້ໃຊ້ທຸກຄົນອອກຈາກລະບົບແລ້ວ'
   } catch (error) {
     console.error('Error kicking all users:', error)
+    showError.value = true
+    errorMessage.value = 'ເກີດຂໍ້ຜິດພາດໃນການເຄື່ອນຜູ້ໃຊ້ອອກ'
   }
 }
 
+// Main Process Methods
 const startEODProcess = async (): Promise<void> => {
   if (!canStartEOD.value) {
-    console.warn('Cannot start EOD process - validation failed')
+    showError.value = true
+    errorMessage.value = 'ບໍ່ສາມາດເລີ່ມການປິດບັນຊີໄດ້ ກະລຸນາແກ້ໄຂບັນຫາກ່ອນ'
     return
   }
   
@@ -899,22 +1016,34 @@ const startEODProcess = async (): Promise<void> => {
     await new Promise(resolve => setTimeout(resolve, 2000))
     
     lastUpdate.value = new Date().toLocaleString('lo-LA')
+    showSuccess.value = true
+    successMessage.value = 'ການກວດສອບກ່ອນປິດບັນຊີສຳເລັດແລ້ວ'
   } catch (error) {
     console.error('Validation failed:', error)
+    showError.value = true
+    errorMessage.value = 'ການກວດສອບລົ້ມເຫລວ'
   } finally {
     isProcessing.value = false
   }
 }
 
 const refreshData = async (): Promise<void> => {
+  isRefreshing.value = true
   try {
-    // Simulate API call to refresh data
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    await Promise.all([
+      fetchPendingJournals()
+      // Add other refresh calls here
+    ])
     
     lastUpdate.value = new Date().toLocaleString('lo-LA')
-    console.log('Data refreshed')
+    showSuccess.value = true
+    successMessage.value = 'ອັບເດດຂໍ້ມູນທັງໝົດສຳເລັດແລ້ວ'
   } catch (error) {
     console.error('Error refreshing data:', error)
+    showError.value = true
+    errorMessage.value = 'ເກີດຂໍ້ຜິດພາດໃນການອັບເດດຂໍ້ມູນ'
+  } finally {
+    isRefreshing.value = false
   }
 }
 
@@ -932,6 +1061,11 @@ const showDetailDialog = (item: EODStatus): void => {
   console.log('Show detail dialog for:', item)
   // Show success details dialog
 }
+
+// Lifecycle
+onMounted(async () => {
+  await fetchPendingJournals()
+})
 </script>
 
 <style scoped>
@@ -1008,12 +1142,12 @@ const showDetailDialog = (item: EODStatus): void => {
 }
 
 /* Button styling */
-.toggle-button, .refresh-button, .proceed-button, .kick-button {
+.toggle-button, .refresh-button, .proceed-button, .kick-button, .refresh-btn {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   font-weight: 600;
 }
 
-.toggle-button:hover, .refresh-button:hover, .proceed-button:hover, .kick-button:hover {
+.toggle-button:hover, .refresh-button:hover, .proceed-button:hover, .kick-button:hover, .refresh-btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
 }

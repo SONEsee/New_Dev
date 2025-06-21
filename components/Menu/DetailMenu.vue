@@ -6,7 +6,7 @@ const route = useRoute();
 const menuStore = useMenuStore();
 
 const id = computed(() => {
-  const queryId = route.query.id;
+  const queryId = route.query.menu_id;
 
   return Array.isArray(queryId) ? queryId[0] : queryId || "";
 });
