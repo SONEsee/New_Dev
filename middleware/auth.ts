@@ -6,22 +6,13 @@ export default defineNuxtRouteMiddleware((to, from) => {
   const token = localStorage.getItem("token");
   const user = localStorage.getItem("user");
   
-//   if (!token || !user) {
-//     return navigateTo({
-//       path: "/login",
-//       query: {
-//         redirect: to.fullPath,
-//       },
-//     });
-//   }
-// });
-
-
-export default defineNuxtRouteMiddleware(async (to, from) => {
-  // Skip auth check for public routes
-  const publicRoutes = ['/login', '/register', '/forgot-password', '/']
-  if (publicRoutes.includes(to.path)) {
-    return
+  if (!token || !user) {
+    return navigateTo({
+      path: "/login",
+      query: {
+        redirect: to.fullPath,
+      },
+    });
   }
   
  
