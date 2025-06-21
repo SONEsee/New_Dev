@@ -15,6 +15,12 @@ export const assetStore = defineStore("asset", {
         },
         isloading: false,
       },
+      respons_filter_asset_type_id:{
+        query: {
+          asset_type_id: "",
+        },
+        isloading: false,
+      },
       isLoading: false,
       form_create_asset: {
         asset_code: "",
@@ -45,6 +51,9 @@ export const assetStore = defineStore("asset", {
             "Content-Type": "application/json",
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
+          params:{
+            ...this.respons_filter_asset_type_id.query
+          }
         });
         if (res.status === 200) {
           this.response_asset_list = res.data;

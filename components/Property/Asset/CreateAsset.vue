@@ -5,25 +5,25 @@ import { ref, computed, onMounted, watch } from "vue";
 
 const locationStores = locationStore();
 const assetStoreInstance = assetStore();
+const proppertyStore = propertyStore();
 const router = useRouter();
 const route = useRoute();
 
-
+const asset_id = route.query.asset_type_id;
 const asset_type_id = route.query.asset_type_id as string;
-const asset_type_name = route.query.asset_type_name as string;
 
-const locations= computed(()=>{
-    return locationStores.response_location_list
-})
-const title = ref("ເພີ່ມຊັບສິນຍອ່ຍໃໝ່");
-const loading = ref(false);
-const form = ref();
-const proppertyStore = propertyStore();
+// Computed properties
+const count = computed(() => {
+  return assetStoreInstance.response_asset_list || [];
+});
 
-const mockData1 =  computed(()=>{
-  return proppertyStore.respons_data_property_category || []
-})
+const locations = computed(() => {
+  return locationStores.response_location_list || [];
+});
 
+const mockData1 = computed(() => {
+  return proppertyStore.respons_data_property_category || [];
+});
 
 const selectedAssetType = computed(() => {
   if (!mockData1.value || !asset_type_id) return null;
@@ -32,23 +32,41 @@ const selectedAssetType = computed(() => {
   return found;
 });
 
+// Form state
+const title = ref("ເພີ່ມຊັບສິນໃໝ່");
+const loading = ref(false);
+const form = ref();
 
-const assetResponse = computed(() => {
-  return assetStoreInstance.response_asset_by_type || [];
-});
+// Functions for asset code generation
+const extractSequenceNumber = (assetCode) => {
+  // Extract number from asset_code like "FIX-000003" -> 3
+  const match = assetCode.match(/-(\d+)$/);
+  return match ? parseInt(match[1], 10) : 0;
+};
 
-const assetTypes = [
-  { title: "ເຄື່ອງຈັກ", value: "1" },
-  { title: "ພາຫານະ", value: "2" },
-  { title: "ອຸປະກອນ IT", value: "3" },
-  { title: "ເຟີນິເຈີ", value: "4" },
-  { title: "ອາຄານ", value: "5" },
-];
+const generateNewAssetCode = (assetData, typeCode) => {
+  if (!assetData || assetData.length === 0) {
+    // If no data, start from 000001
+    return `${typeCode}-000001`;
+  }
 
+  // Find the highest sequence number
+  const maxSequence = assetData.reduce((max, item) => {
+    const sequence = extractSequenceNumber(item.asset_code);
+    return sequence > max ? sequence : max;
+  }, 0);
+
+  // Add 1 and format to 6 digits
+  const nextSequence = (maxSequence + 1).toString().padStart(6, '0');
+  return `${typeCode}-${nextSequence}`;
+};
+
+// Navigation
 const goBack = () => {
   router.go(-1);
 };
 
+// Form submission
 const submitForm = async () => {
   try {
     console.log('Form data before validation:', assetStoreInstance.form_create_asset);
@@ -83,6 +101,7 @@ const submitForm = async () => {
   }
 };
 
+// Validation rules
 const rules = {
   required: (value: any) => !!value || "ກະລຸນາປ້ອນຂໍ້ມູນ",
   maxLength20: (value: string) => {
@@ -99,8 +118,8 @@ const rules = {
   },
   assetCode: (value: string) => {
     if (!value) return "ກະລຸນາປ້ອນລະຫັດຊັບສິນ";
-    const pattern = /^[A-Z]{3}[0-9]{6}$/;
-    return pattern.test(value) || "ຮູບແບບຕ້ອງເປັນ ABC123456 (3 ຕົວອັກສອນ + 6 ຕົວເລກ)";
+    const pattern = /^[A-Z]{3}-\d{6}$/;
+    return pattern.test(value) || "ຮູບແບບຕ້ອງເປັນ ABC-123456 (3 ຕົວອັກສອນ-6 ຕົວເລກ)";
   },
   positiveNumber: (value: string | number) => {
     if (!value) return "ກະລຸນາປ້ອນມູນຄ່າ";
@@ -109,36 +128,41 @@ const rules = {
   },
 };
 
-
-watch(assetResponse, (newRes) => {
-  if (asset_type_name) {
-    if (newRes && newRes.length > 0) {
-      const resData = newRes[0];
-      const nextId = resData.count + 1;
-      const paddedId = nextId.toString().padStart(6, '0');
-      assetStoreInstance.form_create_asset.asset_code = `${asset_type_name}${paddedId}`;
-    } else {
-      assetStoreInstance.form_create_asset.asset_code = `${asset_type_name}-000001`;
-    }
+// Watchers
+// Generate asset code when count data or selected type changes
+watch([count, selectedAssetType], ([assetData, selectedType]) => {
+  console.log('Asset data:', assetData);
+  console.log('Selected type:', selectedType);
+  
+  if (selectedType && selectedType.type_code) {
+    const newAssetCode = generateNewAssetCode(assetData, selectedType.type_code);
+    assetStoreInstance.form_create_asset.asset_code = newAssetCode;
+    console.log('Generated asset code:', newAssetCode);
   }
 }, { immediate: true });
 
-
+// Set asset type ID
 watch([mockData1, () => asset_type_id], ([data, typeId]) => {
   if (data && data.length > 0 && typeId) {
     console.log('Setting asset_type_id:', typeId);
     console.log('Available mockData1:', data.map(item => ({ id: item.type_id, name: item.type_name_la })));
-    
+  
     const typeIdNumber = typeof typeId === 'string' ? parseInt(typeId) : typeId;
     assetStoreInstance.form_create_asset.asset_type_id = typeIdNumber;
   }
 }, { immediate: true });
 
+// Lifecycle
 onMounted(async () => {
+  // Set filter for asset list
+  assetStoreInstance.respons_filter_asset_type_id.query.asset_type_id = asset_id;
+  
+  // Load data
+  await assetStoreInstance.GetAssetList();
   await locationStores.GetLocationList();
   await proppertyStore.GetPropertyCategoryById();
   
-  // ດຶງຂໍ້ມູນ asset ຕາມ type_id
+  // Load assets by type if type_id exists
   if (asset_type_id) {
     await assetStoreInstance.GetAssetByTypeId(asset_type_id);
   }
@@ -147,6 +171,11 @@ onMounted(async () => {
 
 <template>
   <section class="pa-6">
+    <!-- Debug info -->
+    <div class="mb-4">
+      <small class="text-grey">Debug: Asset Count = {{ count.length }}</small>
+    </div>
+
     <v-form ref="form" @submit.prevent="submitForm">
       <v-row>
         <v-col cols="12">
@@ -155,17 +184,19 @@ onMounted(async () => {
 
         <v-col cols="12" class="pt-12">
           <v-row>
+            <!-- Left Column -->
             <v-col cols="12" md="6">
               <label>ລະຫັດຊັບສິນ / Asset Code <span class="text-error">*</span></label>
               <v-text-field
                 v-model="assetStoreInstance.form_create_asset.asset_code"
-                
-                placeholder="ເຊັ່ນ: BLD000001, FIX000001"
+                :rules="[rules.required, rules.assetCode]"
+                placeholder="ເຊັ່ນ: FIX-000001, BLD-000001"
                 density="compact"
                 variant="outlined"
                 hide-details="auto"
                 class="pb-6"
                 maxlength="20"
+                readonly
               ></v-text-field>
 
               <label>ຊື່ຊັບສິນ (ລາວ) / Asset Name (Lao) <span class="text-error">*</span></label>
@@ -181,6 +212,7 @@ onMounted(async () => {
               ></v-text-field>
             </v-col>
 
+            <!-- Right Column -->
             <v-col cols="12" md="6">
               <label>ປະເພດຊັບສິນ / Asset Type <span class="text-error">*</span></label>
               <v-autocomplete
@@ -197,18 +229,14 @@ onMounted(async () => {
                 readonly
               >
                 <template v-slot:selection="{ item }">
-                  <span v-if="item && item.title && item.value">
-                    {{ selectedAssetType.type_name_la }}({{ selectedAssetType?.type_code }})
-                    <!-- {{ item.title }}({{ item.value }}) -->
-                  </span>
-                  <span v-else-if="selectedAssetType">
-                    {{ selectedAssetType.type_name_la }}({{ selectedAssetType.type_id }})
+                  <span v-if="selectedAssetType">
+                    {{ selectedAssetType.type_name_la }} ({{ selectedAssetType.type_code }})
                   </span>
                 </template>
                 <template v-slot:item="{ props, item }">
                   <v-list-item
                     v-bind="props"
-                    :title="`${item.title}(${item.value})`"
+                    :title="`${item.title} (${item.raw.type_code})`"
                   />
                 </template>
               </v-autocomplete>
@@ -226,6 +254,7 @@ onMounted(async () => {
               ></v-text-field>
             </v-col>
             
+            <!-- Buttons -->
             <v-col cols="12" class="d-flex flex-wrap justify-center">
               <v-btn 
                 color="error" 

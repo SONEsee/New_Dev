@@ -6,6 +6,9 @@ import { useRouter } from "vue-router";
 const router = useRouter();
 
 const assetStoreInstance = assetStore();
+const count = computed(()=>{
+  return assetStoreInstance.response_asset_list;
+})
 const mockData = computed(() => {
   return assetStoreInstance.response_asset_list;
 });
