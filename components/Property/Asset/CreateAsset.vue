@@ -103,16 +103,16 @@ const rules = {
 
 // Watch ສຳລັບສ້າງ asset_code ອັດຕະໂນມັດ (ໃຊ້ asset_type_id ຈາກ URL)
 watch(assetResponse, (newRes) => {
-  if (asset_type_id) {
+  if (asset_type_name) {
     if (newRes && newRes.length > 0) {
       const resData = newRes[0];
       const nextId = resData.count + 1;
       const paddedId = nextId.toString().padStart(6, '0');
-      assetStoreInstance.form_create_asset.asset_code = `${asset_type_id}${paddedId}`;
+      assetStoreInstance.form_create_asset.asset_code = `${asset_type_name}${paddedId}`;
     } else {
       // ຖ້າບໍ່ມີ response ແຕ່ມີ asset_type_id ຈາກ URL parameter
       // ໃຊ້ຄ່າເລີ່ມຕົ້ນ 000001
-      assetStoreInstance.form_create_asset.asset_code = `${asset_type_id}000001`;
+      assetStoreInstance.form_create_asset.asset_code = `${asset_type_name}000001`;
     }
   }
 }, { immediate: true });
@@ -171,6 +171,20 @@ onMounted(async () => {
             </v-col>
 
             <v-col cols="12" md="6">
+              <label>ປະເພດຊັບສິນ / Asset Type <span class="text-error">*</span></label>
+              <v-select
+                v-model="assetStoreInstance.form_create_asset.asset_type_id"
+                :rules="[rules.required]"
+                :items="mockData1"
+                item-title="type_name_la"
+                item-value="type_id"
+                placeholder="ກະລຸນາເລືອກປະເພດຊັບສິນ"
+                density="compact"
+                
+                variant="outlined"
+                hide-details="auto"
+                class="pb-6"
+              ></v-select>
               <label>ຊື່ຊັບສິນ (ອັງກິດ) / Asset Name (English) <span class="text-error">*</span></label>
               <v-text-field
                 v-model="assetStoreInstance.form_create_asset.asset_name_en"
@@ -183,22 +197,7 @@ onMounted(async () => {
                 maxlength="100"
               ></v-text-field>
 
-              <label>ປະເພດຊັບສິນ / Asset Type <span class="text-error">*</span></label>
-              <v-text-field
-                :value="asset_type_name ? decodeURIComponent(asset_type_name) : ''"
-                density="compact"
-                variant="outlined"
-                hide-details="auto"
-                class="pb-6"
-                readonly
-                placeholder="ປະເພດຊັບສິນຈາກການເລືອກ"
-              ></v-text-field>
               
-              <!-- Hidden field ສຳລັບເກັບ asset_type_id -->
-              <input 
-                type="hidden" 
-                v-model="assetStoreInstance.form_create_asset.asset_type_id"
-              />
             </v-col>
             
             <v-col cols="12" class="d-flex flex-wrap justify-center">
