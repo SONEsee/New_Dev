@@ -24,6 +24,14 @@ const mockData1 =  computed(()=>{
   return proppertyStore.respons_data_property_category || []
 })
 
+// ຫາຂໍ້ມູນ asset type ທີ່ຖືກເລືອກ
+const selectedAssetType = computed(() => {
+  if (!mockData1.value || !asset_type_id) return null;
+  const found = mockData1.value.find(item => String(item.type_id) === String(asset_type_id));
+  console.log('selectedAssetType found:', found);
+  return found;
+});
+
 // ສຳລັບເກັບຂໍ້ມູນ response ທີ່ໃຊ້ສ້າງ asset_code
 const assetResponse = computed(() => {
   return assetStoreInstance.response_asset_by_type || [];
@@ -101,7 +109,7 @@ const rules = {
   },
 };
 
-// Watch ສຳລັບສ້າງ asset_code ອັດຕະໂນມັດ (ໃຊ້ asset_type_id ຈາກ URL)
+// Watch ສຳລັບສ້າງ asset_code ອັດຕະໂນມັດ (ໃຊ້ asset_type_name ຈາກ URL)
 watch(assetResponse, (newRes) => {
   if (asset_type_name) {
     if (newRes && newRes.length > 0) {
@@ -110,10 +118,18 @@ watch(assetResponse, (newRes) => {
       const paddedId = nextId.toString().padStart(6, '0');
       assetStoreInstance.form_create_asset.asset_code = `${asset_type_name}${paddedId}`;
     } else {
-      // ຖ້າບໍ່ມີ response ແຕ່ມີ asset_type_id ຈາກ URL parameter
-      // ໃຊ້ຄ່າເລີ່ມຕົ້ນ 000001
-      assetStoreInstance.form_create_asset.asset_code = `${asset_type_name}000001`;
+      assetStoreInstance.form_create_asset.asset_code = `${asset_type_name}-000001`;
     }
+  }
+}, { immediate: true });
+
+
+watch([mockData1, () => asset_type_id], ([data, typeId]) => {
+  if (data && data.length > 0 && typeId) {
+    console.log('Setting asset_type_id:', typeId);
+  
+    const typeIdNumber = typeof typeId === 'string' ? parseInt(typeId) : typeId;
+    assetStoreInstance.form_create_asset.asset_type_id = typeIdNumber;
   }
 }, { immediate: true });
 
@@ -121,12 +137,7 @@ onMounted(async () => {
   await locationStores.GetLocationList();
   await proppertyStore.GetPropertyCategoryById();
   
-  // Set asset_type_id ຈາກ URL parameter ກ່ອນ
-  if (asset_type_id) {
-    assetStoreInstance.form_create_asset.asset_type_id = asset_type_id;
-  }
-  
-  // ດຶງຂໍ້ມູນຊັບສິນທີ່ມີຢູ່ແລ້ວຕາມ asset_type_id ເພື່ອສ້າງລະຫັດໃໝ່
+  // ດຶງຂໍ້ມູນ asset ຕາມ type_id
   if (asset_type_id) {
     await assetStoreInstance.GetAssetByTypeId(asset_type_id);
   }
@@ -148,13 +159,12 @@ onMounted(async () => {
               <v-text-field
                 v-model="assetStoreInstance.form_create_asset.asset_code"
                 :rules="[rules.required, rules.assetCode]"
-                placeholder="ເຊັ່ນ: FIX000001, MOB000001"
+                placeholder="ເຊັ່ນ: BLD000001, FIX000001"
                 density="compact"
                 variant="outlined"
                 hide-details="auto"
                 class="pb-6"
                 maxlength="20"
-                
               ></v-text-field>
 
               <label>ຊື່ຊັບສິນ (ລາວ) / Asset Name (Lao) <span class="text-error">*</span></label>
@@ -172,7 +182,7 @@ onMounted(async () => {
 
             <v-col cols="12" md="6">
               <label>ປະເພດຊັບສິນ / Asset Type <span class="text-error">*</span></label>
-              <v-select
+              <v-autocomplete
                 v-model="assetStoreInstance.form_create_asset.asset_type_id"
                 :rules="[rules.required]"
                 :items="mockData1"
@@ -180,11 +190,27 @@ onMounted(async () => {
                 item-value="type_id"
                 placeholder="ກະລຸນາເລືອກປະເພດຊັບສິນ"
                 density="compact"
-                
                 variant="outlined"
                 hide-details="auto"
                 class="pb-6"
-              ></v-select>
+                
+              >
+                <template v-slot:selection="{ item }">
+                  <span v-if="item && item.title && item.value">
+                    {{ item.title }}({{ item.value }})
+                  </span>
+                  <span v-else-if="selectedAssetType">
+                    {{ selectedAssetType.type_name_la }}({{ selectedAssetType.type_id }})
+                  </span>
+                </template>
+                <template v-slot:item="{ props, item }">
+                  <v-list-item
+                    v-bind="props"
+                    :title="`${item.title}(${item.value})`"
+                  />
+                </template>
+              </v-autocomplete>
+
               <label>ຊື່ຊັບສິນ (ອັງກິດ) / Asset Name (English) <span class="text-error">*</span></label>
               <v-text-field
                 v-model="assetStoreInstance.form_create_asset.asset_name_en"
@@ -196,8 +222,6 @@ onMounted(async () => {
                 class="pb-6"
                 maxlength="100"
               ></v-text-field>
-
-              
             </v-col>
             
             <v-col cols="12" class="d-flex flex-wrap justify-center">

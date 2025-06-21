@@ -28,7 +28,7 @@ const handleSubmit = async (item: any) => {
       cancelButtonText: "ຍົກເລີກ",
       showCancelButton: true,
     });
-    
+
     if (notification.isConfirmed) {
       loading.value = true;
       await assetStoreInstance.UpdateAssetStatus(item.asset_id, newStatus);
@@ -184,7 +184,7 @@ const headers = computed(() => [
 
 const filteredData = computed(() => {
   console.log("🔍 Computing filtered data...");
-  
+
   let data = mockData.value || [];
   console.log("📊 Initial data length:", data.length);
 
@@ -195,18 +195,21 @@ const filteredData = computed(() => {
       const assetTypeCode = item.asset_type_detail?.type_code;
       return assetTypeCode === selectedAssetType.value;
     });
-    console.log(`🏷️ After asset type filter: ${beforeFilter} -> ${data.length}`);
+    console.log(
+      `🏷️ After asset type filter: ${beforeFilter} -> ${data.length}`
+    );
   }
 
   // Filter by search term
   if (search.value && search.value.trim()) {
     const searchTerm = search.value.toLowerCase().trim();
     const beforeFilter = data.length;
-    data = data.filter((item) =>
-      item.asset_name_la?.toLowerCase().includes(searchTerm) ||
-      item.asset_name_en?.toLowerCase().includes(searchTerm) ||
-      item.asset_code?.toLowerCase().includes(searchTerm) ||
-      item.description?.toLowerCase().includes(searchTerm)
+    data = data.filter(
+      (item) =>
+        item.asset_name_la?.toLowerCase().includes(searchTerm) ||
+        item.asset_name_en?.toLowerCase().includes(searchTerm) ||
+        item.asset_code?.toLowerCase().includes(searchTerm) ||
+        item.description?.toLowerCase().includes(searchTerm)
     );
     console.log(`🔍 After search filter: ${beforeFilter} -> ${data.length}`);
   }
@@ -270,20 +273,17 @@ const confirmDelete = async (item: any) => {
   }
 };
 
-// ✅ ປັບປຸງ clearFilters ໃຫ້ດີກວ່າເກົ່າ
 const clearFilters = async () => {
   try {
     loading.value = true;
     console.log("🧹 Clearing all filters...");
-    
-    // Clear all filters
+
     selectedAssetType.value = "all";
     search.value = "";
     localStorage.removeItem(SELECTED_ASSET_TYPE_KEY);
-    
-    // Reload data to ensure fresh data
+
     await refreshData();
-    
+
     console.log("✅ Filters cleared and data reloaded");
     successMessage.value = "ເຄລຍການກັ່ນຕອງສຳເລັດແລ້ວ";
     showSuccess.value = true;
@@ -302,7 +302,7 @@ const refreshData = async () => {
     console.log("🔄 Refreshing data...");
     await Promise.all([
       assetStoreInstance.GetAssetList(),
-      proppertyStore.GetPropertyCategoryById()
+      proppertyStore.GetPropertyCategoryById(),
     ]);
     console.log("✅ Data refreshed successfully");
   } catch (error) {
@@ -311,7 +311,6 @@ const refreshData = async () => {
   }
 };
 
-// ✅ ເພີ່ມ debug function
 const debugData = () => {
   console.log("🐛 === DEBUG INFO ===");
   console.log("📊 mockData (assets):", mockData.value);
@@ -373,42 +372,30 @@ const goToCreateAssetWithType = () => {
   }
 };
 
+watch(selectedAssetType, (newValue) => {
+  console.log("👁️ Asset type changed to:", newValue);
+  saveAssetTypeSelection(newValue);
+});
 
-watch(
-  selectedAssetType,
-  (newValue) => {
-    console.log("👁️ Asset type changed to:", newValue);
-    saveAssetTypeSelection(newValue);
-  }
-);
-
-
-watch(
-  search,
-  (newValue) => {
-    console.log("🔍 Search changed to:", newValue);
-  }
-);
-
+watch(search, (newValue) => {
+  console.log("🔍 Search changed to:", newValue);
+});
 
 onMounted(async () => {
   console.log("🚀 Component mounted, initializing...");
   loading.value = true;
-  
-  try {
 
+  try {
     initializeRole();
-    
-    
+
     await Promise.all([
       proppertyStore.GetPropertyCategoryById(),
       assetStoreInstance.GetAssetList(),
-      roleStore.GetRoleDetail()
+      roleStore.GetRoleDetail(),
     ]);
-    
- 
+
     loadSavedAssetTypeSelection();
-    
+
     console.log("✅ All data loaded successfully");
   } catch (error) {
     console.error("❌ Error loading data:", error);
@@ -422,7 +409,7 @@ onMounted(async () => {
 
 <template>
   <GlobalTextTitleLine :title="title" />
-  
+
   <!-- Debug Info - ສາມາດເອົາອອກໄດ້ -->
   <!-- 
   <v-card class="mb-4 pa-4" color="grey-lighten-4">
@@ -451,7 +438,7 @@ onMounted(async () => {
 
   <v-col cols="12">
     <v-row>
-      <v-col cols="12" md="3">
+      <v-col cols="12" md="2">
         <div class="d-flex">
           <v-btn
             color="primary"
@@ -464,10 +451,13 @@ onMounted(async () => {
         </div>
       </v-col>
 
-      <v-col cols="12" md="3" class="text-no-wrap">
+      <v-col cols="12" md="4" class="text-no-wrap">
         <v-select
           v-model="selectedAssetType"
-          :items="[{ type_id: 'all', type_name_la: 'ທັງໝົດ', type_code: 'all' }, ...(mockData1 || [])]"
+          :items="[
+            { type_id: 'all', type_name_la: 'ທັງໝົດ', type_code: 'all' },
+            ...(mockData1 || []),
+          ]"
           item-title="type_name_la"
           item-value="type_code"
           label="ປະເພດຊັບສິນ"
@@ -477,10 +467,20 @@ onMounted(async () => {
           placeholder="ເລືອກປະເພດຊັບສິນ"
           :loading="loading"
         >
-          <template v-slot:selection="{ item }">
+          <!-- <template v-slot:selection="{ item }">
             <v-chip size="small" :color="item.raw.type_code === 'all' ? 'primary' : 'secondary'">
               {{ item.raw.type_name_la }}
             </v-chip>
+          </template> -->
+          <template v-slot:selection="{ item }">
+            {{ item.raw.type_name_la }}({{ item.raw.type_id }})
+          </template>
+
+          <template v-slot:item="{ props, item }">
+            <v-list-item
+              v-bind="props"
+              :title="`${item.raw.type_name_la}(${item.raw.type_id})`"
+            />
           </template>
         </v-select>
       </v-col>
@@ -509,8 +509,8 @@ onMounted(async () => {
             <v-icon class="mr-2">mdi-filter-remove</v-icon>
             ເຄລຍການກັ່ນຕອງ
           </v-btn>
-          
-          <v-btn
+
+          <!-- <v-btn
             color="primary"
             variant="outlined"
             @click="refreshData"
@@ -519,7 +519,7 @@ onMounted(async () => {
           >
             <v-icon class="mr-2">mdi-refresh</v-icon>
             ໂຫຼດໃໝ່
-          </v-btn>
+          </v-btn> -->
         </div>
       </v-col>
     </v-row>
@@ -648,7 +648,9 @@ onMounted(async () => {
           flat
           class="text-primary"
           icon="mdi-eye-outline"
-          @click="goPath(`/property/asset/detail?asset_code=${item.asset_code}`)"
+          @click="
+            goPath(`/property/asset/detail?asset_code=${item.asset_code}`)
+          "
         />
       </template>
 
@@ -658,7 +660,11 @@ onMounted(async () => {
           flat
           class="text-info"
           icon="mdi-pen"
-          @click="goPath(`/property/asset/edit?asset_code=${item.asset_code}&asset_id=${item.coa_id}`)"
+          @click="
+            goPath(
+              `/property/asset/edit?asset_code=${item.asset_code}&asset_id=${item.coa_id}`
+            )
+          "
         />
       </template>
 
@@ -672,12 +678,13 @@ onMounted(async () => {
         />
       </template>
 
-   
       <template v-slot:no-data>
         <div class="text-center pa-4">
           <v-icon size="64" color="grey">mdi-database-off-outline</v-icon>
           <p class="text-h6 text-grey mt-2">ບໍ່ມີຂໍ້ມູນ</p>
-          <p class="text-body-2 text-grey">ກະລຸນາລອງໂຫຼດໃໝ່ ຫຼືເຄລຍການກັ່ນຕອງ</p>
+          <p class="text-body-2 text-grey">
+            ກະລຸນາລອງໂຫຼດໃໝ່ ຫຼືເຄລຍການກັ່ນຕອງ
+          </p>
           <v-btn color="primary" @click="refreshData" :loading="loading">
             <v-icon class="mr-2">mdi-refresh</v-icon>
             ໂຫຼດໃໝ່
@@ -695,7 +702,6 @@ onMounted(async () => {
     </v-data-table>
   </v-col>
 
-
   <v-snackbar
     v-model="showSuccess"
     color="success"
@@ -706,7 +712,6 @@ onMounted(async () => {
     {{ successMessage }}
   </v-snackbar>
 
-  
   <v-snackbar v-model="showError" color="error" timeout="5000" location="top">
     <v-icon class="mr-2">mdi-alert-circle</v-icon>
     {{ errorMessage }}
