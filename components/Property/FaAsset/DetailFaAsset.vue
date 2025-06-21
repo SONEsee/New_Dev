@@ -3,9 +3,10 @@ import { useRoute, useRouter } from "vue-router";
 
 const faAssetStoreInstance = faAssetStore();
 const route = useRoute();
+
 const router = useRouter();
 
-const asset_id = route.query.asset_id as string;
+const asset_id = route.query.id_faasset as string;
 
 const title = ref("ລາຍລະອຽດຊັບສົມບັດຄົງທີ່");
 const loading = ref(false);
@@ -173,7 +174,7 @@ const bookValuePercentage = computed(() => {
       </v-col>
 
       <v-col cols="12" class="pt-6">
-        <!-- Loading State -->
+      
         <v-card v-if="loading" class="elevation-2 rounded-lg">
           <v-card-text class="text-center pa-12">
             <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
@@ -181,9 +182,9 @@ const bookValuePercentage = computed(() => {
           </v-card-text>
         </v-card>
 
-        <!-- Asset Detail Content -->
+        
         <v-card v-else-if="assetData" class="elevation-2 rounded-lg">
-          <!-- Header -->
+       
           <v-card-title class="bg-primary text-white pa-6">
             <div class="d-flex align-center w-100">
               <div class="flex-grow-1">
@@ -191,7 +192,7 @@ const bookValuePercentage = computed(() => {
                   <v-icon class="mr-3" size="32">mdi-treasure-chest</v-icon>
                   <div>
                     <div class="text-h4 mb-1">{{ assetData.asset_tag }}</div>
-                    <div class="text-h6 opacity-90">ID: {{ assetData.id }}</div>
+                    <div class="text-h6 opacity-90">ID: {{ assetData.asset_id }}</div>
                   </div>
                 </div>
               </div>
@@ -416,7 +417,7 @@ const bookValuePercentage = computed(() => {
                 </v-card>
 
                 <!-- Depreciation Details -->
-                <v-card variant="outlined" class="mb-4">
+                <!-- <v-card variant="outlined" class="mb-4">
                   <v-card-title class="text-h6 pb-2 d-flex align-center">
                     <v-icon class="mr-2">mdi-calculator</v-icon>
                     ລາຍລະອຽດເສື່ອມລາຄາ
@@ -471,10 +472,10 @@ const bookValuePercentage = computed(() => {
                       </div>
                     </v-list>
                   </v-card-text>
-                </v-card>
+                </v-card> -->
 
                 <!-- Quick Actions -->
-                <v-card variant="outlined">
+                <!-- <v-card variant="outlined">
                   <v-card-title class="text-h6 pb-2 d-flex align-center">
                     <v-icon class="mr-2">mdi-lightning-bolt</v-icon>
                     ດຳເນີນການດ່ວນ
@@ -509,7 +510,7 @@ const bookValuePercentage = computed(() => {
                       </v-btn>
                     </div>
                   </v-card-text>
-                </v-card>
+                </v-card> -->
               </v-col>
 
               <!-- Accounting Information -->
@@ -571,7 +572,7 @@ const bookValuePercentage = computed(() => {
                     <v-list density="compact">
                       <v-list-item>
                         <v-list-item-title class="text-subtitle-2 text-grey-darken-1 mb-1">
-                          ສະຖານະເລຄອດ (Record Status)
+                          ສະຖານະ (ຊັບສົມບັດ)
                         </v-list-item-title>
                         <v-list-item-subtitle>
                           <v-chip 
@@ -579,7 +580,7 @@ const bookValuePercentage = computed(() => {
                             size="small" 
                             variant="outlined"
                           >
-                            {{ assetData.Record_Status || 'N/A' }}
+                            {{ assetData.asset_status || 'N/A' }}
                           </v-chip>
                         </v-list-item-subtitle>
                       </v-list-item>
@@ -588,7 +589,7 @@ const bookValuePercentage = computed(() => {
                 </v-row>
               </v-col>
 
-              <!-- Activity Timeline -->
+              
               <v-col cols="12" class="mt-6">
                 <v-divider class="mb-4"></v-divider>
                 <h3 class="text-h6 mb-4 d-flex align-center">

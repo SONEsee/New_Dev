@@ -9,14 +9,12 @@ const title = ref("ເພີ່ມຊັບສົມບັດຄົງທີ່�
 const loading = ref(false);
 const form = ref();
 
-
 const assetStatusOptions = [
   { title: "ເປີດໃຊ້ງານ", value: "ACTIVE" },
   { title: "ປິດໃຊ້ງານ", value: "INACTIVE" },
   { title: "ຊ່ອມແປງ", value: "MAINTENANCE" },
   { title: "ຖອນຈຳໜ່າຍ", value: "DISPOSED" },
 ];
-
 
 const currencyOptions = [
   { title: "ກີບລາວ (LAK)", value: "LAK" },
@@ -25,26 +23,13 @@ const currencyOptions = [
 ];
 
 
-const depreciationOptions = [
+
+const assetAcOptions = [
   { title: "ມີ", value: "Y" },
   { title: "ບໍ່ມີ", value: "N" },
 ];
 
-// Depreciation Type Options
-const depreciationTypeOptions = [
-  { title: "ເສັ້ນກົງ", value: "Straight-line" },
-  { title: "ລົດລົງ", value: "Declining" },
-  { title: "ຫົວໜ່ວຍຜະລິດ", value: "ProductionUnit" },
-];
 
-// Mock Data for dropdowns
-const assetCharts = ref([
-  { id: 1, name: "ອາຄານ", code: "BUILD" },
-  { id: 2, name: "ເຄື່ອງຈັກ", code: "MACH" },
-  { id: 3, name: "ຍານພາຫະນະ", code: "VEH" },
-  { id: 4, name: "ເຄື່ອງໃຊ້ສຳນັກງານ", code: "OFF" },
-  { id: 5, name: "ເຄື່ອງຄອມພິວເຕີ", code: "IT" },
-]);
 
 const locations = ref([
   { id: 1, name: "ສຳນັກງານໃຫຍ່", code: "HQ" },
@@ -83,21 +68,7 @@ const submitForm = async () => {
   }
 };
 
-// Watch depreciation setting to show/hide related fields
-watch(
-  () => faAssetStoreInstance.form_create_fa_asset.has_depreciation,
-  (newVal) => {
-    if (newVal === 'N') {
-      faAssetStoreInstance.form_create_fa_asset.dpca_type = null;
-      faAssetStoreInstance.form_create_fa_asset.dpca_percentage = null;
-      faAssetStoreInstance.form_create_fa_asset.asset_useful_life = null;
-      faAssetStoreInstance.form_create_fa_asset.dpca_start_date = null;
-      faAssetStoreInstance.form_create_fa_asset.dpca_end_date = null;
-    }
-  }
-);
-
-// Auto calculate end date when start date and useful life are set
+// Watch for depreciation calculation
 watch(
   [
     () => faAssetStoreInstance.form_create_fa_asset.dpca_start_date,
@@ -107,8 +78,21 @@ watch(
     if (startDate && usefulLife) {
       const endDate = new Date(startDate);
       endDate.setFullYear(endDate.getFullYear() + usefulLife);
-      faAssetStoreInstance.form_create_fa_asset.dpca_end_date = endDate;
+      faAssetStoreInstance.form_create_fa_asset.dpca_end_date = endDate.toISOString().split('T')[0];
     }
+  }
+);
+
+// Watch for asset value remain calculation
+watch(
+  [
+    () => faAssetStoreInstance.form_create_fa_asset.asset_value,
+    () => faAssetStoreInstance.form_create_fa_asset.asset_accu_dpca_value
+  ],
+  ([assetValue, accuDpcaValue]) => {
+    const value = assetValue || 0;
+    const accumulated = accuDpcaValue || 0;
+    faAssetStoreInstance.form_create_fa_asset.asset_value_remain = value - accumulated;
   }
 );
 
@@ -139,7 +123,6 @@ const rules = {
 };
 
 onMounted(async () => {
-  // Load reference data
   loading.value = true;
   try {
     await Promise.all([
@@ -165,7 +148,7 @@ onMounted(async () => {
 
         <v-col cols="12" class="pt-12">
           <v-row>
-            <!-- Basic Information -->
+            <!-- Basic Information Section -->
             <v-col cols="12">
               <h3 class="text-h6 mb-4 d-flex align-center">
                 <v-icon class="mr-2" color="primary">mdi-information</v-icon>
@@ -174,31 +157,6 @@ onMounted(async () => {
             </v-col>
 
             <v-col cols="12" md="6">
-              <label>ລະຫັດຊັບສົມບັດ <span class="text-error">*</span></label>
-              <v-select
-                v-model="faAssetStoreInstance.form_create_fa_asset.asset_id"
-                :rules="[rules.requiredSelect]"
-                :items="assetCharts"
-                item-title="name"
-                item-value="id"
-                placeholder="ກະລຸນາເລືອກປະເພດຊັບສົມບັດ"
-                density="compact"
-                variant="outlined"
-                hide-details="auto"
-                class="pb-6"
-              >
-                <template #item="{ props, item }">
-                  <v-list-item v-bind="props">
-                    <template #prepend>
-                      <v-chip size="x-small" color="primary" variant="outlined">
-                        {{ item.raw.code }}
-                      </v-chip>
-                    </template>
-                    <v-list-item-title>{{ item.raw.name }}</v-list-item-title>
-                  </v-list-item>
-                </template>
-              </v-select>
-
               <label>ປ້າຍຊັບສິນ (Asset Tag) <span class="text-error">*</span></label>
               <v-text-field
                 v-model="faAssetStoreInstance.form_create_fa_asset.asset_tag"
@@ -260,22 +218,6 @@ onMounted(async () => {
                 class="pb-6"
               ></v-text-field>
 
-              <label>ສະຖານະຊັບສົມບັດ <span class="text-error">*</span></label>
-              <v-select
-                v-model="faAssetStoreInstance.form_create_fa_asset.asset_status"
-                :rules="[rules.requiredSelect]"
-                :items="assetStatusOptions"
-                item-title="title"
-                item-value="value"
-                placeholder="ເລືອກສະຖານະຊັບສົມບັດ"
-                density="compact"
-                variant="outlined"
-                hide-details="auto"
-                class="pb-6"
-              ></v-select>
-            </v-col>
-
-            <v-col cols="12" md="6">
               <label>ສະກຸນເງິນ <span class="text-error">*</span></label>
               <v-select
                 v-model="faAssetStoreInstance.form_create_fa_asset.asset_currency"
@@ -304,7 +246,9 @@ onMounted(async () => {
                 class="pb-6"
                 prefix="₭"
               ></v-text-field>
+            </v-col>
 
+            <v-col cols="12" md="6">
               <label>ຜູ້ສະໜອງ/ຜູ້ຂາຍ</label>
               <v-select
                 v-model="faAssetStoreInstance.form_create_fa_asset.supplier_id"
@@ -353,79 +297,7 @@ onMounted(async () => {
                 maxlength="500"
                 counter
               ></v-textarea>
-            </v-col>
 
-            <!-- Depreciation Information -->
-            <v-col cols="12" class="mt-6">
-              <v-divider class="mb-4"></v-divider>
-              <h3 class="text-h6 mb-4 d-flex align-center">
-                <v-icon class="mr-2" color="primary">mdi-calculator</v-icon>
-                ຂໍ້ມູນການເສື່ອມລາຄາ
-              </h3>
-            </v-col>
-
-            <v-col cols="12" md="6">
-              <label>ມີການຄິດເສື່ອມລາຄາບໍ່ <span class="text-error">*</span></label>
-              <v-select
-                v-model="faAssetStoreInstance.form_create_fa_asset.has_depreciation"
-                :rules="[rules.requiredSelect]"
-                :items="depreciationOptions"
-                item-title="title"
-                item-value="value"
-                placeholder="ເລືອກການຄິດເສື່ອມລາຄາ"
-                density="compact"
-                variant="outlined"
-                hide-details="auto"
-                class="pb-6"
-              ></v-select>
-
-              <div v-if="faAssetStoreInstance.form_create_fa_asset.has_depreciation === 'Y'">
-                <label>ວິທີຄິດເສື່ອມລາຄາ</label>
-                <v-select
-                  v-model="faAssetStoreInstance.form_create_fa_asset.dpca_type"
-                  :items="depreciationTypeOptions"
-                  item-title="title"
-                  item-value="value"
-                  placeholder="ເລືອກວິທີຄິດເສື່ອມລາຄາ"
-                  density="compact"
-                  variant="outlined"
-                  hide-details="auto"
-                  class="pb-6"
-                ></v-select>
-
-                <label>ອັດຕາເສື່ອມລາຄາ (%)</label>
-                <v-text-field
-                  v-model.number="faAssetStoreInstance.form_create_fa_asset.dpca_percentage"
-                  :rules="[rules.percentage]"
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.01"
-                  placeholder="0.00"
-                  density="compact"
-                  variant="outlined"
-                  hide-details="auto"
-                  class="pb-6"
-                  suffix="%"
-                ></v-text-field>
-
-                <label>ອາຍຸການໃຊ້ງານ (ປີ)</label>
-                <v-text-field
-                  v-model.number="faAssetStoreInstance.form_create_fa_asset.asset_useful_life"
-                  :rules="[rules.positiveNumber]"
-                  type="number"
-                  min="1"
-                  placeholder="0"
-                  density="compact"
-                  variant="outlined"
-                  hide-details="auto"
-                  class="pb-6"
-                  suffix="ປີ"
-                ></v-text-field>
-              </div>
-            </v-col>
-
-            <v-col cols="12" md="6">
               <label>ມູນຄ່າຊາກ</label>
               <v-text-field
                 v-model.number="faAssetStoreInstance.form_create_fa_asset.asset_salvage_value"
@@ -441,29 +313,189 @@ onMounted(async () => {
                 prefix="₭"
               ></v-text-field>
 
-              <div v-if="faAssetStoreInstance.form_create_fa_asset.has_depreciation === 'Y'">
-                <label>ວັນທີ່ເລີ່ມຄິດເສື່ອມລາຄາ</label>
-                <v-text-field
-                  v-model="faAssetStoreInstance.form_create_fa_asset.dpca_start_date"
-                  type="date"
-                  density="compact"
-                  variant="outlined"
-                  hide-details="auto"
-                  class="pb-6"
-                ></v-text-field>
+              <label>ວັນທີ່ຈຳໜ່າຍ</label>
+              <v-text-field
+                v-model="faAssetStoreInstance.form_create_fa_asset.asset_disposal_date"
+                type="date"
+                density="compact"
+                variant="outlined"
+                hide-details="auto"
+                class="pb-6"
+              ></v-text-field>
+            </v-col>
 
-                <label>ວັນທີ່ສິ້ນສຸດການເສື່ອມລາຄາ</label>
-                <v-text-field
-                  v-model="faAssetStoreInstance.form_create_fa_asset.dpca_end_date"
-                  type="date"
-                  density="compact"
-                  variant="outlined"
-                  hide-details="auto"
-                  class="pb-6"
-                  readonly
-                  hint="ຄິດໄລ່ອັດຕະໂນມັດຈາກວັນທີ່ເລີ່ມແລະອາຍຸການໃຊ້ງານ"
-                ></v-text-field>
-              </div>
+            <!-- Depreciation Information -->
+            <v-col cols="12" class="mt-6">
+              <v-divider class="mb-4"></v-divider>
+              <h3 class="text-h6 mb-4 d-flex align-center">
+                <v-icon class="mr-2" color="primary">mdi-calculator</v-icon>
+                ຂໍ້ມູນການເສື່ອມລາຄາ
+              </h3>
+            </v-col>
+
+            <v-col cols="12" md="6">
+              <label>ປະເພດການເສື່ອມລາຄາ</label>
+              <v-text-field
+                v-model="faAssetStoreInstance.form_create_fa_asset.dpca_type"
+                placeholder="ເຊັ່ນ: SL, DB, UOP"
+                density="compact"
+                variant="outlined"
+                hide-details="auto"
+                class="pb-6"
+                hint="SL=ເສັ້ນກົງ, DB=ລົດລົງ, UOP=ຫົວໜ່ວຍຜະລິດ"
+              ></v-text-field>
+
+              <label>ອັດຕາເສື່ອມລາຄາ (%)</label>
+              <v-text-field
+                v-model.number="faAssetStoreInstance.form_create_fa_asset.dpca_percentage"
+                :rules="[rules.percentage]"
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                placeholder="0.00"
+                density="compact"
+                variant="outlined"
+                hide-details="auto"
+                class="pb-6"
+                suffix="%"
+              ></v-text-field>
+
+              <label>ອາຍຸການໃຊ້ງານ (ປີ)</label>
+              <v-text-field
+                v-model.number="faAssetStoreInstance.form_create_fa_asset.asset_useful_life"
+                :rules="[rules.positiveNumber]"
+                type="number"
+                min="1"
+                placeholder="0"
+                density="compact"
+                variant="outlined"
+                hide-details="auto"
+                class="pb-6"
+                suffix="ປີ"
+              ></v-text-field>
+
+              <label>ວັນທີ່ເລີ່ມຄິດເສື່ອມລາຄາ</label>
+              <v-text-field
+                v-model="faAssetStoreInstance.form_create_fa_asset.dpca_start_date"
+                type="date"
+                density="compact"
+                variant="outlined"
+                hide-details="auto"
+                class="pb-6"
+              ></v-text-field>
+            </v-col>
+
+            <v-col cols="12" md="6">
+              <label>ວັນທີ່ສິ້ນສຸດການເສື່ອມລາຄາ</label>
+              <v-text-field
+                v-model="faAssetStoreInstance.form_create_fa_asset.dpca_end_date"
+                type="date"
+                density="compact"
+                variant="outlined"
+                hide-details="auto"
+                class="pb-6"
+                readonly
+                hint="ຄິດໄລ່ອັດຕະໂນມັດຈາກວັນທີ່ເລີ່ມແລະອາຍຸການໃຊ້ງານ"
+              ></v-text-field>
+
+              <label>ມູນຄ່າເສື່ອມລາຄາສະສົມ</label>
+              <v-text-field
+                v-model.number="faAssetStoreInstance.form_create_fa_asset.asset_accu_dpca_value"
+                :rules="[rules.positiveNumber]"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+                density="compact"
+                variant="outlined"
+                hide-details="auto"
+                class="pb-6"
+                prefix="₭"
+              ></v-text-field>
+
+              <label>ມູນຄ່າຄົງເຫຼືອ</label>
+              <v-text-field
+                v-model.number="faAssetStoreInstance.form_create_fa_asset.asset_value_remain"
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                density="compact"
+                variant="outlined"
+                hide-details="auto"
+                class="pb-6"
+                prefix="₭"
+                readonly
+                hint="ຄິດໄລ່ອັດຕະໂນມັດ: ມູນຄ່າຊັບສິນ - ເສື່ອມລາຄາສະສົມ"
+              ></v-text-field>
+
+              <label>ວັນທີ່ເສື່ອມລາຄາຄັ້ງສຸດທ້າຍ</label>
+              <v-text-field
+                v-model="faAssetStoreInstance.form_create_fa_asset.asset_latest_date_dpca"
+                type="date"
+                density="compact"
+                variant="outlined"
+                hide-details="auto"
+                class="pb-6"
+              ></v-text-field>
+            </v-col>
+
+            <!-- Asset Check Information -->
+            <v-col cols="12" class="mt-6">
+              <v-divider class="mb-4"></v-divider>
+              <h3 class="text-h6 mb-4 d-flex align-center">
+                <v-icon class="mr-2" color="primary">mdi-check-circle</v-icon>
+                ຂໍ້ມູນການກວດສອບຊັບສິນ
+              </h3>
+            </v-col>
+
+            <v-col cols="12" md="6">
+              <label>ມີການກວດສອບບໍ່</label>
+              <v-select
+                v-model="faAssetStoreInstance.form_create_fa_asset.asset_ac_yesno"
+                :items="assetAcOptions"
+                item-title="title"
+                item-value="value"
+                placeholder="ເລືອກການກວດສອບ"
+                density="compact"
+                variant="outlined"
+                hide-details="auto"
+                class="pb-6"
+              ></v-select>
+
+              <label>ວັນທີ່ກວດສອບ</label>
+              <v-text-field
+                v-model="faAssetStoreInstance.form_create_fa_asset.asset_ac_date"
+                type="date"
+                density="compact"
+                variant="outlined"
+                hide-details="auto"
+                class="pb-6"
+              ></v-text-field>
+            </v-col>
+
+            <v-col cols="12" md="6">
+              <label>ເວລາກວດສອບ</label>
+              <v-text-field
+                v-model="faAssetStoreInstance.form_create_fa_asset.asset_ac_datetime"
+                type="datetime-local"
+                density="compact"
+                variant="outlined"
+                hide-details="auto"
+                class="pb-6"
+              ></v-text-field>
+
+              <!-- <label>ຜູ້ກວດສອບ</label>
+              <v-text-field
+                v-model="faAssetStoreInstance.form_create_fa_asset.aaset_ac_by"
+                :rules="[rules.maxLength50]"
+                placeholder="ຊື່ຜູ້ກວດສອບ"
+                density="compact"
+                variant="outlined"
+                hide-details="auto"
+                class="pb-6"
+                maxlength="50"
+              ></v-text-field> -->
             </v-col>
 
             <!-- Information Card -->
@@ -481,7 +513,7 @@ onMounted(async () => {
                     </v-list-item>
                     <v-list-item>
                       <v-list-item-title class="text-subtitle-2">ການເສື່ອມລາຄາ:</v-list-item-title>
-                      <v-list-item-subtitle>ຊັບສົມບັດສ່ວນໃຫຍ່ຄວນມີການຄິດເສື່ອມລາຄາ ຍົກເວັ້ນທີ່ດິນ</v-list-item-subtitle>
+                      <v-list-item-subtitle>SL = ເສັ້ນກົງ, DB = ລົດລົງ, UOP = ຫົວໜ່ວຍຜະລິດ</v-list-item-subtitle>
                     </v-list-item>
                     <v-list-item>
                       <v-list-item-title class="text-subtitle-2">ມູນຄ່າຊາກ:</v-list-item-title>

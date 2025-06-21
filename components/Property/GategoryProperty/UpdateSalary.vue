@@ -4,51 +4,47 @@ import { CallSwal } from "#build/imports";
 import { useRoute } from "vue-router";
 
 const propertyStor = propertyStore();
-
 const route = useRoute();
-const type_id = route.query.type_id as string;
-
+const id = Number(route.query.type_id) || 0;
+const update_form = propertyStor.form_update_property_category
 const title = ref("ແກ້ໄຂປະເພດຊັບສິນ");
 const loading = ref(false);
 const form = ref();
 
-const update_form = ref({
-  type_id: "" as string | number,
-  type_code: "",
-  type_name: "",
-  description: "",
-});
+
+
+const rules = {
+  required: (value: any) => !!value || "ກະລຸນາໃສ່ຂໍ້ມູນ",
+};
 
 onMounted(() => {
-  if (type_id) {
-    loadPropertyDetail();
-  }
+  propertyStor.GetPropertyDetail(id);
+
 });
 
-const loadPropertyDetail = async () => {
-  try {
-    await propertyStor.GetPropertyDetail(type_id);
-  } catch (error) {
-    console.error("Error loading property detail:", error);
-  }
-};
+
+
 
 watch(
   () => propertyStor.respons_detail_property_category,
   (newVal) => {
     if (newVal) {
-      update_form.value.type_id = newVal.type_id || "";
-      update_form.value.type_code = newVal.type_code || "";
-      update_form.value.type_name = newVal.type_name || "";
-      update_form.value.description = newVal.description || "";
+      update_form.type_id = newVal.type_id || "";
+      update_form.type_code = newVal.type_code || "";
+      update_form.type_name_la = newVal.type_name_la || "";
+      update_form.type_name_en = newVal.type_name_en || "";
+      update_form.is_tangible = newVal.is_tangible || "";
+      
     }
   },
   { immediate: true }
 );
 
 const submitForm = async () => {
-  const isValid = await form.value.validate();
-  if (isValid) {
+  if (!form.value) return;
+  
+  const validation = await form.value.validate();
+  if (validation.valid) {
     const notification = await CallSwal({
       icon: "warning",
       title: "ຄຳເຕືອນ",
@@ -67,26 +63,7 @@ const submitForm = async () => {
 const updatePropertyType = async () => {
   loading.value = true;
   try {
-    const res = await axios.put(`property/${type_id}`, update_form.value, {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    });
-
-    if (res.status === 200) {
-      CallSwal({
-        title: "ສຳເລັດ",
-        text: "ສຳເລັດການແກ້ໄຂປະເພດຊັບສິນ",
-        icon: "success",
-        showCancelButton: false,
-        showConfirmButton: false,
-      });
-
-      setTimeout(() => {
-        navigateTo("/property/propertytype");
-      }, 1500);
-    }
+   await propertyStor.UpdatePropertyType(id)
   } catch (error) {
     console.error("Error updating property type:", error);
     CallSwal({
@@ -116,28 +93,56 @@ const updatePropertyType = async () => {
               <label>ລະຫັດປະເພດ / Type Code</label>
               <v-text-field
                 v-model="update_form.type_code"
-                :rules="[(v) => !!v || 'ກະລຸນາປ້ອນລະຫັດປະເພດ']"
+                :rules="[rules.required]"
                 placeholder="ກະລຸນາປ້ອນລະຫັດປະເພດ"
                 density="compact"
                 variant="outlined"
                 hide-details="auto"
                 class="pb-6"
-              ></v-text-field>
+              />
 
-              <label>ຊື່ປະເພດ / Type Name</label>
+              <label>ຊື່ປະເພດ (ລາວ) / Type Name (Lao)</label>
               <v-text-field
-                v-model="update_form.type_name"
-                :rules="[(v) => !!v || 'ກະລຸນາປ້ອນຊື່ປະເພດ']"
-                placeholder="ກະລຸນາປ້ອນຊື່ປະເພດ"
+                v-model="update_form.type_name_la"
+                :rules="[rules.required]"
+                placeholder="ກະລຸນາປ້ອນຊື່ປະເພດພາສາລາວ"
                 density="compact"
                 variant="outlined"
                 hide-details="auto"
                 class="pb-6"
-              ></v-text-field>
+              />
+
+              <label>ຊື່ປະເພດ (ອັງກິດ) / Type Name (English)</label>
+              <v-text-field
+                v-model="update_form.type_name_en"
+                :rules="[rules.required]"
+                placeholder="ກະລຸນາປ້ອນຊື່ປະເພດພາສາອັງກິດ"
+                density="compact"
+                variant="outlined"
+                hide-details="auto"
+                class="pb-6"
+              />
             </v-col>
 
             <v-col cols="12" md="6">
-              <label>ຄຳອະທິບາຍ / Description</label>
+              <label>ປະເພດຊັບສິນ / Asset Type</label>
+              <v-select
+                v-model="update_form.is_tangible"
+                :rules="[rules.required]"
+                placeholder="ເລືອກປະເພດຊັບສິນ"
+                density="compact"
+                variant="outlined"
+                hide-details="auto"
+                class="pb-6"
+                :items="[
+                  { title: 'ຊັບສິນທີ່ແທ້ຈິງ', value: 'Y' },
+                  { title: 'ຊັບສິນທີ່ບໍ່ແທ້ຈິງ', value: 'N' }
+                ]"
+                item-title="title"
+                item-value="value"
+              />
+
+              <!-- <label>ຄຳອະທິບາຍ / Description</label>
               <v-textarea
                 v-model="update_form.description"
                 placeholder="ກະລຸນາປ້ອນຄຳອະທິບາຍ"
@@ -145,22 +150,28 @@ const updatePropertyType = async () => {
                 variant="outlined"
                 hide-details="auto"
                 class="pb-6"
-                rows="3"
-              ></v-textarea>
+                rows="6"
+              /> -->
             </v-col>
           </v-row>
         </v-col>
+        
         <v-col cols="12" class="d-flex flex-wrap justify-center">
-          <v-btn color="primary" flat type="submit" :loading="loading">
+          <v-btn 
+            color="primary" 
+            flat 
+            type="submit" 
+            :loading="loading"
+            :disabled="loading"
+          >
             ບັນທຶກ
           </v-btn>
           <v-btn
             color="error"
             flat
-            type="submit"
-            :loading="loading"
             class="ml-3"
             @click="$router.go(-1)"
+            :disabled="loading"
           >
             ຍົກເລີກ
           </v-btn>

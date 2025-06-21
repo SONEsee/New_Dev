@@ -420,7 +420,7 @@
               </v-row>
             </v-col>
 
-            <!-- Information Card -->
+         
             <v-col cols="12" class="mt-4">
               <v-card variant="outlined" color="info">
                 <v-card-title class="text-h6 pb-2">
@@ -446,7 +446,7 @@
               </v-card>
             </v-col>
 
-            <!-- Action Buttons -->
+           
             <v-col cols="12" class="d-flex flex-wrap justify-center mt-6">
               <v-btn 
                 color="error" 
@@ -512,13 +512,13 @@ const faAssetStoreInstance = faAssetStore();
 const route = useRoute();
 const router = useRouter();
 
-const asset_id = route.query.asset_id as string;
+const asset_id = route.query.id_faasset as string;
 
 const title = ref("ແກ້ໄຂຊັບສົມບັດຄົງທີ່");
 const loading = ref(false);
 const form = ref();
 
-// Asset Status Options
+
 const assetStatusOptions = [
   { title: "ເປີດໃຊ້ງານ", value: "ACTIVE" },
   { title: "ປິດໃຊ້ງານ", value: "INACTIVE" },
@@ -533,20 +533,20 @@ const currencyOptions = [
   { title: "ບາດໄທ (THB)", value: "THB" },
 ];
 
-// Depreciation Options
+
 const depreciationOptions = [
   { title: "ມີ", value: "Y" },
   { title: "ບໍ່ມີ", value: "N" },
 ];
 
-// Depreciation Type Options
+
 const depreciationTypeOptions = [
   { title: "ເສັ້ນກົງ", value: "Straight-line" },
   { title: "ລົດລົງ", value: "Declining" },
   { title: "ຫົວໜ່ວຍຜະລິດ", value: "ProductionUnit" },
 ];
 
-// Mock Data for dropdowns
+
 const assetCharts = ref([
   { id: 1, name: "ອາຄານ", code: "BUILD" },
   { id: 2, name: "ເຄື່ອງຈັກ", code: "MACH" },

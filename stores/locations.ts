@@ -43,7 +43,7 @@ export const locationStore = defineStore("location", {
       this.isLoading = true;
       try {
         const res = await axios.get<LocationModel.Location[]>(
-          `fa-locations`,
+          `/api/asset_location/`,
           {
             headers: {
               "Content-Type": "application/json",
@@ -66,7 +66,7 @@ export const locationStore = defineStore("location", {
       this.isLoading = true;
       try {
         const res = await axios.get<LocationModel.Location[]>(
-          `fa-locations/parents`,
+          `/api/asset_location/`,
           {
             headers: {
               "Content-Type": "application/json",
@@ -112,7 +112,7 @@ export const locationStore = defineStore("location", {
       this.isLoading = true;
       try {
         const res = await axios.post<LocationModel.Location>(
-          `fa-locations`,
+          `/api/asset_location/`,
           this.form_create_location,
           {
             headers: {
@@ -130,7 +130,7 @@ export const locationStore = defineStore("location", {
             showConfirmButton: false,
           });
           setTimeout(() => {
-            goPath("/fa-locations");
+            goPath("/property/locations/");
           }, 1500);
 
      
@@ -173,7 +173,7 @@ export const locationStore = defineStore("location", {
             showConfirmButton: false,
           });
           setTimeout(() => {
-            goPath("/fa-locations");
+            goPath("/property/locations/");
           }, 1500);
 
         
@@ -373,7 +373,7 @@ export const locationStore = defineStore("location", {
           .filter(location => location.parent_location_id === parentId)
           .map(location => ({
             ...location,
-            children: buildTree(location.id)
+            children: buildTree(location.location_id)
           }));
       };
       

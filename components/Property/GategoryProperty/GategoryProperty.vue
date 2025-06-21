@@ -1,28 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
 const proppertyStore = propertyStore();
+const mockData1 =  computed(()=>{
+  return proppertyStore.respons_data_property_category || []
+})
 
-const handlesubmit = async (mockData: any) => {
-  try {
-    const notification = await CallSwal({
-      title: "ຢືນຢັນ",
-      text: "ທ່ານຕ້ອງການບັນທຶກຂໍ້ມູນນີ້ໃຫ້ແນ່?",
-      icon: "question",
-      confirmButtonText: "ຕົກລົງ",
-      cancelButtonText: "ຍົກເລີກ",
-    });
-    if (notification) {
-      CallSwal({
-        title: "ຍັງບໍ່ສົມບູນ",
-        text: "ທ່ານຕອ້ງໄດ້ຕໍ່ api ກອ່ນ",
-        icon: "warning",
-      });
-      setTimeout(() => {}, 1000);
-    }
-  } catch (error) {
-    console.error("Error submitting form:", error);
-  }
-};
+onMounted(()=>{
+  proppertyStore.GetPropertyCategoryById();
+})
 const search = ref("");
 const dialog = ref(false);
 const deleteDialog = ref(false);
@@ -50,17 +35,9 @@ const roleStore = RoleStore();
 const role1 = computed(() => {
   return roleStore.responst_data_detail;
 });
-const formData = ref({
-  type_id: null,
-  type_code: "",
-  type_name: "",
-  description: "",
-  is_active: true,
-});
 
-const itemToDelete = ref(null);
-const selectedItem = ref(null);
-const form = ref(null);
+
+
 
 const rules = {
   required: (value: any) => !!value || "ກະລຸນາໃສ່ຂໍ້ມູນ",
@@ -70,11 +47,9 @@ const title = "ຈັດການປະເພດຊັບສິນ";
 
 const headers = computed(() => [
   { title: "ລະຫັດ", value: "type_code", width: "120px" },
-  { title: "ຊື່", value: "type_name", width: "200px" },
-  { title: "ຄຳອະທິບາຍ", value: "description", width: "300px" },
-
-  { title: "ເວລາເພີ່ມ", value: "created_at", width: "150px" },
-  { title: "ເວລາແກ້ໄຂ", value: "updated_at", width: "150px" },
+  { title: "ຊື່ພາສາລາວ", value: "type_name_la", width: "200px" },
+  { title: "ຊື່ພາສາອັງກິດ", value: "type_name_en", width: "200px" },
+ 
 
   ...(canView.value
     ? [
@@ -109,89 +84,21 @@ const headers = computed(() => [
         },
       ]
     : []),
-  ...(canAdd.value
-    ? [{ title: "ສະຖານະ", value: "is_active", align: "center", width: "5px" }]
+  ...(canRecordStatus.value
+    ? [{ title: "ສະຖານະ", value: "Record_Status", align: "center", width: "5px" }]
     : []),
 ]);
 
-const mockData = ref([
-  {
-    type_id: 1,
-    type_code: "T001",
-    type_name: "ປະເພດທີ່ 1",
-    description: "ນີ້ແມ່ນຄຳອະທິບາຍສຳລັບປະເພດທີ່ 1 ໃນພາສາລາວ.",
-    is_active: true,
-    created_at: new Date("2025-06-16T13:13:00+07:00"),
-    updated_at: new Date("2025-06-16T13:13:00+07:00"),
-  },
-  {
-    type_id: 2,
-    type_code: "T002",
-    type_name: "ປະເພດທີ່ 2",
-    description: "ຄຳອະທິບາຍສຳລັບປະເພດທີ່ 2, ລາຍລະອຽດເພີ່ມເຕີມ.",
-    is_active: false,
-    created_at: new Date("2025-06-15T09:00:00+07:00"),
-    updated_at: new Date("2025-06-16T10:30:00+07:00"),
-  },
-  {
-    type_id: 3,
-    type_code: "T003",
-    type_name: "ປະເພດທີ່ 3",
-    description: "ລາຍລະອຽດຂອງປະເພດທີ່ 3 ສຳລັບການນໍາໃຊ້ທົ່ວໄປ.",
-    is_active: true,
-    created_at: new Date("2025-06-14T14:45:00+07:00"),
-    updated_at: new Date("2025-06-15T16:20:00+07:00"),
-  },
-  {
-    type_id: 4,
-    type_code: "T004",
-    type_name: "ປະເພດທີ່ 4",
-    description: "ຄຳອະທິບາຍສຳລັບປະເພດທີ່ 4, ໃຊ້ໃນກໍລະນີພິເສດ.",
-    is_active: true,
-    created_at: new Date("2025-06-13T11:10:00+07:00"),
-    updated_at: new Date("2025-06-14T12:00:00+07:00"),
-  },
-  {
-    type_id: 5,
-    type_code: "T005",
-    type_name: "ປະເພດທີ່ 5",
-    description: "ປະເພດທີ່ 5 ມີຄຳອະທິບາຍສຳລັບການທົດສອບ.",
-    is_active: false,
-    created_at: new Date("2025-06-12T08:30:00+07:00"),
-    updated_at: new Date("2025-06-13T09:15:00+07:00"),
-  },
-]);
 
 const filteredData = computed(() => {
-  return mockData.value;
+  return mockData1.value;
 });
 
-const formatDate = (date: Date) => {
-  if (!date) return "-";
-  return new Intl.DateTimeFormat("lo-LA", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(date));
-};
 
-const editItem = (item: any) => {
-  editMode.value = true;
-  formData.value = { ...item };
-  dialog.value = true;
-};
 
-const viewItem = (item: any) => {
-  selectedItem.value = item;
-  viewDialog.value = true;
-};
 
-const editFromView = () => {
-  viewDialog.value = false;
-  editItem(selectedItem.value);
-};
+
+
 
 const confirmDelete = async (item: any) => {
   try {
@@ -248,7 +155,7 @@ onMounted(async () => {
       </v-row>
 
       <v-data-table
-        :items="filteredData"
+        :items="mockData1"
         :headers="headers"
         :search="search"
         class="elevation-1 rounded-lg"
@@ -259,11 +166,11 @@ onMounted(async () => {
           <b class="text-primary">{{ column.title }}</b>
         </template>
 
-        <template v-slot:header.type_name="{ column }">
+        <template v-slot:header.type_name_la="{ column }">
           <b class="text-primary">{{ column.title }}</b>
         </template>
 
-        <template v-slot:header.description="{ column }">
+        <template v-slot:header.type_name_en="{ column }">
           <b class="text-primary">{{ column.title }}</b>
         </template>
 
@@ -275,7 +182,7 @@ onMounted(async () => {
           <b class="text-primary">{{ column.title }}</b>
         </template>
 
-        <template v-slot:header.is_active="{ column }">
+        <template v-slot:header.Record_Status="{ column }">
           <b class="text-primary">{{ column.title }}</b>
         </template>
         <template v-slot:header.edit="{ column }">
@@ -288,30 +195,15 @@ onMounted(async () => {
           <b class="text-primary">{{ column.title }}</b>
         </template>
 
-        <template #item.is_active="{ item }">
-          <v-btn @click="handlesubmit" flat v-if="item.is_active === true">
-            <v-icon
-              icon="mdi-toggle-switch"
-              color="primary"
-              size="small"
-            ></v-icon>
-          </v-btn>
-          <v-btn @click="handlesubmit" flat v-if="item.is_active === false">
-            <v-icon
-              icon="mdi-toggle-switch-off-outline"
-              color="error"
-              size="small"
-            ></v-icon>
-          </v-btn>
-        </template>
+        
 
-        <template #item.created_at="{ item }">
+        <!-- <template #item.created_at="{ item }">
           <span>{{ formatDate(item.created_at) }}</span>
         </template>
 
         <template #item.updated_at="{ item }">
           <span>{{ formatDate(item.updated_at) }}</span>
-        </template>
+        </template> -->
 
         <template #item.edit="{ item }">
           <v-btn
@@ -360,17 +252,14 @@ onMounted(async () => {
           </div>
         </template>
 
-        <template #no-data>
+        <template v-slot:item.Record_Status="{ item }">
           <div class="text-center pa-8">
-            <v-icon size="64" color="grey-lighten-2" class="mb-4">
-              mdi-database-off
-            </v-icon>
-            <p class="text-h6 text-grey-lighten-1 mb-0">
-              ບໍ່ມີຂໍ້ມູນປະເພດຊັບສິນ
-            </p>
-            <p class="text-body-2 text-grey-lighten-1 mt-2">
-              ເລີ່ມຕົ້ນໂດຍການເພີ່ມປະເພດຊັບສິນໃໝ່
-            </p>
+            <v-btn flat size="small" v-if="item.Record_Status === 'O'">
+              <v-icon icon="mdi-toggle-switch" color="primary"></v-icon>
+            </v-btn>
+            <v-btn flat size="small" v-if="item.Record_Status === 'C'">
+              <v-icon icon="mdi-toggle-switch-off-outline" color="error"></v-icon>
+            </v-btn>
           </div>
         </template>
       </v-data-table>
