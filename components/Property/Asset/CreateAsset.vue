@@ -12,7 +12,7 @@ const route = useRoute();
 const asset_id = route.query.asset_type_id;
 const asset_type_id = route.query.asset_type_id as string;
 
-// Computed properties
+
 const count = computed(() => {
   return assetStoreInstance.response_asset_list || [];
 });
@@ -32,14 +32,14 @@ const selectedAssetType = computed(() => {
   return found;
 });
 
-// Form state
+
 const title = ref("ເພີ່ມຊັບສິນໃໝ່");
 const loading = ref(false);
 const form = ref();
 
-// Functions for asset code generation
+
 const extractSequenceNumber = (assetCode) => {
-  // Extract number from asset_code like "FIX-000003" -> 3
+
   const match = assetCode.match(/-(\d+)$/);
   return match ? parseInt(match[1], 10) : 0;
 };
@@ -172,9 +172,9 @@ onMounted(async () => {
 <template>
   <section class="pa-6">
     <!-- Debug info -->
-    <div class="mb-4">
+    <!-- <div class="mb-4">
       <small class="text-grey">Debug: Asset Count = {{ count.length }}</small>
-    </div>
+    </div> -->
 
     <v-form ref="form" @submit.prevent="submitForm">
       <v-row>
