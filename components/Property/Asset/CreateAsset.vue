@@ -154,7 +154,7 @@ onMounted(async () => {
                 hide-details="auto"
                 class="pb-6"
                 maxlength="20"
-                readonly
+                
               ></v-text-field>
 
               <label>ຊື່ຊັບສິນ (ລາວ) / Asset Name (Lao) <span class="text-error">*</span></label>
