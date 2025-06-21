@@ -8,14 +8,14 @@ const assetStoreInstance = assetStore();
 const router = useRouter();
 const route = useRoute();
 
-// ດຶງ asset_type_id ແລະ asset_type_name ຈາກ URL parameter
+
 const asset_type_id = route.query.asset_type_id as string;
 const asset_type_name = route.query.asset_type_name as string;
 
 const locations= computed(()=>{
     return locationStores.response_location_list
 })
-const title = ref("ເພີ່ມຊັບສິນໃໝ່");
+const title = ref("ເພີ່ມຊັບສິນຍອ່ຍໃໝ່");
 const loading = ref(false);
 const form = ref();
 const proppertyStore = propertyStore();
@@ -24,7 +24,7 @@ const mockData1 =  computed(()=>{
   return proppertyStore.respons_data_property_category || []
 })
 
-// ຫາຂໍ້ມູນ asset type ທີ່ຖືກເລືອກ
+
 const selectedAssetType = computed(() => {
   if (!mockData1.value || !asset_type_id) return null;
   const found = mockData1.value.find(item => String(item.type_id) === String(asset_type_id));
@@ -32,7 +32,7 @@ const selectedAssetType = computed(() => {
   return found;
 });
 
-// ສຳລັບເກັບຂໍ້ມູນ response ທີ່ໃຊ້ສ້າງ asset_code
+
 const assetResponse = computed(() => {
   return assetStoreInstance.response_asset_by_type || [];
 });
@@ -109,7 +109,7 @@ const rules = {
   },
 };
 
-// Watch ສຳລັບສ້າງ asset_code ອັດຕະໂນມັດ (ໃຊ້ asset_type_name ຈາກ URL)
+
 watch(assetResponse, (newRes) => {
   if (asset_type_name) {
     if (newRes && newRes.length > 0) {
@@ -127,7 +127,8 @@ watch(assetResponse, (newRes) => {
 watch([mockData1, () => asset_type_id], ([data, typeId]) => {
   if (data && data.length > 0 && typeId) {
     console.log('Setting asset_type_id:', typeId);
-  
+    console.log('Available mockData1:', data.map(item => ({ id: item.type_id, name: item.type_name_la })));
+    
     const typeIdNumber = typeof typeId === 'string' ? parseInt(typeId) : typeId;
     assetStoreInstance.form_create_asset.asset_type_id = typeIdNumber;
   }
@@ -193,11 +194,12 @@ onMounted(async () => {
                 variant="outlined"
                 hide-details="auto"
                 class="pb-6"
-                
+                readonly
               >
                 <template v-slot:selection="{ item }">
                   <span v-if="item && item.title && item.value">
-                    {{ item.title }}({{ item.value }})
+                    {{ selectedAssetType.type_name_la }}({{ selectedAssetType?.type_code }})
+                    <!-- {{ item.title }}({{ item.value }}) -->
                   </span>
                   <span v-else-if="selectedAssetType">
                     {{ selectedAssetType.type_name_la }}({{ selectedAssetType.type_id }})

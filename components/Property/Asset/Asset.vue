@@ -473,13 +473,13 @@ onMounted(async () => {
             </v-chip>
           </template> -->
           <template v-slot:selection="{ item }">
-            {{ item.raw.type_name_la }}({{ item.raw.type_id }})
+            {{ item.raw.type_name_la }}({{ item.raw.type_code }})
           </template>
 
           <template v-slot:item="{ props, item }">
             <v-list-item
               v-bind="props"
-              :title="`${item.raw.type_name_la}(${item.raw.type_id})`"
+              :title="`${item.raw.type_name_la}(${item.raw.type_code})`"
             />
           </template>
         </v-select>
