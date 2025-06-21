@@ -159,7 +159,7 @@ onMounted(async () => {
               <label>ລະຫັດຊັບສິນ / Asset Code <span class="text-error">*</span></label>
               <v-text-field
                 v-model="assetStoreInstance.form_create_asset.asset_code"
-                :rules="[rules.required, rules.assetCode]"
+                
                 placeholder="ເຊັ່ນ: BLD000001, FIX000001"
                 density="compact"
                 variant="outlined"

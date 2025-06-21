@@ -110,6 +110,12 @@ const headers = [
     align: "center" as const,
     width: "200px",
   },
+  // {
+  //   title: "ສະຖານະ",
+  //   key: "record_Status",
+  //   align: "center" as const,
+  //   width: "200px",
+  // },
   {
     title: "ການປະຕິບັດ",
     key: "actions",
@@ -171,7 +177,7 @@ const fetchMenuOptions = async () => {
       // Sort by menu_id
       options.sort((a, b) => a.value.localeCompare(b.value));
       
-      // Add "All" option at the beginning
+  
       menuOptions.value = [
         {
           text: "ທັງໝົດ",
@@ -183,7 +189,7 @@ const fetchMenuOptions = async () => {
     }
   } catch (error: any) {
     console.error("Error fetching menu options:", error);
-    // Generate menu options from existing items if API fails
+ 
     generateMenuOptionsFromItems();
   } finally {
     menuOptionsLoading.value = false;
@@ -201,7 +207,7 @@ const fetchRoleOptions = async () => {
     });
 
     if (res.status === 200) {
-      // Remove duplicates using Map to ensure unique role_id (as string)
+     
       const uniqueRolesMap = new Map<string, Role>()
       
       res.data.forEach(role => {
@@ -211,7 +217,7 @@ const fetchRoleOptions = async () => {
         }
       });
 
-      // Create dropdown options from unique roles
+    
       const options = Array.from(uniqueRolesMap.values()).map((role) => ({
         text: `${role.role_id} - ${role.role_name_la}`,
         value: String(role.role_id),
@@ -316,7 +322,7 @@ const generateRoleOptionsFromItems = () => {
 }
 
 
-// Fetch main role details data
+
 const fetchData = async () => {
   loading.value = true;
   try {
@@ -343,41 +349,38 @@ const fetchData = async () => {
   }
 };
 
-// Filter by role
 const filterByRole = () => {
-  // The filtering logic is handled by the computed property filteredItems
-  // No need for additional API calls since we have all data in originalItems
+ 
 };
 
-// Filter by menu
+
 const filterByMenu = () => {
-  // The filtering logic is handled by the computed property filteredItems
-  // No need for additional API calls since we have all data in originalItems
+
 };
 
-// Navigation
+
 const goPath = (path: string) => {
   router.push(path);
 };
 
-// Delete confirmation
+
 const confirmDelete = (item: RoleDetailModel.RoleDetailResponse) => {
   itemToDelete.value = item;
   deleteDialog.value = true;
 };
 
-// View details
+
 const viewDetails = (item: RoleDetailModel.RoleDetailResponse) => {
   selectedItem.value = item;
   detailsDialog.value = true;
 };
 
-// Delete item
+
 const deleteItem = async () => {
   if (itemToDelete.value) {
     deleteLoading.value = true;
     try {
-      // Use both role_id and sub_menu_id as query params
+      
       const roleId = itemToDelete.value.role_id
       const subMenuId = itemToDelete.value.sub_menu_id || itemToDelete.value.fuu_details?.sub_menu?.sub_menu_id
       await axios.delete(`api/roledetail-delete/?role_id=${roleId}&sub_menu_id=${subMenuId}`, {
@@ -452,7 +455,7 @@ onMounted(async () => {
           </v-col>
           <v-spacer />
          
-           <v-col cols="12" md="3">
+           <v-col cols="12" md="5">
             <v-select
               v-model="selectedMenuId"
               :items="menuItems"
@@ -468,7 +471,7 @@ onMounted(async () => {
               class="justify-end"
             >
              <template v-slot:selection="{ item }">
-            {{ item.raw.menu_name_la }}({{ item.raw.module_Id }})
+            {{ item.raw.menu_name_la }}({{ item.raw.menu_id }})
           </template>
 
           <template v-slot:item="{ props, item }">
