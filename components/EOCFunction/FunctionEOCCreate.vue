@@ -46,16 +46,18 @@
                     no-data-text="ບໍ່ພົບຂໍ້ມູນ Module"
                     :error-messages="moduleError"
                   >
-                    <template v-slot:item="{ props, item }">
-                      <v-list-item v-bind="props">
-                        <template v-slot:prepend>
-                          <v-avatar size="32" color="primary" variant="tonal">
-                            <v-icon size="18">mdi-package-variant</v-icon>
-                          </v-avatar>
-                        </template>
-                        <v-list-item-title>{{item.raw.module_name_en }} - {{ item.raw.module_Id }}</v-list-item-title>
-                      </v-list-item>
-                    </template>
+                  <template v-slot:item="{ props, item }">
+                    <v-list-item v-bind="props">
+                      <template v-slot:prepend>
+                        <v-avatar size="32" color="primary" variant="tonal">
+                          <v-icon size="18">mdi-package-variant</v-icon>
+                        </v-avatar>
+                      </template>
+                      <!-- <v-list-item-title>
+                        {{ item.raw.module_name_la }} ({{ item.raw.module_Id }})
+                      </v-list-item-title> -->
+                    </v-list-item>
+                  </template>
                     <template v-slot:selection="{ item }">
                       {{ item.value }} - {{ item.title }}
                     </template>
@@ -70,8 +72,8 @@
                     :loading="loadingFunctions"
                     :disabled="loadingFunctions"
                     label="ເລືອກ Function *"
-                    item-title="description_la"
-                    item-value="function_id"
+                    item-title="title"
+                    item-value="value"
                     variant="outlined"
                     prepend-inner-icon="mdi-function"
                     :rules="[rules.required]"
@@ -86,13 +88,10 @@
                             <v-icon size="18">mdi-function</v-icon>
                           </v-avatar>
                         </template>
-                        <v-list-item-subtitle>
-                          ID: {{ item.raw.function_id }} • {{ item.raw.description_en || 'No English description' }}
-                        </v-list-item-subtitle>
                       </v-list-item>
                     </template>
                     <template v-slot:selection="{ item }">
-                      {{ item.value }} - {{ item.title }}
+                      {{ item.title }}
                     </template>
                   </v-select>
                 </v-col>
@@ -143,8 +142,7 @@
                             <span class="font-weight-bold">{{ item.raw.value }}</span>
                           </v-avatar>
                         </template>
-                        <v-list-item-title>{{ item.raw.title }}</v-list-item-title>
-                        <v-list-item-subtitle>{{ item.raw.description }}</v-list-item-subtitle>
+          
                       </v-list-item>
                     </template>
                   </v-select>
@@ -318,17 +316,17 @@ const functionOptions = ref([])
 // Static options
 const eocTypeOptions = ref([
   { 
-    title: 'EOD - End of Day Processing', 
+    title: 'EOD - ປິດບັນຊີປະຈາໍາວັນ', 
     value: 'EOD', 
     description: 'ປິດບັນຊີປະຈາໍາວັນ' 
   },
   { 
-    title: 'EOM - End oF Month Processing', 
+    title: 'EOM - ປິດບັນຊີປະຈາໍາເດືອນ', 
     value: 'SOD', 
     description: 'ປິດບັນຊີປະຈາໍາເດືອນ' 
   },
   { 
-    title: 'RPT - End of Year Processing', 
+    title: 'RPT - ປິດບັນຊີປະຈາໍາປີ', 
     value: 'RPT', 
     description: 'ປິດບັນຊີປະຈາໍາປີ' 
   },
@@ -390,9 +388,14 @@ const loadModules = async () => {
     
     if (response.data) {
       const modules = response.data.results || response.data
+      // moduleOptions.value = modules.map(module => ({
+      //   title: module.module_name_la || module.module_name || module.module_Id,
+      //   value: module.module_Id, // Ensure this matches the API response field
+      //   ...module
+      // }))
       moduleOptions.value = modules.map(module => ({
-        title: module.module_name_la || module.module_name || module.module_Id,
-        value: module.module_Id, // Ensure this matches the API response field
+        title: `${module.module_name_la} (${module.module_Id})`, // <-- Display as "name (id)"
+        value: module.module_Id,
         ...module
       }))
       
@@ -428,7 +431,7 @@ const loadFunctions = async () => {
       const functions = response.data.results || response.data
       // Transform functions for v-select
       functionOptions.value = functions.map(func => ({
-        title: func.description_la || func.function_id,
+        title: `${func.description_la} (${func.function_id})`,
         value: func.function_id,
         ...func
       }))
