@@ -64,7 +64,7 @@
                   v-model="form.function_id"
                   label="Function ID"
                   variant="outlined"
-                  readonly
+              
                   bg-color="grey-lighten-4"
                   prepend-inner-icon="mdi-identifier"
                 />
