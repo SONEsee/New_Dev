@@ -28,7 +28,7 @@ onMounted(async () => {
 });
 
 watch(res, (newRes) => {
-  // ຖ້າມີຂໍ້ມູນ response ແລະ c_main
+  
   if (newRes && newRes.length > 0) {
     const resData = newRes[0];
     const nextId = resData.c_main + 1;

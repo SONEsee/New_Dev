@@ -15,6 +15,12 @@ export const assetStore = defineStore("asset", {
         },
         isloading: false,
       },
+      respons_filter_asset_type_id:{
+        query: {
+          asset_type_id: "",
+        },
+        isloading: false,
+      },
       isLoading: false,
       form_create_asset: {
         asset_code: "",
@@ -45,6 +51,9 @@ export const assetStore = defineStore("asset", {
             "Content-Type": "application/json",
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
+          params:{
+            ...this.respons_filter_asset_type_id.query
+          }
         });
         if (res.status === 200) {
           this.response_asset_list = res.data;
@@ -361,14 +370,14 @@ export const assetStore = defineStore("asset", {
     activeAssets: (state) => {
       if (!state.response_asset_list) return [];
       return state.response_asset_list.filter(
-        (asset) => asset.RECORD_STAT === "O"
+        (asset) => asset.Record_Status === "O"
       );
     },
 
     inactiveAssets: (state) => {
       if (!state.response_asset_list) return [];
       return state.response_asset_list.filter(
-        (asset) => asset.RECORD_STAT === "C"
+        (asset) => asset.Record_Status === "C"
       );
     },
 
@@ -405,8 +414,8 @@ export const assetStore = defineStore("asset", {
       }
 
       const total = state.response_asset_list.length;
-      const active = state.response_asset_list.filter(a => a.RECORD_STAT === "O").length;
-      const inactive = state.response_asset_list.filter(a => a.RECORD_STAT === "C").length;
+      const active = state.response_asset_list.filter(a => a.Record_Status === "O").length;
+      const inactive = state.response_asset_list.filter(a => a.Record_Status === "C").length;
       const totalValue = state.response_asset_list.reduce((sum, asset) => sum + (asset.value || 0), 0);
       
       const byType = state.response_asset_list.reduce((acc, asset) => {
