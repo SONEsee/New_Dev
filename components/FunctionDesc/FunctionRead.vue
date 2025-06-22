@@ -5,12 +5,12 @@
       <v-col cols="12">
         <div class="d-flex justify-space-between align-center">
           <div>
-            <h1 class="text-h4 font-weight-light mb-1">ຈັດການ Function Description</h1>
-            <p class="text-body-2 text-grey">ຈັດການລາຍລະອຽດ Function ທັງໝົດໃນລະບົບ</p>
+            <h1 class="text-h4 font-weight-light mb-1 text-styles">ຈັດການຕັ້ງຄ່າ</h1>
+            <p class="text-body-2 text-grey">ຈັດການລາຍລະອຽດ ການຕັ້ງຄ່າ ທັງໝົດໃນລະບົບ</p>
           </div>
           <v-btn
             color="primary"
-            @click="$router.push('/functiondesc/create')"
+            @click="goPath('/functiondesc/create')"
             prepend-icon="mdi-plus"
             variant="flat"
             class="text-none"
@@ -47,7 +47,9 @@
               variant="outlined"
               density="comfortable"
               hide-details
-              @change="fetchData"
+              item-title="title"
+              item-value="value"
+              @update:model-value="fetchData"
             />
           </v-col>
           <v-col cols="12" md="4">
@@ -59,7 +61,9 @@
               variant="outlined"
               density="comfortable"
               hide-details
-              @change="fetchData"
+              item-title="title"
+              item-value="value"
+              @update:model-value="fetchData"
             />
           </v-col>
         </v-row>
@@ -105,55 +109,130 @@
 
         <!-- Function ID -->
         <template v-slot:item.function_id="{ item }">
-          <span class="font-weight-medium">{{ item.function_id }}</span>
+          <span class="font-weight-medium text-primary">{{ item.function_id }}</span>
         </template>
 
-        <!-- Record Status -->
+        <!-- Record Status with Action Buttons -->
         <template v-slot:item.Record_Status="{ item }">
-          <v-chip
-            :color="getRecordStatusColor(item.Record_Status)"
-            size="small"
-            variant="tonal"
-            label
-          >
-            {{ getRecordStatusText(item.Record_Status) }}
-          </v-chip>
+          <div class="d-flex align-center gap-2">
+            <v-chip
+              :color="getRecordStatusColor(item.Record_Status)"
+              size="small"
+              variant="tonal"
+              label
+            >
+              {{ getRecordStatusText(item.Record_Status) }}
+            </v-chip>
+            
+            <!-- Open/Close Toggle Buttons -->
+            <div class="d-flex gap-1">
+              <v-tooltip :text="item.Record_Status === 'O' ? 'ປິດ' : 'ເປີດ'" location="top">
+                <template v-slot:activator="{ props }">
+                  <v-btn
+                    v-bind="props"
+                    :icon="item.Record_Status === 'O' ? 'mdi-lock' : 'mdi-lock-open'"
+                    size="x-small"
+                    variant="text"
+                    :color="item.Record_Status === 'O' ? 'error' : 'success'"
+                    @click="toggleRecordStatus(item)"
+                    :loading="actionLoading[`record_${item.function_id}`]"
+                  />
+                </template>
+              </v-tooltip>
+            </div>
+          </div>
         </template>
 
-        <!-- EOD Function -->
+        <!-- EOD Function with Action Buttons -->
         <template v-slot:item.eod_function="{ item }">
-          <v-icon 
-            :icon="item.eod_function === 'Y' ? 'mdi-check-circle' : 'mdi-close-circle'"
-            :color="item.eod_function === 'Y' ? 'success' : 'grey'"
-            size="small"
-          />
+          <div class="d-flex align-center gap-2">
+            <v-chip
+              :color="item.eod_function === 'Y' ? 'success' : 'grey'"
+              size="small"
+              variant="tonal"
+              label
+            >
+              <v-icon 
+                :icon="item.eod_function === 'Y' ? 'mdi-check-circle' : 'mdi-close-circle'"
+                size="small"
+                class="mr-1"
+              />
+              {{ item.eod_function === 'Y' ? 'ເປີດໃຊ້' : 'ປິດໃຊ້' }}
+            </v-chip>
+            
+            <!-- Enable/Disable Toggle Buttons -->
+            <div class="d-flex gap-1">
+              <v-tooltip :text="item.eod_function === 'Y' ? 'ປິດໃຊ້ EOD' : 'ເປີດໃຊ້ EOD'" location="top">
+                <template v-slot:activator="{ props }">
+                  <v-btn
+                    v-bind="props"
+                    :icon="item.eod_function === 'Y' ? 'mdi-toggle-switch' : 'mdi-toggle-switch-off'"
+                    size="x-small"
+                    variant="text"
+                    :color="item.eod_function === 'Y' ? 'warning' : 'success'"
+                    @click="toggleEodFunction(item)"
+                    :loading="actionLoading[`eod_${item.function_id}`]"
+                  />
+                </template>
+              </v-tooltip>
+            </div>
+          </div>
         </template>
 
         <!-- Auth Status -->
         <template v-slot:item.Auth_Status="{ item }">
-          <v-chip
-            v-if="item.Auth_Status"
-            :color="getAuthStatusColor(item.Auth_Status)"
-            size="small"
-            variant="tonal"
-            label
-          >
-            {{ getAuthStatusText(item.Auth_Status) }}
-          </v-chip>
-          <span v-else class="text-grey text-body-2">-</span>
+          <div class="d-flex align-center gap-2">
+            <v-chip
+              v-if="item.Auth_Status"
+              :color="getAuthStatusColor(item.Auth_Status)"
+              size="small"
+              variant="tonal"
+              label
+            >
+              <v-icon 
+                :icon="item.Auth_Status === 'A' ? 'mdi-shield-check' : 'mdi-shield-alert'"
+                size="small"
+                class="mr-1"
+              />
+              {{ getAuthStatusText(item.Auth_Status) }}
+            </v-chip>
+            <span v-else class="text-grey text-body-2">-</span>
+            
+            <!-- Authorize/Unauthorize Toggle Button -->
+            <v-tooltip :text="item.Auth_Status === 'A' ? 'ຍົກເລີກອະນຸມັດ' : 'ອະນຸມັດ'" location="top">
+              <template v-slot:activator="{ props }">
+                <v-btn
+                  v-bind="props"
+                  :icon="item.Auth_Status === 'A' ? 'mdi-shield-remove' : 'mdi-shield-check'"
+                  size="x-small"
+                  variant="text"
+                  :color="item.Auth_Status === 'A' ? 'error' : 'primary'"
+                  @click="toggleAuthStatus(item)"
+                  :loading="actionLoading[`auth_${item.function_id}`]"
+                />
+              </template>
+            </v-tooltip>
+          </div>
         </template>
 
         <!-- Descriptions -->
         <template v-slot:item.description_la="{ item }">
-          <div class="text-truncate" style="max-width: 250px;" :title="item.description_la">
+          <div class="text-truncate" style="max-width: 200px;" :title="item.description_la">
             {{ item.description_la || '-' }}
           </div>
         </template>
 
         <template v-slot:item.description_en="{ item }">
-          <div class="text-truncate" style="max-width: 250px;" :title="item.description_en">
+          <div class="text-truncate" style="max-width: 200px;" :title="item.description_en">
             {{ item.description_en || '-' }}
           </div>
+        </template>
+
+        <!-- Function Order -->
+        <template v-slot:item.function_order="{ item }">
+          <v-chip size="small" variant="outlined" color="info">
+            {{ item.function_order || '-' }}
+          </v-chip>
         </template>
 
         <!-- Date formatting -->
@@ -161,32 +240,38 @@
           <span class="text-body-2">{{ formatDate(item.Maker_DT_Stamp) }}</span>
         </template>
 
+        <!-- Maker ID -->
+        <template v-slot:item.Maker_Id="{ item }">
+          <v-chip size="small" variant="outlined" color="grey">
+            {{ item.Maker_Id || '-' }}
+          </v-chip>
+        </template>
+        
         <!-- Actions -->
         <template v-slot:item.actions="{ item }">
           <div class="d-flex gap-1">
             <v-tooltip text="ເບິ່ງລາຍລະອຽດ" location="top">
-              <template v-slot:activator="{ props }">
+              <!-- <template v-slot:activator="{ props }">
                 <v-btn
                   v-bind="props"
-                  @click="viewItem(item)"
                   icon="mdi-eye-outline"
                   size="small"
                   variant="text"
                   color="primary"
+                  @click="goPath(`/functiondesc/view/${item.function_id}`)"
                 />
-              </template>
+              </template> -->
             </v-tooltip>
             
             <v-tooltip text="ແກ້ໄຂ" location="top">
               <template v-slot:activator="{ props }">
                 <v-btn
                   v-bind="props"
-                  @click="editItem(item)"
-                  icon="mdi-pencil-outline"
+                  icon="mdi-pencil"
                   size="small"
                   variant="text"
                   color="primary"
-                  :disabled="item.Auth_Status === 'A'"
+                  @click="goPath(`/functiondesc/update?function_id=${item.function_id}`)"
                 />
               </template>
             </v-tooltip>
@@ -195,57 +280,15 @@
               <template v-slot:activator="{ props }">
                 <v-btn
                   v-bind="props"
-                  @click="deleteItem(item)"
                   icon="mdi-delete-outline"
                   size="small"
                   variant="text"
                   color="error"
+                  @click="deleteItem(item)"
                   :disabled="item.Auth_Status === 'A'"
                 />
               </template>
             </v-tooltip>
-            
-            <v-menu location="bottom">
-              <template v-slot:activator="{ props }">
-                <v-btn
-                  v-bind="props"
-                  icon="mdi-dots-vertical"
-                  size="small"
-                  variant="text"
-                />
-              </template>
-              <v-list density="compact" elevation="0" class="py-0">
-                <v-list-item 
-                  @click="toggleOpen(item)" 
-                  :disabled="item.Auth_Status !== 'A'"
-                  slim
-                >
-                  <template v-slot:prepend>
-                    <v-icon size="small">
-                      {{ item.Record_Status === 'O' ? 'mdi-close' : 'mdi-check' }}
-                    </v-icon>
-                  </template>
-                  <v-list-item-title>
-                    {{ item.Record_Status === 'O' ? 'ປິດ' : 'ເປີດ' }}
-                  </v-list-item-title>
-                </v-list-item>
-                
-                <v-list-item 
-                  @click="toggleAuth(item)" 
-                  v-if="item.Auth_Status !== undefined"
-                  slim
-                >
-                  <template v-slot:prepend>
-                    <v-icon size="small">
-                      {{ item.Auth_Status === 'A' ? 'mdi-cancel' : 'mdi-check-decagram' }}
-                    </v-icon>
-                  </template>
-                  <v-list-item-title>
-                    {{ item.Auth_Status === 'A' ? 'ຍົກເລີກອະນຸມັດ' : 'ອະນຸມັດ' }}
-                  </v-list-item-title>
-                </v-list-item>
-              </v-list>
-            </v-menu>
           </div>
         </template>
 
@@ -261,25 +304,34 @@
     </v-card>
 
     <!-- Delete Confirmation Dialog -->
-    <v-dialog v-model="deleteDialog" max-width="400" persistent>
-      <v-card>
-        <v-card-text class="pa-6">
-          <div class="text-center">
-            <v-icon size="64" color="error" class="mb-4">mdi-delete-alert-outline</v-icon>
-            <h3 class="text-h6 mb-2">ຢືນຢັນການລຶບ</h3>
-            <p class="text-body-2 text-grey">
-              ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການລຶບ Function Description ນີ້?<br>
-              ການດຳເນີນການນີ້ບໍ່ສາມາດຍົກເລີກໄດ້
-            </p>
+    <v-dialog v-model="deleteDialog" max-width="500" persistent>
+      <v-card class="text-center pa-4">
+        <v-card-text>
+          <div class="mx-auto mb-4">
+            <v-avatar size="80" color="error" class="mb-4">
+              <v-icon size="50" color="white">mdi-delete-alert</v-icon>
+            </v-avatar>
           </div>
+          
+          <h2 class="text-h5 mb-2">ຢືນຢັນການລຶບ</h2>
+          <p class="text-body-1 text-grey-darken-1 mb-4">
+            ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການລຶບ Function Description:
+          </p>
+          <v-chip color="primary" size="large" class="mb-4">
+            {{ itemToDelete?.function_id }}
+          </v-chip>
+          <p class="text-body-2 text-error">
+            ການດຳເນີນການນີ້ບໍ່ສາມາດຍົກເລີກໄດ້
+          </p>
         </v-card-text>
-        <v-divider></v-divider>
-        <v-card-actions class="pa-4">
-          <v-spacer />
+        
+        <v-card-actions class="justify-center gap-3 pb-4">
           <v-btn 
             @click="deleteDialog = false" 
-            variant="text"
-            class="text-none"
+            variant="outlined"
+            color="grey"
+            size="large"
+            class="text-none px-8"
           >
             ຍົກເລີກ
           </v-btn>
@@ -287,7 +339,8 @@
             @click="confirmDelete" 
             color="error" 
             variant="flat"
-            class="text-none"
+            size="large"
+            class="text-none px-8"
             :loading="deleteLoading"
           >
             ລຶບ
@@ -300,23 +353,32 @@
     <v-snackbar 
       v-model="snackbar.show" 
       :color="snackbar.color"
-      :timeout="3000"
+      :timeout="4000"
       location="bottom right"
       variant="flat"
+      elevation="4"
     >
       <div class="d-flex align-center">
-        <v-icon class="mr-2">
+        <v-icon class="mr-3" size="24">
           {{ snackbar.color === 'success' ? 'mdi-check-circle' : 'mdi-alert-circle' }}
         </v-icon>
-        {{ snackbar.message }}
+        <span class="text-body-1">{{ snackbar.message }}</span>
       </div>
+      <template v-slot:actions>
+        <v-btn 
+          icon="mdi-close" 
+          variant="text" 
+          size="small"
+          @click="snackbar.show = false"
+        />
+      </template>
     </v-snackbar>
   </v-container>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { useRouter } from 'vue-router'
 import axios from '@/helpers/axios'
 
 const router = useRouter()
@@ -324,6 +386,7 @@ const router = useRouter()
 // Reactive data
 const loading = ref(false)
 const deleteLoading = ref(false)
+const actionLoading = ref({})
 const items = ref([])
 const totalItems = ref(0)
 const page = ref(1)
@@ -347,29 +410,28 @@ const snackbar = ref({
 
 // Options
 const recordStatusOptions = ref([
+  { title: 'ທັງໝົດ', value: null },
   { title: 'ເປີດ', value: 'O' },
-  { title: 'ປິດ', value: 'C' },
-  { title: 'ໃຊ້ງານ', value: 'Y' },
-  { title: 'ບໍ່ໃຊ້ງານ', value: 'N' }
+  { title: 'ປິດ', value: 'C' }
 ])
 
 const eodFunctionOptions = ref([
-  { title: 'ໃຊ້ງານ', value: 'Y' },
-  { title: 'ບໍ່ໃຊ້', value: 'N' }
+  { title: 'ທັງໝົດ', value: null },
+  { title: 'ເປີດໃຊ້', value: 'Y' },
+  { title: 'ປິດໃຊ້', value: 'N' }
 ])
 
 // Table headers
 const headers = ref([
-  { title: 'Function ID', key: 'function_id', sortable: true },
+  { title: 'Function ID', key: 'function_id', sortable: true, width: '120px' },
   { title: 'ລາຍລະອຽດ (ລາວ)', key: 'description_la', sortable: true },
   { title: 'ລາຍລະອຽດ (ອັງກິດ)', key: 'description_en', sortable: true },
-  { title: 'ລໍາດັບ', key: 'function_order', sortable: true, align: 'center' },
-  { title: 'EOD', key: 'eod_function', sortable: true, align: 'center' },
-  { title: 'ສະຖານະ', key: 'Record_Status', sortable: true, align: 'center' },
-  { title: 'ອະນຸມັດ', key: 'Auth_Status', sortable: false, align: 'center' },
-  { title: 'ຜູ້ສ້າງ', key: 'Maker_Id', sortable: false },
-  { title: 'ວັນທີ', key: 'Maker_DT_Stamp', sortable: true },
-  { title: '', key: 'actions', sortable: false, align: 'center', width: '150px' }
+  { title: 'ລໍາດັບ', key: 'function_order', sortable: true, align: 'center', width: '100px' },
+  { title: 'EOD Function', key: 'eod_function', sortable: true, align: 'center', width: '140px' },
+  { title: 'ສະຖານະ Record', key: 'Record_Status', sortable: true, align: 'center', width: '140px' },
+  { title: 'ຜູ້ສ້າງ', key: 'Maker_Id', sortable: false, width: '100px' },
+  { title: 'ວັນທີສ້າງ', key: 'Maker_DT_Stamp', sortable: true, width: '140px' },
+  { title: 'ຈັດການ', key: 'actions', sortable: false, align: 'center', width: '120px' }
 ])
 
 // Computed statistics
@@ -382,7 +444,7 @@ const statistics = computed(() => [
   },
   {
     title: 'ໃຊ້ງານ',
-    value: items.value.filter(item => item.Record_Status === 'Y').length || 0,
+    value: items.value.filter(item => item.Record_Status === 'Y' || item.Record_Status === 'O').length || 0,
     icon: 'mdi-check-circle-outline',
     color: 'success'
   },
@@ -401,6 +463,14 @@ const statistics = computed(() => [
 ])
 
 // Methods
+const goPath = (path) => {
+  router.push(path)
+}
+
+const setActionLoading = (key, value) => {
+  actionLoading.value[key] = value
+}
+
 const loadItems = ({ page, itemsPerPage, sortBy }) => {
   fetchData()
 }
@@ -412,7 +482,9 @@ const fetchData = async () => {
       page: page.value,
       page_size: itemsPerPage.value,
       search: searchQuery.value || '',
-      ...Object.fromEntries(Object.entries(filters.value).filter(([_, v]) => v !== null))
+      ...Object.fromEntries(
+        Object.entries(filters.value).filter(([_, v]) => v !== null && v !== '')
+      )
     }
 
     const response = await axios.get('/api/function-desc/', { params })
@@ -442,14 +514,6 @@ const debounceSearch = (() => {
   }
 })()
 
-const viewItem = (item) => {
-  router.push(`/function-desc/view/${item.function_id}`)
-}
-
-const editItem = (item) => {
-  router.push(`/function-desc/update/${item.function_id}`)
-}
-
 const deleteItem = (item) => {
   itemToDelete.value = item
   deleteDialog.value = true
@@ -472,30 +536,48 @@ const confirmDelete = async () => {
   }
 }
 
-const toggleOpen = async (item) => {
+const toggleRecordStatus = async (item) => {
   const action = item.Record_Status === 'O' ? 'set_close' : 'set_open'
-  await performAction(item.function_id, action)
-}
-
-const toggleAuth = async (item) => {
-  const action = item.Auth_Status === 'A' ? 'unauthorize' : 'authorize'
-  await performAction(item.function_id, action)
-}
-
-const performAction = async (id, action) => {
+  const loadingKey = `record_${item.function_id}`
+  
+  setActionLoading(loadingKey, true)
   try {
-    const response = await axios.post(`/api/function-desc/${id}/${action}/`)
+    const response = await axios.post(`/api/function-desc/${item.function_id}/${action}/`)
     
     if (response.data) {
       showSnackbar(response.data.message || 'ດຳເນີນການສຳເລັດ', 'success')
       fetchData()
     }
   } catch (error) {
-    console.error('Error performing action:', error)
+    console.error('Error toggling record status:', error)
     const errorMessage = error.response?.data?.detail || error.response?.data?.error || 'ເກີດຂໍ້ຜິດພາດ'
     showSnackbar(errorMessage, 'error')
+  } finally {
+    setActionLoading(loadingKey, false)
   }
 }
+
+const toggleEodFunction = async (item) => {
+  const action = item.eod_function === 'Y' ? 'set_disable_eoc' : 'set_enable_eoc'
+  const loadingKey = `eod_${item.function_id}`
+  
+  setActionLoading(loadingKey, true)
+  try {
+    const response = await axios.post(`/api/function-desc/${item.function_id}/${action}/`)
+    
+    if (response.data) {
+      showSnackbar(response.data.message || 'ດຳເນີນການ EOD ສຳເລັດ', 'success')
+      fetchData()
+    }
+  } catch (error) {
+    console.error('Error toggling EOD function:', error)
+    const errorMessage = error.response?.data?.detail || error.response?.data?.error || 'ເກີດຂໍ້ຜິດພາດ'
+    showSnackbar(errorMessage, 'error')
+  } finally {
+    setActionLoading(loadingKey, false)
+  }
+}
+
 
 const getRecordStatusColor = (status) => {
   const colors = {
@@ -511,8 +593,6 @@ const getRecordStatusText = (status) => {
   const texts = {
     'O': 'ເປີດ',
     'C': 'ປິດ',
-    'Y': 'ໃຊ້ງານ',
-    'N': 'ບໍ່ໃຊ້ງານ'
   }
   return texts[status] || status
 }
@@ -562,6 +642,7 @@ onMounted(() => {
 :deep(.v-data-table-header__content) {
   font-weight: 600;
   color: #616161;
+  font-size: 13px;
 }
 
 .border {
@@ -584,11 +665,49 @@ onMounted(() => {
 
 /* Hover effects */
 :deep(.v-data-table__tr:hover) {
-  background-color: #f5f5f5 !important;
+  background-color: #f8f9fa !important;
 }
 
 /* Loading skeleton */
 :deep(.v-skeleton-loader__bone) {
   background-color: #f5f5f5 !important;
+}
+
+/* Table row spacing */
+:deep(.v-data-table__td) {
+  padding: 8px 12px !important;
+}
+
+/* Action buttons spacing */
+.gap-1 {
+  gap: 4px;
+}
+
+.gap-2 {
+  gap: 8px;
+}
+
+.gap-3 {
+  gap: 12px;
+}
+
+/* Status chips alignment */
+:deep(.v-chip--size-small) {
+  font-size: 11px;
+  height: 24px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  :deep(.v-data-table__td) {
+    padding: 6px 8px !important;
+    font-size: 12px;
+  }
+  
+  :deep(.v-btn--size-small) {
+    min-width: 32px;
+    width: 32px;
+    height: 32px;
+  }
 }
 </style>

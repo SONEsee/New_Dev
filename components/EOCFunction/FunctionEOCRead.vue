@@ -8,7 +8,7 @@
           <h2 class="text-h4 font-weight-medium text-primary">ການຈັດການ EOC Maintain</h2>
           <v-btn
             color="primary"
-            @click="$router.push('/eoc-maintain/create')"
+            @click="$router.push('/eocfunction/create')"
             prepend-icon="mdi-plus"
             variant="elevated"
             class="text-none"
@@ -216,6 +216,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import axios from "@/helpers/axios";
 
 const router = useRouter()
 
@@ -307,7 +308,7 @@ const statistics = computed(() => [
 const fetchData = async () => {
   loading.value = true
   try {
-    const token = localStorage.getItem('authToken')
+    const token = localStorage.getItem('token')
     const params = new URLSearchParams({
       page: page.value,
       page_size: itemsPerPage.value,
@@ -315,12 +316,15 @@ const fetchData = async () => {
       ...Object.fromEntries(Object.entries(filters.value).filter(([_, v]) => v !== null))
     })
 
-    const response = await fetch(`/api/v1/eoc-maintain/?${params}`, {
+    const response = await axios.get(`/api/eoc-maintain/?${params}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       }
     })
+
+    console.log('Response data:', response.data);
+    
 
     if (response.ok) {
       const data = await response.json()
@@ -339,7 +343,7 @@ const fetchData = async () => {
 const fetchStatistics = async () => {
   try {
     const token = localStorage.getItem('authToken')
-    const response = await fetch('/api/v1/eoc-maintain/statistics/', {
+    const response = await fetch('/api/eoc-maintain/statistics/', {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
@@ -369,7 +373,7 @@ const viewItem = (item) => {
 }
 
 const editItem = (item) => {
-  router.push(`/eoc-maintain/edit/${item.eoc_id}`)
+  router.push(`/eoc-maintain/update${item.eoc_id}`)
 }
 
 const deleteItem = (item) => {
@@ -380,7 +384,7 @@ const deleteItem = (item) => {
 const confirmDelete = async () => {
   try {
     const token = localStorage.getItem('authToken')
-    const response = await fetch(`/api/v1/eoc-maintain/${itemToDelete.value.eoc_id}/`, {
+    const response = await fetch(`/api/eoc-maintain/${itemToDelete.value.eoc_id}/`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -417,7 +421,7 @@ const toggleAuth = async (item) => {
 const performAction = async (id, action) => {
   try {
     const token = localStorage.getItem('authToken')
-    const response = await fetch(`/api/v1/eoc-maintain/${id}/${action}/`, {
+    const response = await fetch(`/api/eoc-maintain/${id}/${action}/`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,

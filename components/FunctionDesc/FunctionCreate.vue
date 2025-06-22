@@ -112,53 +112,10 @@
               <div class="mb-6">
                 <h3 class="text-h6 font-weight-regular mb-4">ການຕັ້ງຄ່າ</h3>
                 <v-row>
-                  <!-- EOD Function -->
-                  <v-col cols="12" md="6">
-                    <v-select
-                      v-model="form.eod_function"
-                      :items="eodFunctionOptions"
-                      label="Function EOD"
-                      variant="outlined"
-                      density="comfortable"
-                    >
-                      <template v-slot:prepend-inner>
-                        <v-icon size="small" color="grey">mdi-clock-end</v-icon>
-                      </template>
-                      <template v-slot:selection="{ item }">
-                        <v-chip 
-                          :color="item.value === 'Y' ? 'success' : 'grey'" 
-                          size="small"
-                          variant="tonal"
-                        >
-                          {{ item.title }}
-                        </v-chip>
-                      </template>
-                    </v-select>
-                  </v-col>
+
 
                   <!-- Record Status -->
-                  <v-col cols="12" md="6">
-                    <v-select
-                      v-model="form.Record_Status"
-                      :items="recordStatusOptions"
-                      label="ສະຖານະ Record"
-                      variant="outlined"
-                      density="comfortable"
-                    >
-                      <template v-slot:prepend-inner>
-                        <v-icon size="small" color="grey">mdi-toggle-switch</v-icon>
-                      </template>
-                      <template v-slot:selection="{ item }">
-                        <v-chip 
-                          :color="getStatusColor(item.value)" 
-                          size="small"
-                          variant="tonal"
-                        >
-                          {{ item.title }}
-                        </v-chip>
-                      </template>
-                    </v-select>
-                  </v-col>
+                 
                 </v-row>
               </div>
 
@@ -376,7 +333,7 @@ const createAnother = () => {
 }
 
 const goToList = () => {
-  router.push('/function-desc')
+  router.push('/functiondesc')
 }
 
 const getStatusColor = (status) => {
