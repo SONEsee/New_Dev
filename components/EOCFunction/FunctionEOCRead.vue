@@ -1,17 +1,20 @@
-
 <template>
-  <v-container fluid class="pa-4">
+  <v-container fluid class="pa-6">
     <!-- Header Section -->
-    <v-row class="mb-4">
+    <v-row class="mb-6">
       <v-col cols="12">
-        <div class="d-flex justify-space-between align-center mb-4">
-          <h2 class="text-h4 font-weight-medium text-primary">ການຈັດການ EOC Maintain</h2>
+        <div class="d-flex justify-space-between align-center">
+          <div>
+            <h1 class="text-h4 font-weight-light mb-1">ການຈັດການ EOC Maintain</h1>
+            <p class="text-body-2 text-grey">ຈັດການການຕັ້ງຄ່າ EOC Functions ທັງໝົດໃນລະບົບ</p>
+          </div>
           <v-btn
             color="primary"
-            @click="$router.push('/eocfunction/create')"
+            @click="goPath('/eocfunction/create')"
             prepend-icon="mdi-plus"
-            variant="elevated"
+            variant="flat"
             class="text-none"
+            elevation="0"
           >
             ສ້າງໃໝ່
           </v-btn>
@@ -19,82 +22,87 @@
       </v-col>
     </v-row>
 
-    <!-- Filters Section -->
-    <v-row class="mb-4">
-      <v-col cols="12" md="3">
-        <v-select
-          v-model="filters.eoc_type"
-          :items="eocTypeOptions"
-          label="ປະເພດ EOC"
-          clearable
-          outlined
-          dense
-          @change="fetchData"
-        />
-      </v-col>
-      <v-col cols="12" md="3">
-        <v-select
-          v-model="filters.Record_Status"
-          :items="recordStatOptions"
-          label="ສະຖານະ Record"
-          clearable
-          outlined
-          dense
-          @change="fetchData"
-        />
-      </v-col>
-      <v-col cols="12" md="3">
-        <v-select
-          v-model="filters.Auth_Status"
-          :items="authStatusOptions"
-          label="ສະຖານະການອະນຸມັດ"
-          clearable
-          outlined
-          dense
-          @change="fetchData"
-        />
-      </v-col>
-      <v-col cols="12" md="3">
-        <v-text-field
-          v-model="searchQuery"
-          label="ຄົ້ນຫາ"
-          prepend-inner-icon="mdi-magnify"
-          clearable
-          outlined
-          dense
-          @input="debounceSearch"
-        />
-      </v-col>
-    </v-row>
+    <!-- Search and Filters -->
+    <v-card class="mb-6" elevation="0" color="grey-lighten-5">
+      <v-card-text>
+        <v-row>
+          <v-col cols="12" md="3">
+            <v-text-field
+              v-model="searchQuery"
+              label="ຄົ້ນຫາ"
+              prepend-inner-icon="mdi-magnify"
+              clearable
+              variant="outlined"
+              density="comfortable"
+              hide-details
+              @input="debounceSearch"
+            />
+          </v-col>
+          <v-col cols="12" md="3">
+            <v-select
+              v-model="filters.eoc_type"
+              :items="eocTypeOptions"
+              label="ປະເພດ EOC"
+              clearable
+              variant="outlined"
+              density="comfortable"
+              hide-details
+              item-title="title"
+              item-value="value"
+              @update:model-value="fetchData"
+            />
+          </v-col>
+          <v-col cols="12" md="3">
+            <v-select
+              v-model="filters.Record_Status"
+              :items="recordStatusOptions"
+              label="ສະຖານະ Record"
+              clearable
+              variant="outlined"
+              density="comfortable"
+              hide-details
+              item-title="title"
+              item-value="value"
+              @update:model-value="fetchData"
+            />
+          </v-col>
+          <v-col cols="12" md="3">
+            <v-select
+              v-model="filters.Auth_Status"
+              :items="authStatusOptions"
+              label="ສະຖານະການອະນຸມັດ"
+              clearable
+              variant="outlined"
+              density="comfortable"
+              hide-details
+              item-title="title"
+              item-value="value"
+              @update:model-value="fetchData"
+            />
+          </v-col>
+        </v-row>
+      </v-card-text>
+    </v-card>
 
     <!-- Statistics Cards -->
-    <v-row class="mb-4">
-      <v-col cols="12" md="3" v-for="stat in statistics" :key="stat.title">
-        <v-card class="pa-3" outlined>
-          <div class="d-flex align-center">
-            <v-icon :color="stat.color" size="32" class="mr-3">{{ stat.icon }}</v-icon>
+    <v-row class="mb-6">
+      <v-col cols="12" sm="6" md="3" v-for="stat in statistics" :key="stat.title">
+        <v-card elevation="0" class="border">
+          <v-card-text class="d-flex align-center pa-4">
+            <v-avatar :color="stat.color" size="48" class="mr-4">
+              <v-icon color="white" size="24">{{ stat.icon }}</v-icon>
+            </v-avatar>
             <div>
-              <div class="text-h6 font-weight-bold">{{ stat.value }}</div>
-              <div class="text-caption text-grey-darken-1">{{ stat.title }}</div>
+              <div class="text-h5 font-weight-medium">{{ stat.value }}</div>
+              <div class="text-body-2 text-grey-darken-1">{{ stat.title }}</div>
             </div>
-          </div>
+          </v-card-text>
         </v-card>
       </v-col>
     </v-row>
 
     <!-- Data Table -->
-    <v-card outlined>
-      <v-card-title class="bg-grey-lighten-4 pa-4">
-        <span class="text-h6">ລາຍການ EOC Maintain</span>
-        <v-spacer />
-        <v-btn
-          @click="fetchData"
-          icon="mdi-refresh"
-          variant="text"
-          size="small"
-        />
-      </v-card-title>
-
+    <v-card elevation="0" class="border">
       <v-data-table-server
         v-model:items-per-page="itemsPerPage"
         v-model:page="page"
@@ -103,112 +111,260 @@
         :items-length="totalItems"
         :loading="loading"
         :search="searchQuery"
-        @update:options="fetchData"
+        @update:options="loadItems"
         class="elevation-0"
         item-value="eoc_id"
+        hover
       >
-        <!-- Status Chips -->
-        <template v-slot:item.Record_Status="{ item }">
+        <!-- Custom loading -->
+        <template v-slot:loading>
+          <v-skeleton-loader type="table-row@10" />
+        </template>
+
+        <!-- EOC ID -->
+        <template v-slot:item.eoc_id="{ item }">
+          <span class="font-weight-medium text-primary">{{ item.eoc_id }}</span>
+        </template>
+
+        <!-- EOC Type -->
+        <template v-slot:item.eoc_type="{ item }">
           <v-chip
-            :color="getStatusColor(item.Record_Status)"
+            :color="getEocTypeColor(item.eoc_type)"
             size="small"
-            variant="flat"
+            variant="tonal"
+            label
           >
-            {{ getStatusText(item.Record_Status) }}
+            {{ item.eoc_type }}
           </v-chip>
         </template>
 
-        <template v-slot:item.Auth_Status="{ item }">
-          <v-chip
-            :color="getAuthStatusColor(item.Auth_Status)"
-            size="small"
-            variant="flat"
-          >
-            {{ getAuthStatusText(item.Auth_Status) }}
+        <!-- Module -->
+        <template v-slot:item.module_id="{ item }">
+          <v-chip size="small" variant="outlined" color="info">
+            {{ item.module_id }}
           </v-chip>
+        </template>
+
+        <!-- Function -->
+        <template v-slot:item.function_id="{ item }">
+          <div class="text-truncate" style="max-width: 200px;" :title="item.function_name">
+            <v-chip size="small" variant="outlined" color="success">
+              {{ item.function_id }}
+            </v-chip>
+          </div>
+        </template>
+
+        <!-- Record Status with Action Buttons -->
+        <template v-slot:item.Record_Status="{ item }">
+          <div class="d-flex align-center gap-2">
+            <v-chip
+              :color="getRecordStatusColor(item.Record_Status)"
+              size="small"
+              variant="tonal"
+              label
+            >
+              {{ getRecordStatusText(item.Record_Status) }}
+            </v-chip>
+            
+            <!-- Open/Close Toggle Buttons -->
+            <div class="d-flex gap-1">
+              <v-tooltip :text="item.Record_Status === 'O' ? 'ປິດ' : 'ເປີດ'" location="top">
+                <template v-slot:activator="{ props }">
+                  <v-btn
+                    v-bind="props"
+                    :icon="item.Record_Status === 'O' ? 'mdi-lock' : 'mdi-lock-open'"
+                    size="x-small"
+                    variant="text"
+                    :color="item.Record_Status === 'O' ? 'error' : 'success'"
+                    @click="toggleRecordStatus(item)"
+                    :disabled="item.Auth_Status !== 'A'"
+                    :loading="actionLoading[`record_${item.eoc_id}`]"
+                  />
+                </template>
+              </v-tooltip>
+            </div>
+          </div>
+        </template>
+
+        <!-- Auth Status with Action Buttons -->
+        <template v-slot:item.Auth_Status="{ item }">
+          <div class="d-flex align-center gap-2">
+            <v-chip
+              :color="getAuthStatusColor(item.Auth_Status)"
+              size="small"
+              variant="tonal"
+              label
+            >
+              <v-icon 
+                :icon="item.Auth_Status === 'A' ? 'mdi-shield-check' : 'mdi-shield-alert'"
+                size="small"
+                class="mr-1"
+              />
+              {{ getAuthStatusText(item.Auth_Status) }}
+            </v-chip>
+            
+            <!-- Authorize/Unauthorize Toggle Button -->
+            <v-tooltip :text="item.Auth_Status === 'A' ? 'ຍົກເລີກອະນຸມັດ' : 'ອະນຸມັດ'" location="top">
+              <template v-slot:activator="{ props }">
+                <v-btn
+                  v-bind="props"
+                  :icon="item.Auth_Status === 'A' ? 'mdi-shield-remove' : 'mdi-shield-check'"
+                  size="x-small"
+                  variant="text"
+                  :color="item.Auth_Status === 'A' ? 'error' : 'primary'"
+                  @click="toggleAuthStatus(item)"
+                  :loading="actionLoading[`auth_${item.eoc_id}`]"
+                />
+              </template>
+            </v-tooltip>
+          </div>
+        </template>
+
+        <!-- Sequence Number -->
+        <template v-slot:item.eoc_seq_no="{ item }">
+          <v-chip size="small" variant="outlined" color="purple">
+            {{ item.eoc_seq_no }}
+          </v-chip>
+        </template>
+
+        <!-- Maker Name -->
+        <template v-slot:item.maker_name="{ item }">
+          <v-chip size="small" variant="outlined" color="grey">
+            {{ item.maker_name || item.Maker_Id || '-' }}
+          </v-chip>
+        </template>
+
+        <!-- Date formatting -->
+        <template v-slot:item.Maker_DT_Stamp="{ item }">
+          <span class="text-body-2">{{ formatDate(item.Maker_DT_Stamp) }}</span>
         </template>
 
         <!-- Actions -->
         <template v-slot:item.actions="{ item }">
           <div class="d-flex gap-1">
-            <v-btn
-              @click="viewItem(item)"
-              icon="mdi-eye"
-              size="small"
-              variant="text"
-              color="blue"
-            />
-            <v-btn
-              @click="editItem(item)"
-              icon="mdi-pencil"
-              size="small"
-              variant="text"
-              color="green"
-              :disabled="item.Auth_Status === 'A'"
-            />
-            <v-btn
-              @click="deleteItem(item)"
-              icon="mdi-delete"
-              size="small"
-              variant="text"
-              color="red"
-              :disabled="item.Auth_Status === 'A'"
-            />
-            
-            <!-- Status Actions -->
-            <v-menu>
+            <v-tooltip text="ເບິ່ງລາຍລະອຽດ" location="top">
               <template v-slot:activator="{ props }">
                 <v-btn
                   v-bind="props"
-                  icon="mdi-dots-vertical"
+                  icon="mdi-eye-outline"
                   size="small"
                   variant="text"
+                  color="primary"
+                  @click="viewItem(item)"
                 />
               </template>
-              <v-list density="compact">
-                <v-list-item @click="toggleOpen(item)" :disabled="item.Auth_Status !== 'A'">
-                  <v-list-item-title>
-                    {{ item.Record_Status === 'O' ? 'ປິດ' : 'ເປີດ' }}
-                  </v-list-item-title>
-                </v-list-item>
-                <v-list-item @click="toggleAuth(item)">
-                  <v-list-item-title>
-                    {{ item.Auth_Status === 'A' ? 'ຍົກເລີກອະນຸມັດ' : 'ອະນຸມັດ' }}
-                  </v-list-item-title>
-                </v-list-item>
-              </v-list>
-            </v-menu>
+            </v-tooltip>
+            
+            <v-tooltip text="ແກ້ໄຂ" location="top">
+              <template v-slot:activator="{ props }">
+                <v-btn
+                  v-bind="props"
+                  icon="mdi-pencil"
+                  size="small"
+                  variant="text"
+                  color="primary"
+                  @click="goPath(`/eocfunction/update?eoc_id=${item.eoc_id}`)"
+                  :disabled="item.Auth_Status === 'A'"
+                />
+              </template>
+            </v-tooltip>
+            
+            <v-tooltip text="ລຶບ" location="top">
+              <template v-slot:activator="{ props }">
+                <v-btn
+                  v-bind="props"
+                  icon="mdi-delete-outline"
+                  size="small"
+                  variant="text"
+                  color="error"
+                  @click="deleteItem(item)"
+                  :disabled="item.Auth_Status === 'A'"
+                />
+              </template>
+            </v-tooltip>
           </div>
         </template>
 
         <!-- No Data -->
         <template v-slot:no-data>
-          <div class="text-center pa-4">
-            <v-icon size="64" color="grey-lighten-2">mdi-database-off</v-icon>
-            <div class="text-h6 text-grey-darken-1 mt-2">ບໍ່ມີຂໍ້ມູນ</div>
+          <div class="text-center py-12">
+            <v-icon size="64" color="grey-lighten-2" class="mb-4">mdi-database-search-outline</v-icon>
+            <div class="text-h6 text-grey mb-2">ບໍ່ພົບຂໍ້ມູນ</div>
+            <div class="text-body-2 text-grey">ບໍ່ມີຂໍ້ມູນ EOC Maintain ໃນລະບົບ</div>
           </div>
         </template>
       </v-data-table-server>
     </v-card>
 
     <!-- Delete Confirmation Dialog -->
-    <v-dialog v-model="deleteDialog" max-width="400">
-      <v-card>
-        <v-card-title class="text-h6">ຢືນຢັນການລຶບ</v-card-title>
+    <v-dialog v-model="deleteDialog" max-width="500" persistent>
+      <v-card class="text-center pa-4">
         <v-card-text>
-          ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການລຶບ EOC Maintain ນີ້?
+          <div class="mx-auto mb-4">
+            <v-avatar size="80" color="error" class="mb-4">
+              <v-icon size="50" color="white">mdi-delete-alert</v-icon>
+            </v-avatar>
+          </div>
+          
+          <h2 class="text-h5 mb-2">ຢືນຢັນການລຶບ</h2>
+          <p class="text-body-1 text-grey-darken-1 mb-4">
+            ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການລຶບ EOC Maintain:
+          </p>
+          <v-chip color="primary" size="large" class="mb-4">
+            {{ itemToDelete?.eoc_id }}
+          </v-chip>
+          <p class="text-body-2 text-error">
+            ການດຳເນີນການນີ້ບໍ່ສາມາດຍົກເລີກໄດ້
+          </p>
         </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn @click="deleteDialog = false" variant="text">ຍົກເລີກ</v-btn>
-          <v-btn @click="confirmDelete" color="red" variant="flat">ລຶບ</v-btn>
+        
+        <v-card-actions class="justify-center gap-3 pb-4">
+          <v-btn 
+            @click="deleteDialog = false" 
+            variant="outlined"
+            color="grey"
+            size="large"
+            class="text-none px-8"
+          >
+            ຍົກເລີກ
+          </v-btn>
+          <v-btn 
+            @click="confirmDelete" 
+            color="error" 
+            variant="flat"
+            size="large"
+            class="text-none px-8"
+            :loading="deleteLoading"
+          >
+            ລຶບ
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
-    <!-- Snackbar for notifications -->
-    <v-snackbar v-model="snackbar.show" :color="snackbar.color" timeout="3000">
-      {{ snackbar.message }}
+    <!-- Snackbar -->
+    <v-snackbar 
+      v-model="snackbar.show" 
+      :color="snackbar.color"
+      :timeout="4000"
+      location="bottom right"
+      variant="flat"
+      elevation="4"
+    >
+      <div class="d-flex align-center">
+        <v-icon class="mr-3" size="24">
+          {{ snackbar.color === 'success' ? 'mdi-check-circle' : 'mdi-alert-circle' }}
+        </v-icon>
+        <span class="text-body-1">{{ snackbar.message }}</span>
+      </div>
+      <template v-slot:actions>
+        <v-btn 
+          icon="mdi-close" 
+          variant="text" 
+          size="small"
+          @click="snackbar.show = false"
+        />
+      </template>
     </v-snackbar>
   </v-container>
 </template>
@@ -216,12 +372,14 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from "@/helpers/axios";
+import axios from '@/helpers/axios'
 
 const router = useRouter()
 
 // Reactive data
 const loading = ref(false)
+const deleteLoading = ref(false)
+const actionLoading = ref({})
 const items = ref([])
 const totalItems = ref(0)
 const page = ref(1)
@@ -229,7 +387,6 @@ const itemsPerPage = ref(10)
 const searchQuery = ref('')
 const deleteDialog = ref(false)
 const itemToDelete = ref(null)
-const stats = ref({})
 
 // Filters
 const filters = ref({
@@ -247,114 +404,104 @@ const snackbar = ref({
 
 // Options
 const eocTypeOptions = ref([
-  { title: 'Type A', value: 'A' },
-  { title: 'Type B', value: 'B' },
-  { title: 'Type C', value: 'C' }
+  { title: 'ທັງໝົດ', value: null },
+  { title: 'EOD - End of Day', value: 'EOD' },
+  { title: 'EOM - End of Month', value: 'EOM' },
+  { title: 'EOY - End of Year', value: 'EOY' }
 ])
 
-const recordStatOptions = ref([
+const recordStatusOptions = ref([
+  { title: 'ທັງໝົດ', value: null },
   { title: 'ເປີດ', value: 'O' },
   { title: 'ປິດ', value: 'C' }
 ])
 
 const authStatusOptions = ref([
-  { title: 'ອະນຍມັດແລ້ວ', value: 'A' },
+  { title: 'ທັງໝົດ', value: null },
+  { title: 'ອະນຸມັດແລ້ວ', value: 'A' },
   { title: 'ລໍຖ້າອະນຸມັດ', value: 'U' }
 ])
 
 // Table headers
 const headers = ref([
-  { title: 'ID', key: 'eoc_id', sortable: true },
-  { title: 'ລໍາດັບ', key: 'eoc_seq_no', sortable: true },
-  { title: 'ປະເພດ EOC', key: 'eoc_type', sortable: true },
-  { title: 'Module', key: 'module_name', sortable: false },
-  { title: 'Function', key: 'function_name', sortable: false },
-  { title: 'ສະຖານະ Record', key: 'Record_Status', sortable: true },
-  { title: 'ສະຖານະການອະນຸມັດ', key: 'Auth_Status', sortable: true },
-  { title: 'ຜູ້ສ້າງ', key: 'maker_name', sortable: false },
-  { title: 'ວັນທີສ້າງ', key: 'Maker_DT_Stamp', sortable: true },
-  { title: 'ການດໍາເນີນງານ', key: 'actions', sortable: false, width: '200px' }
+  { title: 'EOC ID', key: 'eoc_id', sortable: true, width: '100px' },
+  { title: 'ລໍາດັບ', key: 'eoc_seq_no', sortable: true, align: 'center', width: '80px' },
+  { title: 'ປະເພດ EOC', key: 'eoc_type', sortable: true, align: 'center', width: '100px' },
+  { title: 'Module', key: 'module_id', sortable: false, align: 'center', width: '100px' },
+  { title: 'Function', key: 'function_id', sortable: false, width: '120px' },
+  { title: 'ສະຖານະ Record', key: 'Record_Status', sortable: true, align: 'center', width: '140px' },
+  { title: 'ສະຖານະອະນຸມັດ', key: 'Auth_Status', sortable: true, align: 'center', width: '140px' },
+  { title: 'ຜູ້ສ້າງ', key: 'maker_name', sortable: false, width: '100px' },
+  { title: 'ວັນທີສ້າງ', key: 'Maker_DT_Stamp', sortable: true, width: '120px' },
+  { title: 'ຈັດການ', key: 'actions', sortable: false, align: 'center', width: '120px' }
 ])
 
 // Computed statistics
 const statistics = computed(() => [
   {
     title: 'ທັງໝົດ',
-    value: stats.value.total_records || 0,
+    value: totalItems.value || 0,
     icon: 'mdi-file-document-multiple',
-    color: 'blue'
+    color: 'primary'
   },
   {
     title: 'ອະນຸມັດແລ້ວ',
-    value: stats.value.authorized || 0,
-    icon: 'mdi-check-circle',
-    color: 'green'
+    value: items.value.filter(item => item.Auth_Status === 'A').length || 0,
+    icon: 'mdi-shield-check-outline',
+    color: 'success'
   },
   {
     title: 'ລໍຖ້າອະນຸມັດ',
-    value: stats.value.unauthorized || 0,
-    icon: 'mdi-clock-outline',
-    color: 'orange'
+    value: items.value.filter(item => item.Auth_Status === 'U').length || 0,
+    icon: 'mdi-shield-alert-outline',
+    color: 'warning'
   },
   {
     title: 'ເປີດຢູ່',
-    value: stats.value.open_records || 0,
-    icon: 'mdi-lock-open',
-    color: 'purple'
+    value: items.value.filter(item => item.Record_Status === 'O').length || 0,
+    icon: 'mdi-lock-open-outline',
+    color: 'info'
   }
 ])
 
 // Methods
+const goPath = (path) => {
+  router.push(path)
+}
+
+const setActionLoading = (key, value) => {
+  actionLoading.value[key] = value
+}
+
+const loadItems = ({ page, itemsPerPage, sortBy }) => {
+  fetchData()
+}
+
 const fetchData = async () => {
   loading.value = true
   try {
-    const token = localStorage.getItem('token')
-    const params = new URLSearchParams({
+    const params = {
       page: page.value,
       page_size: itemsPerPage.value,
       search: searchQuery.value || '',
-      ...Object.fromEntries(Object.entries(filters.value).filter(([_, v]) => v !== null))
-    })
+      ...Object.fromEntries(
+        Object.entries(filters.value).filter(([_, v]) => v !== null && v !== '')
+      )
+    }
 
-    const response = await axios.get(`/api/eoc-maintain/?${params}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    })
-
-    console.log('Response data:', response.data);
+    const response = await axios.get('/api/eoc-maintain/', { params })
     
-
-    if (response.ok) {
-      const data = await response.json()
-      items.value = data.results
-      totalItems.value = data.count
-    } else {
-      showSnackbar('ເກີດຂໍ້ຜິດພາດໃນການໂຫລດຂໍ້ມູນ', 'error')
+    if (response.data) {
+      items.value = response.data.results || response.data
+      totalItems.value = response.data.count || items.value.length
     }
   } catch (error) {
-    showSnackbar('ເກີດຂໍ້ຜິດພາດໃນການເຊື່ອມຕໍ່', 'error')
+    console.error('Error fetching data:', error)
+    showSnackbar('ເກີດຂໍ້ຜິດພາດໃນການໂຫລດຂໍ້ມູນ', 'error')
+    items.value = []
+    totalItems.value = 0
   } finally {
     loading.value = false
-  }
-}
-
-const fetchStatistics = async () => {
-  try {
-    const token = localStorage.getItem('authToken')
-    const response = await fetch('/api/eoc-maintain/statistics/', {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    })
-
-    if (response.ok) {
-      stats.value = await response.json()
-    }
-  } catch (error) {
-    console.error('Error fetching statistics:', error)
   }
 }
 
@@ -363,17 +510,14 @@ const debounceSearch = (() => {
   return () => {
     clearTimeout(timeout)
     timeout = setTimeout(() => {
+      page.value = 1
       fetchData()
     }, 500)
   }
 })()
 
 const viewItem = (item) => {
-  router.push(`/eoc-maintain/view/${item.eoc_id}`)
-}
-
-const editItem = (item) => {
-  router.push(`/eoc-maintain/update${item.eoc_id}`)
+  router.push(`/eocfunction/view/${item.eoc_id}`)
 }
 
 const deleteItem = (item) => {
@@ -382,81 +526,104 @@ const deleteItem = (item) => {
 }
 
 const confirmDelete = async () => {
+  deleteLoading.value = true
   try {
-    const token = localStorage.getItem('authToken')
-    const response = await fetch(`/api/eoc-maintain/${itemToDelete.value.eoc_id}/`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    })
-
-    if (response.ok) {
-      showSnackbar('ລຶບສໍາເລັດແລ້ວ', 'success')
-      fetchData()
-      fetchStatistics()
-    } else {
-      const errorData = await response.json()
-      showSnackbar(errorData.error || 'ເກີດຂໍ້ຜິດພາດໃນການລຶບ', 'error')
-    }
+    await axios.delete(`/api/eoc-maintain/${itemToDelete.value.eoc_id}/`)
+    showSnackbar('ລຶບສໍາເລັດແລ້ວ', 'success')
+    fetchData()
   } catch (error) {
-    showSnackbar('ເກີດຂໍ້ຜິດພາດໃນການເຊື່ອມຕໍ່', 'error')
+    console.error('Error deleting item:', error)
+    const errorMessage = error.response?.data?.error || 'ເກີດຂໍ້ຜິດພາດໃນການລຶບ'
+    showSnackbar(errorMessage, 'error')
   } finally {
+    deleteLoading.value = false
     deleteDialog.value = false
     itemToDelete.value = null
   }
 }
 
-const toggleOpen = async (item) => {
+const toggleRecordStatus = async (item) => {
   const action = item.Record_Status === 'O' ? 'set_close' : 'set_open'
-  await performAction(item.eoc_id, action)
-}
-
-const toggleAuth = async (item) => {
-  const action = item.Auth_Status === 'A' ? 'unauthorize' : 'authorize'
-  await performAction(item.eoc_id, action)
-}
-
-const performAction = async (id, action) => {
+  const loadingKey = `record_${item.eoc_id}`
+  
+  setActionLoading(loadingKey, true)
   try {
-    const token = localStorage.getItem('authToken')
-    const response = await fetch(`/api/eoc-maintain/${id}/${action}/`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    })
-
-    if (response.ok) {
-      const data = await response.json()
-      showSnackbar(data.message, 'success')
+    const response = await axios.post(`/api/eoc-maintain/${item.eoc_id}/${action}/`)
+    
+    if (response.data) {
+      showSnackbar(response.data.message || 'ດຳເນີນການສຳເລັດ', 'success')
       fetchData()
-      fetchStatistics()
-    } else {
-      const errorData = await response.json()
-      showSnackbar(errorData.detail || errorData.error || 'ເກີດຂໍ້ຜິດພາດ', 'error')
     }
   } catch (error) {
-    showSnackbar('ເກີດຂໍ້ຜິດພາດໃນການເຊື່ອມຕໍ່', 'error')
+    console.error('Error toggling record status:', error)
+    const errorMessage = error.response?.data?.detail || error.response?.data?.error || 'ເກີດຂໍ້ຜິດພາດ'
+    showSnackbar(errorMessage, 'error')
+  } finally {
+    setActionLoading(loadingKey, false)
   }
 }
 
-const getStatusColor = (status) => {
-  return status === 'O' ? 'green' : 'grey'
+const toggleAuthStatus = async (item) => {
+  const action = item.Auth_Status === 'A' ? 'unauthorize' : 'authorize'
+  const loadingKey = `auth_${item.eoc_id}`
+  
+  setActionLoading(loadingKey, true)
+  try {
+    const response = await axios.post(`/api/eoc-maintain/${item.eoc_id}/${action}/`)
+    
+    if (response.data) {
+      showSnackbar(response.data.message || 'ດຳເນີນການອະນຸມັດສຳເລັດ', 'success')
+      fetchData()
+    }
+  } catch (error) {
+    console.error('Error toggling auth status:', error)
+    const errorMessage = error.response?.data?.detail || error.response?.data?.error || 'ເກີດຂໍ້ຜິດພາດ'
+    showSnackbar(errorMessage, 'error')
+  } finally {
+    setActionLoading(loadingKey, false)
+  }
 }
 
-const getStatusText = (status) => {
+// Status helper methods
+const getEocTypeColor = (type) => {
+  const colors = {
+    'EOD': 'primary',
+    'SOD': 'success', 
+    'RPT': 'warning',
+    'BAK': 'info'
+  }
+  return colors[type] || 'grey'
+}
+
+const getRecordStatusColor = (status) => {
+  return status === 'O' ? 'success' : 'error'
+}
+
+const getRecordStatusText = (status) => {
   return status === 'O' ? 'ເປີດ' : 'ປິດ'
 }
 
 const getAuthStatusColor = (status) => {
-  return status === 'A' ? 'green' : 'orange'
+  return status === 'A' ? 'success' : 'warning'
 }
 
 const getAuthStatusText = (status) => {
   return status === 'A' ? 'ອະນຸມັດແລ້ວ' : 'ລໍຖ້າອະນຸມັດ'
+}
+
+const formatDate = (date) => {
+  if (!date) return '-'
+  try {
+    return new Date(date).toLocaleDateString('lo-LA', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  } catch {
+    return date
+  }
 }
 
 const showSnackbar = (message, color = 'success') => {
@@ -466,20 +633,97 @@ const showSnackbar = (message, color = 'success') => {
 // Lifecycle
 onMounted(() => {
   fetchData()
-  fetchStatistics()
 })
 </script>
 
 <style scoped>
-.v-card {
-  border-radius: 8px;
+:deep(.v-data-table) {
+  font-size: 14px;
 }
 
-.v-btn {
+:deep(.v-data-table-header) {
+  background-color: #fafafa;
+}
+
+:deep(.v-data-table-header__content) {
+  font-weight: 600;
+  color: #616161;
+  font-size: 13px;
+}
+
+.border {
+  border: 1px solid #e0e0e0 !important;
+}
+
+.text-truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+:deep(.v-btn) {
   text-transform: none !important;
 }
 
-.v-chip {
+:deep(.v-chip) {
   font-weight: 500;
+}
+
+/* Hover effects */
+:deep(.v-data-table__tr:hover) {
+  background-color: #f8f9fa !important;
+}
+
+/* Loading skeleton */
+:deep(.v-skeleton-loader__bone) {
+  background-color: #f5f5f5 !important;
+}
+
+/* Table row spacing */
+:deep(.v-data-table__td) {
+  padding: 8px 12px !important;
+}
+
+/* Action buttons spacing */
+.gap-1 {
+  gap: 4px;
+}
+
+.gap-2 {
+  gap: 8px;
+}
+
+.gap-3 {
+  gap: 12px;
+}
+
+/* Status chips alignment */
+:deep(.v-chip--size-small) {
+  font-size: 11px;
+  height: 24px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  :deep(.v-data-table__td) {
+    padding: 6px 8px !important;
+    font-size: 12px;
+  }
+  
+  :deep(.v-btn--size-small) {
+    min-width: 32px;
+    width: 32px;
+    height: 32px;
+  }
+}
+
+/* Enhanced button styles */
+.v-btn--variant-flat {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.v-btn:hover {
+  transform: translateY(-1px);
+  transition: transform 0.2s ease;
 }
 </style>

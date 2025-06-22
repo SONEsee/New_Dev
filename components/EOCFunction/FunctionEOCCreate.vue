@@ -12,8 +12,8 @@
             size="large"
           />
           <div>
-            <h1 class="text-h4 font-weight-light text-primary mb-1">ສ້າງ EOC Maintain ໃໝ່</h1>
-            <p class="text-body-2 text-grey">ສ້າງການຕັ້ງຄ່າ EOC Function ສໍາລັບລະບົບ</p>
+            <h1 class="text-h4 font-weight-light text-primary mb-1 text-styles">ສ້າງການຕັ້ງຄ່າການປິດບັນຊີໃໝ່</h1>
+            <p class="text-body-2 text-grey text-styles">ສ້າງການຕັ້ງຄ່າການປິດບັນຊີໃໝ່</p>
           </div>
         </div>
 
@@ -32,7 +32,7 @@
                 <!-- Module Selection -->
                 <v-col cols="12" md="6">
                   <v-select
-                    v-model="form.module_Id"
+                    v-model="form.module_id"
                     :items="moduleOptions"
                     :loading="loadingModules"
                     label="ເລືອກ Module *"
@@ -53,8 +53,7 @@
                             <v-icon size="18">mdi-package-variant</v-icon>
                           </v-avatar>
                         </template>
-                        <v-list-item-title>{{ item.raw.module_name_la || item.raw.module_name || item.raw.module_Id }}</v-list-item-title>
-                        <v-list-item-subtitle>ID: {{ item.raw.module_Id }}</v-list-item-subtitle>
+                        <v-list-item-title>{{item.raw.module_name_en }} - {{ item.raw.module_Id }}</v-list-item-title>
                       </v-list-item>
                     </template>
                     <template v-slot:selection="{ item }">
@@ -87,7 +86,6 @@
                             <v-icon size="18">mdi-function</v-icon>
                           </v-avatar>
                         </template>
-                        <v-list-item-title>{{ item.raw.description_la || item.raw.function_id }}</v-list-item-title>
                         <v-list-item-subtitle>
                           ID: {{ item.raw.function_id }} • {{ item.raw.description_en || 'No English description' }}
                         </v-list-item-subtitle>
@@ -289,6 +287,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from '@/helpers/axios'
+import { watch } from 'vue'
 
 const router = useRouter()
 
@@ -302,8 +301,9 @@ const moduleError = ref('')
 const functionError = ref('')
 
 // Form data
+// Form data
 const form = ref({
-  module_Id: null,
+  module_id: null, // Changed from module_Id
   function_id: null,
   eoc_seq_no: 1,
   eoc_type: '',
@@ -320,23 +320,18 @@ const eocTypeOptions = ref([
   { 
     title: 'EOD - End of Day Processing', 
     value: 'EOD', 
-    description: 'ໃຊ້ສໍາລັບການປຸງແຕ່ງຂໍ້ມູນຕອນຈົບວັນ' 
+    description: 'ປິດບັນຊີປະຈາໍາວັນ' 
   },
   { 
-    title: 'SOD - Start of Day Processing', 
+    title: 'EOM - End oF Month Processing', 
     value: 'SOD', 
-    description: 'ໃຊ້ສໍາລັບການປຸງແຕ່ງຂໍ້ມູນຕອນເລີ່ມວັນ' 
+    description: 'ປິດບັນຊີປະຈາໍາເດືອນ' 
   },
   { 
-    title: 'RPT - Report Generation', 
+    title: 'RPT - End of Year Processing', 
     value: 'RPT', 
-    description: 'ໃຊ້ສໍາລັບການສ້າງລາຍງານ' 
+    description: 'ປິດບັນຊີປະຈາໍາປີ' 
   },
-  { 
-    title: 'BAK - Backup Process', 
-    value: 'BAK', 
-    description: 'ໃຊ້ສໍາລັບການສຳຮອງຂໍ້ມູນ' 
-  }
 ])
 
 const recordStatusOptions = ref([
@@ -361,7 +356,7 @@ const rules = {
 
 // Computed
 const selectedModule = computed(() => {
-  return moduleOptions.value.find(m => m.module_Id === form.value.module_Id)
+  return moduleOptions.value.find(m => m.module_Id === form.value.module_id)
 })
 
 const selectedFunction = computed(() => {
@@ -395,13 +390,12 @@ const loadModules = async () => {
     
     if (response.data) {
       const modules = response.data.results || response.data
-      // Transform modules for v-select
       moduleOptions.value = modules.map(module => ({
         title: module.module_name_la || module.module_name || module.module_Id,
-        value: module.module_Id, // <-- this is the code like "GL"
+        value: module.module_Id, // Ensure this matches the API response field
         ...module
       }))
-            
+      
       if (moduleOptions.value.length === 0) {
         moduleError.value = 'ບໍ່ພົບຂໍ້ມູນ Module ໃນລະບົບ'
       }
@@ -415,6 +409,7 @@ const loadModules = async () => {
     loadingModules.value = false
   }
 }
+
 
 const loadFunctions = async () => {
   loadingFunctions.value = true
@@ -457,15 +452,26 @@ const onModuleChange = () => {
   form.value.function_id = null
   loadFunctions()
 }
-
 const submitForm = async () => {
   if (!formValid.value) return
 
   loading.value = true
   try {
-    console.log('Submitting EOC Maintain data:', form.value)
+    // Transform the form data to match API expectations
+    const payload = {
+      eoc_id: '1', // Hardcoded as per Postman example, adjust as needed
+      module_id: form.value.module_id,
+      function_id: form.value.function_id,
+      eoc_seq_no: form.value.eoc_seq_no.toString(), // Ensure string as per Postman
+      eoc_type: form.value.eoc_type,
+      Record_Status: form.value.Record_Status,
+      mod_no: form.value.mod_no ? form.value.mod_no.toString() : '1', // Default to '1' if null
+      Auth_Status: 'U' // Hardcoded as per Postman example
+    }
 
-    const response = await axios.post('/api/eoc-maintain/', form.value)
+    console.log('Submitting EOC Maintain data:', payload)
+
+    const response = await axios.post('/api/eoc-maintain/', payload)
     
     if (response.data) {
       showSnackbar(response.data.message || 'ສ້າງສໍາເລັດແລ້ວ', 'success')
@@ -477,7 +483,6 @@ const submitForm = async () => {
     console.error('Error creating EOC maintain:', error)
     
     if (error.response?.data?.errors) {
-      // Handle field-specific validation errors
       const errors = error.response.data.errors
       Object.keys(errors).forEach(field => {
         showSnackbar(`${field}: ${errors[field][0]}`, 'error')
@@ -493,10 +498,9 @@ const submitForm = async () => {
     loading.value = false
   }
 }
-
 const resetForm = () => {
   form.value = {
-    module_Id: null,
+    module_id: null, // Changed from module_Id
     function_id: null,
     eoc_seq_no: 1,
     eoc_type: '',
@@ -513,7 +517,9 @@ const resetForm = () => {
 const showSnackbar = (message, color = 'success') => {
   snackbar.value = { show: true, message, color }
 }
-
+watch(() => form.value.module_id, (newValue) => {
+  console.log('Selected module_id:', newValue)
+})
 // Lifecycle
 onMounted(() => {
   loadModules()
