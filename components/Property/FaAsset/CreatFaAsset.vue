@@ -64,7 +64,7 @@ const submitForm = async () => {
   }
 };
 
-// Watch for depreciation calculation
+
 watch(
   [
     () => faAssetStoreInstance.form_create_fa_asset.dpca_start_date,
@@ -79,7 +79,7 @@ watch(
   }
 );
 
-// Watch for asset value remain calculation
+
 watch(
   [
     () => faAssetStoreInstance.form_create_fa_asset.asset_value,
@@ -156,7 +156,7 @@ onMounted(async () => {
         <v-col cols="12" class="pt-12">
           <v-row>
             
-            <!-- ກຸ່ມຂໍ້ມູນພື້ນຖານ (ສີຂຽວ) -->
+           
             <v-col cols="12">
               <v-card variant="outlined" class="mb-6" style="border: 2px solid #4CAF50;">
                 <v-card-title class="text-h6 pb-2 bg-success text-white">
@@ -166,6 +166,18 @@ onMounted(async () => {
                 <v-card-text class="pt-4">
                   <v-row>
                     <v-col cols="12" md="6">
+                      <label>ລະຫັດ (Asset Code) <span class="text-error">*</span></label>
+                      <v-text-field
+                        v-model="faAssetStoreInstance.form_create_fa_asset.asset_list_code"
+                        :rules="[rules.required, rules.assetTag, rules.maxLength50]"
+                        placeholder="ເຊັ່ນ: 0001,0002"
+                        density="compact"
+                        variant="outlined"
+                        hide-details="auto"
+                        
+                        maxlength="50"
+                        hint="ໃຊ້ເປັນ 0001,0002"
+                      ></v-text-field>
                       <label>ປ້າຍຊັບສິນ (Asset Tag) <span class="text-error">*</span></label>
                       <v-text-field
                         v-model="faAssetStoreInstance.form_create_fa_asset.asset_tag"
@@ -230,7 +242,7 @@ onMounted(async () => {
                     </v-col>
 
                     <v-col cols="12" md="6">
-                      <label>ສະກຸນເງິນ <span class="text-error">*</span></label>
+                      <label>ລະຫັດອ້າງອີງຊັບສົມບັດ <span class="text-error">*</span></label>
                       <v-select
                         v-model="faAssetStoreInstance.form_create_fa_asset.asset_currency"
                         :rules="[rules.requiredSelect]"

@@ -63,25 +63,7 @@ const parentLocations = ref([
     location_code: "HQ-001",
     location_name_la: "ສຳນັກງານໃຫຍ່",
     location_type: "BUILDING",
-  },
-  {
-    id: 2,
-    location_code: "HQ-F01",
-    location_name_la: "ຊັ້ນທີ 1",
-    location_type: "FLOOR",
-  },
-  {
-    id: 4,
-    location_code: "WH-001",
-    location_name_la: "ໂກດັງທີ 1",
-    location_type: "WAREHOUSE",
-  },
-  {
-    id: 5,
-    location_code: "BR-LPB",
-    location_name_la: "ສາຂາຫຼວງພະບາງ",
-    location_type: "BUILDING",
-  },
+  }
 ]);
 
 const goBack = () => {
@@ -301,7 +283,7 @@ const locationTypes = ref([
                 v-model="
                   locationStoreInstance.form_update_location.parent_location_id
                 "
-                :items="filteredParentLocations"
+                :items="parentLocations"
                 item-title="location_name_la"
                 item-value="id"
                 placeholder="ເລືອກສະຖານທີ່ແມ່ (ຖ້າມີ)"
@@ -316,7 +298,7 @@ const locationTypes = ref([
                   )
                 "
               >
-                <template #item="{ props, item }">
+                <!-- <template #item="{ props, item }">
                   <v-list-item v-bind="props">
                     <template #prepend>
                       <v-chip
@@ -334,7 +316,7 @@ const locationTypes = ref([
                       item.raw.location_type
                     }}</v-list-item-subtitle>
                   </v-list-item>
-                </template>
+                </template> -->
               </v-select>
                <label>ປະເພດສະຖານທີ່</label>
               <v-select
