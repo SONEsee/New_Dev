@@ -322,12 +322,12 @@ const eocTypeOptions = ref([
   },
   { 
     title: 'EOM - ປິດບັນຊີປະຈາໍາເດືອນ', 
-    value: 'SOD', 
+    value: 'EOM', 
     description: 'ປິດບັນຊີປະຈາໍາເດືອນ' 
   },
   { 
-    title: 'RPT - ປິດບັນຊີປະຈາໍາປີ', 
-    value: 'RPT', 
+    title: 'EOY - ປິດບັນຊີປະຈາໍາປີ', 
+    value: 'EOY', 
     description: 'ປິດບັນຊີປະຈາໍາປີ' 
   },
 ])

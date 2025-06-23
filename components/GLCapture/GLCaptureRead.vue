@@ -1,21 +1,15 @@
 <template>
   <div class="gl-approved-master">
     <!-- Page Header -->
-    <div class="page-header text-styles">
-      <h1 class=" d-flex align-center font-weight-bold">
-        <v-icon
-          color="primary"
-          class="mr-3"
-          size="32"
-        >
-          mdi-book-check
-        </v-icon>
+    <div class="page-header-compact">
+      <h1 class="page-title-compact">
+        <v-icon color="primary" size="24" class="mr-2">mdi-book-check</v-icon>
         ລາຍການບັນທຶກບັນຊີ
       </h1>
     </div>
 
     <!-- Filter Section -->
-    <v-card class="filter-card mb-4" elevation="2">
+    <v-card class="filter-card mb-2" elevation="2">
       <v-card-text>
         <v-row dense>
           <v-col cols="12" md="3">
