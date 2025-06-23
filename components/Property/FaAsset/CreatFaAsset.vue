@@ -1,7 +1,10 @@
 <script lang="ts" setup>
 import { CallSwal } from "#build/imports";
 import { useRouter } from "vue-router";
-
+const assetStoreInstance = assetStore();
+const mockData = computed(() => {
+  return assetStoreInstance.response_asset_list || [];
+});
 const locationStoreInstance = locationStore();
 const location = computed(() => {
   return locationStoreInstance.response_location_list || [];
@@ -119,6 +122,7 @@ const rules = {
 };
 
 onMounted(async () => {
+  assetStoreInstance.GetAssetList();
   loading.value = true;
   try {
     await Promise.all([
@@ -147,6 +151,8 @@ onMounted(async () => {
 
 <template>
   <section class="pa-6">
+
+    
     <v-form ref="form" @submit.prevent="submitForm">
       <v-row>
         <v-col cols="12">
@@ -186,7 +192,7 @@ onMounted(async () => {
                         density="compact"
                         variant="outlined"
                         hide-details="auto"
-                        class="pb-4"
+                        
                         maxlength="50"
                         hint="ໃຊ້ໄດ້ແຕ່ຕົວອັກສອນພິມໃຫຍ່, ຕົວເລກ, - ແລະ _"
                       ></v-text-field>
@@ -199,11 +205,39 @@ onMounted(async () => {
                         density="compact"
                         variant="outlined"
                         hide-details="auto"
-                        class="pb-4"
+                       
                         maxlength="50"
                       ></v-text-field>
 
-                      <label>ສະຖານທີ່ຕັ້ງ</label>
+                      
+
+                      <!-- <label>ວັນທີ່ໄດ້ຮັບ/ຊື້ <span class="text-error">*</span></label>
+                      <v-text-field
+                        v-model="faAssetStoreInstance.form_create_fa_asset.asset_date"
+                        :rules="[rules.required]"
+                        type="date"
+                        density="compact"
+                        variant="outlined"
+                        hide-details="auto"
+                        class="pb-4"
+                      ></v-text-field> -->
+                    </v-col>
+
+                    <v-col cols="12" md="6">
+                      <label>ລະຫັດອ້າງອີງຊັບສົມບັດ <span class="text-error">*</span></label>
+                      <v-select
+                        v-model="faAssetStoreInstance.form_create_fa_asset.asset_type_id"
+                        :rules="[rules.requiredSelect]"
+                        :items="mockData"
+                        item-title="asset_name_la"
+                        item-value="coa_id"
+                        placeholder="ເລືອກຊັບສົມບັດ"
+                        density="compact"
+                        variant="outlined"
+                        hide-details="auto"
+                      
+                      ></v-select>
+<label>ສະຖານທີ່ຕັ້ງ</label>
                       <v-select
                         v-model="faAssetStoreInstance.form_create_fa_asset.asset_location_id"
                         :items="location"
@@ -213,50 +247,13 @@ onMounted(async () => {
                         density="compact"
                         variant="outlined"
                         hide-details="auto"
-                        class="pb-4"
+                       
                         clearable
                         :disabled="!location.length"
                       >
-                        <template #item="{ props, item }">
-                          <v-list-item v-bind="props">
-                            <template #prepend v-if="item.raw.code">
-                              <v-chip size="x-small" color="secondary" variant="outlined">
-                                {{ item.raw.code }}
-                              </v-chip>
-                            </template>
-                            <v-list-item-title>{{ item.raw.location_name_la || item.raw.name }}</v-list-item-title>
-                          </v-list-item>
-                        </template>
+                      
                       </v-select>
-
-                      <label>ວັນທີ່ໄດ້ຮັບ/ຊື້ <span class="text-error">*</span></label>
-                      <v-text-field
-                        v-model="faAssetStoreInstance.form_create_fa_asset.asset_date"
-                        :rules="[rules.required]"
-                        type="date"
-                        density="compact"
-                        variant="outlined"
-                        hide-details="auto"
-                        class="pb-4"
-                      ></v-text-field>
-                    </v-col>
-
-                    <v-col cols="12" md="6">
-                      <label>ລະຫັດອ້າງອີງຊັບສົມບັດ <span class="text-error">*</span></label>
-                      <v-select
-                        v-model="faAssetStoreInstance.form_create_fa_asset.asset_currency"
-                        :rules="[rules.requiredSelect]"
-                        :items="currencyOptions"
-                        item-title="title"
-                        item-value="value"
-                        placeholder="ເລືອກສະກຸນເງິນ"
-                        density="compact"
-                        variant="outlined"
-                        hide-details="auto"
-                        class="pb-4"
-                      ></v-select>
-
-                      <label>ມູນຄ່າຊັບສົມບັດ <span class="text-error">*</span></label>
+                      <!-- <label>ມູນຄ່າຊັບສົມບັດ <span class="text-error">*</span></label>
                       <v-text-field
                         v-model.number="faAssetStoreInstance.form_create_fa_asset.asset_value"
                         :rules="[rules.required, rules.positiveNumber]"
@@ -269,7 +266,7 @@ onMounted(async () => {
                         hide-details="auto"
                         class="pb-4"
                         prefix="₭"
-                      ></v-text-field>
+                      ></v-text-field> -->
 
                       <label>ລາຍລະອຽດຄຸນລັກສະນະ</label>
                       <v-textarea
@@ -638,9 +635,9 @@ label {
   margin-bottom: 16px;
 }
 
-/* ສີສຳລັບກຸ່ມຕ່າງໆ */
+
 .bg-success {
-  background-color: #4CAF50 !important;
+  background-color: #eceeec !important;
 }
 
 .bg-warning {
