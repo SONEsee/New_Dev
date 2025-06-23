@@ -209,62 +209,12 @@ onMounted(async () => {
         <v-col cols="12" >
           <v-row>
         
-            <v-col cols="12">
-              <!-- <h3 class="text-h6 mb-4 d-flex align-center">
-                <v-icon class="mr-2" color="primary">mdi-format-list-bulleted-type</v-icon>
-                ປະເພດສະຖານທີ່
-              </h3> -->
-              
-              <!-- <v-radio-group 
-                v-model="locationStoreInstance.form_create_location.location_type"
-                :rules="[rules.requiredSelect]"
-                class="mb-6"
-              >
-                <v-row>
-                  <v-col v-for="option in locationTypeOptions" :key="option.value" cols="12" md="4" lg="2">
-                    <v-card 
-                      variant="outlined" 
-                      :color="locationStoreInstance.form_create_location.location_type === option.value ? option.color : ''"
-                      class="pa-4 cursor-pointer h-100"
-                      @click="locationStoreInstance.form_create_location.location_type = option.value"
-                    >
-                      <v-radio :value="option.value" class="d-none"></v-radio>
-                      <div class="text-center">
-                        <v-icon 
-                          :color="locationStoreInstance.form_create_location.location_type === option.value ? 'white' : option.color" 
-                          size="48" 
-                          class="mb-2"
-                        >
-                          {{ option.icon }}
-                        </v-icon>
-                        <h4 
-                          :class="locationStoreInstance.form_create_location.location_type === option.value ? 'text-white' : `text-${option.color}`"
-                          class="text-h6 mb-2"
-                        >
-                          {{ option.title }}
-                        </h4>
-                        <p 
-                          :class="locationStoreInstance.form_create_location.location_type === option.value ? 'text-white' : 'text-grey'"
-                          class="text-caption mb-0"
-                        >
-                          {{ option.description }}
-                        </p>
-                      </div>
-                    </v-card>
-                  </v-col>
-                </v-row>
-              </v-radio-group> -->
-            </v-col>
+            
 
           
-            <!-- <v-col cols="12">
-              <h3 class="text-h6 mb-4 d-flex align-center">
-                <v-icon class="mr-2" color="primary">mdi-information</v-icon>
-                ຂໍ້ມູນພື້ນຖານ
-              </h3>
-            </v-col> -->
+           
 
-            <v-col cols="12" md="6">
+            <v-col cols="12" md="">
               <label>ລະຫັດສະຖານທີ່ <span class="text-error">*</span></label>
               <v-text-field
                 v-model="locationStoreInstance.form_create_location.location_code"
@@ -273,7 +223,7 @@ onMounted(async () => {
                 density="compact"
                 variant="outlined"
                 hide-details="auto"
-                class="pb-6"
+                class=""
                 maxlength="20"
                 hint="ໃຊ້ໄດ້ແຕ່ຕົວອັກສອນພິມໃຫຍ່, ຕົວເລກ, - ແລະ _"
               ></v-text-field>
@@ -286,7 +236,7 @@ onMounted(async () => {
                 density="compact"
                 variant="outlined"
                 hide-details="auto"
-                class="pb-6"
+                class=""
                 maxlength="255"
               ></v-text-field>
 
@@ -298,7 +248,7 @@ onMounted(async () => {
                 density="compact"
                 variant="outlined"
                 hide-details="auto"
-                class="pb-6"
+                class=""
                 maxlength="255"
               ></v-text-field>
 
@@ -312,7 +262,7 @@ onMounted(async () => {
                 density="compact"
                 variant="outlined"
                 hide-details="auto"
-                class="pb-6"
+                class=""
                 clearable
                 :disabled="['BUILDING', 'WAREHOUSE'].includes(locationStoreInstance.form_create_location.location_type)"
               >
@@ -329,19 +279,7 @@ onMounted(async () => {
                 </template>
               </v-select>
 
-              <!-- <label>ສະຖານະເລຄອດ <span class="text-error">*</span></label>
-              <v-select
-                v-model="locationStoreInstance.form_create_location.record_stat"
-                :rules="[rules.requiredSelect]"
-                :items="recordStatusOptions"
-                item-title="title"
-                item-value="value"
-                placeholder="ເລືອກສະຖານະ"
-                density="compact"
-                variant="outlined"
-                hide-details="auto"
-                class="pb-6"
-              ></v-select> -->
+             
             </v-col>
 
             <v-col cols="12" md="6">
@@ -353,7 +291,7 @@ onMounted(async () => {
                 density="compact"
                 variant="outlined"
                 hide-details="auto"
-                class="pb-6"
+                class=""
                 maxlength="100"
                 prepend-inner-icon="mdi-account"
               ></v-text-field>
@@ -366,7 +304,7 @@ onMounted(async () => {
                 density="compact"
                 variant="outlined"
                 hide-details="auto"
-                class="pb-6"
+                class=""
                 prepend-inner-icon="mdi-phone"
               ></v-text-field>
 
@@ -377,7 +315,7 @@ onMounted(async () => {
                 density="compact"
                 variant="outlined"
                 hide-details="auto"
-                class="pb-6"
+                class=""
                 rows="3"
                 prepend-inner-icon="mdi-map-marker"
               ></v-textarea>
@@ -390,7 +328,7 @@ onMounted(async () => {
                 density="compact"
                 variant="outlined"
                 hide-details="auto"
-                class="pb-6"
+                class=""
                 rows="3"
                 maxlength="500"
                 counter
@@ -398,8 +336,8 @@ onMounted(async () => {
               ></v-textarea>
             </v-col>
 
-            <!-- Preview Section -->
-            <v-col cols="12" class="mt-6" v-if="locationStoreInstance.form_create_location.location_type">
+            
+            <v-col cols="12" class="" v-if="locationStoreInstance.form_create_location.location_type">
               <v-divider class="mb-4"></v-divider>
               <h3 class="text-h6 mb-4 d-flex align-center">
                 <v-icon class="mr-2" color="primary">mdi-eye</v-icon>
@@ -497,76 +435,11 @@ onMounted(async () => {
                   </v-col>
                 </v-row>
 
-                <!-- Location Hierarchy Preview -->
-                <!-- <v-row class="mt-4" v-if="locationStoreInstance.form_create_location.parent_location_id">
-                  <v-col cols="12">
-                    <v-card variant="outlined" color="warning">
-                      <v-card-title class="text-h6 pb-2">
-                        <v-icon class="mr-2">mdi-file-tree</v-icon>
-                        ໂຄງສ້າງສະຖານທີ່
-                      </v-card-title>
-                      <v-card-text class="pt-0">
-                        <div class="d-flex align-center">
-                          <div class="text-center mr-4">
-                            <v-icon color="secondary" size="32" class="mb-2">
-                              {{ locationTypeOptions.find(t => 
-                                parentLocations.find(p => p.id === locationStoreInstance.form_create_location.parent_location_id)?.location_type === t.value
-                              )?.icon }}
-                            </v-icon>
-                            <div class="text-subtitle-2">ສະຖານທີ່ແມ່</div>
-                            <div class="text-body-2">
-                              {{ parentLocations.find(p => p.id === locationStoreInstance.form_create_location.parent_location_id)?.location_name_la }}
-                            </div>
-                          </div>
-                          <v-icon size="32" color="primary" class="mx-4">mdi-arrow-right</v-icon>
-                          <div class="text-center">
-                            <v-icon 
-                              :color="locationTypeOptions.find(t => t.value === locationStoreInstance.form_create_location.location_type)?.color" 
-                              size="32" 
-                              class="mb-2"
-                            >
-                              {{ locationTypeOptions.find(t => t.value === locationStoreInstance.form_create_location.location_type)?.icon }}
-                            </v-icon>
-                            <div class="text-subtitle-2">ສະຖານທີ່ໃໝ່</div>
-                            <div class="text-body-2">
-                              {{ locationStoreInstance.form_create_location.location_name_la || 'ຍັງບໍ່ໄດ້ປ້ອນ' }}
-                            </div>
-                          </div>
-                        </div>
-                      </v-card-text>
-                    </v-card>
-                  </v-col>
-                </v-row> -->
+                
               </v-card>
             </v-col>
 
-            <!-- Information Card -->
-            <!-- <v-col cols="12" class="mt-4">
-              <v-card variant="outlined" color="info">
-                <v-card-title class="text-h6 pb-2">
-                  <v-icon class="mr-2">mdi-lightbulb-outline</v-icon>
-                  ຄຳແນະນຳ
-                </v-card-title>
-                <v-card-text class="pt-0">
-                  <v-list density="compact">
-                    <v-list-item>
-                      <v-list-item-title class="text-subtitle-2">ລະຫັດສະຖານທີ່:</v-list-item-title>
-                      <v-list-item-subtitle>ໃຊ້ຮູບແບບທີ່ເປັນມາດຕະຖານ ເຊັ່ນ: HQ-001, WH-VTE, FLOOR-01</v-list-item-subtitle>
-                    </v-list-item>
-                    <v-list-item>
-                      <v-list-item-title class="text-subtitle-2">ໂຄງສ້າງສະຖານທີ່:</v-list-item-title>
-                      <v-list-item-subtitle>ອາຄານ → ຊັ້ນ → ຫ້ອງ/ພື້ນທີ່, ໂກດັງເປັນແບບຄົນລະຕົວ</v-list-item-subtitle>
-                    </v-list-item>
-                    <v-list-item>
-                      <v-list-item-title class="text-subtitle-2">ຊື່ສອງພາສາ:</v-list-item-title>
-                      <v-list-item-subtitle>ຄວນໃສ່ຊື່ທັງພາສາລາວແລະອັງກິດເພື່ອງ່າຍຕໍ່ການຄົ້ນຫາ</v-list-item-subtitle>
-                    </v-list-item>
-                  </v-list>
-                </v-card-text>
-              </v-card>
-            </v-col> -->
-
-            <!-- Action Buttons -->
+            
             <v-col cols="12" class="d-flex flex-wrap justify-center ">
               <v-btn 
                 color="error" 

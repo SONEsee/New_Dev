@@ -2,6 +2,7 @@
 import { ref, onMounted, computed, watch } from "vue";
 import { CallSwal } from "#build/imports";
 import { useRouter } from "vue-router";
+import axios from "@/helpers/axios";
 
 const router = useRouter();
 
@@ -18,14 +19,13 @@ const mockData1 = computed(() => {
   return proppertyStore.respons_data_property_category || [];
 });
 
-const handleSubmit = async (item: any) => {
+const handleSubmit = async (id: any) => {
   try {
-    const newStatus = item.Record_Status === "O" ? "C" : "O";
-    const statusText = item.Record_Status === "O" ? "ເປີດ" : "ປິດ";
+    
 
     const notification = await CallSwal({
       title: "ຢືນຢັນ",
-      text: `ທ່ານຕ້ອງການ${statusText}ສະຖານະຊັບສິນນີ້ໃຊ່ບໍ່?`,
+      text: `ທ່ານຕ້ອງການສະຖານະຊັບສິນນີ້ໃຊ່ບໍ່?`,
       icon: "question",
       confirmButtonText: "ຕົກລົງ",
       cancelButtonText: "ຍົກເລີກ",
@@ -33,16 +33,76 @@ const handleSubmit = async (item: any) => {
     });
 
     if (notification.isConfirmed) {
-      loading.value = true;
-      await assetStoreInstance.UpdateAssetStatus(item.asset_id, newStatus);
-      await refreshData();
-      successMessage.value = `ປ່ຽນສະຖານະຊັບສິນສຳເລັດແລ້ວ`;
-      showSuccess.value = true;
+      const req = await axios.post(`api/chart_of_asset/${id}/set_open/`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });if(req.status===200){
+        CallSwal({
+          icon: "success",
+          title: "ສຳເລັດ",
+          text: `ອັບເດດສະຖານະຊັບສິນແລ້ວ`,
+          showConfirmButton: false,
+          timer: 1500,
+        });
+        await assetStoreInstance.GetAssetList();
+      }
+      
     }
   } catch (error) {
     console.error("Error submitting form:", error);
-    errorMessage.value = "ເກີດຂໍ້ຜິດພາດໃນການປ່ຽນສະຖານະ";
-    showError.value = true;
+    CallSwal({
+      icon: "error",
+      title: "ຂໍ້ຜິດພາດ",
+      text: "ບໍ່ສາມາດອັບເດດໄດ້, ກະລຸນາໃສ່ຂໍ້ມູນ",
+      showConfirmButton: false,
+      timer: 1500,
+    });
+  } finally {
+    loading.value = false;
+  }
+};
+const handleSubmitof = async (id: any) => {
+  try {
+    
+
+    const notification = await CallSwal({
+      title: "ຢືນຢັນ",
+      text: `ທ່ານຕ້ອງການສະຖານະຊັບສິນນີ້ໃຊ່ບໍ່?`,
+      icon: "question",
+      confirmButtonText: "ຕົກລົງ",
+      cancelButtonText: "ຍົກເລີກ",
+      showCancelButton: true,
+    });
+
+    if (notification.isConfirmed) {
+      const req = await axios.post(`api/chart_of_asset/${id}/set_close/`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });if(req.status===200){
+        CallSwal({
+          icon: "success",
+          title: "ສຳເລັດ",
+          text: `ອັບເດດສະຖານະຊັບສິນແລ້ວ`,
+          showConfirmButton: false,
+          timer: 1500,
+        });
+        await assetStoreInstance.GetAssetList();
+      }
+      
+    }
+  } catch (error) {
+    console.error("Error submitting form:", error);
+    CallSwal({
+      icon: "error",
+      title: "ຂໍ້ຜິດພາດ",
+      text: "ບໍ່ສາມາດອັບເດດໄດ້, ກະລຸນາໃສ່ຂໍ້ມູນ",
+      showConfirmButton: false,
+      timer: 1500,
+    });
   } finally {
     loading.value = false;
   }
@@ -74,7 +134,7 @@ const role1 = computed(() => {
   return roleStore.responst_data_detail;
 });
 
-const title = "ຈັດການຊັບສິນ";
+const title = "ຈັດການຊັບສິນຍອ່ຍ";
 
 const headers = computed(() => [
   {
@@ -124,7 +184,7 @@ const headers = computed(() => [
   },
   {
     title: "ເວລາແກ້ໄຂ",
-    value: "updated_at",
+    value: "Checker_DT_Stamp",
     align: "center",
     sortable: true,
     filterable: false,
@@ -135,7 +195,7 @@ const headers = computed(() => [
     ? [
         {
           title: "ສະຖານະ",
-          value: "RECORD_STAT",
+          value: "Record_Status",
           align: "center",
           sortable: true,
           filterable: true,
@@ -191,7 +251,7 @@ const filteredData = computed(() => {
   let data = mockData.value || [];
   console.log("📊 Initial data length:", data.length);
 
-  // Filter by asset type
+
   if (selectedAssetType.value && selectedAssetType.value !== "all") {
     const beforeFilter = data.length;
     data = data.filter((item) => {
@@ -203,7 +263,7 @@ const filteredData = computed(() => {
     );
   }
 
-  // Filter by search term
+
   if (search.value && search.value.trim()) {
     const searchTerm = search.value.toLowerCase().trim();
     const beforeFilter = data.length;
@@ -287,9 +347,7 @@ const clearFilters = async () => {
 
     await refreshData();
 
-    console.log("✅ Filters cleared and data reloaded");
-    successMessage.value = "ເຄລຍການກັ່ນຕອງສຳເລັດແລ້ວ";
-    showSuccess.value = true;
+ 
   } catch (error) {
     console.error("❌ Error clearing filters:", error);
     errorMessage.value = "ເກີດຂໍ້ຜິດພາດໃນການເຄລຍການກັ່ນຕອງ";
@@ -299,7 +357,7 @@ const clearFilters = async () => {
   }
 };
 
-// ✅ ເພີ່ມ refreshData function
+
 const refreshData = async () => {
   try {
     console.log("🔄 Refreshing data...");
@@ -411,33 +469,9 @@ onMounted(async () => {
 </script>
 
 <template>
+  <div class="pa-2">
   <GlobalTextTitleLine :title="title" />
 
-  <!-- Debug Info - ສາມາດເອົາອອກໄດ້ -->
-  <!-- 
-  <v-card class="mb-4 pa-4" color="grey-lighten-4">
-    <v-card-title class="text-h6">🐛 Debug Info</v-card-title>
-    <v-card-text>
-      <div class="d-flex flex-wrap ga-2">
-        <v-chip size="small" color="primary">
-          Assets: {{ mockData?.length || 0 }}
-        </v-chip>
-        <v-chip size="small" color="secondary">
-          Types: {{ mockData1?.length || 0 }}
-        </v-chip>
-        <v-chip size="small" color="success">
-          Filtered: {{ filteredData?.length || 0 }}
-        </v-chip>
-        <v-chip size="small" color="warning">
-          Selected Type: {{ selectedAssetType }}
-        </v-chip>
-      </div>
-      <v-btn size="small" color="info" @click="debugData" class="mt-2">
-        Show Debug Log
-      </v-btn>
-    </v-card-text>
-  </v-card>
-  -->
 
   <v-col cols="12">
     <v-row>
@@ -558,11 +592,11 @@ onMounted(async () => {
         <b style="color: blue">{{ column.title }}</b>
       </template>
 
-      <template v-slot:header.updated_at="{ column }">
+      <template v-slot:header.Checker_DT_Stamp="{ column }">
         <b style="color: blue">{{ column.title }}</b>
       </template>
 
-      <template v-slot:header.RECORD_STAT="{ column }">
+      <template v-slot:header.Record_Status="{ column }">
         <b style="color: blue">{{ column.title }}</b>
       </template>
 
@@ -616,28 +650,28 @@ onMounted(async () => {
         </div>
       </template>
 
-      <template v-slot:item.updated_at="{ item }">
+      <template v-slot:item.Checker_DT_Stamp="{ item }">
         <div class="text-center">
           <v-chip size="small" variant="outlined" color="info">
-            {{ formatDate(item.updated_at) }}
+            {{ formatDate(item.Checker_DT_Stamp) }}
           </v-chip>
         </div>
       </template>
 
-      <template v-slot:item.RECORD_STAT="{ item }">
+      <template v-slot:item.Record_Status="{ item }">
         <div class="text-center">
           <v-btn
-            v-if="item.RECORD_STAT === 'O'"
+            v-if="item.Record_Status === 'O'"
             flat
-            @click="handleSubmit(item)"
+            @click="handleSubmitof(item.coa_id)"
             :loading="loading"
           >
             <v-icon color="success">mdi-toggle-switch</v-icon>
           </v-btn>
           <v-btn
-            v-if="item.RECORD_STAT === 'C'"
+            v-if="item.Record_Status === 'C'"
             flat
-            @click="handleSubmit(item)"
+            @click="handleSubmit(item.coa_id)"
             :loading="loading"
           >
             <v-icon color="error">mdi-toggle-switch-off-outline</v-icon>
@@ -695,7 +729,7 @@ onMounted(async () => {
         </div>
       </template>
 
-      <!-- Loading slot -->
+  
       <template v-slot:loading>
         <div class="text-center pa-4">
           <v-progress-circular indeterminate color="primary" size="64" />
@@ -718,5 +752,5 @@ onMounted(async () => {
   <v-snackbar v-model="showError" color="error" timeout="5000" location="top">
     <v-icon class="mr-2">mdi-alert-circle</v-icon>
     {{ errorMessage }}
-  </v-snackbar>
+  </v-snackbar></div>
 </template>

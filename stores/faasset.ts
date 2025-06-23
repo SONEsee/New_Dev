@@ -36,6 +36,9 @@ export const faAssetStore = defineStore("faAsset", {
         asset_ac_date: null as Date | null,
         asset_ac_datetime: null as Date | null,
         aaset_ac_by: null as string | null,
+        // ເພີ່ມຂໍ້ມູນທີ່ຂາດຈາກຮູບ
+        asset_status: "ACTIVE" as 'ACTIVE' | 'INACTIVE' | 'MAINTENANCE' | 'DISPOSED',
+        has_depreciation: "Y" as 'Y' | 'N',
       },
       form_update_fa_asset: {
         id: "" as string | number,
@@ -62,6 +65,9 @@ export const faAssetStore = defineStore("faAsset", {
         asset_ac_date: null as Date | null,
         asset_ac_datetime: null as Date | null,
         aaset_ac_by: null as string | null,
+        // ເພີ່ມຂໍ້ມູນທີ່ຂາດຈາກຮູບ
+        asset_status: "ACTIVE" as 'ACTIVE' | 'INACTIVE' | 'MAINTENANCE' | 'DISPOSED',
+        has_depreciation: "Y" as 'Y' | 'N',
       },
     };
   },
@@ -421,7 +427,7 @@ export const faAssetStore = defineStore("faAsset", {
         if (this.response_fa_asset_detail) {
           const asset = this.response_fa_asset_detail;
           this.form_update_fa_asset = {
-            
+            id: asset.id || assetId,
             asset_serial_no: asset.asset_serial_no,
             asset_tag: asset.asset_tag,
             asset_location_id: asset.asset_location_id,
@@ -445,6 +451,9 @@ export const faAssetStore = defineStore("faAsset", {
             asset_ac_date: asset.asset_ac_date,
             asset_ac_datetime: asset.asset_ac_datetime,
             aaset_ac_by: asset.aaset_ac_by,
+            // ເພີ່ມຂໍ້ມູນທີ່ຂາດ
+            asset_status: asset.asset_status || "ACTIVE",
+            has_depreciation: asset.has_depreciation || "Y",
           };
         }
       } catch (error) {
@@ -479,6 +488,9 @@ export const faAssetStore = defineStore("faAsset", {
         asset_ac_date: null,
         asset_ac_datetime: null,
         aaset_ac_by: null,
+        // ເພີ່ມຂໍ້ມູນທີ່ຂາດ
+        asset_status: "ACTIVE",
+        has_depreciation: "Y",
       };
     },
 
@@ -508,6 +520,9 @@ export const faAssetStore = defineStore("faAsset", {
         asset_ac_date: null,
         asset_ac_datetime: null,
         aaset_ac_by: null,
+        // ເພີ່ມຂໍ້ມູນທີ່ຂາດ
+        asset_status: "ACTIVE",
+        has_depreciation: "Y",
       };
     },
   },
