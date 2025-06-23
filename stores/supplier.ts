@@ -34,7 +34,7 @@ export const supplierStore = defineStore("supplier", {
       this.isLoading = true;
       try {
         const res = await axios.get<SupplierModel.Supplier[]>(
-          `supplier`,
+          `/api/asset_suppliers/`,
           {
             headers: {
               "Content-Type": "application/json",
@@ -53,11 +53,11 @@ export const supplierStore = defineStore("supplier", {
     },
 
     
-    async GetSupplierDetail(id: string) {
+    async GetSupplierDetail(id: number) {
       this.isLoading = true;
       try {
         const res = await axios.get<SupplierModel.Supplier>(
-          `supplier/${id}`,
+          `/api/asset_suppliers/${id}`,
           {
             headers: {
               "Content-Type": "application/json",
@@ -80,7 +80,7 @@ export const supplierStore = defineStore("supplier", {
       this.isLoading = true;
       try {
         const res = await axios.post<SupplierModel.Supplier>(
-          `supplier`,
+          `/api/asset_suppliers/`,
           this.form_create_supplier,
           {
             headers: {
@@ -98,7 +98,7 @@ export const supplierStore = defineStore("supplier", {
             showConfirmButton: false,
           });
           setTimeout(() => {
-            goPath("/supplier");
+            goPath("/property/supplier");
           }, 1500);
 
          
@@ -126,11 +126,11 @@ export const supplierStore = defineStore("supplier", {
     },
 
   
-    async UpdateSupplier(id: string) {
+    async UpdateSupplier(id: number) {
       this.isLoading = true;
       try {
         const res = await axios.put<SupplierModel.Supplier>(
-          `supplier/${id}`,
+          `/api/asset_suppliers/${id}/`,
           this.form_update_supplier,
           {
             headers: {
@@ -148,7 +148,7 @@ export const supplierStore = defineStore("supplier", {
             showConfirmButton: false,
           });
           setTimeout(() => {
-            goPath("/supplier");
+            goPath("/property/supplier");
           }, 1500);
 
          
@@ -180,19 +180,20 @@ export const supplierStore = defineStore("supplier", {
     async DeleteSupplier(id: string) {
       this.isLoading = true;
       try {
-        const res = await axios.delete(`supplier/${id}`, {
+        const res = await axios.delete(`/api/asset_suppliers/${id}`, {
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         });
-        if (res.status === 200) {
+        if (res.status === 200 || res.status === 204) {
           CallSwal({
             title: "ສຳເລັດ",
             text: "ສຳເລັດການລຶບຜູ້ສະໜອງ",
             icon: "success",
             showCancelButton: false,
             showConfirmButton: false,
+            timer: 1500,
           });
          
           await this.GetSupplierList();

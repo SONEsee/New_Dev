@@ -27,7 +27,7 @@ export interface AssetTypeDetail {
     depreciation_rate: number; // Annual depreciation rate in percentage
     useful_life: number; // Useful life in years
     description?: string;
-    RECORD_STAT: 'O' | 'C';
+    Record_Status: 'O' | 'C';
     created_at: string | Date;
     updated_at: string | Date;
   }
@@ -61,7 +61,7 @@ export interface AssetTypeDetail {
     parts_replaced?: string;
     status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
     notes?: string;
-    RECORD_STAT: 'O' | 'C';
+    Record_Status: 'O' | 'C';
     created_at: string | Date;
     updated_at: string | Date;
     created_by?: number;
@@ -84,7 +84,7 @@ export interface AssetTypeDetail {
     transferred_by: number;
     status: 'pending' | 'approved' | 'completed' | 'rejected';
     notes?: string;
-    RECORD_STAT: 'O' | 'C';
+    Record_Status: 'O' | 'C';
     created_at: string | Date;
     updated_at: string | Date;
   }
@@ -101,7 +101,7 @@ export interface AssetTypeDetail {
     book_value: number;
     useful_life_remaining: number;
     calculated_by: number;
-    RECORD_STAT: 'O' | 'C';
+    Record_Status: 'O' | 'C';
     created_at: string | Date;
     updated_at: string | Date;
   }
@@ -118,7 +118,7 @@ export interface AssetTypeDetail {
     responsible_person?: string;
     contact_info?: string;
     description?: string;
-    RECORD_STAT: 'O' | 'C';
+    Record_Status: 'O' | 'C';
     Maker_DT_Stamp: string | Date;
     updated_at: string | Date;
   }

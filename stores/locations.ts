@@ -23,7 +23,7 @@ export const locationStore = defineStore("location", {
         record_stat: "O" as 'C' | 'O',
       },
       form_update_location: {
-        id: "" as string | number,
+       
         location_code: "",
         location_name_la: "",
         location_name_en: "",
@@ -33,7 +33,7 @@ export const locationStore = defineStore("location", {
         responsible_person: "",
         phone: "",
         remarks: "",
-        record_stat: "O" as 'C' | 'O',
+       
       },
     };
   },
@@ -85,11 +85,11 @@ export const locationStore = defineStore("location", {
     },
 
   
-    async GetLocationDetail(id: string) {
+    async GetLocationDetail(id:number) {
       this.isLoading = true;
       try {
         const res = await axios.get<LocationModel.Location>(
-          `fa-locations/${id}`,
+          `/api/asset_location/${id}`,
           {
             headers: {
               "Content-Type": "application/json",
@@ -151,11 +151,11 @@ export const locationStore = defineStore("location", {
     },
 
   
-    async UpdateLocation(id: string) {
+    async UpdateLocation(id: number) {
       this.isLoading = true;
       try {
         const res = await axios.put<LocationModel.Location>(
-          `fa-locations/${id}`,
+          `/api/asset_location/${id}/`,
           this.form_update_location,
           {
             headers: {
@@ -197,19 +197,20 @@ export const locationStore = defineStore("location", {
     async DeleteLocation(id: string) {
       this.isLoading = true;
       try {
-        const res = await axios.delete(`fa-locations/${id}`, {
+        const res = await axios.delete(`/api/asset_location/${id}`, {
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         });
-        if (res.status === 200) {
+        if (res.status === 200 || res.status === 204) {
           CallSwal({
             title: "ສຳເລັດ",
             text: "ສຳເລັດການລຶບສະຖານທີ່",
             icon: "success",
             showCancelButton: false,
             showConfirmButton: false,
+            timer: 1500,
           });
         
           await this.GetLocationList();
@@ -229,12 +230,49 @@ export const locationStore = defineStore("location", {
     },
 
   
-    async UpdateLocationStatus(id: string, status: 'C' | 'O') {
+    async UpdateLocationStatus(id: number, ) {
       this.isLoading = true;
       try {
-        const res = await axios.patch(
-          `fa-locations/${id}/status`,
-          { record_stat: status },
+        const res = await axios.post(
+          `api/asset_location/${id}/set_open/`,
+          
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+        if (res.status === 200) {
+          CallSwal({
+            title: "ສຳເລັດ",
+            text: "ສຳເລັດການອັບເດດສະຖານະ",
+            icon: "success",
+            showCancelButton: false,
+            showConfirmButton: false,
+          });
+    
+          await this.GetLocationList();
+        }
+      } catch (error) {
+        console.error("Error updating location status:", error);
+        CallSwal({
+          title: "ຜິດພາດ",
+          text: "ມີຂໍ້ຜິດພາດໃນການອັບເດດສະຖານະ",
+          icon: "error",
+          showCancelButton: false,
+          confirmButtonText: "ຕົກລົງ",
+        });
+      } finally {
+        this.isLoading = false;
+      }
+    },
+    async UpdateLocationStatusof(id: number, ) {
+      this.isLoading = true;
+      try {
+        const res = await axios.post(
+          `api/asset_location/${id}/set_close/`,
+         
           {
             headers: {
               "Content-Type": "application/json",
@@ -286,7 +324,7 @@ export const locationStore = defineStore("location", {
   
     resetUpdateForm() {
       this.form_update_location = {
-        id: "",
+       
         location_code: "",
         location_name_la: "",
         location_name_en: "",
@@ -296,7 +334,7 @@ export const locationStore = defineStore("location", {
         responsible_person: "",
         phone: "",
         remarks: "",
-        record_stat: "O",
+       
       };
     },
   },

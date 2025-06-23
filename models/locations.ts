@@ -9,5 +9,5 @@ export interface Location {
   responsible_person: string | null;
   phone: string | null; 
   remarks: string | null; 
-  record_stat: 'C' | 'O';
+  Record_Status: 'C' | 'O';
 }

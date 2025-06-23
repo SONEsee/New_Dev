@@ -1,13 +1,11 @@
 <script lang="ts" setup>
 import { useRoute, useRouter } from "vue-router";
 
-
 const supplierStoreInstance = supplierStore();
 const route = useRoute();
 const router = useRouter();
 
-const supplier_id = route.query.supplier_id as string;
-
+const supplier_id = Number(route.query.supplier_id) || 0;
 
 const title = ref("ລາຍລະອຽດຜູ້ສະໜອງ");
 const loading = ref(false);
@@ -23,24 +21,17 @@ const {
   initializeRole,
 } = useRolePermissions();
 
-
 const goBack = () => {
   router.go(-1);
 };
 
-
-const editSupplier = () => {
-  router.push(`/supplier/edit/?supplier_id=${supplier_id}`);
-};
-
-
 onMounted(() => {
+  supplierStoreInstance.GetSupplierDetail(supplier_id);
   if (supplier_id) {
     loadSupplierDetail();
   }
   initializeRole();
 });
-
 
 const loadSupplierDetail = async () => {
   loading.value = true;
@@ -52,7 +43,6 @@ const loadSupplierDetail = async () => {
     loading.value = false;
   }
 };
-
 
 const supplierData = computed(() => {
   return supplierStoreInstance.response_supplier_detail;
@@ -70,11 +60,11 @@ const formatDate = (date: Date | string) => {
 };
 
 const getStatusText = (status: string) => {
-  return status === 'O' ? 'ເປີດໃຊ້ງານ' : 'ປິດໃຊ້ງານ';
+  return status === "O" ? "ເປີດໃຊ້ງານ" : "ປິດໃຊ້ງານ";
 };
 
 const getStatusColor = (status: string) => {
-  return status === 'O' ? 'success' : 'error';
+  return status === "O" ? "success" : "error";
 };
 </script>
 
@@ -85,9 +75,48 @@ const getStatusColor = (status: string) => {
         <GlobalTextTitleLine :title="title" />
       </v-col>
 
-     
-
-      <v-col cols="12" class="">
+      <v-col cols="12" md="6">
+        <GlobalCardTitle
+          :title="'ລະຫັດຜູ້ສະໜອງ'"
+          :text="supplierData?.supplier_code"
+        />
+        <GlobalCardTitle
+          :title="'ຊື່ຜູ້ສະໜອງ'"
+          :text="supplierData?.supplier_name"
+        />
+        <GlobalCardTitle
+          :title="'ຜູ້ປະສານງານ'"
+          :text="supplierData?.contact_person"
+        />
+        <v-list-item class="mt-4">
+          <!-- <v-list-item-title class="text-subtitle-2 text-grey-darken-1">
+            ສະຖານະ
+          </v-list-item-title> -->
+          <!-- <v-list-item-subtitle class="mt-1">
+            <v-chip
+              :color="getStatusColor(supplierData.Record_Status || 'C')"
+              variant="flat"
+              size="small"
+            >
+              <v-icon
+                start
+                :icon="
+                  supplierData.Record_Status === 'O'
+                    ? 'mdi-check-circle'
+                    : 'mdi-close-circle'
+                "
+              ></v-icon>
+              {{ getStatusText(supplierData.Record_Status || "C") }}
+            </v-chip>
+          </v-list-item-subtitle> -->
+        </v-list-item>
+      </v-col>
+      <v-col cols="12" md="6">
+        <GlobalCardTitle :title="'ເບີໂທລະສັບ'" :text="supplierData?.phone" />
+        <GlobalCardTitle :title="'ອີເມວ'" :text="supplierData?.email" />
+        <GlobalCardTitle :title="'ທີ່ຢູ່'" :text="supplierData?.address" />
+      </v-col>
+      <!-- <v-col cols="12" class="">
         <v-card v-if="!loading && supplierData" class="elevation-2 rounded-lg">
           <v-card-title class="bg-primary text-white">
             <v-icon class="mr-2">mdi-truck</v-icon>
@@ -99,10 +128,10 @@ const getStatusColor = (status: string) => {
               <v-col cols="12" md="6">
                 <v-list density="compact">
                   <v-list-item>
-                    <v-list-item-title class="text-subtitle-2 text-grey-darken-1">
+                    <v-list-item-title class=" text-grey-darken-1">
                       ລະຫັດຜູ້ສະໜອງ
                     </v-list-item-title>
-                    <v-list-item-subtitle class="text-h6 text-black mt-1">
+                    <v-list-item-subtitle class=" text-black mt-1">
                       {{ supplierData.supplier_code || '-' }}
                     </v-list-item-subtitle>
                   </v-list-item>
@@ -131,12 +160,12 @@ const getStatusColor = (status: string) => {
                     </v-list-item-title>
                     <v-list-item-subtitle class="mt-1">
                       <v-chip 
-                        :color="getStatusColor(supplierData.RECORD_STAT || 'C')"
+                        :color="getStatusColor(supplierData.Record_Status || 'C')"
                         variant="flat"
                         size="small"
                       >
-                        <v-icon start :icon="supplierData.RECORD_STAT === 'O' ? 'mdi-check-circle' : 'mdi-close-circle'"></v-icon>
-                        {{ getStatusText(supplierData.RECORD_STAT || 'C') }}
+                        <v-icon start :icon="supplierData.Record_Status === 'O' ? 'mdi-check-circle' : 'mdi-close-circle'"></v-icon>
+                        {{ getStatusText(supplierData.Record_Status || 'C') }}
                       </v-chip>
                     </v-list-item-subtitle>
                   </v-list-item>
@@ -197,7 +226,7 @@ const getStatusColor = (status: string) => {
                       <div class="text-caption">ສ້າງວັນທີ</div>
                     </template>
                     <div class="text-body-2">
-                      {{ formatDate(supplierData.created_at) }}
+                      {{ formatDate(supplierData.Maker_DT_Stamp) }}
                     </div>
                   </v-timeline-item>
 
@@ -209,7 +238,7 @@ const getStatusColor = (status: string) => {
                       <div class="text-caption">ແກ້ໄຂຄັ້ງສຸດທ້າຍ</div>
                     </template>
                     <div class="text-body-2">
-                      {{ formatDate(supplierData.updated_at) }}
+                      {{ formatDate(supplierData.Checker_DT_Stamp) }}
                     </div>
                   </v-timeline-item>
                 </v-timeline>
@@ -219,7 +248,7 @@ const getStatusColor = (status: string) => {
         </v-card>
 
         <!-- Loading State -->
-        <v-card v-else-if="loading" class="elevation-2 rounded-lg">
+      <!-- <v-card v-else-if="loading" class="elevation-2 rounded-lg">
           <v-card-text class="text-center pa-12">
             <v-progress-circular
               indeterminate
@@ -244,7 +273,7 @@ const getStatusColor = (status: string) => {
             </p>
           </v-card-text>
         </v-card>
-      </v-col>
+      </v-col>  -->
     </v-row>
   </section>
 </template>

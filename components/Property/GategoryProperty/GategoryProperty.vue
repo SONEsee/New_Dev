@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import axios from "@/helpers/axios";
 import { ref, onMounted, computed } from "vue";
 const proppertyStore = propertyStore();
 const mockData1 =  computed(()=>{
@@ -37,7 +38,84 @@ const role1 = computed(() => {
 });
 
 
+const openstatus = async (id:any)=>{
 
+  try {
+    const notification = await CallSwal({
+      icon: "warning",
+      title: "ຄຳເຕືອນ",
+      text: `ທ່ານກຳລັງອັບເດດສະຖານະ ທ່ານແນ່ໃຈແລ້ວບໍ່?`,
+      showCancelButton: true,
+      confirmButtonText: "ຕົກລົງ",
+      cancelButtonText: "ຍົກເລີກ",
+    });if(notification.isConfirmed){
+      const req = await axios.post(`api/asset_types/${id}/set_open/`,{
+     headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+    });if(req.status ===200){
+      CallSwal({
+        icon: "success",
+        title: "ສຳເລັດ",
+        text: "ອັບເດດສະຖານະແລ້ວ",
+        showConfirmButton: false,
+        timer: 1500,
+      });
+      proppertyStore.GetPropertyCategoryById();
+    }
+    }
+    
+  } catch (error) {
+    CallSwal({
+      icon: "error",
+      title: "ຂໍ້ຜິດພາດ",
+      text: "ບໍ່ສາມາດອັບເດດໄດ້, ກະລຸນາໃສ່ຂໍ້ມູນ",
+      showConfirmButton: false,
+      timer: 1500,
+    });
+    
+  }
+}
+const offstatus = async (id:any)=>{
+
+  try {
+    const notification = await CallSwal({
+      icon: "warning",
+      title: "ຄຳເຕືອນ",
+      text: `ທ່ານກຳລັງອັບເດດສະຖານະ ທ່ານແນ່ໃຈແລ້ວບໍ່?`,
+      showCancelButton: true,
+      confirmButtonText: "ຕົກລົງ",
+      cancelButtonText: "ຍົກເລີກ",
+    });if(notification.isConfirmed){
+      const req = await axios.post(`api/asset_types/${id}/set_close/`,{
+     headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+    });if(req.status ===200){
+      CallSwal({
+        icon: "success",
+        title: "ສຳເລັດ",
+        text: "ອັບເດດສະຖານະແລ້ວ",
+        showConfirmButton: false,
+        timer: 1500,
+      });
+      proppertyStore.GetPropertyCategoryById();
+    }
+    }
+    
+  } catch (error) {
+    CallSwal({
+      icon: "error",
+      title: "ຂໍ້ຜິດພາດ",
+      text: "ບໍ່ສາມາດອັບເດດໄດ້, ກະລຸນາໃສ່ຂໍ້ມູນ",
+      showConfirmButton: false,
+      timer: 1500,
+    });
+    
+  }
+}
 
 const rules = {
   required: (value: any) => !!value || "ກະລຸນາໃສ່ຂໍ້ມູນ",
@@ -46,9 +124,9 @@ const rules = {
 const title = "ຈັດການປະເພດຊັບສິນ";
 
 const headers = computed(() => [
-  { title: "ລະຫັດ", value: "type_code", width: "120px" },
-  { title: "ຊື່ພາສາລາວ", value: "type_name_la", width: "200px" },
-  { title: "ຊື່ພາສາອັງກິດ", value: "type_name_en", width: "200px" },
+  { title: "ລະຫັດ", value: "type_code"},
+  { title: "ຊື່ພາສາລາວ", value: "type_name_la" },
+  { title: "ຊື່ພາສາອັງກິດ", value: "type_name_en" },
  
 
   ...(canView.value
@@ -127,7 +205,7 @@ onMounted(async () => {
     <div class="pa-3">
       <GlobalTextTitleLine :title="title" />
 
-      <v-row class="mb-4">
+      <v-row class="">
         <v-col cols="12" md="6">
           <v-btn
             v-if="canAdd"
@@ -158,7 +236,7 @@ onMounted(async () => {
         :items="mockData1"
         :headers="headers"
         :search="search"
-        class="elevation-1 rounded-lg"
+        
         :loading="loading"
         hover
       >
@@ -197,18 +275,12 @@ onMounted(async () => {
 
         
 
-        <!-- <template #item.created_at="{ item }">
-          <span>{{ formatDate(item.created_at) }}</span>
-        </template>
-
-        <template #item.updated_at="{ item }">
-          <span>{{ formatDate(item.updated_at) }}</span>
-        </template> -->
+       
 
         <template #item.edit="{ item }">
           <v-btn
-            color="primary"
-            variant="text"
+            class="text-primary"
+           flat
             size="small"
             icon="mdi-pencil"
             @click="
@@ -220,7 +292,7 @@ onMounted(async () => {
           </v-btn>
         </template>
         <template #item.weiw="{ item }">
-          <div class="d-flex gap-2">
+          <div >
             <v-btn
               color="info"
               variant="text"
@@ -238,7 +310,7 @@ onMounted(async () => {
           </div>
         </template>
         <template #item.delete="{ item }">
-          <div class="d-flex gap-2">
+          <div >
             <v-btn
               color="error"
               variant="text"
@@ -253,11 +325,11 @@ onMounted(async () => {
         </template>
 
         <template v-slot:item.Record_Status="{ item }">
-          <div class="text-center pa-8">
-            <v-btn flat size="small" v-if="item.Record_Status === 'O'">
+          <div >
+            <v-btn flat size="small" v-if="item.Record_Status === 'O'" @click="offstatus(item.type_id)">
               <v-icon icon="mdi-toggle-switch" color="primary"></v-icon>
             </v-btn>
-            <v-btn flat size="small" v-if="item.Record_Status === 'C'">
+            <v-btn flat size="small" v-if="item.Record_Status === 'C'" @click="openstatus(item.type_id)">
               <v-icon icon="mdi-toggle-switch-off-outline" color="error"></v-icon>
             </v-btn>
           </div>

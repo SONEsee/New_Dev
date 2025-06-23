@@ -20,7 +20,27 @@ const handleSubmit = async (item: any) => {
       showCancelButton: true,
     });
     if (notification.isConfirmed) {
-      await locationStoreInstance.UpdateLocationStatus(item.id, newStatus);
+      await locationStoreInstance.UpdateLocationStatus(item.location_id);
+    }
+  } catch (error) {
+    console.error("Error submitting form:", error);
+  }
+};
+const handleSubmitof = async (item: any) => {
+  try {
+    const newStatus = item.record_stat === "O" ? "C" : "O";
+    const statusText = newStatus === "O" ? "ເປີດ" : "ປິດ";
+
+    const notification = await CallSwal({
+      title: "ຢືນຢັນ",
+      text: `ທ່ານຕ້ອງການປິດສະຖານະສະຖານທີ່ນີ້ໃຊ່ບໍ່?`,
+      icon: "question",
+      confirmButtonText: "ຕົກລົງ",
+      cancelButtonText: "ຍົກເລີກ",
+      showCancelButton: true,
+    });
+    if (notification.isConfirmed) {
+      await locationStoreInstance.UpdateLocationStatusof(item.location_id);
     }
   } catch (error) {
     console.error("Error submitting form:", error);
@@ -129,7 +149,7 @@ const headers = computed(() => [
     ? [
         {
           title: "ສະຖານະ",
-          value: "record_stat",
+          value: "Record_Status",
           align: "center",
           sortable: true,
           filterable: true,
@@ -181,92 +201,7 @@ const headers = computed(() => [
 onMounted(()=>{
   locationStoreInstance.GetLocationList();
 })
-// const mockData = ref([
-//   {
-//     id: 1,
-//     location_code: "HQ-001",
-//     location_name_la: "ສຳນັກງານໃຫຍ່",
-//     location_name_en: "Head Office",
-//     parent_location_id: null,
-//     parent_location: null,
-//     location_type: "BUILDING",
-//     address: "ນະຄອນຫຼວງວຽງຈັນ, ລາວ",
-//     responsible_person: "ທ່ານ ສົມສີ ວົງເວືອງ",
-//     phone: "021-123456",
-//     remarks: "ອາຄານສຳນັກງານຫຼັກ",
-//     record_stat: "O",
-//   },
-//   {
-//     id: 2,
-//     location_code: "HQ-F01",
-//     location_name_la: "ຊັ້ນທີ 1",
-//     location_name_en: "1st Floor",
-//     parent_location_id: 1,
-//     parent_location: { location_code: "HQ-001", location_name_la: "ສຳນັກງານໃຫຍ່" },
-//     location_type: "FLOOR",
-//     address: null,
-//     responsible_person: "ທ່ານ ສົມພົງ ແກ້ວມະນີ",
-//     phone: "021-123457",
-//     remarks: "ຊັ້ນທີ 1 ສຳນັກງານໃຫຍ່",
-//     record_stat: "O",
-//   },
-//   {
-//     id: 3,
-//     location_code: "HQ-R101",
-//     location_name_la: "ຫ້ອງບັນຊີ",
-//     location_name_en: "Accounting Room",
-//     parent_location_id: 2,
-//     parent_location: { location_code: "HQ-F01", location_name_la: "ຊັ້ນທີ 1" },
-//     location_type: "ROOM",
-//     address: null,
-//     responsible_person: "ທ່ານ ມານີ ລາວົງ",
-//     phone: "021-123458",
-//     remarks: "ຫ້ອງແຜນກບັນຊີ",
-//     record_stat: "O",
-//   },
-//   {
-//     id: 4,
-//     location_code: "WH-001",
-//     location_name_la: "ໂກດັງທີ 1",
-//     location_name_en: "Warehouse 1",
-//     parent_location_id: null,
-//     parent_location: null,
-//     location_type: "WAREHOUSE",
-//     address: "ເຂດອຸດສາຫະກຳ, ວຽງຈັນ",
-//     responsible_person: "ທ່ານ ບຸນມີ ສີຫາ",
-//     phone: "021-987654",
-//     remarks: "ໂກດັງເກັບສິນຄ້າຫຼັກ",
-//     record_stat: "O",
-//   },
-//   {
-//     id: 5,
-//     location_code: "BR-LPB",
-//     location_name_la: "ສາຂາຫຼວງພະບາງ",
-//     location_name_en: "Luang Prabang Branch",
-//     parent_location_id: null,
-//     parent_location: null,
-//     location_type: "BUILDING",
-//     address: "ເມືອງຫຼວງພະບາງ, ແຂວງຫຼວງພະບາງ",
-//     responsible_person: "ທ່ານ ກຳພອນ ວົງໄຊ",
-//     phone: "071-555123",
-//     remarks: "ສາຂາເຂດພາກເໜືອ",
-//     record_stat: "C",
-//   },
-//   {
-//     id: 6,
-//     location_code: "AREA-P01",
-//     location_name_la: "ພື້ນທີ່ຈອດລົດ",
-//     location_name_en: "Parking Area",
-//     parent_location_id: 1,
-//     parent_location: { location_code: "HQ-001", location_name_la: "ສຳນັກງານໃຫຍ່" },
-//     location_type: "AREA",
-//     address: null,
-//     responsible_person: "ທ່ານ ຄຳມູນ ທອງ",
-//     phone: "021-123459",
-//     remarks: "ພື້ນທີ່ຈອດລົດພະນັກງານ",
-//     record_stat: "O",
-//   },
-// ]);
+
 
 const filteredData = computed(() => {
   let data = mockData.value;
@@ -337,7 +272,7 @@ const confirmDelete = async (item: any) => {
     });
 
     if (notification.isConfirmed) {
-      await locationStoreInstance.DeleteLocation(item.id);
+      await locationStoreInstance.DeleteLocation(item.location_id);
     }
   } catch (error) {
     console.error("Error confirming delete:", error);
@@ -349,7 +284,7 @@ const clearFilters = async () => {
   search.value = "";
 };
 
-// Statistics
+
 const statistics = computed(() => {
   const data = filteredData.value;
   return {
@@ -361,8 +296,7 @@ const statistics = computed(() => {
     warehouse: data.filter(item => item.location_type === 'WAREHOUSE').length,
     mainLocations: data.filter(item => !item.parent_location_id).length,
     subLocations: data.filter(item => item.parent_location_id).length,
-    active: data.filter(item => item.record_stat === 'O').length,
-    inactive: data.filter(item => item.record_stat === 'C').length,
+    
   };
 });
 
@@ -387,7 +321,7 @@ onMounted(async () => {
 
   <v-col cols="12">
     
-    <v-row class="mb-4">
+    <!-- <v-row class="mb-4">
       <v-col cols="12" md="2">
         <v-card variant="outlined">
           <v-card-text class="text-center">
@@ -442,7 +376,7 @@ onMounted(async () => {
           </v-card-text>
         </v-card>
       </v-col>
-    </v-row>
+    </v-row> -->
 
    
     <v-row>
@@ -501,7 +435,7 @@ onMounted(async () => {
 
     <!-- Summary Information -->
     <v-row class="mb-4">
-      <v-col cols="12">
+      <!-- <v-col cols="12">
         <v-card variant="outlined" color="info">
           <v-card-text>
             <div class="d-flex flex-wrap justify-space-between align-center">
@@ -530,7 +464,7 @@ onMounted(async () => {
             </div>
           </v-card-text>
         </v-card>
-      </v-col>
+      </v-col> -->
     </v-row>
 
     <!-- Data Table -->
@@ -569,7 +503,7 @@ onMounted(async () => {
         <b style="color: blue">{{ column.title }}</b>
       </template>
 
-      <template v-slot:header.record_stat="{ column }">
+      <template v-slot:header.Record_Status="{ column }">
         <b style="color: blue">{{ column.title }}</b>
       </template>
 
@@ -656,17 +590,17 @@ onMounted(async () => {
         </div>
       </template>
 
-      <template v-slot:item.record_stat="{ item }">
+      <template v-slot:item.Record_Status="{ item }">
         <div>
           <v-btn
-            v-if="item.record_stat === 'O'"
+            v-if="item.Record_Status === 'O'"
             flat
-            @click="handleSubmit(item)"
+            @click="handleSubmitof(item)"
           >
             <v-icon color="success">mdi-toggle-switch</v-icon>
           </v-btn>
           <v-btn
-            v-if="item.record_stat === 'C'"
+            v-if="item.Record_Status === 'C'"
             flat
             @click="handleSubmit(item)"
           >
