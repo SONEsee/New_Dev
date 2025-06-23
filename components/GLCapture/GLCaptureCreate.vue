@@ -86,15 +86,42 @@
                   @input="onMainDescriptionChange"></v-text-field>
               </v-col>
               <v-col cols="12" md="4">
-                <v-select v-model="journalData.fin_cycle" :items="finCycles" item-title="cycle_display"
-                  item-value="fin_cycle" label="ຮອບການເງິນ" variant="outlined" density="comfortable"
-                  :loading="loading.finCycles" @update:model-value="loadPeriodCodes"
-                  prepend-inner-icon="mdi-calendar-range" hide-details="auto" no-data-text="ບໍ່ມີຂໍ້ມູນຮອບການເງິນ">
-                  <template #item="{ props, item }">
-                    <v-list-item v-bind="props">
-                    </v-list-item>
-                  </template>
-                </v-select>
+                 <v-select 
+                    v-model="journalData.fin_cycle" 
+                    :items="finCycles" 
+                    item-title="cycle_display"
+                    item-value="fin_cycle" 
+                    label="ຮອບການເງິນ" 
+                    variant="outlined" 
+                    density="comfortable"
+                    :loading="loading.finCycles" 
+                    @update:model-value="loadPeriodCodes"
+                    prepend-inner-icon="mdi-calendar-range" 
+                    hide-details="auto" 
+                    no-data-text="ບໍ່ມີຂໍ້ມູນຮອບການເງິນ">
+                    <template #append-inner>
+                      <v-btn 
+                        icon 
+                        size="x-small" 
+                        variant="text" 
+                        color="info" 
+                        @click="refreshAutoSelection"
+                        title="ເລືອກອັດຕະໂນມັດຕາມປີປັດຈຸບັນ">
+                        <v-icon size="small">mdi-refresh-auto</v-icon>
+                      </v-btn>
+                    </template>
+                    <template #item="{ props, item }">
+                      <v-list-item v-bind="props">
+                        <!-- Add indicator for current year -->
+                        <template #append v-if="item.raw.fin_cycle.toString().includes(currentYear.toString())">
+                          <v-chip size="x-small" color="success" variant="flat">
+                            <v-icon size="x-small">mdi-calendar-today</v-icon>
+                            ປີນີ້
+                          </v-chip>
+                        </template>
+                      </v-list-item>
+                    </template>
+                  </v-select>
               </v-col>
               <v-col cols="12" md="4">
                 <v-select v-model="journalData.Period_code" :items="periodCodes" item-title="period_display"
@@ -1295,7 +1322,7 @@ const loadPeriodCodes = async () => {
     const data = response.data.results || response.data || []
     periodCodes.value = data.map(period => ({
       ...period,
-      period_display: `${period.period_code} - ${period.PC_StartDate ? new Date(period.PC_StartDate).toLocaleDateString() : ''}`,
+      period_display: `${period.period_code}`,
     }))
   } catch (error) {
     console.error('Error loading period codes:', error)
@@ -1305,7 +1332,7 @@ const loadPeriodCodes = async () => {
   }
 }
 
-const submitJournal = async () => {
+const submitJournal = async () => { 
   if (!isFormValid.value) {
     Swal.fire({
       icon: 'warning',

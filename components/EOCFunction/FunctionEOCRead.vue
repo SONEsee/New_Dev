@@ -146,12 +146,10 @@
         </template>
 
         <!-- Function -->
-        <template v-slot:item.function_id="{ item }">
-          <div class="text-truncate" style="max-width: 200px;" :title="item.function_name">
-            <v-chip size="small" variant="outlined" color="success">
-              {{ item.function_id }}
-            </v-chip>
-          </div>
+        <template v-slot:item.function_name="{ item }">
+          <span class="font-weight-medium">
+            {{ item.function_id }} - {{ item.function_name || '-' }}
+          </span>
         </template>
 
         <!-- Record Status with Action Buttons -->
@@ -428,7 +426,7 @@ const headers = ref([
   { title: 'ລໍາດັບ', key: 'eoc_seq_no', sortable: true, align: 'center', width: '80px' },
   { title: 'ປະເພດ EOC', key: 'eoc_type', sortable: true, align: 'center', width: '100px' },
   { title: 'Module', key: 'module_id', sortable: false, align: 'center', width: '100px' },
-  { title: 'Function', key: 'function_id', sortable: false, width: '120px' },
+  { title: 'Function', key: 'function_name', sortable: false, width: '120px' },
   { title: 'ສະຖານະ Record', key: 'Record_Status', sortable: true, align: 'center', width: '140px' },
   { title: 'ສະຖານະອະນຸມັດ', key: 'Auth_Status', sortable: true, align: 'center', width: '140px' },
   { title: 'ຜູ້ສ້າງ', key: 'maker_name', sortable: false, width: '100px' },
