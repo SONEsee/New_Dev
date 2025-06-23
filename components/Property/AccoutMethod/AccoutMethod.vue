@@ -3,7 +3,9 @@ import { ref, onMounted, computed } from "vue";
 import { CallSwal } from "#build/imports";
 
 const accountMethodStoreInstance = accountMethodStore();
-
+const response = computed(()=>{
+  return accountMethodStoreInstance.response_account_method_list || [];
+})
 const handleSubmit = async (item: any) => {
   try {
     const newStatus = item.record_stat === "O" ? "C" : "O";
@@ -403,6 +405,7 @@ const statistics = computed(() => {
 });
 
 onMounted(async () => {
+  accountMethodStoreInstance.GetAccountMethodList();
   loading.value = true;
   try {
     initializeRole();
@@ -463,7 +466,7 @@ onMounted(async () => {
       </v-col>
     </v-row>
 
-
+test{{ response }}
     <v-row>
       <v-col cols="12" md="3">
         <div class="d-flex">
