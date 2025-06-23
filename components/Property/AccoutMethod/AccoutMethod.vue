@@ -3,7 +3,7 @@ import { ref, onMounted, computed } from "vue";
 import { CallSwal } from "#build/imports";
 
 const accountMethodStoreInstance = accountMethodStore();
-const response = computed(()=>{
+const mockData = computed(()=>{
   return accountMethodStoreInstance.response_account_method_list || [];
 })
 const handleSubmit = async (item: any) => {
@@ -199,73 +199,73 @@ const headers = computed(() => [
     : []),
 ]);
 
-const mockData = ref([
-  {
-    mapping_id: 1,
-    ref_id: 2024001,
-    acc_type: "ASSET",
-    asset_id: 1,
-    debit_account_id: "1441001",
-    credit_account_id: "1101100",
-    amount: 15000000,
-    transaction_date: new Date("2025-06-15T10:00:00+07:00"),
-    description: "ການຊື້ຄອມພິວເຕີ Dell",
-    journal_entry_id: "JE-2024-001",
-    record_stat: "O",
-  },
-  {
-    mapping_id: 2,
-    ref_id: 2024002,
-    acc_type: "DEPRECIATION",
-    asset_id: 1,
-    debit_account_id: "5551001",
-    credit_account_id: "1442001",
-    amount: 1250000,
-    transaction_date: new Date("2025-06-30T15:30:00+07:00"),
-    description: "ການຄິດເສື່ອມລາຄາປະຈຳເດືອນ",
-    journal_entry_id: "JE-2024-002",
-    record_stat: "O",
-  },
-  {
-    mapping_id: 3,
-    ref_id: 2024003,
-    acc_type: "ASSET",
-    asset_id: 2,
-    debit_account_id: "1441001",
-    credit_account_id: "2100000",
-    amount: 50000000,
-    transaction_date: new Date("2025-06-10T09:15:00+07:00"),
-    description: "ການຊື້ເຄື່ອງຈັກຜະລິດແບບຜ່ອນຊຳລະ",
-    journal_entry_id: null,
-    record_stat: "O",
-  },
-  {
-    mapping_id: 4,
-    ref_id: 2024004,
-    acc_type: "DISPOSAL",
-    asset_id: 3,
-    debit_account_id: "1101100",
-    credit_account_id: "1441001",
-    amount: 80000000,
-    transaction_date: new Date("2025-06-20T14:45:00+07:00"),
-    description: "ການຂາຍລົດໃຫ້ບໍລິການ",
-    journal_entry_id: "JE-2024-004",
-    record_stat: "C",
-  },
-  {
-    mapping_id: 5,
-    ref_id: 2024005,
-    acc_type: "DEPRECIATION",
-    asset_id: 2,
-    debit_account_id: "5551001",
-    credit_account_id: "1442001",
-    amount: 4166667,
-    transaction_date: new Date("2025-06-30T16:00:00+07:00"),
-    description: "ການຄິດເສື່ອມລາຄາເຄື່ອງຈັກ",
-    journal_entry_id: null,
-    record_stat: "O",
-  },
-]);
+// const mockData = ref([
+//   {
+//     mapping_id: 1,
+//     ref_id: 2024001,
+//     acc_type: "ASSET",
+//     asset_id: 1,
+//     debit_account_id: "1441001",
+//     credit_account_id: "1101100",
+//     amount: 15000000,
+//     transaction_date: new Date("2025-06-15T10:00:00+07:00"),
+//     description: "ການຊື້ຄອມພິວເຕີ Dell",
+//     journal_entry_id: "JE-2024-001",
+//     record_stat: "O",
+//   },
+//   {
+//     mapping_id: 2,
+//     ref_id: 2024002,
+//     acc_type: "DEPRECIATION",
+//     asset_id: 1,
+//     debit_account_id: "5551001",
+//     credit_account_id: "1442001",
+//     amount: 1250000,
+//     transaction_date: new Date("2025-06-30T15:30:00+07:00"),
+//     description: "ການຄິດເສື່ອມລາຄາປະຈຳເດືອນ",
+//     journal_entry_id: "JE-2024-002",
+//     record_stat: "O",
+//   },
+//   {
+//     mapping_id: 3,
+//     ref_id: 2024003,
+//     acc_type: "ASSET",
+//     asset_id: 2,
+//     debit_account_id: "1441001",
+//     credit_account_id: "2100000",
+//     amount: 50000000,
+//     transaction_date: new Date("2025-06-10T09:15:00+07:00"),
+//     description: "ການຊື້ເຄື່ອງຈັກຜະລິດແບບຜ່ອນຊຳລະ",
+//     journal_entry_id: null,
+//     record_stat: "O",
+//   },
+//   {
+//     mapping_id: 4,
+//     ref_id: 2024004,
+//     acc_type: "DISPOSAL",
+//     asset_id: 3,
+//     debit_account_id: "1101100",
+//     credit_account_id: "1441001",
+//     amount: 80000000,
+//     transaction_date: new Date("2025-06-20T14:45:00+07:00"),
+//     description: "ການຂາຍລົດໃຫ້ບໍລິການ",
+//     journal_entry_id: "JE-2024-004",
+//     record_stat: "C",
+//   },
+//   {
+//     mapping_id: 5,
+//     ref_id: 2024005,
+//     acc_type: "DEPRECIATION",
+//     asset_id: 2,
+//     debit_account_id: "5551001",
+//     credit_account_id: "1442001",
+//     amount: 4166667,
+//     transaction_date: new Date("2025-06-30T16:00:00+07:00"),
+//     description: "ການຄິດເສື່ອມລາຄາເຄື່ອງຈັກ",
+//     journal_entry_id: null,
+//     record_stat: "O",
+//   },
+// ]);
 
 const filteredData = computed(() => {
   let data = mockData.value;
@@ -466,7 +466,7 @@ onMounted(async () => {
       </v-col>
     </v-row>
 
-test{{ response }}
+
     <v-row>
       <v-col cols="12" md="3">
         <div class="d-flex">

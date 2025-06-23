@@ -189,7 +189,7 @@ const locationTypes = ref([
   { title: "ອາຄານ", value: "ອາຄານ", color: "primary" },
   { title: "ຊັ້ນ", value: "ຊັ້ນ", color: "info" },
   { title: "ຫ້ອງ", value: "ຫ້ອງ", color: "success" },
-  { title: "ສານຫຼືສວນ", value: "ສານຫຼືສວນ", color: "warning" },
+  { title: "ລານຫຼືສວນ", value: "ສານຫຼືສວນ", color: "warning" },
   { title: "ສາງເກັບເຄື່ອງ", value: "ສາງເກັບເຄື່ອງ", color: "error" }
 ])
 </script>

@@ -130,7 +130,7 @@ export const accountMethodStore = defineStore("accountMethod", {
       this.isLoading = true;
       try {
         const res = await axios.post<AccountsModel.AccoutMethodRespons>(
-          `account-methods`,
+          `/api/asset_account/`,
           this.form_create_account_method,
           {
             headers: {

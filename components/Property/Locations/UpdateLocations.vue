@@ -232,6 +232,13 @@ onMounted(async () => {
     loading.value = false;
   }
 });
+const locationTypes = ref([
+  { title: "ອາຄານ", value: "ອາຄານ", color: "primary" },
+  { title: "ຊັ້ນ", value: "ຊັ້ນ", color: "info" },
+  { title: "ຫ້ອງ", value: "ຫ້ອງ", color: "success" },
+  { title: "ລານຫຼືສວນ", value: "ສານຫຼືສວນ", color: "warning" },
+  { title: "ສາງເກັບເຄື່ອງ", value: "ສາງເກັບເຄື່ອງ", color: "error" }
+])
 </script>
 
 <template>
@@ -329,6 +336,23 @@ onMounted(async () => {
                   </v-list-item>
                 </template>
               </v-select>
+               <label>ປະເພດສະຖານທີ່</label>
+              <v-select
+                v-model="locationStoreInstance.form_update_location.location_type"
+                :items="locationTypes"
+                item-title="title"
+                item-value="value"
+                placeholder="ເລືອກປະເພດສະຖານທີ່"
+                density="compact"
+                variant="outlined"
+                hide-details="auto"
+               
+               
+                
+              >
+                
+              </v-select>
+
             </v-col>
 
             <v-col cols="12" md="6">
