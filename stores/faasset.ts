@@ -14,6 +14,7 @@ export const faAssetStore = defineStore("faAsset", {
       isLoading: false,
       form_create_fa_asset: {
         asset_type_id: null as number | null,
+        asset_list_id: "",
         asset_serial_no: "",
         asset_list_code: "",
         asset_tag: "",
@@ -48,6 +49,7 @@ export const faAssetStore = defineStore("faAsset", {
       },
       form_update_fa_asset: {
         id: "" as string | number,
+        asset_list_id: "",
         asset_type_id: null as number | null,
         asset_serial_no: "",
         asset_list_code: "",
@@ -197,6 +199,7 @@ export const faAssetStore = defineStore("faAsset", {
                 .split("T")[0]
             : null,
             asset_type_id: this.form_create_fa_asset.asset_type_id || null,
+            asset_list_id: this.form_create_fa_asset.asset_list_id || "",
           warranty_end_date: this.form_create_fa_asset.warranty_end_date
             ? new Date(this.form_create_fa_asset.warranty_end_date)
                 .toISOString()
@@ -290,6 +293,7 @@ export const faAssetStore = defineStore("faAsset", {
                 .toISOString()
                 .split("T")[0]
             : null,
+            asset_list_id: this.form_create_fa_asset.asset_list_id || "",
             asset_type_id: this.form_update_fa_asset.asset_type_id || null,
           warranty_end_date: this.form_update_fa_asset.warranty_end_date
             ? new Date(this.form_update_fa_asset.warranty_end_date)
