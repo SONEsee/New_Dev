@@ -65,6 +65,73 @@ const playtype = [
   },
 ];
 
+// Number formatting functions
+const formatNumber = (value) => {
+  if (!value && value !== 0) return '';
+  const num = parseFloat(value);
+  if (isNaN(num)) return '';
+  
+  // Check if the number is a whole number
+  if (num % 1 === 0) {
+    // Display without decimal places for whole numbers
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(num);
+  } else {
+    // Display with decimal places for numbers with decimals
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(num);
+  }
+};
+
+const parseFormattedNumber = (value) => {
+  if (!value) return null;
+  const cleanValue = value.toString().replace(/,/g, '');
+  const num = parseFloat(cleanValue);
+  return isNaN(num) ? null : num;
+};
+
+// Reactive formatted values for display
+const formattedAssetValue = computed({
+  get: () => formatNumber(faAssetStoreInstance.form_create_fa_asset.asset_value),
+  set: (val) => {
+    faAssetStoreInstance.form_create_fa_asset.asset_value = parseFormattedNumber(val);
+  }
+});
+
+const formattedSalvageValue = computed({
+  get: () => formatNumber(faAssetStoreInstance.form_create_fa_asset.asset_salvage_value),
+  set: (val) => {
+    faAssetStoreInstance.form_create_fa_asset.asset_salvage_value = parseFormattedNumber(val);
+  }
+});
+
+const formattedAccuDpcaValue = computed({
+  get: () => formatNumber(faAssetStoreInstance.form_create_fa_asset.asset_accu_dpca_value),
+  set: (val) => {
+    faAssetStoreInstance.form_create_fa_asset.asset_accu_dpca_value = parseFormattedNumber(val);
+  }
+});
+
+const formattedAssetValueRemain = computed(() => {
+  return formatNumber(faAssetStoreInstance.form_create_fa_asset.asset_value_remain);
+});
+
+const formattedAssetValueRemainBegin = computed(() => {
+  return formatNumber(faAssetStoreInstance.form_create_fa_asset.asset_value_remainBegin);
+});
+
+const formattedAssetValueRemainMonth = computed(() => {
+  return formatNumber(faAssetStoreInstance.form_create_fa_asset.asset_value_remainMonth);
+});
+
+const formattedAssetValueRemainLast = computed(() => {
+  return formatNumber(faAssetStoreInstance.form_create_fa_asset.asset_value_remainLast);
+});
+
 const goBack = () => {
   router.go(-1);
 };
@@ -529,17 +596,14 @@ onMounted(async () => {
                         <span class="text-error">*</span></label
                       >
                       <v-text-field
-                        v-model.number="
-                          faAssetStoreInstance.form_create_fa_asset.asset_value
-                        "
+                        v-model="formattedAssetValue"
                         :rules="[rules.required, rules.positiveNumber]"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        placeholder="0.00"
+                        placeholder="0"
                         density="compact"
                         variant="outlined"
                         hide-details="auto"
+                        prefix="₭"
+                        class="formatted-number-input"
                       ></v-text-field
                     ></v-col>
                     <v-col cols="12" md="3">
@@ -553,21 +617,6 @@ onMounted(async () => {
                         hide-details="auto"
                         :items="currencyOptions"
                       ></v-autocomplete>
-                      <!-- <label>ມີການເສື່ອມລາຄາບໍ່</label>
-                      <v-select
-                        v-model="
-                          faAssetStoreInstance.form_create_fa_asset
-                            .has_depreciation
-                        "
-                        :items="hasDepreciationOptions"
-                        item-title="title"
-                        item-value="value"
-                        placeholder="ເລືອກການເສື່ອມລາຄາ"
-                        density="compact"
-                        variant="outlined"
-                        hide-details="auto"
-                        
-                      ></v-select> -->
                     </v-col>
                     <v-col cols="12" md="3">
                       <label
@@ -583,19 +632,6 @@ onMounted(async () => {
                         variant="outlined"
                         hide-details="auto"
                       ></v-text-field>
-
-                      <!-- <label>ວັນໝົດອາຍຸການຮັບປະກັນ</label>
-                      <v-text-field
-                        v-model="
-                          faAssetStoreInstance.form_create_fa_asset
-                            .warranty_end_date
-                        "
-                        type="date"
-                        density="compact"
-                        variant="outlined"
-                        hide-details="auto"
-                        class="pb-4"
-                      ></v-text-field> -->
                     </v-col>
                     <v-col cols="12" md="3">
                       <label>ຜູ້ສະໜອງ/ຜູ້ຂາຍ</label>
@@ -726,34 +762,27 @@ onMounted(async () => {
                       ></v-autocomplete>
                       <label>ມູນຄ່າຕໍ່ເດືອນ</label>
                       <v-text-field
-                        v-model="
-                          faAssetStoreInstance.form_create_fa_asset
-                            .asset_value_remainMonth
-                        "
-                        :rules="[rules.maxLength50]"
-                        placeholder="ເຊັ່ນ: SN-FIX-001-20250623-0001"
+                        :value="formattedAssetValueRemainMonth"
+                        placeholder="ເຊັ່ນ: 1,000,000"
                         density="compact"
                         variant="outlined"
                         hide-details="auto"
-                        maxlength="50"
                         hint="ສ້າງອັດຕະໂນມັດ"
                         readonly
+                        prefix="₭"
+                        class="formatted-number-input"
                       ></v-text-field>
                       <label>ມູນຄ່າຄົງເຫຼືອ</label>
                       <v-text-field
-                        v-model.number="
-                          faAssetStoreInstance.form_create_fa_asset
-                            .asset_value_remain
-                        "
-                        type="number"
-                        step="0.01"
-                        placeholder="0.00"
+                        :value="formattedAssetValueRemain"
+                        placeholder="0"
                         density="compact"
                         variant="outlined"
                         hide-details="auto"
                         prefix="₭"
                         readonly
                         hint="ຄິດໄລ່ອັດຕະໂນມັດ: ມູນຄ່າຊັບສິນ - ເສື່ອມລາຄາສະສົມ"
+                        class="formatted-number-input"
                       ></v-text-field>
 
                       <label>ວັນທີ່ສິ້ນສຸດການລາຄາຫຼູຍຫຽ້ນ</label>
@@ -783,36 +812,25 @@ onMounted(async () => {
                       </v-text-field>
                       <label>ມູນຄ່າຕັ້ນ</label>
                       <v-text-field
-                        v-model="
-                          faAssetStoreInstance.form_create_fa_asset
-                            .asset_value_remainBegin
-                        "
-                        :rules="[
-                          rules.required,
-                          rules.assetTag,
-                          rules.maxLength50,
-                        ]"
+                        :value="formattedAssetValueRemainBegin"
                         placeholder="ມູນຄ່າຕົ້ນ"
                         density="compact"
                         variant="outlined"
                         hide-details="auto"
-                        maxlength="50"
+                        readonly
+                        prefix="₭"
+                        class="formatted-number-input"
                       ></v-text-field>
                       <label>ມູນຄ່າຫຼູ້ຍຫຽ້ນລາຄາສະສົມ</label>
                       <v-text-field
-                        v-model.number="
-                          faAssetStoreInstance.form_create_fa_asset
-                            .asset_accu_dpca_value
-                        "
+                        v-model="formattedAccuDpcaValue"
                         :rules="[rules.positiveNumber]"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        placeholder="0.00"
+                        placeholder="0"
                         density="compact"
                         variant="outlined"
                         hide-details="auto"
                         prefix="₭"
+                        class="formatted-number-input"
                       ></v-text-field>
 
                       <label>ວັນທີ່ຖອນຈຳໜ່າຍຊັບສົມບັດ</label>
@@ -830,34 +848,26 @@ onMounted(async () => {
                     <v-col cols="12" md="3">
                       <label>ມູນຄ່າຊາກ</label>
                       <v-text-field
-                        v-model.number="
-                          faAssetStoreInstance.form_create_fa_asset
-                            .asset_salvage_value
-                        "
+                        v-model="formattedSalvageValue"
                         :rules="[rules.positiveNumber]"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        placeholder="0.00"
+                        placeholder="0"
                         density="compact"
                         variant="outlined"
                         hide-details="auto"
                         prefix="₭"
+                        class="formatted-number-input"
                       ></v-text-field>
                       <label>ມູນຄ່າທ້າຍ</label>
                       <v-text-field
-                        v-model="
-                          faAssetStoreInstance.form_create_fa_asset
-                            .asset_value_remainLast
-                        "
-                        :rules="[rules.maxLength50]"
-                        placeholder="ເຊັ່ນ: SN-FIX-001-20250623-0001"
+                        :value="formattedAssetValueRemainLast"
+                        placeholder="ເຊັ່ນ: 1,000,000"
                         density="compact"
                         variant="outlined"
                         hide-details="auto"
-                        maxlength="50"
                         hint="ສ້າງອັດຕະໂນມັດ"
                         readonly
+                        prefix="₭"
+                        class="formatted-number-input"
                       ></v-text-field>
                       <label>ວັນທີ່ເສື່ອມລາຄາຄັ້ງລາສຸດ</label>
                       <v-text-field
@@ -875,123 +885,6 @@ onMounted(async () => {
                 </v-card-text>
               </v-card>
             </v-col>
-
-            <!-- <v-col cols="12">
-              <v-card
-                variant="outlined"
-                class="mb-6"
-                style="border: 2px solid #ce93d8"
-              >
-                <v-card-title
-                  class="text-h6 pb-2 bg-purple-lighten-2 text-white"
-                >
-                  <v-icon class="mr-2">mdi-check-circle</v-icon>
-                  ຂໍ້ມູນການກວດສອບຊັບສິນ
-                </v-card-title>
-                <v-card-text class="pt-4">
-                  <v-row>
-                    <v-col cols="12" md="6">
-                      <label>ສະຖານະການບັນທຶກ</label>
-                      <v-select
-                        v-model="
-                          faAssetStoreInstance.form_create_fa_asset
-                            .asset_ac_yesno
-                        "
-                        :items="assetAcOptions"
-                        item-title="title"
-                        item-value="value"
-                        placeholder="ເລືອກການກວດສອບ"
-                        density="compact"
-                        variant="outlined"
-                        hide-details="auto"
-                        class="pb-4"
-                      ></v-select>
-
-                      <label>ວັນທີ່ກວດສອບ</label>
-                      <v-text-field
-                        v-model="
-                          faAssetStoreInstance.form_create_fa_asset
-                            .asset_ac_date
-                        "
-                        type="date"
-                        density="compact"
-                        variant="outlined"
-                        hide-details="auto"
-                        class="pb-4"
-                      ></v-text-field>
-                    </v-col>
-
-                    <v-col cols="12" md="6">
-                      <label>ເວລາກວດສອບ</label>
-                      <v-text-field
-                        v-model="
-                          faAssetStoreInstance.form_create_fa_asset
-                            .asset_ac_datetime
-                        "
-                        type="datetime-local"
-                        density="compact"
-                        variant="outlined"
-                        hide-details="auto"
-                        class="pb-4"
-                      ></v-text-field>
-
-                      <label>ຜູ້ກວດສອບ</label>
-                      <v-text-field
-                        v-model="
-                          faAssetStoreInstance.form_create_fa_asset.aaset_ac_by
-                        "
-                        placeholder="ຊື່ຜູ້ກວດສອບ"
-                        density="compact"
-                        variant="outlined"
-                        hide-details="auto"
-                        class="pb-4"
-                      ></v-text-field>
-                    </v-col>
-                  </v-row>
-                </v-card-text>
-              </v-card>
-            </v-col> -->
-
-            <!-- ຄຳແນະນຳ -->
-            <!-- <v-col cols="12" class="mt-4">
-              <v-card variant="outlined" color="info">
-                <v-card-title class="text-h6 pb-2">
-                  <v-icon class="mr-2">mdi-lightbulb-outline</v-icon>
-                  ຄຳແນະນຳ
-                </v-card-title>
-                <v-card-text class="pt-0">
-                  <v-list density="compact">
-                    <v-list-item>
-                      <v-list-item-title class="text-subtitle-2"
-                        >ປ້າຍຊັບສິນ:</v-list-item-title
-                      >
-                      <v-list-item-subtitle
-                        >ໃຊ້ຮູບແບບທີ່ເປັນມາດຕະຖານ ເຊັ່ນ: IT-2024-001,
-                        MACH-001</v-list-item-subtitle
-                      >
-                    </v-list-item>
-                    <v-list-item>
-                      <v-list-item-title class="text-subtitle-2"
-                        >ການເສື່ອມລາຄາ:</v-list-item-title
-                      >
-                      <v-list-item-subtitle
-                        >SL = ເສັ້ນກົງ, DB = ລົດລົງ, UOP =
-                        ຫົວໜ່ວຍຜະລິດ</v-list-item-subtitle
-                      >
-                    </v-list-item>
-                    <v-list-item>
-                      <v-list-item-title class="text-subtitle-2"
-                        >ມູນຄ່າຊາກ:</v-list-item-title
-                      >
-                      <v-list-item-subtitle
-                        >ປົກກະຕິຕັ້ງເປັນ 5-10%
-                        ຂອງມູນຄ່າຕົ້ນທຶນ</v-list-item-subtitle
-                      >
-                    </v-list-item>
-                  </v-list>
-                </v-card-text>
-              </v-card>
-            </v-col> -->
 
             <!-- ປຸ່ມບັນທຶກ -->
             <v-col cols="12" class="d-flex flex-wrap justify-center mt-6">
@@ -1030,6 +923,17 @@ onMounted(async () => {
 .v-text-field input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
+}
+
+/* Custom styling for formatted number inputs */
+.formatted-number-input .v-field__input {
+  text-align: right;
+  font-family: 'Roboto Mono', monospace;
+  font-weight: 500;
+}
+
+.formatted-number-input .v-field__input input {
+  text-align: right;
 }
 
 label {

@@ -45,13 +45,13 @@ export const faAssetStore = defineStore("faAsset", {
         asset_ac_datetime: null as Date | null,
         aaset_ac_by: null as string | null,
 
-        asset_status: "UNDER_CONSTRUCTION" as
-          | "UNDER_CONSTRUCTION"
-          | "ACTIVE"
-          | "INACTIVE"
-          | "MAINTENANCE"
-          | "DAMAGED"
-          | "DISPOSED",
+         asset_status: "UC" as
+          | "UC"
+          | "AC"
+          | "IA"
+          | "MT"
+          | "DS"
+          | "DM",
         has_depreciation: "Y" as "Y" | "N",
       },
       form_update_fa_asset: {
@@ -88,13 +88,13 @@ export const faAssetStore = defineStore("faAsset", {
         asset_ac_datetime: null as Date | null,
         aaset_ac_by: null as string | null,
 
-        asset_status: "UNDER_CONSTRUCTION" as
-          | "UNDER_CONSTRUCTION"
-          | "ACTIVE"
-          | "INACTIVE"
-          | "MAINTENANCE"
-          | "DAMAGED"
-          | "DISPOSED",
+        asset_status: "UC" as
+          | "UC"
+          | "AC"
+          | "IA"
+          | "MT"
+          | "DS"
+          | "DM",
         has_depreciation: "Y" as "Y" | "N",
       },
     };

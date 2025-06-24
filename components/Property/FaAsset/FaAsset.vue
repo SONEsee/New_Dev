@@ -82,10 +82,12 @@ const title = "ຈັດການຊັບສົມບັດພວມຊື້�
 
 const assetStatuses = [
   { title: "ທັງໝົດ", value: "all" },
-  { title: "ເປີດໃຊ້ງານ", value: "ACTIVE" },
-  { title: "ປິດໃຊ້ງານ", value: "INACTIVE" },
-  { title: "ບຳລຸງຮັກສາ", value: "MAINTENANCE" },
-  { title: "ຖອນຈຳໜ່າຍ", value: "DISPOSED" },
+  { title: "ເປີດໃຊ້ງານ", value: "AC" },
+  { title: "ປິດໃຊ້ງານ", value: "IA" },
+  { title: "ບຳລຸງຮັກສາ", value: "MT" },
+  { title: "ຖອນຈຳໜ່າຍ", value: "DS" },
+  { title: "ເສຍຫາຍ", value: "DM" },
+  { title: "ພວມຊື້ພວມກໍ່ສ້າງ", value: "DM" },
 ];
 
 const currencies = [
@@ -104,60 +106,36 @@ const headers = computed(() => [
     width: "80px",
     class: "text-primary font-weight-bold",
   },
+   {
+    title: "ປະເພດຊັບສົມບັດ",
+    value: "asset_type_id",
+    align: "start",
+    sortable: true,
+    filterable: true,
+    width: "120px",
+  }, 
+  
   {
-    title: "ປ້າຍຊັບສິນ",
-    value: "asset_tag",
+    title: "ລາຍລະອຽດສົມບັດ",
+    value: "asset_spec",
     align: "start",
     sortable: true,
     filterable: true,
     width: "120px",
     class: "text-h6",
   },
-  {
-    title: "Serial Number",
-    value: "asset_serial_no",
-    align: "start",
-    sortable: true,
-    filterable: true,
-    width: "120px",
-  },
-  {
-    title: "ແຜນຜັງຊັບສົມບັດ",
-    value: "asset_id",
-    align: "center",
-    sortable: true,
-    filterable: true,
-    width: "150px",
-    class: "text-center",
-  },
-  {
-    title: "ສະຖານທີ່",
-    value: "asset_location_id",
-    align: "center",
-    sortable: true,
-    filterable: true,
-    width: "120px",
-    class: "text-center",
-  },
-  {
-    title: "ວັນທີ່ໄດ້ຮັບ",
-    value: "asset_date",
-    align: "center",
-    sortable: true,
-    filterable: false,
-    width: "120px",
-    class: "text-center",
-  },
-  {
-    title: "ມູນຄ່າ",
+ 
+  
+  
+   {
+    title: "ມູນຄ່າເລີ່ມຕົ້ນ",
     value: "asset_value",
     align: "end",
     sortable: true,
     filterable: false,
     width: "120px",
     class: "text-end",
-  },
-  {
+  },{
     title: "ມູນຄ່າຍັງເຫຼືອ",
     value: "asset_value_remain",
     align: "end",
@@ -167,6 +145,43 @@ const headers = computed(() => [
     class: "text-end",
   },
   {
+    title: "ມູນຄ່າສະສົມ",
+    value: "asset_accu_dpca_value",
+    align: "center",
+    sortable: true,
+    filterable: true,
+    width: "100px",
+    class: "text-center",
+  },
+  {
+    title: "ມູນຄ່າຕໍ່ເດືອນ",
+    value: "asset_value_remainMonth",
+    align: "center",
+    sortable: true,
+    filterable: true,
+    width: "120px",
+    class: "text-center",
+  },{
+    title: "ປະເພດການຈ່າຍ",
+    value: "type_of_pay",
+    align: "center",
+    sortable: true,
+    filterable: true,
+    width: "150px",
+    class: "text-center",
+  }, 
+  {
+    title: "ວັນທີ່ໄດ້ຮັບ",
+    value: "asset_date",
+    align: "center",
+    sortable: true,
+    filterable: false,
+    width: "120px",
+    class: "text-center",
+  },
+
+  
+  {
     title: "ສະຖານະ",
     value: "asset_status",
     align: "center",
@@ -175,15 +190,7 @@ const headers = computed(() => [
     width: "120px",
     class: "text-center",
   },
-  {
-    title: "ເສື່ອມລາຄາ",
-    value: "has_depreciation",
-    align: "center",
-    sortable: true,
-    filterable: true,
-    width: "100px",
-    class: "text-center",
-  },
+ 
   ...(canView.value
     ? [
         {
@@ -237,7 +244,6 @@ const headers = computed(() => [
 const filteredData = computed(() => {
   let data = mockData.value;
 
-  // Filter by status
   if (selectedStatus.value !== "all") {
     data = data.filter((item) => item.asset_status === selectedStatus.value);
   }
@@ -281,24 +287,24 @@ const formatCurrency = (value: number, currency: string) => {
 
 const getStatusColor = (status: string) => {
   const colors = {
-    ACTIVE: "success",
-    INACTIVE: "warning",
-    MAINTENANCE: "info",
-    DISPOSED: "error",
-    UNDER_CONSTRUCTION: "primary",
-    DAMAGED: "secondary",
+    AC: "success",
+    IA: "warning",
+    MT: "info",
+    DS: "error",
+    UC: "primary",
+    DM: "secondary",
   };
   return colors[status as keyof typeof colors] || "grey";
 };
 
 const getStatusText = (status: string) => {
   const texts = {
-    ACTIVE: "ເປີດໃຊ້ງານ",
-    INACTIVE: "ປິດໃຊ້ງານ",
-    MAINTENANCE: "ບຳລຸງຮັກສາ",
-    DISPOSED: "ຖອນຈຳໜ່າຍ",
-    UNDER_CONSTRUCTION: "ພວມຊື້ພວມກໍ່ສ້າງ",
-    DAMAGED: "ເສຍຫາຍ",
+    AC: "ເປີດໃຊ້ງານ",
+    IA: "ປິດໃຊ້ງານ",
+    MT: "ບຳລຸງຮັກສາ",
+    DS: "ຖອນຈຳໜ່າຍ",
+    UC: "ພວມຊື້ພວມກໍ່ສ້າງ",
+    DM: "ເສຍຫາຍ",
   };
   return texts[status as keyof typeof texts] || status;
 };
@@ -412,7 +418,10 @@ onMounted(async () => {
         <b style="color: blue">{{ column.title }}</b>
       </template>
 
-      <template v-slot:header.asset_tag="{ column }">
+      <template v-slot:header.asset_spec="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
+      </template>
+      <template v-slot:header.asset_type_id="{ column }">
         <b style="color: blue">{{ column.title }}</b>
       </template>
 
@@ -420,11 +429,11 @@ onMounted(async () => {
         <b style="color: blue">{{ column.title }}</b>
       </template>
 
-      <template v-slot:header.asset_id="{ column }">
+      <template v-slot:header.type_of_pay="{ column }">
         <b style="color: blue">{{ column.title }}</b>
       </template>
 
-      <template v-slot:header.asset_location_id="{ column }">
+      <template v-slot:header.asset_value_remainMonth="{ column }">
         <b style="color: blue">{{ column.title }}</b>
       </template>
 
@@ -463,6 +472,9 @@ onMounted(async () => {
       <template v-slot:header.depreciation="{ column }">
         <b style="color: blue">{{ column.title }}</b>
       </template>
+      <template v-slot:header.asset_accu_dpca_value="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
+      </template>
 
       <template v-slot:item.asset_list_id="{ item }">
         <v-chip color="primary" variant="outlined" size="small">
@@ -470,16 +482,38 @@ onMounted(async () => {
         </v-chip>
       </template>
 
-      <template v-slot:item.asset_tag="{ item }">
-        <span class="font-weight-bold">{{ item.asset_tag }}</span>
+      <template v-slot:item.asset_spec="{ item }">
+        <span class="font-weight-bold">{{ item.asset_spec }}</span>
       </template>
 
       <template v-slot:item.asset_serial_no="{ item }">
         <span>{{ item.asset_serial_no || "-" }}</span>
       </template>
+      <template v-slot:item.asset_accu_dpca_value="{ item }">
+        <v-chip color="primary">{{ item.asset_accu_dpca_value || "-" }}</v-chip>
+      </template>
+      <template v-slot:item.asset_type_id="{ item }">
+        <v-chip color="primary">{{ item.asset_type_id || "-" }}</v-chip>
+      </template>
 
-      <template v-slot:item.asset_id="{ item }">
-        <div class="text-center">
+      <template v-slot:item.type_of_pay="{ item }">
+        <v-chip color="primary" v-if="item.type_of_pay === '1101100'"
+          >ເງິນສົດ
+          <p></p
+        ></v-chip>
+        <v-chip color="info" v-if="item.type_of_pay === '1101200'"
+          >ເງິນສົດຄັງຍ່ອຍ
+          <p></p
+        ></v-chip>
+        <v-chip color="success" v-if="item.type_of_pay === '1121130'"
+          >ບັນຊີຝາກປະຢັດ
+          <p></p
+        ></v-chip>
+        <v-chip color="warning" v-if="item.type_of_pay === '1121110'"
+          >ບັນຊີເງິນຝາກກະແສລາຍວັນ
+          <p></p
+        ></v-chip>
+        <!-- <div class="text-center">
           <div v-if="item.asset_chart">
             <p class="text-body-2 font-weight-medium">
               {{ item.asset_chart.asset_name }}
@@ -489,18 +523,13 @@ onMounted(async () => {
             </p>
           </div>
           <span v-else class="text-grey">-</span>
-        </div>
+        </div> -->
       </template>
 
-      <template v-slot:item.asset_location_id="{ item }">
+      <template v-slot:item.asset_value_remainMonth="{ item }">
         <div class="text-center">
-          <div v-if="item.location">
-            <p class="text-body-2">{{ item.location.location_name }}</p>
-            <p class="text-caption text-grey">
-              {{ item.location.location_code }}
-            </p>
-          </div>
-          <span v-else class="text-grey">-</span>
+          
+          <v-chip color="primary">{{ item.asset_value_remainMonth }}</v-chip>
         </div>
       </template>
 

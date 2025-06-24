@@ -1,7 +1,6 @@
 import axios from "@/helpers/axios";
 import { LocationModel } from "~/models";
 import { CallSwal, goPath } from "#build/imports";
-
 export const locationStore = defineStore("location", {
   state() {
     return {

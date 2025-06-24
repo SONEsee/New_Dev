@@ -24,8 +24,8 @@ export interface AssetTypeDetail {
     type_code: string;
     type_name_la: string;
     type_name_en: string;
-    depreciation_rate: number; // Annual depreciation rate in percentage
-    useful_life: number; // Useful life in years
+    depreciation_rate: number; 
+    useful_life: number;
     description?: string;
     Record_Status: 'O' | 'C';
     created_at: string | Date;
