@@ -1,16 +1,16 @@
 <template>
   <div class="gl-approved-master">
-    <!-- Page Header -->
+    <!-- Page Header - Compact -->
     <div class="page-header-compact">
       <h1 class="page-title-compact">
-        <v-icon color="primary" size="24" class="mr-2">mdi-book-check</v-icon>
+        <v-icon color="primary" size="20" class="mr-2">mdi-book-check</v-icon>
         ລາຍການບັນທຶກບັນຊີ
       </h1>
     </div>
 
-    <!-- Filter Section -->
-    <v-card class="filter-card mb-2" elevation="2">
-      <v-card-text>
+    <!-- Filter Section - Thinner -->
+    <v-card class="filter-card-thin mb-2" elevation="1">
+      <v-card-text class="pa-2">
         <v-row dense>
           <v-col cols="12" md="3">
             <v-text-field
@@ -18,10 +18,11 @@
               label="ຄົ້ນຫາ"
               prepend-inner-icon="mdi-magnify"
               variant="outlined"
-              density="comfortable"
+              density="compact"
               clearable
               placeholder="ເລກອ້າງອີງ, ຂໍ້ຄວາມ..."
               @update:model-value="searchDebounced"
+              hide-details
             ></v-text-field>
           </v-col>
           <v-col cols="12" md="2">
@@ -32,9 +33,10 @@
               item-value="module_Id"
               label="ໂມດູນ"
               variant="outlined"
-              density="comfortable"
+              density="compact"
               clearable
               @update:model-value="loadData"
+              hide-details
             ></v-select>
           </v-col>
           <v-col cols="12" md="2">
@@ -45,9 +47,10 @@
               item-value="ccy_code"
               label="ສະກຸນເງິນ"
               variant="outlined"
-              density="comfortable"
+              density="compact"
               clearable
               @update:model-value="loadData"
+              hide-details
             ></v-select>
           </v-col>
           <v-col cols="12" md="2">
@@ -58,9 +61,10 @@
               item-value="value"
               label="ສະຖານະອະນຸມັດ"
               variant="outlined"
-              density="comfortable"
+              density="compact"
               clearable
               @update:model-value="loadData"
+              hide-details
             ></v-select>
           </v-col>
           <v-col cols="12" md="2">
@@ -69,8 +73,9 @@
               label="ວັນທີເລີ່ມ"
               type="date"
               variant="outlined"
-              density="comfortable"
+              density="compact"
               @update:model-value="loadData"
+              hide-details
             ></v-text-field>
           </v-col>
           <v-col cols="12" md="1">
@@ -80,8 +85,9 @@
               @click="loadData"
               :loading="loading"
               block
+              size="small"
             >
-              <v-icon>mdi-filter</v-icon>
+              <v-icon size="16">mdi-filter</v-icon>
               ຄົ້ນຫາ
             </v-btn>
           </v-col>
@@ -89,55 +95,55 @@
       </v-card-text>
     </v-card>
 
-    <!-- Summary Cards -->
-    <v-row dense class="mb-4">
+    <!-- Summary Cards - Thinner -->
+    <v-row dense class="mb-3">
       <v-col cols="6" sm="3" md="3">
-        <v-card class="summary-card" elevation="1">
-          <v-card-text class="pa-3">
+        <v-card class="summary-card-thin" elevation="1">
+          <v-card-text class="pa-2">
             <div class="d-flex align-center">
-              <v-icon size="28" color="primary" class="mr-3">mdi-file-document-multiple</v-icon>
+              <v-icon size="20" color="primary" class="mr-2">mdi-file-document-multiple</v-icon>
               <div>
-                <div class="summary-value">{{ summary.total }}</div>
-                <div class="summary-label">ລາຍການທັງໝົດ</div>
+                <div class="summary-value-thin">{{ summary.total }}</div>
+                <div class="summary-label-thin">ລາຍການທັງໝົດ</div>
               </div>
             </div>
           </v-card-text>
         </v-card>
       </v-col>
       <v-col cols="6" sm="3" md="3">
-        <v-card class="summary-card" elevation="1">
-          <v-card-text class="pa-3">
+        <v-card class="summary-card-thin" elevation="1">
+          <v-card-text class="pa-2">
             <div class="d-flex align-center">
-              <v-icon size="28" color="warning" class="mr-3">mdi-clock-outline</v-icon>
+              <v-icon size="20" color="warning" class="mr-2">mdi-clock-outline</v-icon>
               <div>
-                <div class="summary-value">{{ summary.pending }}</div>
-                <div class="summary-label">ລໍຖ້າອະນຸມັດ</div>
+                <div class="summary-value-thin">{{ summary.pending }}</div>
+                <div class="summary-label-thin">ລໍຖ້າອະນຸມັດ</div>
               </div>
             </div>
           </v-card-text>
         </v-card>
       </v-col>
       <v-col cols="6" sm="3" md="3">
-        <v-card class="summary-card" elevation="1">
-          <v-card-text class="pa-3">
+        <v-card class="summary-card-thin" elevation="1">
+          <v-card-text class="pa-2">
             <div class="d-flex align-center">
-              <v-icon size="28" color="success" class="mr-3">mdi-check-circle</v-icon>
+              <v-icon size="20" color="success" class="mr-2">mdi-check-circle</v-icon>
               <div>
-                <div class="summary-value">{{ summary.approved }}</div>
-                <div class="summary-label">ອະນຸມັດແລ້ວ</div>
+                <div class="summary-value-thin">{{ summary.approved }}</div>
+                <div class="summary-label-thin">ອະນຸມັດແລ້ວ</div>
               </div>
             </div>
           </v-card-text>
         </v-card>
       </v-col>
       <v-col cols="6" sm="3" md="3">
-        <v-card class="summary-card" elevation="1">
-          <v-card-text class="pa-3">
+        <v-card class="summary-card-thin" elevation="1">
+          <v-card-text class="pa-2">
             <div class="d-flex align-center">
-              <v-icon size="28" color="error" class="mr-3">mdi-close-circle</v-icon>
+              <v-icon size="20" color="error" class="mr-2">mdi-close-circle</v-icon>
               <div>
-                <div class="summary-value">{{ summary.rejected }}</div>
-                <div class="summary-label">ປະຕິເສດ</div>
+                <div class="summary-value-thin">{{ summary.rejected }}</div>
+                <div class="summary-label-thin">ປະຕິເສດ</div>
               </div>
             </div>
           </v-card-text>
@@ -145,10 +151,10 @@
       </v-col>
     </v-row>
 
-    <!-- Data Table -->
-    <v-card elevation="2" class="data-table-card">
-      <v-card-title class="d-flex justify-space-between align-center">
-        <span>ລາຍການບັນທຶກບັນຊີ</span>
+    <!-- Data Table - Compact -->
+    <v-card elevation="1" class="data-table-card-thin">
+      <v-card-title class="d-flex justify-space-between align-center pa-3">
+        <span class="text-h6">ລາຍການບັນທຶກບັນຊີ</span>
         <div>
           <v-btn
             color="primary"
@@ -156,6 +162,7 @@
             @click="$router.push('/glcapture/create')"
             prepend-icon="mdi-plus"
             class="mr-2"
+            size="small"
           >
             ເພີ່ມບັນທຶກໃຫມ່
           </v-btn>
@@ -165,16 +172,18 @@
             @click="exportData"
             :disabled="items.length === 0"
             class="mr-2"
+            size="small"
           >
-            <v-icon left>mdi-download</v-icon>
+            <v-icon left size="16">mdi-download</v-icon>
             ສົ່ງອອກ
           </v-btn>
           <v-btn
             color="primary"
             variant="text"
             @click="loadData"
+            size="small"
           >
-            <v-icon left>mdi-refresh</v-icon>
+            <v-icon left size="16">mdi-refresh</v-icon>
             ໂຫຼດໃໝ່
           </v-btn>
         </div>
@@ -186,14 +195,14 @@
         :loading="loading"
         :search="filters.search"
         :items-per-page="10"
-        density="comfortable"
-        class="elevation-0 full-width-table"
+        density="compact"
+        class="elevation-0 full-width-table-thin"
         item-value="JRNLLog_id"
       >
         <!-- Reference No -->
         <template v-slot:item.Reference_No="{ item }">
           <v-chip
-            size="small"
+            size="x-small"
             color="primary"
             variant="outlined"
             @click="viewDetails(item)"
@@ -205,7 +214,7 @@
 
         <!-- Module -->
         <template v-slot:item.module_id="{ item }">
-          <span v-if="item.module_id">
+          <span v-if="item.module_id" class="text-compact">
             {{ getModuleName(item.module_id) }}
           </span>
           <span v-else class="text-grey">-</span>
@@ -213,7 +222,7 @@
 
         <!-- Currency and Amount -->
         <template v-slot:item.Fcy_Amount="{ item }">
-          <div class="text-right">
+          <div class="text-right text-compact">
             <strong>{{ formatNumber(item.Fcy_Amount) }}</strong>
             <span class="text-grey ml-1">{{ item.Ccy_cd }}</span>
           </div>
@@ -221,7 +230,7 @@
 
         <!-- LCY Amount -->
         <template v-slot:item.Lcy_Amount="{ item }">
-          <div class="text-right">
+          <div class="text-right text-compact">
             {{ formatNumber(item.Lcy_Amount) }} LAK
           </div>
         </template>
@@ -233,9 +242,8 @@
           </v-chip>
         </template>
 
-
         <template v-slot:item.Addl_text="{ item }">
-          <div class="text-truncate">
+          <div class="text-truncate text-compact">
             {{ item.Addl_text || '-' }}
             <v-tooltip v-if="item.Addl_text" location="top">
               <template v-slot:activator="{ props }">
@@ -248,14 +256,14 @@
 
         <!-- Value Date -->
         <template v-slot:item.Value_date="{ item }">
-          {{ formatDate(item.Value_date) }}
+          <span class="text-compact">{{ formatDate(item.Value_date) }}</span>
         </template>
 
         <!-- Auth Status -->
         <template v-slot:item.Auth_Status="{ item }">
           <v-chip
             :color="getStatusColor(item.Auth_Status)"
-            size="small"
+            size="x-small"
             variant="flat"
           >
             <v-icon left size="x-small">{{ getStatusIcon(item.Auth_Status) }}</v-icon>
@@ -265,9 +273,9 @@
 
         <!-- Maker Info -->
         <template v-slot:item.Maker_Id="{ item }">
-          <div class="text-caption">
-            <div v-if="item.Maker_Id">{{ item.Maker_Id.Username }}</div>
-            <div class="text-grey">{{ formatDateTime(item.Maker_DT_Stamp) }}</div>
+          <div class="text-caption-thin">
+            <div v-if="item.Maker_Id" class="text-compact">{{ item.Maker_Id.Username }}</div>
+            <div class="text-grey text-xs">{{ formatDateTime(item.Maker_DT_Stamp) }}</div>
           </div>
         </template>
 
@@ -275,150 +283,147 @@
         <template v-slot:item.actions="{ item }">
           <v-btn
             icon
-            size="small"
+            size="x-small"
             variant="text"
             color="info"
             @click="viewDetails(item)"
             title="ເບິ່ງລາຍລະອຽດ"
           >
-            <v-icon size="small">mdi-eye</v-icon>
+            <v-icon size="14">mdi-eye</v-icon>
           </v-btn>
           
           <v-btn
             v-if="item.Auth_Status === 'U' && canApprove"
             icon
-            size="small"
+            size="x-small"
             variant="text"
             color="success"
             @click="approveItem(item)"
             title="ອະນຸມັດ"
           >
-            <v-icon size="small">mdi-check</v-icon>
+            <v-icon size="14">mdi-check</v-icon>
           </v-btn>
           
           <v-btn
             v-if="item.Auth_Status === 'U' && canApprove"
             icon
-            size="small"
+            size="x-small"
             variant="text"
             color="error"
             @click="rejectItem(item)"
             title="ປະຕິເສດ"
           >
-            <v-icon size="small">mdi-close</v-icon>
+            <v-icon size="14">mdi-close</v-icon>
           </v-btn>
           
           <v-btn
             v-if="item.delete_stat !== 'Y'"
             icon
-            size="small"
+            size="x-small"
             variant="text"
             color="error"
             @click="deleteItem(item)"
             title="ລຶບ"
           >
-            <v-icon size="small">mdi-delete</v-icon>
+            <v-icon size="14">mdi-delete</v-icon>
           </v-btn>
         </template>
       </v-data-table>
     </v-card>
 
-<!-- Details Dialog - Updated with minimal professional style -->
-<v-dialog v-model="detailsDialog" max-width="1000px" scrollable>
-  <v-card class="elevation-0 rounded-lg">
+<!-- Details Dialog - Thinner and more compact -->
+<v-dialog v-model="detailsDialog" max-width="900px" scrollable>
+  <v-card class="elevation-1 rounded-lg">
     <!-- Minimal Header -->
-    <v-card-title class="px-6 py-3 bg-primary text-white">
+    <v-card-title class="px-4 py-2 bg-primary text-white">
       <div class="d-flex align-center justify-space-between w-100">
         <div class="text-h6 font-weight-medium">{{ selectedItem?.Reference_No }}</div>
         <v-btn 
           icon="mdi-close" 
           variant="text" 
-          size="small"
+          size="x-small"
           color="white"
           @click="detailsDialog = false"
         ></v-btn>
       </div>
     </v-card-title>
     
-    <v-card-text v-if="selectedItem" class="px-6 py-4">
+    <v-card-text v-if="selectedItem" class="px-4 py-3">
       <!-- Compact Main Information -->
-      <div class="mb-6">
-        <div class="section-title mb-3">ຂໍ້ມູນຫຼັກ</div>
-        <div class="info-grid">
-          <div class="info-item">
-            <span class="info-label">ໂມດູນ:</span>
-            <span class="info-value">{{ getModuleName(selectedItem.module_id) }}</span>
+      <div class="mb-4">
+        <div class="section-title-thin mb-2">ຂໍ້ມູນຫຼັກ</div>
+        <div class="info-grid-thin">
+          <div class="info-item-thin">
+            <span class="info-label-thin">ໂມດູນ:</span>
+            <span class="info-value-thin">{{ getModuleName(selectedItem.module_id) }}</span>
           </div>
-          <div class="info-item">
-            <span class="info-label">ວັນທີ:</span>
-            <span class="info-value">{{ formatDate(selectedItem.Value_date) }}</span>
+          <div class="info-item-thin">
+            <span class="info-label-thin">ວັນທີ:</span>
+            <span class="info-value-thin">{{ formatDate(selectedItem.Value_date) }}</span>
           </div>
-          <div class="info-item">
-            <span class="info-label">ສະຖານະ:</span>
+          <div class="info-item-thin">
+            <span class="info-label-thin">ສະຖານະ:</span>
             <v-chip
               :color="getStatusColor(selectedItem.Auth_Status)"
-              size="small"
+              size="x-small"
               variant="flat"
-              class="ml-2"
+              class="ml-1"
             >
               {{ getStatusText(selectedItem.Auth_Status) }}
             </v-chip>
           </div>
-          <div class="info-item">
-            <span class="info-label">ລະຫັດ:</span>
-            <span class="info-value">{{ selectedItem.Txn_code }}</span>
+          <div class="info-item-thin">
+            <span class="info-label-thin">ລະຫັດ:</span>
+            <span class="info-value-thin">{{ selectedItem.Txn_code }}</span>
           </div>
-
         </div>
       </div>
 
-
-
-     <!-- Journal Entries - Proper Double Entry Display -->
+     <!-- Journal Entries - Thinner table -->
       <div>
-        <div class="section-title mb-3">
+        <div class="section-title-thin mb-2">
           ລາຍການບັນທຶກ ({{ journalEntries.length }} ລາຍການ)
         </div>
-        <div class="journal-table-container">
-          <table class="journal-table-minimal">
+        <div class="journal-table-container-thin">
+          <table class="journal-table-ultra-thin">
             <thead>
               <tr>
-                <th width="140">ບັນຊີ</th>
+                <th width="120">ບັນຊີ</th>
                 <th>ຊື່ບັນຊີ</th>
-                <th width="100" class="text-right">Debit (FCY)</th>
-                <th width="100" class="text-right">Credit (FCY)</th>
-                <th width="100" class="text-right">Debit (LCY)</th>
-                <th width="100" class="text-right">Credit (LCY)</th>
+                <th width="80" class="text-right">Debit (FCY)</th>
+                <th width="80" class="text-right">Credit (FCY)</th>
+                <th width="80" class="text-right">Debit (LCY)</th>
+                <th width="80" class="text-right">Credit (LCY)</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="(entry, index) in journalEntries" :key="entry.JRNLLog_id">
-                <td class="font-weight-medium">{{ entry.account_code }}</td>
-                <td class="text-truncate" style="max-width: 200px;">
+                <td class="font-weight-medium text-compact">{{ entry.account_code }}</td>
+                <td class="text-truncate text-compact" style="max-width: 180px;">
                   <span :title="entry.account_name">{{ entry.account_name }}</span>
-                  <div v-if="entry.Addl_sub_text" class="text-caption text-grey">
+                  <div v-if="entry.Addl_sub_text" class="text-xs text-grey">
                     {{ entry.Addl_sub_text }}
                   </div>
                 </td>
-                <td class="text-right">
+                <td class="text-right text-compact">
                   <span v-if="parseFloat(entry.fcy_dr) > 0" class="font-weight-medium">
                     {{ formatNumber(entry.fcy_dr) }}
                   </span>
                   <span v-else class="text-grey">-</span>
                 </td>
-                <td class="text-right">
+                <td class="text-right text-compact">
                   <span v-if="parseFloat(entry.fcy_cr) > 0" class="font-weight-medium">
                     {{ formatNumber(entry.fcy_cr) }}
                   </span>
                   <span v-else class="text-grey">-</span>
                 </td>
-                <td class="text-right">
+                <td class="text-right text-compact">
                   <span v-if="parseFloat(entry.lcy_dr) > 0" class="font-weight-medium text-blue">
                     {{ formatNumber(entry.lcy_dr) }}
                   </span>
                   <span v-else class="text-grey">-</span>
                 </td>
-                <td class="text-right">
+                <td class="text-right text-compact">
                   <span v-if="parseFloat(entry.lcy_cr) > 0" class="font-weight-medium text-blue">
                     {{ formatNumber(entry.lcy_cr) }}
                   </span>
@@ -427,21 +432,21 @@
               </tr>
             </tbody>
             <tfoot>
-              <tr class="totals-row">
-                <td colspan="2" class="text-right font-weight-bold">ລວມ:</td>
-                <td class="text-right font-weight-bold">{{ formatNumber(totalFcyDebit) }}</td>
-                <td class="text-right font-weight-bold">{{ formatNumber(totalFcyCredit) }}</td>
-                <td class="text-right font-weight-bold text-blue">{{ formatNumber(totalLcyDebit) }}</td>
-                <td class="text-right font-weight-bold text-blue">{{ formatNumber(totalLcyCredit) }}</td>
+              <tr class="totals-row-thin">
+                <td colspan="2" class="text-right font-weight-bold text-compact">ລວມ:</td>
+                <td class="text-right font-weight-bold text-compact">{{ formatNumber(totalFcyDebit) }}</td>
+                <td class="text-right font-weight-bold text-compact">{{ formatNumber(totalFcyCredit) }}</td>
+                <td class="text-right font-weight-bold text-blue text-compact">{{ formatNumber(totalLcyDebit) }}</td>
+                <td class="text-right font-weight-bold text-blue text-compact">{{ formatNumber(totalLcyCredit) }}</td>
               </tr>
               <tr>
-                <td colspan="6" class="text-center py-2">
+                <td colspan="6" class="text-center py-1">
                   <v-chip 
-                    size="small" 
+                    size="x-small" 
                     :color="isBalanced ? 'success' : 'error'"
                     variant="flat"
                   >
-                    <v-icon size="14" class="mr-1">{{ isBalanced ? 'mdi-check' : 'mdi-alert' }}</v-icon>
+                    <v-icon size="12" class="mr-1">{{ isBalanced ? 'mdi-check' : 'mdi-alert' }}</v-icon>
                     {{ isBalanced ? 'ສົມດຸນ' : 'ບໍ່ສົມດຸນ' }}
                   </v-chip>
                 </td>
@@ -452,55 +457,53 @@
       </div>
 
       <!-- Compact Financial Information -->
-      <div class="mb-6">
-        <div class="section-title mb-3">ຂໍ້ມູນການເງິນ</div>
-        <div class="amount-summary">
-          <div class="amount-item">
-            <div class="amount-label">FCY Amount</div>
-            <div class="amount-value">{{ formatNumber(selectedItem.Fcy_Amount) }} {{ selectedItem.Ccy_cd }}</div>
+      <div class="mb-4">
+        <div class="section-title-thin mb-2">ຂໍ້ມູນການເງິນ</div>
+        <div class="amount-summary-thin">
+          <div class="amount-item-thin">
+            <div class="amount-label-thin">FCY Amount</div>
+            <div class="amount-value-thin">{{ formatNumber(selectedItem.Fcy_Amount) }} {{ selectedItem.Ccy_cd }}</div>
           </div>
-          <div class="amount-item">
-            <div class="amount-label">LCY Amount</div>
-            <div class="amount-value">{{ formatNumber(selectedItem.Lcy_Amount) }} LAK</div>
+          <div class="amount-item-thin">
+            <div class="amount-label-thin">LCY Amount</div>
+            <div class="amount-value-thin">{{ formatNumber(selectedItem.Lcy_Amount) }} LAK</div>
           </div>
-          <div class="amount-item">
-            <div class="amount-label">Rate</div>
-            <div class="amount-value">{{ formatNumber(selectedItem.Exch_rate, 6) }}</div>
+          <div class="amount-item-thin">
+            <div class="amount-label-thin">Rate</div>
+            <div class="amount-value-thin">{{ formatNumber(selectedItem.Exch_rate, 6) }}</div>
           </div>
         </div>
       </div>
-
- 
     </v-card-text>
     
     <!-- Minimal Actions -->
     <v-divider></v-divider>
-    <v-card-actions class="px-6 py-3">
+    <v-card-actions class="px-4 py-2">
       <v-spacer></v-spacer>
       <v-btn
         v-if="selectedItem?.Auth_Status === 'U' && canApprove"
         color="success"
         variant="flat"
-        size="small"
+        size="x-small"
         @click="approveItem(selectedItem)"
       >
-        <v-icon start size="small">mdi-check</v-icon>
+        <v-icon start size="12">mdi-check</v-icon>
         ອະນຸມັດ
       </v-btn>
       <v-btn
         v-if="selectedItem?.Auth_Status === 'U' && canApprove"
         color="error"
         variant="flat"
-        size="small"
+        size="x-small"
         class="ml-2"
         @click="rejectItem(selectedItem)"
       >
-        <v-icon start size="small">mdi-close</v-icon>
+        <v-icon start size="12">mdi-close</v-icon>
         ປະຕິເສດ
       </v-btn>
       <v-btn
         variant="outlined"
-        size="small"
+        size="x-small"
         class="ml-2"
         @click="detailsDialog = false"
       >
@@ -559,7 +562,6 @@ const headers = [
   { title: 'ໂມດູນ', key: 'module_id', sortable: true },
   { title: 'ຈຳນວນເງິນ', key: 'Fcy_Amount', align: 'end', sortable: true },
   { title: 'ຈຳນວນກີບ', key: 'Lcy_Amount', align: 'end', sortable: true },
-  // { title: 'ສະກຸນເງິນ', key: 'Ccy_cd', sortable: true },\
   { title: 'ເນື້ອໃນ', key: 'Addl_text', sortable: true },
   { title: 'ລະຫັດ', key: 'Txn_code', sortable: true },
   { title: 'ວັນທີ', key: 'Value_date', sortable: true },
@@ -939,72 +941,80 @@ onMounted(() => {
 </script>
 
 <style scoped>
-
-
 .gl-approved-master {
-  padding: 20px;
+  padding: 16px;
 }
 
-.page-header {
-  padding: 16px 0;
-  margin-bottom: 24px;
-  border-bottom: 1px solid #e0e0e0;
+/* Compact header */
+.page-header-compact {
+  padding: 8px 0;
+  margin-bottom: 16px;
 }
 
-.page-header h1 {
-  margin: 0;
-  letter-spacing: 0.25px;
-  color: #1a1a1a;
-}
-
-.page-title {
-  font-size: 2rem;
-  font-weight: 300;
+.page-title-compact {
+  font-size: 1.4rem;
+  font-weight: 500;
   color: #1976d2;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 12px;
-  margin-bottom: 8px;
+  margin: 0;
+  line-height: 1.2;
 }
 
-.page-subtitle {
-  color: #666;
-  font-size: 1.1rem;
+/* Thinner filter card */
+.filter-card-thin {
+  background: #f9f9f9;
+  border: 1px solid #e0e0e0;
 }
 
-.filter-card {
-  background: #f8f9fa;
-}
-
-/* Smaller, thinner summary cards */
-.summary-card {
-  height: 100%;
+/* Thinner summary cards */
+.summary-card-thin {
+  height: auto;
+  min-height: 60px;
   transition: transform 0.2s;
+  border: 1px solid #e0e0e0;
 }
 
-.summary-card:hover {
-  transform: translateY(-2px);
+.summary-card-thin:hover {
+  transform: translateY(-1px);
 }
 
-.summary-value {
-  font-size: 1.5rem;
-  font-weight: 500;
+.summary-value-thin {
+  font-size: 1.2rem;
+  font-weight: 600;
   line-height: 1;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
-.summary-label {
-  font-size: 0.75rem;
+.summary-label-thin {
+  font-size: 0.7rem;
   color: #666;
+  line-height: 1;
 }
 
-/* Full width table */
-.data-table-card {
-  width: 100%;
+/* Thinner data table card */
+.data-table-card-thin {
+  border: 1px solid #e0e0e0;
 }
 
-.full-width-table {
+/* Compact text */
+.text-compact {
+  font-size: 0.8rem;
+  line-height: 1.1;
+}
+
+.text-caption-thin {
+  font-size: 0.7rem;
+  line-height: 1.1;
+}
+
+.text-xs {
+  font-size: 0.65rem;
+  line-height: 1;
+}
+
+/* Full width table - thinner */
+.full-width-table-thin {
   width: 100%;
 }
 
@@ -1012,184 +1022,157 @@ onMounted(() => {
   cursor: pointer;
 }
 
-.section-title {
-  font-size: 14px;
+/* Dialog styles - thinner */
+.section-title-thin {
+  font-size: 0.8rem;
   font-weight: 600;
   color: #1976d2;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  border-bottom: 2px solid #e3f2fd;
-  padding-bottom: 4px;
+  letter-spacing: 0.3px;
+  border-bottom: 1px solid #e3f2fd;
+  padding-bottom: 2px;
+  line-height: 1;
 }
 
-.info-grid {
+.info-grid-thin {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 6px;
+  gap: 4px;
 }
 
-.info-item {
+.info-item-thin {
   display: flex;
   align-items: center;
-  padding: 2px 0;
+  padding: 1px 0;
+  line-height: 1.1;
 }
 
-.info-label {
-  font-size: 13px;
+.info-label-thin {
+  font-size: 0.75rem;
   color: #666;
   font-weight: 500;
-  min-width: 80px;
+  min-width: 60px;
+  line-height: 1;
 }
 
-.info-value {
-  font-size: 13px;
+.info-value-thin {
+  font-size: 0.75rem;
   font-weight: 600;
   color: #1a1a1a;
-  margin-left: 8px;
+  margin-left: 6px;
+  line-height: 1;
 }
 
-.amount-summary {
+/* Thinner amount summary */
+.amount-summary-thin {
   display: flex;
-  gap: 20px;
+  gap: 16px;
   justify-content: space-around;
-  background: #f8f9fa;
-  padding: 16px;
-  border-radius: 8px;
+  background: #f9f9f9;
+  padding: 8px;
+  border-radius: 6px;
   border: 1px solid #e0e0e0;
 }
 
-.amount-item {
+.amount-item-thin {
   text-align: center;
   flex: 1;
 }
 
-.amount-label {
-  font-size: 11px;
+.amount-label-thin {
+  font-size: 0.65rem;
   color: #666;
   font-weight: 600;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
+  line-height: 1;
 }
 
-.amount-value {
-  font-size: 14px;
+.amount-value-thin {
+  font-size: 0.8rem;
   font-weight: 700;
   color: #1976d2;
+  line-height: 1;
 }
 
-.additional-text-compact {
-  background: #f8f9fa;
+/* Ultra-thin journal table */
+.journal-table-container-thin {
   border: 1px solid #e0e0e0;
   border-radius: 6px;
-  padding: 12px;
-  font-size: 13px;
-  line-height: 1.4;
-  color: #333;
-}
-
-.user-info-compact {
-  display: flex;
-  gap: 24px;
-}
-
-.user-item {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.user-label {
-  font-size: 12px;
-  color: #666;
-  font-weight: 600;
-  min-width: 60px;
-}
-
-.user-details {
-  flex: 1;
-}
-
-.user-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: #1a1a1a;
-}
-
-.user-date {
-  font-size: 11px;
-  color: #888;
-  margin-top: 2px;
-}
-
-.journal-table-container {
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
   overflow: hidden;
   background: white;
 }
 
-.journal-table-minimal {
+.journal-table-ultra-thin {
   width: 100%;
   border-collapse: collapse;
 }
 
-.journal-table-minimal thead {
-  background: #f5f5f5;
+.journal-table-ultra-thin thead {
+  background: #f7f7f7;
 }
 
-.journal-table-minimal th {
-  font-size: 11px;
+.journal-table-ultra-thin th {
+  font-size: 0.7rem;
   font-weight: 700;
   color: #333;
-  padding: 10px 8px;
+  padding: 6px 4px;
   border-bottom: 1px solid #e0e0e0;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
+  line-height: 1;
 }
 
-.journal-table-minimal td {
-  padding: 8px;
-  border-bottom: 1px solid #f0f0f0;
-  font-size: 12px;
+.journal-table-ultra-thin td {
+  padding: 4px;
+  border-bottom: 1px solid #f5f5f5;
+  font-size: 0.75rem;
+  line-height: 1.1;
 }
 
-.journal-table-minimal tbody tr:hover {
-  background-color: #f8f9fa;
+.journal-table-ultra-thin tbody tr:hover {
+  background-color: #f9f9f9;
 }
 
-.journal-table-minimal tbody tr:last-child td {
+.journal-table-ultra-thin tbody tr:last-child td {
   border-bottom: none;
 }
 
-.totals-row {
-  background: #f5f5f5;
+.totals-row-thin {
+  background: #f7f7f7;
   font-weight: 700;
 }
 
-.totals-row td {
-  padding: 10px 8px;
-  font-size: 12px;
-  border-top: 2px solid #ddd;
+.totals-row-thin td {
+  padding: 6px 4px;
+  font-size: 0.75rem;
+  border-top: 1px solid #ddd;
+  line-height: 1;
 }
 
 .text-blue {
   color: #1976d2;
 }
- 
+
+/* Vuetify overrides for compact design */
 :deep(.v-data-table) {
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   width: 100% !important;
 }
 
 :deep(.v-data-table th) {
   font-weight: 600;
-  background-color: #f5f5f5;
+  background-color: #f7f7f7;
+  font-size: 0.75rem;
+  padding: 8px 12px !important;
+  height: 36px !important;
 }
 
 :deep(.v-data-table td) {
-  padding: 12px 16px;
+  padding: 6px 12px !important;
+  height: 40px !important;
+  font-size: 0.8rem;
 }
 
 :deep(.v-data-table-wrapper) {
@@ -1201,189 +1184,116 @@ onMounted(() => {
   width: 100% !important;
 }
 
-:deep(.v-simple-table) {
-  font-size: 0.875rem;
+:deep(.v-field__input) {
+  min-height: 32px !important;
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
 }
 
-:deep(.v-simple-table thead) {
-  background-color: #f5f5f5;
+:deep(.v-field__field) {
+  height: 32px !important;
 }
 
-:deep(.v-simple-table th) {
-  font-weight: 600;
-  padding: 8px 12px;
+:deep(.v-input--density-compact .v-field--variant-outlined .v-field__outline__start) {
+  border-radius: 4px 0 0 4px;
 }
 
-:deep(.v-simple-table td) {
-  padding: 8px 12px;
+:deep(.v-input--density-compact .v-field--variant-outlined .v-field__outline__end) {
+  border-radius: 0 4px 4px 0;
 }
 
-.info-item {
-  margin-bottom: 16px;
+:deep(.v-btn--size-small) {
+  min-height: 28px;
+  padding: 0 12px;
+  font-size: 0.75rem;
 }
 
-.info-label {
-  font-size: 12px;
-  color: #666;
+:deep(.v-btn--size-x-small) {
+  min-height: 24px;
+  padding: 0 8px;
+  font-size: 0.7rem;
+}
+
+:deep(.v-chip--size-x-small) {
+  height: 20px;
+  font-size: 0.65rem;
+  padding: 0 6px;
+}
+
+:deep(.v-card-title) {
+  font-size: 1rem;
   font-weight: 500;
-  margin-bottom: 4px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.info-value {
-  font-size: 14px;
-  font-weight: 600;
-  color: #1a1a1a;
-  line-height: 1.2;
-}
-
-.info-sub {
-  font-size: 12px;
-  color: #888;
-  margin-top: 2px;
-}
-
-.amount-card {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  padding: 16px;
-  border-radius: 12px;
-  text-align: center;
-  border: 1px solid #e0e0e0;
-}
-
-.amount-label {
-  font-size: 11px;
-  color: #666;
-  font-weight: 600;
-  margin-bottom: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.amount-value {
-  color: #1976d2;
-  font-weight: 700;
-}
-
-.additional-text {
-  background: #f8f9fa;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 16px;
-  font-size: 14px;
-  line-height: 1.5;
-  color: #333;
-}
-
-.user-card {
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 16px;
-}
-
-.user-title {
-  font-size: 12px;
-  color: #666;
-  font-weight: 600;
-  margin-bottom: 8px;
-  display: flex;
-  align-items: center;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.user-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: #1a1a1a;
-  margin-bottom: 4px;
-}
-
-.user-date {
-  font-size: 12px;
-  color: #888;
-}
-
-.journal-table {
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.journal-table th {
-  font-size: 12px;
-  font-weight: 700;
-  color: #333;
   padding: 12px 16px;
-  border-bottom: 1px solid #e0e0e0;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
-.journal-table td {
-  padding: 12px 16px;
-  border-bottom: 1px solid #f0f0f0;
+:deep(.v-card-text) {
+  font-size: 0.8rem;
 }
 
-.journal-row:hover {
-  background-color: #f8f9fa;
+:deep(.v-card-actions) {
+  min-height: 40px;
 }
 
-.journal-row:last-child td {
-  border-bottom: none;
+:deep(.v-dialog .v-card) {
+  max-height: 90vh;
 }
 
-.journal-table tfoot td {
-  padding: 12px 16px;
-  font-size: 13px;
-}
-
-/* Remove default table styling */
-.v-table > .v-table__wrapper > table > tbody > tr > td,
-.v-table > .v-table__wrapper > table > thead > tr > th,
-.v-table > .v-table__wrapper > table > tfoot > tr > td {
-  border-bottom: none !important;
-}
-
-/* Responsive */
+/* Responsive adjustments */
 @media (max-width: 768px) {
-  .page-title {
-    font-size: 1.5rem;
+  .page-title-compact {
+    font-size: 1.2rem;
   }
   
-  .page-subtitle {
+  .summary-value-thin {
     font-size: 1rem;
   }
   
-  .summary-value {
-    font-size: 1.25rem;
+  .summary-label-thin {
+    font-size: 0.65rem;
   }
-}
-
-@media (max-width: 768px) {
-  .info-grid {
+  
+  .info-grid-thin {
     grid-template-columns: 1fr;
   }
   
-  .amount-summary {
+  .amount-summary-thin {
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
   }
   
-  .user-info-compact {
-    flex-direction: column;
-    gap: 12px;
+  .journal-table-ultra-thin {
+    font-size: 0.65rem;
   }
   
-  .journal-table-minimal {
-    font-size: 10px;
+  .journal-table-ultra-thin th,
+  .journal-table-ultra-thin td {
+    padding: 3px 2px;
   }
   
-  .journal-table-minimal th,
-  .journal-table-minimal td {
-    padding: 6px 4px;
+  :deep(.v-data-table th) {
+    padding: 4px 8px !important;
+    font-size: 0.7rem;
+  }
+  
+  :deep(.v-data-table td) {
+    padding: 4px 8px !important;
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .gl-approved-master {
+    padding: 8px;
+  }
+  
+  .text-compact {
+    font-size: 0.75rem;
+  }
+  
+  .journal-table-ultra-thin th,
+  .journal-table-ultra-thin td {
+    padding: 2px 1px;
+    font-size: 0.6rem;
   }
 }
 </style>
