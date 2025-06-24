@@ -15,6 +15,11 @@ export const faAssetStore = defineStore("faAsset", {
       form_create_fa_asset: {
         asset_type_id: null as number | null,
         asset_list_id: "",
+        asset_value_remainMonth: 0,
+        asset_value_remainBegin: 0,
+        asset_value_remainLast: 0,
+        type_of_pay: "",
+        acc_no: "",
         asset_serial_no: "",
         asset_list_code: "",
         asset_tag: "",
@@ -30,7 +35,7 @@ export const faAssetStore = defineStore("faAsset", {
         asset_useful_life: null as number | null,
         asset_salvage_value: 0,
         dpca_start_date: null as Date | null,
-        dpca_end_date: null as Date | null,
+        dpca_end_date: null as Date | null |string,
         asset_accu_dpca_value: 0,
         asset_value_remain: 0,
         asset_latest_date_dpca: null as Date | null,
@@ -40,10 +45,12 @@ export const faAssetStore = defineStore("faAsset", {
         asset_ac_datetime: null as Date | null,
         aaset_ac_by: null as string | null,
 
-        asset_status: "ACTIVE" as
+        asset_status: "UNDER_CONSTRUCTION" as
+          | "UNDER_CONSTRUCTION"
           | "ACTIVE"
           | "INACTIVE"
           | "MAINTENANCE"
+          | "DAMAGED"
           | "DISPOSED",
         has_depreciation: "Y" as "Y" | "N",
       },
@@ -53,6 +60,11 @@ export const faAssetStore = defineStore("faAsset", {
         asset_type_id: null as number | null,
         asset_serial_no: "",
         asset_list_code: "",
+        asset_value_remainMonth: 0,
+        asset_value_remainBegin: 0,
+        asset_value_remainLast: 0,
+        type_of_pay: "",
+        acc_no: "",
         asset_tag: "",
         asset_location_id: null as number | null,
         asset_spec: "",
@@ -76,10 +88,12 @@ export const faAssetStore = defineStore("faAsset", {
         asset_ac_datetime: null as Date | null,
         aaset_ac_by: null as string | null,
 
-        asset_status: "ACTIVE" as
+        asset_status: "UNDER_CONSTRUCTION" as
+          | "UNDER_CONSTRUCTION"
           | "ACTIVE"
           | "INACTIVE"
           | "MAINTENANCE"
+          | "DAMAGED"
           | "DISPOSED",
         has_depreciation: "Y" as "Y" | "N",
       },
@@ -198,14 +212,21 @@ export const faAssetStore = defineStore("faAsset", {
                 .toISOString()
                 .split("T")[0]
             : null,
-            asset_type_id: this.form_create_fa_asset.asset_type_id || null,
-            asset_list_id: this.form_create_fa_asset.asset_list_id || "",
+          asset_type_id: this.form_create_fa_asset.asset_type_id || null,
+          asset_list_id: this.form_create_fa_asset.asset_list_id || "",
+          asset_value_remainLast:
+            this.form_create_fa_asset.asset_value_remainLast || 0,
+          asset_value_remainBegin:
+            this.form_create_fa_asset.asset_value_remainBegin || 0,
+          asset_value_remainMonth:
+            this.form_create_fa_asset.asset_value_remainMonth || 0,
+          acc_no: this.form_create_fa_asset.acc_no || "",
           warranty_end_date: this.form_create_fa_asset.warranty_end_date
             ? new Date(this.form_create_fa_asset.warranty_end_date)
                 .toISOString()
                 .split("T")[0]
             : null,
-            asset_list_code: this.form_create_fa_asset.asset_list_code || "",
+          asset_list_code: this.form_create_fa_asset.asset_list_code || "",
           dpca_start_date: this.form_create_fa_asset.dpca_start_date
             ? new Date(this.form_create_fa_asset.dpca_start_date)
                 .toISOString()
@@ -263,7 +284,7 @@ export const faAssetStore = defineStore("faAsset", {
             showConfirmButton: false,
           });
           setTimeout(() => {
-            goPath("/fa-assets");
+            goPath("/property/faasset");
           }, 1500);
 
           this.resetCreateForm();
@@ -293,13 +314,14 @@ export const faAssetStore = defineStore("faAsset", {
                 .toISOString()
                 .split("T")[0]
             : null,
-            asset_list_id: this.form_create_fa_asset.asset_list_id || "",
-            asset_type_id: this.form_update_fa_asset.asset_type_id || null,
+          asset_list_id: this.form_create_fa_asset.asset_list_id || "",
+          asset_type_id: this.form_update_fa_asset.asset_type_id || null,
           warranty_end_date: this.form_update_fa_asset.warranty_end_date
             ? new Date(this.form_update_fa_asset.warranty_end_date)
                 .toISOString()
                 .split("T")[0]
             : null,
+
           dpca_start_date: this.form_update_fa_asset.dpca_start_date
             ? new Date(this.form_update_fa_asset.dpca_start_date)
                 .toISOString()
@@ -326,13 +348,20 @@ export const faAssetStore = defineStore("faAsset", {
                 .toISOString()
                 .split("T")[0]
             : null,
-            asset_list_code: this.form_update_fa_asset.asset_list_code || "",
+          asset_list_code: this.form_update_fa_asset.asset_list_code || "",
 
           asset_ac_datetime: this.form_update_fa_asset.asset_ac_datetime
             ? new Date(
                 this.form_update_fa_asset.asset_ac_datetime
               ).toISOString()
             : null,
+          acc_no: this.form_update_fa_asset.acc_no || "",
+          asset_value_remainLast:
+            this.form_update_fa_asset.asset_value_remainLast || 0,
+          asset_value_remainBegin:
+            this.form_update_fa_asset.asset_value_remainBegin || 0,
+          asset_value_remainMonth:
+            this.form_update_fa_asset.asset_value_remainMonth || 0,
 
           dpca_type: this.form_update_fa_asset.dpca_type || null,
           aaset_ac_by: this.form_update_fa_asset.aaset_ac_by || null,
@@ -497,7 +526,6 @@ export const faAssetStore = defineStore("faAsset", {
         if (this.response_fa_asset_detail) {
           const asset = this.response_fa_asset_detail;
           this.form_update_fa_asset = {
-           
             asset_serial_no: asset.asset_serial_no,
             asset_tag: asset.asset_tag,
             asset_type_id: asset.asset_type_id,

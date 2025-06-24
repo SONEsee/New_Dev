@@ -55,6 +55,15 @@ const hasDepreciationOptions = [
   { title: "ມີເສື່ອມລາຄາ", value: "Y" },
   { title: "ບໍ່ມີເສື່ອມລາຄາ", value: "N" },
 ];
+const playtype = [
+  { title: "ເງິນສົດ or Cash", value: "1101100" },
+  { title: "ເງິນສົດຄັງຍ່ອຍ or Petty cash", value: "1101200" },
+  { title: "ບັນຊີຝາກປະຢັດ Or Savings deposits ", value: "1121130" },
+  {
+    title: "ບັນຊີເງິນຝາກກະແສລາຍວັນ Or Current account deposits ",
+    value: "1121110",
+  },
+];
 
 const goBack = () => {
   router.go(-1);
@@ -216,7 +225,18 @@ watch(
     }
   }
 );
-
+watch(
+  [
+    () => faAssetStoreInstance.form_create_fa_asset.asset_value,
+    () => faAssetStoreInstance.form_create_fa_asset.asset_salvage_value,
+  ],
+  ([assetValue, salvageValue]) => {
+    const value = assetValue || 0;
+    const salvage = salvageValue || 0;
+    faAssetStoreInstance.form_create_fa_asset.asset_value_remainBegin =
+      value - salvage;
+  }
+);
 watch(
   [
     () => faAssetStoreInstance.form_create_fa_asset.asset_value,
@@ -314,7 +334,7 @@ onMounted(async () => {
         <v-col cols="12">
           <GlobalTextTitleLine :title="title" />
         </v-col>
-        <!-- <pre>{{ mockData }}</pre> -->
+
         <v-col cols="12" class="">
           <v-row>
             <v-col cols="12">
@@ -424,7 +444,7 @@ onMounted(async () => {
                         prepend-inner-icon="mdi-auto-fix"
                         placeholder="ເຊັ່ນ: FIX-001-202506-0002"
                       ></v-text-field>
- <label>ເລກຊີຣີ (Serial Number)</label>
+                      <label>ເລກຊີຣີ (Serial Number)</label>
                       <v-text-field
                         v-model="
                           faAssetStoreInstance.form_create_fa_asset
@@ -471,10 +491,8 @@ onMounted(async () => {
                       </v-select>
                     </v-col>
                     <v-col cols="12" md="4">
-                     
                       <label>ລາຍລະອຽດຄຸນລັກສະນະ</label>
                       <v-textarea
-                      
                         v-model="
                           faAssetStoreInstance.form_create_fa_asset.asset_spec
                         "
@@ -507,7 +525,7 @@ onMounted(async () => {
                   <v-row>
                     <v-col cols="12" md="3">
                       <label
-                        >ມູນຄ່າຊັບສົມບັດ
+                        >ມູນຄ່າເລີ່ມຕົ້ນ
                         <span class="text-error">*</span></label
                       >
                       <v-text-field
@@ -522,10 +540,9 @@ onMounted(async () => {
                         density="compact"
                         variant="outlined"
                         hide-details="auto"
-                       
                       ></v-text-field
                     ></v-col>
-                     <v-col cols="12" md="3">
+                    <v-col cols="12" md="3">
                       <label>ສະກຸນເງິນ</label>
                       <v-autocomplete
                         item-title="title"
@@ -608,18 +625,8 @@ onMounted(async () => {
                             :title="`${item.raw.supplier_name}(${item.raw.supplier_code})`"
                           />
                         </template>
-                        <!-- <template #item="{ props, item }">
-                          <v-list-item v-bind="props">
-                            {{ item.supplier_name }}{{ item.supplier_code }}
-                           
-                          </v-list-item>
-                        </template> -->
                       </v-select>
                     </v-col>
-                    
-
-                   
-                    
                   </v-row>
                 </v-card-text>
               </v-card>
@@ -658,8 +665,22 @@ onMounted(async () => {
                         item-title="title"
                         item-value="value"
                       ></v-autocomplete>
-
-                      <label>ອັດຕາເສື່ອມລາຄາ (%)</label>
+                      <label>ອາຍຸການໃຊ້ງານ (ປີ)</label>
+                      <v-text-field
+                        v-model.number="
+                          faAssetStoreInstance.form_create_fa_asset
+                            .asset_useful_life
+                        "
+                        :rules="[rules.positiveNumber]"
+                        type="number"
+                        min="1"
+                        placeholder="0"
+                        density="compact"
+                        variant="outlined"
+                        hide-details="auto"
+                        suffix="ປີ"
+                      ></v-text-field>
+                      <label>ອັດຕາຄ່າຫຼູຍຫຽ້ນລາຄາ (%)</label>
                       <v-text-field
                         v-model.number="
                           faAssetStoreInstance.form_create_fa_asset
@@ -676,25 +697,7 @@ onMounted(async () => {
                         hide-details="auto"
                         suffix="%"
                       ></v-text-field>
-
-                      <label>ອາຍຸການໃຊ້ງານ (ປີ)</label>
-                      <v-text-field
-                        v-model.number="
-                          faAssetStoreInstance.form_create_fa_asset
-                            .asset_useful_life
-                        "
-                        :rules="[rules.positiveNumber]"
-                        type="number"
-                        min="1"
-                        placeholder="0"
-                        density="compact"
-                        variant="outlined"
-                        hide-details="auto"
-                        suffix="ປີ"
-                      ></v-text-field>
-                    </v-col>
-                    <v-col cols="12" md="3">
-                      <label>ວັນທີ່ເລີ່ມຄິດເສື່ອມລາຄາ</label>
+                      <label>ວັນທີ່ເລີ່ມຄິດລາຄາຫຼູ້ຍຫຽ້ນ</label>
                       <v-text-field
                         v-model="
                           faAssetStoreInstance.form_create_fa_asset
@@ -705,24 +708,38 @@ onMounted(async () => {
                         variant="outlined"
                         hide-details="auto"
                       ></v-text-field>
-
-                      <label>ມູນຄ່າຊາກ</label>
-                      <v-text-field
+                    </v-col>
+                    <v-col cols="12" md="3">
+                      <label>ປະເພດການຊຳລະ</label>
+                      <v-autocomplete
                         v-model.number="
-                          faAssetStoreInstance.form_create_fa_asset
-                            .asset_salvage_value
+                          faAssetStoreInstance.form_create_fa_asset.type_of_pay
                         "
-                        :rules="[rules.positiveNumber]"
-                        type="number"
-                        min="0"
+                        :items="playtype"
+                        item-value="value"
+                        item-title="title"
                         step="0.01"
                         placeholder="0.00"
                         density="compact"
                         variant="outlined"
                         hide-details="auto"
-                        prefix="₭"
+                      ></v-autocomplete>
+                      <label>ມູນຄ່າຕໍ່ເດືອນ</label>
+                      <v-text-field
+                        v-model="
+                          faAssetStoreInstance.form_create_fa_asset
+                            .asset_value_remainMonth
+                        "
+                        :rules="[rules.maxLength50]"
+                        placeholder="ເຊັ່ນ: SN-FIX-001-20250623-0001"
+                        density="compact"
+                        variant="outlined"
+                        hide-details="auto"
+                        maxlength="50"
+                        hint="ສ້າງອັດຕະໂນມັດ"
+                        readonly
                       ></v-text-field>
-                       <label>ມູນຄ່າຄົງເຫຼືອ</label>
+                      <label>ມູນຄ່າຄົງເຫຼືອ</label>
                       <v-text-field
                         v-model.number="
                           faAssetStoreInstance.form_create_fa_asset
@@ -738,9 +755,8 @@ onMounted(async () => {
                         readonly
                         hint="ຄິດໄລ່ອັດຕະໂນມັດ: ມູນຄ່າຊັບສິນ - ເສື່ອມລາຄາສະສົມ"
                       ></v-text-field>
-                    </v-col>
-                    <v-col cols="12" md="3">
-                      <label>ວັນທີ່ສິ້ນສຸດການເສື່ອມລາຄາ</label>
+
+                      <label>ວັນທີ່ສິ້ນສຸດການລາຄາຫຼູຍຫຽ້ນ</label>
                       <v-text-field
                         v-model="
                           faAssetStoreInstance.form_create_fa_asset
@@ -753,8 +769,36 @@ onMounted(async () => {
                         readonly
                         hint="ຄິດໄລ່ອັດຕະໂນມັດຈາກວັນທີ່ເລີ່ມແລະອາຍຸການໃຊ້ງານ"
                       ></v-text-field>
-
-                      <label>ມູນຄ່າເສື່ອມລາຄາສະສົມ</label>
+                    </v-col>
+                    <v-col cols="12" md="3">
+                      <label>ເລກບັນຊີ</label>
+                      <v-text-field
+                        v-model="
+                          faAssetStoreInstance.form_create_fa_asset.acc_no
+                        "
+                        density="compact"
+                        variant="outlined"
+                        hide-details="auto"
+                      >
+                      </v-text-field>
+                      <label>ມູນຄ່າຕັ້ນ</label>
+                      <v-text-field
+                        v-model="
+                          faAssetStoreInstance.form_create_fa_asset
+                            .asset_value_remainBegin
+                        "
+                        :rules="[
+                          rules.required,
+                          rules.assetTag,
+                          rules.maxLength50,
+                        ]"
+                        placeholder="ມູນຄ່າຕົ້ນ"
+                        density="compact"
+                        variant="outlined"
+                        hide-details="auto"
+                        maxlength="50"
+                      ></v-text-field>
+                      <label>ມູນຄ່າຫຼູ້ຍຫຽ້ນລາຄາສະສົມ</label>
                       <v-text-field
                         v-model.number="
                           faAssetStoreInstance.form_create_fa_asset
@@ -771,26 +815,55 @@ onMounted(async () => {
                         prefix="₭"
                       ></v-text-field>
 
-                     
-                    </v-col>
-                    <v-col cols="12" md="3">
-                      <label>ວັນທີ່ເສື່ອມລາຄາຄັ້ງລາສຸດ</label>
+                      <label>ວັນທີ່ຖອນຈຳໜ່າຍຊັບສົມບັດ</label>
                       <v-text-field
                         v-model="
                           faAssetStoreInstance.form_create_fa_asset
-                            .asset_latest_date_dpca
+                            .asset_disposal_date
                         "
                         type="date"
                         density="compact"
                         variant="outlined"
                         hide-details="auto"
                       ></v-text-field>
-
-                      <label>ວັນທີ່ຖອນຈຳໜ່າຍຊັບສົມບັດ</label>
+                    </v-col>
+                    <v-col cols="12" md="3">
+                      <label>ມູນຄ່າຊາກ</label>
+                      <v-text-field
+                        v-model.number="
+                          faAssetStoreInstance.form_create_fa_asset
+                            .asset_salvage_value
+                        "
+                        :rules="[rules.positiveNumber]"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                        density="compact"
+                        variant="outlined"
+                        hide-details="auto"
+                        prefix="₭"
+                      ></v-text-field>
+                      <label>ມູນຄ່າທ້າຍ</label>
                       <v-text-field
                         v-model="
                           faAssetStoreInstance.form_create_fa_asset
-                            .asset_disposal_date
+                            .asset_value_remainLast
+                        "
+                        :rules="[rules.maxLength50]"
+                        placeholder="ເຊັ່ນ: SN-FIX-001-20250623-0001"
+                        density="compact"
+                        variant="outlined"
+                        hide-details="auto"
+                        maxlength="50"
+                        hint="ສ້າງອັດຕະໂນມັດ"
+                        readonly
+                      ></v-text-field>
+                      <label>ວັນທີ່ເສື່ອມລາຄາຄັ້ງລາສຸດ</label>
+                      <v-text-field
+                        v-model="
+                          faAssetStoreInstance.form_create_fa_asset
+                            .asset_latest_date_dpca
                         "
                         type="date"
                         density="compact"

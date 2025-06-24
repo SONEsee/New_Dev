@@ -3,24 +3,26 @@ import { ref, onMounted, computed } from "vue";
 import { CallSwal } from "#build/imports";
 
 const faAssetStoreInstance = faAssetStore();
-const mockData  = computed(()=>{
+const mockData = computed(() => {
   return faAssetStoreInstance.response_fa_asset_list;
-})
-onMounted(()=>{
-  faAssetStoreInstance.GetFaAssetList()
-})
+});
+onMounted(() => {
+  faAssetStoreInstance.GetFaAssetList();
+});
 const handleStatusChange = async (item: any, newStatus: string) => {
   try {
     const statusTexts = {
-      ACTIVE: 'ເປີດໃຊ້ງານ',
-      INACTIVE: 'ປິດໃຊ້ງານ',
-      MAINTENANCE: 'ບຳລຸງຮັກສາ',
-      DISPOSED: 'ຖອນຈຳໜ່າຍ'
+      ACTIVE: "ເປີດໃຊ້ງານ",
+      INACTIVE: "ປິດໃຊ້ງານ",
+      MAINTENANCE: "ບຳລຸງຮັກສາ",
+      DISPOSED: "ຖອນຈຳໜ່າຍ",
     };
-    
+
     const notification = await CallSwal({
       title: "ຢືນຢັນ",
-      text: `ທ່ານຕ້ອງການປ່ຽນສະຖານະເປັນ "${statusTexts[newStatus as keyof typeof statusTexts]}" ໃຊ່ບໍ່?`,
+      text: `ທ່ານຕ້ອງການປ່ຽນສະຖານະເປັນ "${
+        statusTexts[newStatus as keyof typeof statusTexts]
+      }" ໃຊ່ບໍ່?`,
       icon: "question",
       confirmButtonText: "ຕົກລົງ",
       cancelButtonText: "ຍົກເລີກ",
@@ -221,36 +223,39 @@ const headers = computed(() => [
         },
       ]
     : []),
-  {
-    title: "ຄິດເສື່ອມ",
-    value: "depreciation",
-    align: "center",
-    sortable: false,
-    filterable: false,
-    width: "80px",
-    class: "text-center",
-  },
+  // {
+  //   title: "ຄິດເສື່ອມ",
+  //   value: "depreciation",
+  //   align: "center",
+  //   sortable: false,
+  //   filterable: false,
+  //   width: "80px",
+  //   class: "text-center",
+  // },
 ]);
-
 
 const filteredData = computed(() => {
   let data = mockData.value;
-  
+
   // Filter by status
   if (selectedStatus.value !== "all") {
-    data = data.filter(item => item.asset_status === selectedStatus.value);
+    data = data.filter((item) => item.asset_status === selectedStatus.value);
   }
-  
-  
+
   if (search.value) {
-    data = data.filter(item =>
-      item.asset_tag.toLowerCase().includes(search.value.toLowerCase()) ||
-      item.asset_serial_no?.toLowerCase().includes(search.value.toLowerCase()) ||
-      item.asset_chart?.asset_name?.toLowerCase().includes(search.value.toLowerCase()) ||
-      item.asset_spec?.toLowerCase().includes(search.value.toLowerCase())
+    data = data.filter(
+      (item) =>
+        item.asset_tag.toLowerCase().includes(search.value.toLowerCase()) ||
+        item.asset_serial_no
+          ?.toLowerCase()
+          .includes(search.value.toLowerCase()) ||
+        item.asset_chart?.asset_name
+          ?.toLowerCase()
+          .includes(search.value.toLowerCase()) ||
+        item.asset_spec?.toLowerCase().includes(search.value.toLowerCase())
     );
   }
-  
+
   return data;
 });
 
@@ -269,7 +274,9 @@ const formatCurrency = (value: number, currency: string) => {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   });
-  return `${symbols[currency as keyof typeof symbols] || ""} ${formatter.format(value)}`;
+  return `${symbols[currency as keyof typeof symbols] || ""} ${formatter.format(
+    value
+  )}`;
 };
 
 const getStatusColor = (status: string) => {
@@ -278,6 +285,8 @@ const getStatusColor = (status: string) => {
     INACTIVE: "warning",
     MAINTENANCE: "info",
     DISPOSED: "error",
+    UNDER_CONSTRUCTION: "primary",
+    DAMAGED: "secondary",
   };
   return colors[status as keyof typeof colors] || "grey";
 };
@@ -288,6 +297,8 @@ const getStatusText = (status: string) => {
     INACTIVE: "ປິດໃຊ້ງານ",
     MAINTENANCE: "ບຳລຸງຮັກສາ",
     DISPOSED: "ຖອນຈຳໜ່າຍ",
+    UNDER_CONSTRUCTION: "ພວມຊື້ພວມກໍ່ສ້າງ",
+    DAMAGED: "ເສຍຫາຍ",
   };
   return texts[status as keyof typeof texts] || status;
 };
@@ -303,7 +314,7 @@ const confirmDelete = async (item: any) => {
       cancelButtonText: "ຍົກເລີກ",
       confirmButtonColor: "#d33",
     });
-    
+
     if (notification.isConfirmed) {
       await faAssetStoreInstance.DeleteFaAsset(item.asset_list_id);
     }
@@ -322,7 +333,7 @@ onMounted(async () => {
   try {
     initializeRole();
     roleStore.GetRoleDetail();
-  
+
     await new Promise((resolve) => setTimeout(resolve, 500));
   } catch (error) {
     errorMessage.value = "ເກີດຂໍ້ຜິດພາດໃນການໂຫຼດຂໍ້ມູນ";
@@ -340,7 +351,11 @@ onMounted(async () => {
     <v-row>
       <v-col cols="12" md="3">
         <div class="d-flex">
-          <v-btn color="primary" @click="goPath(`/property/faasset/create`)" v-if="canAdd">
+          <v-btn
+            color="primary"
+            @click="goPath(`/property/faasset/create`)"
+            v-if="canAdd"
+          >
             <v-icon icon="mdi-plus"></v-icon> ເພີ່ມຊັບສົມບັດ
           </v-btn>
         </div>
@@ -387,8 +402,11 @@ onMounted(async () => {
       </v-col>
     </v-row>
 
-    <v-data-table :headers="headers" :items="filteredData || []" class="text-no-wrap">
-     
+    <v-data-table
+      :headers="headers"
+      :items="filteredData || []"
+      class="text-no-wrap"
+    >
       <template v-slot:header.asset_list_id="{ column }">
         <v-icon start>mdi-identifier</v-icon>
         <b style="color: blue">{{ column.title }}</b>
@@ -446,7 +464,6 @@ onMounted(async () => {
         <b style="color: blue">{{ column.title }}</b>
       </template>
 
-     
       <template v-slot:item.asset_list_id="{ item }">
         <v-chip color="primary" variant="outlined" size="small">
           {{ item.asset_list_id }}
@@ -458,14 +475,18 @@ onMounted(async () => {
       </template>
 
       <template v-slot:item.asset_serial_no="{ item }">
-        <span>{{ item.asset_serial_no || '-' }}</span>
+        <span>{{ item.asset_serial_no || "-" }}</span>
       </template>
 
       <template v-slot:item.asset_id="{ item }">
         <div class="text-center">
           <div v-if="item.asset_chart">
-            <p class="text-body-2 font-weight-medium">{{ item.asset_chart.asset_name }}</p>
-            <p class="text-caption text-grey">{{ item.asset_chart.asset_code }}</p>
+            <p class="text-body-2 font-weight-medium">
+              {{ item.asset_chart.asset_name }}
+            </p>
+            <p class="text-caption text-grey">
+              {{ item.asset_chart.asset_code }}
+            </p>
           </div>
           <span v-else class="text-grey">-</span>
         </div>
@@ -475,7 +496,9 @@ onMounted(async () => {
         <div class="text-center">
           <div v-if="item.location">
             <p class="text-body-2">{{ item.location.location_name }}</p>
-            <p class="text-caption text-grey">{{ item.location.location_code }}</p>
+            <p class="text-caption text-grey">
+              {{ item.location.location_code }}
+            </p>
           </div>
           <span v-else class="text-grey">-</span>
         </div>
@@ -487,13 +510,17 @@ onMounted(async () => {
 
       <template v-slot:item.asset_value="{ item }">
         <div class="text-end">
-          <span class="font-weight-bold">{{ formatCurrency(item.asset_value, item.asset_currency) }}</span>
+          <span class="font-weight-bold">{{
+            formatCurrency(item.asset_value, item.asset_currency)
+          }}</span>
         </div>
       </template>
 
       <template v-slot:item.asset_value_remain="{ item }">
         <div class="text-end">
-          <span class="font-weight-bold text-success">{{ formatCurrency(item.asset_value_remain, item.asset_currency) }}</span>
+          <span class="font-weight-bold text-success">{{
+            formatCurrency(item.asset_value_remain, item.asset_currency)
+          }}</span>
         </div>
       </template>
 
@@ -501,9 +528,9 @@ onMounted(async () => {
         <div class="text-center">
           <v-menu>
             <template v-slot:activator="{ props }">
-              <v-chip 
-                :color="getStatusColor(item.asset_status)" 
-                variant="flat" 
+              <v-chip
+                :color="getStatusColor(item.asset_status)"
+                variant="flat"
                 size="small"
                 v-bind="props"
                 class="cursor-pointer"
@@ -531,12 +558,12 @@ onMounted(async () => {
 
       <template v-slot:item.has_depreciation="{ item }">
         <div class="text-center">
-          <v-chip 
-            :color="item.has_depreciation === 'Y' ? 'success' : 'error'" 
-            variant="flat" 
+          <v-chip
+            :color="item.has_depreciation === 'Y' ? 'success' : 'error'"
+            variant="flat"
             size="small"
           >
-            {{ item.has_depreciation === 'Y' ? 'ມີ' : 'ບໍ່ມີ' }}
+            {{ item.has_depreciation === "Y" ? "ມີ" : "ບໍ່ມີ" }}
           </v-chip>
         </div>
       </template>
@@ -547,7 +574,9 @@ onMounted(async () => {
           flat
           class="text-primary"
           icon="mdi-eye-outline"
-          @click="goPath(`/property/faasset/detail?id_faasset=${item.asset_list_id}`)"
+          @click="
+            goPath(`/property/faasset/detail?id_faasset=${item.asset_list_id}`)
+          "
         />
       </template>
 
@@ -557,7 +586,9 @@ onMounted(async () => {
           flat
           class="text-info"
           icon="mdi-pen"
-          @click="goPath(`/property/faasset/edit?id_faasset=${item.asset_list_id}`)"
+          @click="
+            goPath(`/property/faasset/edit?id_faasset=${item.asset_list_id}`)
+          "
         />
       </template>
 
@@ -573,22 +604,22 @@ onMounted(async () => {
 
       <template v-slot:item.depreciation="{ item }">
         <v-btn
-        
           v-if="item.has_depreciation === 'Y' && item.asset_status === 'ACTIVE'"
           small
-        flat
+          flat
           icon="mdi-calculator"
           @click="calculateDepreciation(item)"
         >
-        <v-icon icon="mdi-calculator"></v-icon>
+          <v-icon icon="mdi-calculator"></v-icon>
           <v-tooltip activator="parent" location="top">ຄິດເສື່ອມລາຄາ</v-tooltip>
         </v-btn>
-      <v-chip v-else color="primary"><p  class="text-primary">ຍັງບໍ່ມີຄ່າເສືອມ</p></v-chip> 
+        <v-chip v-else color="primary"
+          ><p class="text-primary">ຍັງບໍ່ມີຄ່າເສືອມ</p></v-chip
+        >
       </template>
     </v-data-table>
   </v-col>
 
- 
   <v-snackbar
     v-model="showSuccess"
     color="success"
