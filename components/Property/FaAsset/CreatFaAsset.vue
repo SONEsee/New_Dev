@@ -1,3 +1,4 @@
+
 <script lang="ts" setup>
 import { CallSwal } from "#build/imports";
 import { useRouter } from "vue-router";
@@ -65,6 +66,9 @@ const playtype = [
   },
 ];
 
+// Add flag to prevent infinite loop during auto calculation
+const isAutoCalculating = ref(false);
+
 // Number formatting functions
 const formatNumber = (value) => {
   if (!value && value !== 0) return '';
@@ -125,7 +129,21 @@ const formattedAssetValueRemainBegin = computed(() => {
 });
 
 const formattedAssetValueRemainMonth = computed(() => {
-  return formatNumber(faAssetStoreInstance.form_create_fa_asset.asset_value_remainMonth);
+  const assetValue = faAssetStoreInstance.form_create_fa_asset.asset_value;
+  const usefulLife = faAssetStoreInstance.form_create_fa_asset.asset_useful_life;
+  
+  if (assetValue && usefulLife && usefulLife > 0) {
+    const monthlyValue = assetValue / (usefulLife * 12);
+    // Round to 2 decimal places to avoid precision issues
+    const roundedValue = Math.round(monthlyValue * 100) / 100;
+    // Update the store value as well
+    faAssetStoreInstance.form_create_fa_asset.asset_value_remainMonth = roundedValue;
+    return formatNumber(roundedValue);
+  }
+  
+  // Reset if no valid values
+  faAssetStoreInstance.form_create_fa_asset.asset_value_remainMonth = 0;
+  return formatNumber(0);
 });
 
 const formattedAssetValueRemainLast = computed(() => {
@@ -317,6 +335,44 @@ watch(
   }
 );
 
+// NEW: Watch for asset_useful_life changes to auto-calculate dpca_percentage
+watch(
+  () => faAssetStoreInstance.form_create_fa_asset.asset_useful_life,
+  (newUsefulLife) => {
+    if (isAutoCalculating.value) return; // Prevent infinite loop
+    
+    if (newUsefulLife && newUsefulLife > 0) {
+      isAutoCalculating.value = true;
+      const percentage = 100 / newUsefulLife;
+      // Round to 2 decimal places
+      faAssetStoreInstance.form_create_fa_asset.dpca_percentage = Math.round(percentage * 100) / 100;
+      
+      nextTick(() => {
+        isAutoCalculating.value = false;
+      });
+    }
+  }
+);
+
+// NEW: Watch for dpca_percentage changes to auto-calculate asset_useful_life
+watch(
+  () => faAssetStoreInstance.form_create_fa_asset.dpca_percentage,
+  (newPercentage) => {
+    if (isAutoCalculating.value) return; // Prevent infinite loop
+    
+    if (newPercentage && newPercentage > 0) {
+      isAutoCalculating.value = true;
+      const usefulLife = 100 / newPercentage;
+      // Round to nearest integer for useful life in years
+      faAssetStoreInstance.form_create_fa_asset.asset_useful_life = Math.round(usefulLife);
+      
+      nextTick(() => {
+        isAutoCalculating.value = false;
+      });
+    }
+  }
+);
+
 watch(
   assetcode,
   (newValue) => {
@@ -393,6 +449,7 @@ onMounted(async () => {
   }
 });
 </script>
+
 
 <template>
   <section class="pa-6">
@@ -668,7 +725,7 @@ onMounted(async () => {
               </v-card>
             </v-col>
 
-            <v-col
+               <v-col
               cols="12"
               v-show="
                 faAssetStoreInstance.form_create_fa_asset.has_depreciation ===
@@ -715,6 +772,7 @@ onMounted(async () => {
                         variant="outlined"
                         hide-details="auto"
                         suffix="ປີ"
+                        hint="ປ້ອນອາຍຸການໃຊ້ງານເພື່ອຄິດໄລ່ອັດຕາອັດຕະໂນມັດ"
                       ></v-text-field>
                       <label>ອັດຕາຄ່າຫຼູຍຫຽ້ນລາຄາ (%)</label>
                       <v-text-field
@@ -732,6 +790,7 @@ onMounted(async () => {
                         variant="outlined"
                         hide-details="auto"
                         suffix="%"
+                        hint="ປ້ອນອັດຕາເພື່ອຄິດໄລ່ອາຍຸການໃຊ້ງານອັດຕະໂນມັດ"
                       ></v-text-field>
                       <label>ວັນທີ່ເລີ່ມຄິດລາຄາຫຼູ້ຍຫຽ້ນ</label>
                       <v-text-field
@@ -760,7 +819,7 @@ onMounted(async () => {
                         variant="outlined"
                         hide-details="auto"
                       ></v-autocomplete>
-                      <label>ມູນຄ່າຕໍ່ເດືອນ</label>
+                     <label>ມູນຄ່າຕໍ່ເດືອນ</label>
                       <v-text-field
                         :value="formattedAssetValueRemainMonth"
                         placeholder="ເຊັ່ນ: 1,000,000"
@@ -812,7 +871,7 @@ onMounted(async () => {
                       </v-text-field>
                       <label>ມູນຄ່າຕັ້ນ</label>
                       <v-text-field
-                        :value="formattedAssetValueRemainBegin"
+                        :value="faAssetStoreInstance.form_create_fa_asset.asset_value_remainBegin"
                         placeholder="ມູນຄ່າຕົ້ນ"
                         density="compact"
                         variant="outlined"
@@ -830,6 +889,7 @@ onMounted(async () => {
                         variant="outlined"
                         hide-details="auto"
                         prefix="₭"
+                        readonly
                         class="formatted-number-input"
                       ></v-text-field>
 
@@ -886,7 +946,7 @@ onMounted(async () => {
               </v-card>
             </v-col>
 
-            <!-- ປຸ່ມບັນທຶກ -->
+            
             <v-col cols="12" class="d-flex flex-wrap justify-center mt-6">
               <v-btn
                 color="error"
@@ -925,7 +985,7 @@ onMounted(async () => {
   margin: 0;
 }
 
-/* Custom styling for formatted number inputs */
+
 .formatted-number-input .v-field__input {
   text-align: right;
   font-family: 'Roboto Mono', monospace;

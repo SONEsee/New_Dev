@@ -526,7 +526,7 @@ const assetStatusOptions = [
   { title: "ຖອນຈຳໜ່າຍ", value: "DISPOSED" },
 ];
 
-// Currency Options
+
 const currencyOptions = [
   { title: "ກີບລາວ (LAK)", value: "LAK" },
   { title: "ດໍລ່າສະຫະລັດ (USD)", value: "USD" },
@@ -604,7 +604,7 @@ const loadReferenceData = async () => {
   }
 };
 
-// Watch for data load and populate form
+
 watch(
   () => faAssetStoreInstance.response_fa_asset_detail,
   (newVal) => {

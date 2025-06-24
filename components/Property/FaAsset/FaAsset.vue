@@ -348,6 +348,27 @@ onMounted(async () => {
     loading.value = false;
   }
 });
+const formatNumber = (value) => {
+  if (!value && value !== 0) return '0';
+  const num = parseFloat(value);
+  if (isNaN(num)) return '0';
+  
+ 
+  if (num % 1 === 0) {
+   
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(num);
+  } else {
+    
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(num);
+  }
+};
+
 </script>
 
 <template>
@@ -513,26 +534,24 @@ onMounted(async () => {
           >ບັນຊີເງິນຝາກກະແສລາຍວັນ
           <p></p
         ></v-chip>
-        <!-- <div class="text-center">
-          <div v-if="item.asset_chart">
-            <p class="text-body-2 font-weight-medium">
-              {{ item.asset_chart.asset_name }}
-            </p>
-            <p class="text-caption text-grey">
-              {{ item.asset_chart.asset_code }}
-            </p>
-          </div>
-          <span v-else class="text-grey">-</span>
-        </div> -->
+       
       </template>
 
-      <template v-slot:item.asset_value_remainMonth="{ item }">
-        <div class="text-center">
-          
-          <v-chip color="primary">{{ item.asset_value_remainMonth }}</v-chip>
-        </div>
-      </template>
-
+     <template v-slot:item.asset_value_remainMonth="{ item }">
+    <div class="text-center">
+      <v-chip 
+        :color="item.asset_value_remainMonth > 1000000 ? 'success' : 'primary'"
+        variant="flat"
+      >
+        {{ 
+          new Intl.NumberFormat('en-US', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2
+          }).format(item.asset_value_remainMonth || 0) 
+        }} ₭
+      </v-chip>
+    </div>
+  </template>
       <template v-slot:item.asset_date="{ item }">
         {{ formatDate(item.asset_date) }}
       </template>
