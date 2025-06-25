@@ -1,818 +1,1097 @@
 <template>
-  <v-dialog v-model="dialog" max-width="700px" persistent scrollable>
-    <v-card class="elevation-12">
-      <!-- Header -->
-      <v-card-title class="pa-4 bg-success text-white">
-        <div class="d-flex align-center justify-space-between w-100">
-          <div class="d-flex align-center">
-            <v-icon color="white" class="mr-2">mdi-code-tags-check</v-icon>
-            <div>
-              <div class="text-h6">{{ isEdit ? 'ແກ້ໄຂ' : 'ສ້າງ' }} Master Code</div>
-              <div v-if="masterType" class="text-caption">
-                ສຳລັບ: {{ masterType.master_type_name }}
-              </div>
-            </div>
-          </div>
-          <v-btn
-            icon="mdi-close"
-            variant="text"
-            size="small"
-            color="white"
-            @click="closeDialog"
-          ></v-btn>
+  <div class="master-data-create">
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1 class="page-title">
+        <v-icon color="primary" size="28" class="mr-2">mdi-database-plus</v-icon>
+        ການຈັດການ Master Data
+      </h1>
+      <p class="page-subtitle">ສ້າງ ແລະ ຈັດການ Master Type ແລະ Master Code</p>
+    </div>
+
+    <!-- Action Bar -->
+    <v-card class="action-bar mb-4" elevation="1">
+      <v-card-text class="pa-3">
+        <v-row dense align="center">
+          <v-col cols="12" md="3">
+            <v-text-field
+              v-model="search"
+              label="ຄົ້ນຫາ Master Type"
+              prepend-inner-icon="mdi-magnify"
+              variant="outlined"
+              density="compact"
+              hide-details
+              clearable
+              placeholder="ຊື່ Master Type..."
+            ></v-text-field>
+          </v-col>
+          <v-col cols="12" md="2">
+            <v-select
+              v-model="statusFilter"
+              :items="statusOptions"
+              label="ສະຖານະ"
+              variant="outlined"
+              density="compact"
+              hide-details
+              clearable
+            ></v-select>
+          </v-col>
+          <v-col cols="auto">
+            <v-btn
+              color="primary"
+              variant="flat"
+              @click="openCreateMasterTypeDialog"
+              prepend-icon="mdi-folder-plus"
+              size="small"
+            >
+              ເພີ່ມ Master Type
+            </v-btn>
+          </v-col>
+          <v-col cols="auto">
+            <v-btn
+              color="secondary"
+              variant="outlined"
+              @click="openCreateMasterCodeDialog"
+              prepend-icon="mdi-code-tags-check"
+              size="small"
+            >
+              ເພີ່ມ Master Code
+            </v-btn>
+          </v-col>
+          <v-spacer></v-spacer>
+          <v-col cols="auto">
+            <v-btn
+              color="success"
+              variant="text"
+              @click="exportData"
+              :disabled="masterTypes.length === 0"
+              size="small"
+            >
+              <v-icon size="small">mdi-download</v-icon>
+              ສົ່ງອອກ
+            </v-btn>
+            <v-btn
+              color="primary"
+              variant="text"
+              @click="refreshData"
+              :loading="loading"
+              size="small"
+            >
+              <v-icon size="small">mdi-refresh</v-icon>
+              ໂຫຼດໃໝ່
+            </v-btn>
+          </v-col>
+        </v-row>
+      </v-card-text>
+    </v-card>
+
+    <!-- Loading State -->
+    <v-card v-if="loading" class="text-center pa-8" elevation="1">
+      <v-progress-circular
+        color="primary"
+        indeterminate
+        size="64"
+      ></v-progress-circular>
+      <div class="text-h6 mt-4 text-grey">ກຳລັງໂຫຼດຂໍ້ມູນ...</div>
+    </v-card>
+
+    <!-- Error State -->
+    <v-alert
+      v-if="error && !loading"
+      type="error"
+      variant="tonal"
+      class="mb-4"
+      closable
+      @click:close="error = null"
+    >
+      <template #title>ຂໍ້ຜິດພາດ</template>
+      {{ error }}
+      <template #append>
+        <v-btn
+          color="error"
+          variant="outlined"
+          size="small"
+          @click="refreshData"
+        >
+          ລອງໃໝ່
+        </v-btn>
+      </template>
+    </v-alert>
+
+    <!-- Master Types List with Tree Structure -->
+    <v-card v-if="!loading && !error" elevation="1">
+      <v-card-title class="pa-4 bg-grey-lighten-5">
+        <div class="d-flex align-center justify-space-between">
+          <span class="text-h6">Master Types ({{ filteredMasterTypes.length }})</span>
+          <v-chip color="info" size="small" variant="outlined">
+            ທັງໝົດ {{ totalMasterCodes }} Master Codes
+          </v-chip>
         </div>
       </v-card-title>
-
-      <v-card-text class="pa-4">
-        <v-form ref="form" v-model="valid" @submit.prevent="submitForm">
-          <!-- Master Type Info -->
-          <v-row dense v-if="masterType">
-            <v-col cols="12">
-              <v-alert
-                type="info"
-                variant="tonal"
-                class="mb-3"
-              >
-                <template #title>
-                  <v-icon class="mr-2">mdi-information</v-icon>
-                  Master Type: {{ masterType.master_type_name }}
-                </template>
-                <div v-if="masterType.description" class="text-caption">
-                  {{ masterType.description }}
-                </div>
-                <div class="text-caption mt-2">
-                  <v-chip 
-                    v-if="masterType.code_format_pattern" 
-                    size="small" 
-                    color="warning" 
-                    variant="outlined"
-                    class="mr-2"
-                  >
-                    ຮູບແບບ: {{ masterType.code_format_pattern }}
-                  </v-chip>
-                  <v-chip 
-                    v-if="masterType.require_description" 
-                    size="small" 
-                    color="info" 
-                    variant="outlined"
-                  >
-                    ບັງຄັບຄຳອະທິບາຍ
-                  </v-chip>
-                </div>
-              </v-alert>
-            </v-col>
-          </v-row>
-
-          <!-- Master Code -->
-          <v-row dense>
-            <v-col cols="12" md="6">
-              <v-text-field
-                v-model="formData.master_code"
-                label="Master Code *"
-                :rules="codeRules"
-                variant="outlined"
-                density="comfortable"
-                prepend-inner-icon="mdi-identifier"
-                placeholder="SAV001, CUR001, DEP001"
-                counter="50"
-                hide-details="auto"
-                :loading="loading"
-                @blur="validateCodeFormat"
-              >
-                <template #append-inner>
-                  <v-btn
-                    v-if="!isEdit"
-                    icon
-                    size="small"
-                    variant="text"
-                    color="primary"
-                    @click="generateCode"
-                    title="ສ້າງລະຫັດອັດຕະໂນມັດ"
-                  >
-                    <v-icon size="small">mdi-auto-fix</v-icon>
-                  </v-btn>
-                </template>
-              </v-text-field>
-            </v-col>
-
-            <!-- Display Order -->
-            <v-col cols="12" md="6">
-              <v-text-field
-                v-model.number="formData.display_order"
-                label="ລຳດັບການສະແດງ"
-                type="number"
-                variant="outlined"
-                density="comfortable"
-                prepend-inner-icon="mdi-sort-numeric-ascending"
-                placeholder="1, 2, 3..."
-                min="1"
-                hide-details="auto"
-                :loading="loading"
-              ></v-text-field>
-            </v-col>
-          </v-row>
-
-          <!-- Descriptions -->
-          <v-row dense class="mt-2">
-            <v-col cols="12" md="6">
-              <v-text-field
-                v-model="formData.description_la"
-                :label="descriptionLabel"
-                :rules="descriptionLaRules"
-                variant="outlined"
-                density="comfortable"
-                prepend-inner-icon="mdi-translate"
-                placeholder="ບັນຊີເງິນຝາກປະຢັດ"
-                counter="200"
-                hide-details="auto"
-                :loading="loading"
-              ></v-text-field>
-            </v-col>
-
-            <v-col cols="12" md="6">
-              <v-text-field
-                v-model="formData.description_en"
-                label="ຄຳອະທິບາຍ (ອັງກິດ)"
-                :rules="descriptionEnRules"
-                variant="outlined"
-                density="comfortable"
-                prepend-inner-icon="mdi-translate-variant"
-                placeholder="Savings Account"
-                counter="200"
-                hide-details="auto"
-                :loading="loading"
-              ></v-text-field>
-            </v-col>
-          </v-row>
-
-          <!-- Status and Options -->
-          <v-row dense class="mt-2">
-            <v-col cols="12" md="6">
-              <v-switch
-                v-model="formData.is_active"
-                label="ເປີດໃຊ້ງານ"
-                color="success"
-                density="comfortable"
-                hide-details
-                :loading="loading"
-              >
-                <template #label>
-                  <div class="d-flex align-center">
-                    <v-icon 
-                      :color="formData.is_active ? 'success' : 'error'" 
-                      class="mr-2"
-                    >
-                      {{ formData.is_active ? 'mdi-check-circle' : 'mdi-close-circle' }}
-                    </v-icon>
-                    {{ formData.is_active ? 'ເປີດໃຊ້ງານ' : 'ປິດໃຊ້ງານ' }}
-                  </div>
-                </template>
-              </v-switch>
-            </v-col>
-
-            <v-col cols="12" md="6">
-              <v-switch
-                v-model="formData.is_default"
-                label="ຄ່າເລີ່ມຕົ້ນ"
-                color="warning"
-                density="comfortable"
-                hide-details
-                :loading="loading"
-              >
-                <template #label>
-                  <div class="d-flex align-center">
-                    <v-icon 
-                      :color="formData.is_default ? 'warning' : 'grey'" 
-                      class="mr-2"
-                    >
-                      {{ formData.is_default ? 'mdi-star' : 'mdi-star-outline' }}
-                    </v-icon>
-                    {{ formData.is_default ? 'ຄ່າເລີ່ມຕົ້ນ' : 'ບໍ່ແມ່ນຄ່າເລີ່ມຕົ້ນ' }}
-                  </div>
-                </template>
-              </v-switch>
-            </v-col>
-          </v-row>
-
-          <!-- Additional Configuration -->
-          <v-row dense class="mt-2">
-            <v-col cols="12">
-              <v-expansion-panels variant="accordion">
-                <v-expansion-panel>
-                  <v-expansion-panel-title>
-                    <v-icon class="mr-2">mdi-cog</v-icon>
-                    ການຕັ້ງຄ່າເພີ່ມເຕີມ
-                  </v-expansion-panel-title>
-                  <v-expansion-panel-text>
-                    <!-- Additional Properties -->
-                    <v-row dense class="mt-2">
-                      <v-col cols="12" md="6">
-                        <v-text-field
-                          v-model="formData.category"
-                          label="ປະເພດ/ໝວດໝູ່"
-                          variant="outlined"
-                          density="comfortable"
-                          prepend-inner-icon="mdi-tag"
-                          placeholder="financial, system, user"
-                          hide-details="auto"
-                        ></v-text-field>
-                      </v-col>
-
-                      <v-col cols="12" md="6">
-                        <v-text-field
-                          v-model="formData.color_code"
-                          label="ລະຫັດສີ"
-                          variant="outlined"
-                          density="comfortable"
-                          prepend-inner-icon="mdi-palette"
-                          placeholder="#FF5722"
-                          hide-details="auto"
-                        >
-                          <template #append-inner>
-                            <v-menu>
-                              <template #activator="{ props }">
-                                <v-btn
-                                  icon
-                                  size="small"
-                                  variant="text"
-                                  v-bind="props"
-                                  :style="{ backgroundColor: formData.color_code || '#ccc' }"
-                                >
-                                  <v-icon size="small" :color="getContrastColor(formData.color_code)">
-                                    mdi-palette
-                                  </v-icon>
-                                </v-btn>
-                              </template>
-                              <v-color-picker
-                                v-model="formData.color_code"
-                                mode="hex"
-                                hide-inputs
-                              ></v-color-picker>
-                            </v-menu>
-                          </template>
-                        </v-text-field>
-                      </v-col>
-                    </v-row>
-
-                    <!-- Icon -->
-                    <v-row dense class="mt-2">
-                      <v-col cols="12" md="6">
-                        <v-text-field
-                          v-model="formData.icon_name"
-                          label="ຊື່ໄອຄອນ"
-                          variant="outlined"
-                          density="comfortable"
-                          prepend-inner-icon="mdi-emoticon"
-                          placeholder="mdi-account, mdi-credit-card"
-                          hide-details="auto"
-                        >
-                          <template #append-inner>
-                            <v-icon 
-                              v-if="formData.icon_name" 
-                              :name="formData.icon_name"
-                              size="small"
-                              color="primary"
-                            >
-                              {{ formData.icon_name }}
-                            </v-icon>
-                          </template>
-                        </v-text-field>
-                      </v-col>
-
-                      <v-col cols="12" md="6">
-                        <v-text-field
-                          v-model.number="formData.level"
-                          label="ລະດັບ"
-                          type="number"
-                          variant="outlined"
-                          density="comfortable"
-                          prepend-inner-icon="mdi-format-list-numbered"
-                          placeholder="1, 2, 3"
-                          min="1"
-                          max="10"
-                          hide-details="auto"
-                        ></v-text-field>
-                      </v-col>
-                    </v-row>
-
-                    <!-- Additional Data (JSON) -->
-                    <v-row dense class="mt-2">
-                      <v-col cols="12">
-                        <v-textarea
-                          v-model="formData.additional_data"
-                          label="ຂໍ້ມູນເພີ່ມເຕີມ (JSON)"
-                          variant="outlined"
-                          density="comfortable"
-                          prepend-inner-icon="mdi-code-json"
-                          placeholder='{"min_amount": 1000, "max_amount": 1000000, "interest_rate": 2.5}'
-                          rows="3"
-                          hint="ຂໍ້ມູນເພີ່ມເຕີມໃນຮູບແບບ JSON (ບໍ່ບັງຄັບ)"
-                          persistent-hint
-                          hide-details="auto"
-                        ></v-textarea>
-                      </v-col>
-                    </v-row>
-
-                    <!-- Notes -->
-                    <v-row dense class="mt-2">
-                      <v-col cols="12">
-                        <v-textarea
-                          v-model="formData.notes"
-                          label="ໝາຍເຫດ"
-                          variant="outlined"
-                          density="comfortable"
-                          prepend-inner-icon="mdi-note-text"
-                          placeholder="ໝາຍເຫດເພີ່ມເຕີມ..."
-                          rows="2"
-                          counter="1000"
-                          hide-details="auto"
-                        ></v-textarea>
-                      </v-col>
-                    </v-row>
-                  </v-expansion-panel-text>
-                </v-expansion-panel>
-              </v-expansion-panels>
-            </v-col>
-          </v-row>
-
-          <!-- Code Format Validation Warning -->
-          <v-row dense class="mt-2" v-if="formatValidationMessage">
-            <v-col cols="12">
-              <v-alert
-                :type="formatValidationMessage.type"
-                variant="tonal"
-                density="compact"
-              >
-                {{ formatValidationMessage.text }}
-              </v-alert>
-            </v-col>
-          </v-row>
-
-          <!-- Preview Section -->
-          <v-row dense class="mt-4" v-if="formData.master_code">
-            <v-col cols="12">
-              <v-alert
-                type="info"
-                variant="tonal"
-                class="preview-alert"
-              >
-                <template #title>
-                  <v-icon class="mr-2">mdi-eye</v-icon>
-                  ຕົວຢ່າງ Master Code
-                </template>
-                <div class="preview-content">
-                  <div class="d-flex align-center mb-2">
-                    <v-icon 
-                      :color="formData.color_code || 'primary'" 
-                      class="mr-2"
-                      :name="formData.icon_name"
-                    >
-                      {{ formData.icon_name || 'mdi-code-tags' }}
-                    </v-icon>
-                    <strong>{{ formData.master_code }}</strong>
-                    <v-chip
-                      :color="formData.is_active ? 'success' : 'error'"
-                      size="small"
-                      variant="flat"
-                      class="ml-2"
-                    >
-                      {{ formData.is_active ? 'ເປີດໃຊ້' : 'ປິດໃຊ້' }}
-                    </v-chip>
-                    <v-chip
-                      v-if="formData.is_default"
-                      color="warning"
-                      size="small"
-                      variant="flat"
-                      class="ml-1"
-                    >
-                      <v-icon size="x-small" class="mr-1">mdi-star</v-icon>
-                      Default
-                    </v-chip>
-                  </div>
-                  <div v-if="formData.description_la || formData.description_en" class="text-caption text-grey mb-2">
-                    <div v-if="formData.description_la">LA: {{ formData.description_la }}</div>
-                    <div v-if="formData.description_en">EN: {{ formData.description_en }}</div>
-                  </div>
-                  <div class="text-caption">
-                    <span class="text-info">ລຳດັບ:</span> {{ formData.display_order || 'ອັດຕະໂນມັດ' }}
-                    <span v-if="formData.category" class="ml-3">
-                      <span class="text-info">ປະເພດ:</span> {{ formData.category }}
-                    </span>
-                    <span v-if="formData.level" class="ml-3">
-                      <span class="text-info">ລະດັບ:</span> {{ formData.level }}
-                    </span>
-                  </div>
-                </div>
-              </v-alert>
-            </v-col>
-          </v-row>
-        </v-form>
-      </v-card-text>
-
-      <!-- Actions -->
-      <v-divider></v-divider>
-      <v-card-actions class="pa-4">
-        <v-spacer></v-spacer>
-        <v-btn
-          variant="outlined"
-          @click="closeDialog"
-          :disabled="loading"
+      
+      <v-expansion-panels 
+        v-model="expandedPanels" 
+        multiple 
+        variant="accordion" 
+        class="master-panels"
+      >
+        <v-expansion-panel
+          v-for="masterType in filteredMasterTypes"
+          :key="masterType.M_id"
+          :value="masterType.M_id"
         >
-          ຍົກເລີກ
-        </v-btn>
+          <!-- Master Type Header -->
+          <v-expansion-panel-title class="master-type-header">
+            <div class="d-flex align-center justify-space-between w-100">
+              <div class="d-flex align-center">
+                <v-icon 
+                  :color="getStatusColor(masterType.Status)" 
+                  class="mr-3"
+                  size="large"
+                >
+                  {{ masterType.Status === 'T' ? 'mdi-folder' : 'mdi-folder-outline' }}
+                </v-icon>
+                <div>
+                  <div class="master-type-name">
+                    [{{ masterType.M_code }}] {{ masterType.M_name_en }}
+                  </div>
+                  <div class="master-type-desc text-caption text-grey">
+                    LA: {{ masterType.M_name_la }} | {{ masterType.M_detail || 'ບໍ່ມີຄຳອະທິບາຍ' }}
+                  </div>
+                </div>
+              </div>
+              
+              <div class="d-flex align-center" @click.stop>
+                <v-chip
+                  :color="getStatusColor(masterType.Status)"
+                  size="small"
+                  variant="flat"
+                  class="mr-2"
+                >
+                  {{ masterType.Status === 'T' ? 'ເປີດໃຊ້' : 'ປິດໃຊ້' }}
+                </v-chip>
+                
+                <v-chip
+                  color="info"
+                  size="small"
+                  variant="outlined"
+                  class="mr-2"
+                >
+                  {{ getMasterCodesByTypeId(masterType.M_id).length }} ລະຫັດ
+                </v-chip>
+
+                <!-- Master Type Actions -->
+                <v-btn
+                  icon
+                  size="small"
+                  variant="text"
+                  color="primary"
+                  @click="openCreateMasterCodeDialog(masterType)"
+                  title="ເພີ່ມ Master Code"
+                >
+                  <v-icon size="small">mdi-plus</v-icon>
+                </v-btn>
+                
+                <v-btn
+                  icon
+                  size="small"
+                  variant="text"
+                  color="info"
+                  @click="editMasterType(masterType)"
+                  title="ແກ້ໄຂ Master Type"
+                >
+                  <v-icon size="small">mdi-pencil</v-icon>
+                </v-btn>
+                
+                <v-btn
+                  icon
+                  size="small"
+                  variant="text"
+                  color="error"
+                  @click="deleteMasterType(masterType)"
+                  title="ລຶບ Master Type"
+                  :disabled="getMasterCodesByTypeId(masterType.M_id).length > 0"
+                >
+                  <v-icon size="small">mdi-delete</v-icon>
+                </v-btn>
+              </div>
+            </div>
+          </v-expansion-panel-title>
+
+          <!-- Master Codes Content -->
+          <v-expansion-panel-text>
+            <div class="master-codes-section">
+              <!-- Add Master Code Button -->
+              <div class="mb-3">
+                <v-btn
+                  color="primary"
+                  variant="outlined"
+                  size="small"
+                  @click="openCreateMasterCodeDialog(masterType)"
+                  prepend-icon="mdi-plus"
+                >
+                  ເພີ່ມ Master Code ໃຫມ່
+                </v-btn>
+              </div>
+
+              <!-- Master Codes List -->
+              <div v-if="getMasterCodesByTypeId(masterType.M_id).length > 0">
+                <v-card
+                  v-for="code in getMasterCodesByTypeId(masterType.M_id)"
+                  :key="code.MC_id"
+                  class="master-code-card mb-2"
+                  variant="outlined"
+                >
+                  <v-card-text class="pa-3">
+                    <div class="d-flex align-center justify-space-between">
+                      <div class="d-flex align-center">
+                        <v-icon 
+                          :color="getStatusColor(code.Status)" 
+                          class="mr-3"
+                          size="small"
+                        >
+                          mdi-code-tags
+                        </v-icon>
+                        <div>
+                          <div class="master-code-name font-weight-medium">
+                            [{{ code.MC_code }}] {{ code.MC_name_en }}
+                          </div>
+                          <div class="master-code-desc text-caption text-grey">
+                            LA: {{ code.MC_name_la || '-' }} | Detail: {{ code.MC_detail || '-' }}
+                          </div>
+                          <div v-if="code.BOL_code || code.BOL_name" class="text-caption text-info mt-1">
+                            BOL: {{ code.BOL_code || '-' }} / {{ code.BOL_name || '-' }}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div class="d-flex align-center">
+                        <v-chip
+                          :color="getStatusColor(code.Status)"
+                          size="x-small"
+                          variant="flat"
+                          class="mr-2"
+                        >
+                          {{ code.Status === 'T' ? 'ເປີດ' : 'ປິດ' }}
+                        </v-chip>
+                        
+                        <!-- Master Code Actions -->
+                        <v-btn
+                          icon
+                          size="x-small"
+                          variant="text"
+                          color="info"
+                          @click="editMasterCode(code)"
+                          title="ແກ້ໄຂ Master Code"
+                        >
+                          <v-icon size="small">mdi-pencil</v-icon>
+                        </v-btn>
+                        
+                        <v-btn
+                          icon
+                          size="x-small"
+                          variant="text"
+                          color="error"
+                          @click="deleteMasterCode(code)"
+                          title="ລຶບ Master Code"
+                        >
+                          <v-icon size="small">mdi-delete</v-icon>
+                        </v-btn>
+                      </div>
+                    </div>
+                  </v-card-text>
+                </v-card>
+              </div>
+              
+              <!-- Empty State for Master Codes -->
+              <div v-else class="empty-state text-center py-4">
+                <v-icon size="48" color="grey-lighten-1">mdi-code-tags-check</v-icon>
+                <div class="text-h6 text-grey mt-2">ບໍ່ມີ Master Code</div>
+                <div class="text-body-2 text-grey">ເພີ່ມ Master Code ໃຫມ່ສຳລັບ {{ masterType.M_name_en }}</div>
+              </div>
+            </div>
+          </v-expansion-panel-text>
+        </v-expansion-panel>
+      </v-expansion-panels>
+
+      <!-- Empty State for Master Types -->
+      <div v-if="masterTypes.length === 0 && !loading" class="empty-state text-center pa-8">
+        <v-icon size="64" color="grey-lighten-1">mdi-folder-plus</v-icon>
+        <div class="text-h5 text-grey mt-4">ບໍ່ມີ Master Type</div>
+        <div class="text-body-1 text-grey mb-4">ເລີ່ມຕົ້ນໂດຍການສ້າງ Master Type ໃຫມ່</div>
         <v-btn
-          color="success"
+          color="primary"
           variant="flat"
-          @click="submitForm"
-          :loading="loading"
-          :disabled="!valid"
+          @click="openCreateMasterTypeDialog"
+          prepend-icon="mdi-plus"
         >
-          <v-icon start>{{ isEdit ? 'mdi-content-save' : 'mdi-plus' }}</v-icon>
-          {{ isEdit ? 'ບັນທຶກການປ່ຽນແປງ' : 'ສ້າງ Master Code' }}
+          ສ້າງ Master Type ແຮກ
         </v-btn>
-      </v-card-actions>
+      </div>
     </v-card>
-  </v-dialog>
+
+    <!-- Create/Edit Master Type Dialog -->
+    <v-dialog v-model="showCreateMasterType" max-width="600px" persistent>
+      <v-card>
+        <v-card-title class="pa-4 bg-primary text-white">
+          <div class="d-flex align-center justify-space-between">
+            <span class="text-h6">
+              <v-icon class="mr-2">mdi-folder-plus</v-icon>
+              {{ editingMasterType ? 'ແກ້ໄຂ Master Type' : 'ສ້າງ Master Type ໃຫມ່' }}
+            </span>
+            <v-btn
+              icon
+              variant="text"
+              color="white"
+              @click="closeModal"
+            >
+              <v-icon>mdi-close</v-icon>
+            </v-btn>
+          </div>
+        </v-card-title>
+
+        <v-form @submit.prevent="createMasterType" ref="masterTypeFormRef">
+          <v-card-text class="pa-4">
+            <v-row>
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="masterTypeForm.M_code"
+                  label="Master Code *"
+                  variant="outlined"
+                  density="compact"
+                  :rules="[v => !!v || 'ຕ້ອງລະບຸ Master Code']"
+                  required
+                  placeholder="ເຊັ່ນ: PROVINCE"
+                ></v-text-field>
+              </v-col>
+              
+              <v-col cols="12" md="6">
+                <v-select
+                  v-model="masterTypeForm.Status"
+                  :items="statusItems"
+                  label="ສະຖານະ"
+                  variant="outlined"
+                  density="compact"
+                ></v-select>
+              </v-col>
+              
+              <v-col cols="12">
+                <v-text-field
+                  v-model="masterTypeForm.M_name_en"
+                  label="ຊື່ພາສາອັງກິດ *"
+                  variant="outlined"
+                  density="compact"
+                  :rules="[v => !!v || 'ຕ້ອງລະບຸຊື່ພາສາອັງກິດ']"
+                  required
+                  placeholder="ເຊັ່ນ: Province"
+                ></v-text-field>
+              </v-col>
+              
+              <v-col cols="12">
+                <v-text-field
+                  v-model="masterTypeForm.M_name_la"
+                  label="ຊື່ພາສາລາວ *"
+                  variant="outlined"
+                  density="compact"
+                  :rules="[v => !!v || 'ຕ້ອງລະບຸຊື່ພາສາລາວ']"
+                  required
+                  placeholder="ເຊັ່ນ: ແຂວງ"
+                ></v-text-field>
+              </v-col>
+              
+              <v-col cols="12">
+                <v-textarea
+                  v-model="masterTypeForm.M_detail"
+                  label="ລາຍລະອຽດ"
+                  variant="outlined"
+                  density="compact"
+                  rows="2"
+                  placeholder="ລາຍລະອຽດເພີ່ມເຕີມ (ທາງເລືອກ)"
+                ></v-textarea>
+              </v-col>
+            </v-row>
+          </v-card-text>
+          
+          <v-card-actions class="pa-4">
+            <v-spacer></v-spacer>
+            <v-btn
+              variant="outlined"
+              @click="closeModal"
+              :disabled="creating"
+            >
+              ຍົກເລີກ
+            </v-btn>
+            <v-btn
+              color="primary"
+              variant="flat"
+              type="submit"
+              :loading="creating"
+            >
+              {{ editingMasterType ? 'ອັບເດດ' : 'ສ້າງ' }}
+            </v-btn>
+          </v-card-actions>
+        </v-form>
+      </v-card>
+    </v-dialog>
+
+    <!-- Create/Edit Master Code Dialog -->
+    <v-dialog v-model="showCreateMasterCode" max-width="700px" persistent>
+      <v-card>
+        <v-card-title class="pa-4 bg-secondary text-white">
+          <div class="d-flex align-center justify-space-between">
+            <span class="text-h6">
+              <v-icon class="mr-2">mdi-code-tags-check</v-icon>
+              {{ editingMasterCode ? 'ແກ້ໄຂ Master Code' : 'ສ້າງ Master Code ໃຫມ່' }}
+            </span>
+            <v-btn
+              icon
+              variant="text"
+              color="white"
+              @click="closeModal"
+            >
+              <v-icon>mdi-close</v-icon>
+            </v-btn>
+          </div>
+        </v-card-title>
+
+        <v-form @submit.prevent="createMasterCode" ref="masterCodeFormRef">
+          <v-card-text class="pa-4">
+            <v-row>
+              <v-col cols="12" md="6">
+                <v-select
+                  v-model="masterCodeForm.M_id"
+                  :items="masterTypeItems"
+                  label="Master Type *"
+                  variant="outlined"
+                  density="compact"
+                  :rules="[v => !!v || 'ຕ້ອງເລືອກ Master Type']"
+                  required
+                ></v-select>
+              </v-col>
+              
+              <v-col cols="12" md="6">
+                <v-select
+                  v-model="masterCodeForm.Status"
+                  :items="statusItems"
+                  label="ສະຖານະ"
+                  variant="outlined"
+                  density="compact"
+                ></v-select>
+              </v-col>
+              
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="masterCodeForm.MC_code"
+                  label="Master Code *"
+                  variant="outlined"
+                  density="compact"
+                  :rules="[v => !!v || 'ຕ້ອງລະບຸ Master Code']"
+                  required
+                  placeholder="ເຊັ່ນ: VTE"
+                ></v-text-field>
+              </v-col>
+              
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="masterCodeForm.MC_name_en"
+                  label="ຊື່ພາສາອັງກິດ *"
+                  variant="outlined"
+                  density="compact"
+                  :rules="[v => !!v || 'ຕ້ອງລະບຸຊື່ພາສາອັງກິດ']"
+                  required
+                  placeholder="ເຊັ່ນ: Vientiane"
+                ></v-text-field>
+              </v-col>
+              
+              <v-col cols="12">
+                <v-text-field
+                  v-model="masterCodeForm.MC_name_la"
+                  label="ຊື່ພາສາລາວ *"
+                  variant="outlined"
+                  density="compact"
+                  :rules="[v => !!v || 'ຕ້ອງລະບຸຊື່ພາສາລາວ']"
+                  required
+                  placeholder="ເຊັ່ນ: ວຽງຈັນ"
+                ></v-text-field>
+              </v-col>
+              
+              <v-col cols="12">
+                <v-textarea
+                  v-model="masterCodeForm.MC_detail"
+                  label="ລາຍລະອຽດ"
+                  variant="outlined"
+                  density="compact"
+                  rows="2"
+                  placeholder="ລາຍລະອຽດເພີ່ມເຕີມ (ທາງເລືອກ)"
+                ></v-textarea>
+              </v-col>
+              
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="masterCodeForm.BOL_code"
+                  label="BOL Code"
+                  variant="outlined"
+                  density="compact"
+                  placeholder="BOL Code (ທາງເລືອກ)"
+                ></v-text-field>
+              </v-col>
+              
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="masterCodeForm.BOL_name"
+                  label="BOL Name"
+                  variant="outlined"
+                  density="compact"
+                  placeholder="BOL Name (ທາງເລືອກ)"
+                ></v-text-field>
+              </v-col>
+            </v-row>
+          </v-card-text>
+          
+          <v-card-actions class="pa-4">
+            <v-spacer></v-spacer>
+            <v-btn
+              variant="outlined"
+              @click="closeModal"
+              :disabled="creating"
+            >
+              ຍົກເລີກ
+            </v-btn>
+            <v-btn
+              color="primary"
+              variant="flat"
+              type="submit"
+              :loading="creating"
+            >
+              {{ editingMasterCode ? 'ອັບເດດ' : 'ສ້າງ' }}
+            </v-btn>
+          </v-card-actions>
+        </v-form>
+      </v-card>
+    </v-dialog>
+
+    <!-- Success Snackbar -->
+    <v-snackbar
+      v-model="showSuccess"
+      color="success"
+      timeout="3000"
+      location="top right"
+    >
+      <v-icon class="mr-2">mdi-check-circle</v-icon>
+      {{ successMessage }}
+    </v-snackbar>
+  </div>
 </template>
 
-<script setup>
-import { ref, reactive, computed, watch, nextTick } from 'vue'
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import axios from '@/helpers/axios'
 
-// Props
-const props = defineProps({
-  modelValue: {
-    type: Boolean,
-    default: false
-  },
-  masterType: {
-    type: Object,
-    required: true
-  },
-  editItem: {
-    type: Object,
-    default: null
-  }
-})
+// Types
+interface MasterType {
+  M_id: number
+  M_code: string
+  M_name_en: string
+  M_name_la: string
+  M_detail: string
+  Status: string
+}
 
-// Emits
-const emit = defineEmits(['update:modelValue', 'created', 'updated'])
+interface MasterCode {
+  MC_id: number
+  M_id: number
+  MC_code: string
+  MC_name_en: string
+  MC_name_la: string
+  MC_detail: string
+  Status: string
+  BOL_code: string | null
+  BOL_name: string | null
+}
 
-// State
-const dialog = ref(false)
-const valid = ref(false)
-const loading = ref(false)
-const form = ref(null)
-const formatValidationMessage = ref(null)
+interface MasterTypeForm {
+  M_code: string
+  M_name_en: string
+  M_name_la: string
+  M_detail: string
+  Status: string
+}
 
-// Form data
-const formData = reactive({
-  master_code: '',
-  description_la: '',
-  description_en: '',
-  display_order: null,
-  is_active: true,
-  is_default: false,
-  category: '',
-  color_code: '',
-  icon_name: '',
-  level: null,
-  additional_data: '',
-  notes: ''
-})
+interface MasterCodeForm {
+  M_id: number | string
+  MC_code: string
+  MC_name_en: string
+  MC_name_la: string
+  MC_detail: string
+  Status: string
+  BOL_code: string
+  BOL_name: string
+}
 
-// Computed
-const isEdit = computed(() => !!props.editItem)
-
-const descriptionLabel = computed(() => {
-  return props.masterType?.require_description 
-    ? 'ຄຳອະທິບາຍ (ລາວ) *' 
-    : 'ຄຳອະທິບາຍ (ລາວ)'
-})
-
-// Validation rules
-const codeRules = computed(() => [
-  v => !!v || 'ຈຳເປັນຕ້ອງໃສ່ Master Code',
-  v => (v && v.length >= 2) || 'Master Code ຕ້ອງມີຢ່າງໜ້ອຍ 2 ຕົວອັກສອນ',
-  v => (v && v.length <= 50) || 'Master Code ຕ້ອງບໍ່ເກີນ 50 ຕົວອັກສອນ',
-  v => /^[A-Z0-9][A-Z0-9_-]*$/.test(v) || 'Master Code ຕ້ອງເປັນຕົວອັກສອນໃຫຍ່, ເລກ, _, - ເທົ່ານັ້ນ'
-])
-
-const descriptionLaRules = computed(() => {
-  const rules = [
-    v => !v || v.length <= 200 || 'ຄຳອະທິບາຍຕ້ອງບໍ່ເກີນ 200 ຕົວອັກສອນ'
-  ]
-  
-  if (props.masterType?.require_description) {
-    rules.unshift(v => !!v || 'ຈຳເປັນຕ້ອງໃສ່ຄຳອະທິບາຍ')
-  }
-  
-  return rules
-})
-
-const descriptionEnRules = [
-  v => !v || v.length <= 200 || 'ຄຳອະທິບາຍຕ້ອງບໍ່ເກີນ 200 ຕົວອັກສອນ'
-]
-
-// API configuration
-const { $axios } = useNuxtApp()
+// Auth helper
 const getAuthHeaders = () => ({
   headers: {
     Authorization: `Bearer ${localStorage.getItem("token")}`,
   }
 })
 
-// Watch for dialog changes
-watch(() => props.modelValue, (newVal) => {
-  dialog.value = newVal
-  if (newVal) {
-    resetForm()
-    if (props.editItem) {
-      populateForm(props.editItem)
-    }
+// Reactive data
+const masterTypes = ref<MasterType[]>([])
+const masterCodes = ref<MasterCode[]>([])
+const loading = ref(false)
+const creating = ref(false)
+const error = ref<string | null>(null)
+const successMessage = ref<string>('')
+const showSuccess = ref(false)
+const expandedPanels = ref<number[]>([])
+const search = ref('')
+const statusFilter = ref(null)
+
+// Modal states
+const showCreateMasterType = ref(false)
+const showCreateMasterCode = ref(false)
+const editingMasterType = ref<MasterType | null>(null)
+const editingMasterCode = ref<MasterCode | null>(null)
+const selectedMasterTypeForCode = ref<MasterType | null>(null)
+
+// Form refs
+const masterTypeFormRef = ref()
+const masterCodeFormRef = ref()
+
+// Form data with correct variable names
+const masterTypeForm = ref<MasterTypeForm>({
+  M_code: '',
+  M_name_en: '',
+  M_name_la: '',
+  M_detail: '',
+  Status: 'T'
+})
+
+const masterCodeForm = ref<MasterCodeForm>({
+  M_id: '',
+  MC_code: '',
+  MC_name_en: '',
+  MC_name_la: '',
+  MC_detail: '',
+  Status: 'T',
+  BOL_code: '',
+  BOL_name: ''
+})
+
+// Options
+const statusOptions = [
+  { title: 'ທັງໝົດ', value: null },
+  { title: 'ເປີດໃຊ້', value: 'T' },
+  { title: 'ປິດໃຊ້', value: 'F' }
+]
+
+const statusItems = [
+  { title: 'ເປີດໃຊ້', value: 'T' },
+  { title: 'ປິດໃຊ້', value: 'F' }
+]
+
+// Computed
+const filteredMasterTypes = computed(() => {
+  let filtered = masterTypes.value
+
+  if (search.value) {
+    filtered = filtered.filter(type => 
+      type.M_name_en.toLowerCase().includes(search.value.toLowerCase()) ||
+      type.M_name_la.includes(search.value) ||
+      type.M_code.toLowerCase().includes(search.value.toLowerCase())
+    )
+  }
+
+  if (statusFilter.value !== null) {
+    filtered = filtered.filter(type => type.Status === statusFilter.value)
+  }
+
+  return filtered
+})
+
+const getMasterCodesByTypeId = computed(() => {
+  return (masterTypeId: number) => {
+    return masterCodes.value.filter(code => code.M_id === masterTypeId)
   }
 })
 
-watch(dialog, (newVal) => {
-  emit('update:modelValue', newVal)
+const totalMasterCodes = computed(() => {
+  return masterCodes.value.length
+})
+
+const masterTypeItems = computed(() => {
+  return masterTypes.value.map(type => ({
+    title: `[${type.M_code}] ${type.M_name_en}`,
+    value: type.M_id
+  }))
 })
 
 // Methods
-const resetForm = () => {
-  Object.assign(formData, {
-    master_code: '',
-    description_la: '',
-    description_en: '',
-    display_order: null,
-    is_active: true,
-    is_default: false,
-    category: '',
-    color_code: '',
-    icon_name: '',
-    level: null,
-    additional_data: '',
-    notes: ''
-  })
+const getStatusColor = (status: string) => {
+  return status === 'T' ? 'success' : 'error'
+}
+
+const fetchMasterTypes = async () => {
+  try {
+    const response = await axios.get('api/master-types/', getAuthHeaders())
+    masterTypes.value = response.data.results || response.data
+  } catch (err: any) {
+    console.error('Error fetching master types:', err)
+    throw err
+  }
+}
+
+const fetchMasterCodes = async () => {
+  try {
+    const response = await axios.get('api/master-codes/', getAuthHeaders())
+    masterCodes.value = response.data.results || response.data
+  } catch (err: any) {
+    console.error('Error fetching master codes:', err)
+    throw err
+  }
+}
+
+const refreshData = async () => {
+  loading.value = true
+  error.value = null
   
-  formatValidationMessage.value = null
+  try {
+    await Promise.all([fetchMasterTypes(), fetchMasterCodes()])
+  } catch (err: any) {
+    error.value = err.response?.data?.message || 'ບໍ່ສາມາດໂຫຼດຂໍ້ມູນໄດ້'
+  } finally {
+    loading.value = false
+  }
+}
+
+const createMasterType = async () => {
+  if (!masterTypeFormRef.value.validate()) return
   
-  nextTick(() => {
-    if (form.value) {
-      form.value.resetValidation()
+  creating.value = true
+  error.value = null
+  
+  try {
+    if (editingMasterType.value) {
+      // Update existing
+      const response = await axios.put(
+        `api/master-types/${editingMasterType.value.M_id}/`, 
+        masterTypeForm.value, 
+        getAuthHeaders()
+      )
+      
+      const index = masterTypes.value.findIndex(t => t.M_id === editingMasterType.value!.M_id)
+      if (index !== -1) {
+        masterTypes.value[index] = response.data
+      }
+      
+      showSuccessMessage('ອັບເດດ Master Type ສຳເລັດແລ້ວ!')
+    } else {
+      // Create new
+      const response = await axios.post('api/master-types/', masterTypeForm.value, getAuthHeaders())
+      masterTypes.value.push(response.data)
+      showSuccessMessage('ສ້າງ Master Type ສຳເລັດແລ້ວ!')
     }
-  })
+    
+    closeModal()
+    
+  } catch (err: any) {
+    error.value = err.response?.data?.message || 'ບໍ່ສາມາດບັນທຶກຂໍ້ມູນໄດ້'
+  } finally {
+    creating.value = false
+  }
 }
 
-const populateForm = (item) => {
-  Object.assign(formData, {
-    master_code: item.master_code || '',
-    description_la: item.description_la || '',
-    description_en: item.description_en || '',
-    display_order: item.display_order,
-    is_active: item.is_active !== undefined ? item.is_active : true,
-    is_default: item.is_default || false,
-    category: item.category || '',
-    color_code: item.color_code || '',
-    icon_name: item.icon_name || '',
-    level: item.level,
-    additional_data: item.additional_data ? JSON.stringify(item.additional_data, null, 2) : '',
-    notes: item.notes || ''
-  })
+const createMasterCode = async () => {
+  if (!masterCodeFormRef.value.validate()) return
+  
+  creating.value = true
+  error.value = null
+  
+  try {
+    const formData = {
+      ...masterCodeForm.value,
+      M_id: Number(masterCodeForm.value.M_id)
+    }
+    
+    if (editingMasterCode.value) {
+      // Update existing
+      const response = await axios.put(
+        `api/master-codes/${editingMasterCode.value.MCID}/`, 
+        formData, 
+        getAuthHeaders()
+      )
+      
+      const index = masterCodes.value.findIndex(c => c.MCID === editingMasterCode.value!.MCID)
+      if (index !== -1) {
+        masterCodes.value[index] = response.data
+      }
+      
+      showSuccessMessage('ອັບເດດ Master Code ສຳເລັດແລ້ວ!')
+    } else {
+      // Create new
+      const response = await axios.post('api/master-codes/', formData, getAuthHeaders())
+      masterCodes.value.push(response.data)
+      showSuccessMessage('ສ້າງ Master Code ສຳເລັດແລ້ວ!')
+    }
+    
+    closeModal()
+    
+  } catch (err: any) {
+    error.value = err.response?.data?.message || 'ບໍ່ສາມາດບັນທຶກຂໍ້ມູນໄດ້'
+  } finally {
+    creating.value = false
+  }
 }
 
-const validateCodeFormat = () => {
-  if (!formData.master_code || !props.masterType?.code_format_pattern) {
-    formatValidationMessage.value = null
+const openCreateMasterTypeDialog = () => {
+  editingMasterType.value = null
+  resetMasterTypeForm()
+  showCreateMasterType.value = true
+}
+
+const openCreateMasterCodeDialog = (masterType?: MasterType) => {
+  editingMasterCode.value = null
+  selectedMasterTypeForCode.value = masterType || null
+  resetMasterCodeForm()
+  if (masterType) {
+    masterCodeForm.value.M_id = masterType.MID
+  }
+  showCreateMasterCode.value = true
+}
+
+const editMasterType = (masterType: MasterType) => {
+  editingMasterType.value = masterType
+  masterTypeForm.value = {
+    M_code: masterType.M_code,
+    M_name_en: masterType.M_name_en,
+    M_name_la: masterType.M_name_la,
+    M_detail: masterType.M_detail,
+    Status: masterType.Status
+  }
+  showCreateMasterType.value = true
+}
+
+const editMasterCode = (masterCode: MasterCode) => {
+  editingMasterCode.value = masterCode
+  masterCodeForm.value = {
+    M_id: masterCode.MID,
+    MC_code: masterCode.MC_code,
+    MC_name_en: masterCode.MC_name_en,
+    MC_name_la: masterCode.MC_name_la,
+    MC_detail: masterCode.MC_detail,
+    Status: masterCode.Status,
+    BOL_code: masterCode.BOL_code || '',
+    BOL_name: masterCode.BOL_name || ''
+  }
+  showCreateMasterCode.value = true
+}
+
+const deleteMasterType = async (masterType: MasterType) => {
+  if (getMasterCodesByTypeId.value(masterType.M_id).length > 0) {
+    error.value = 'ບໍ່ສາມາດລຶບໄດ້ເພາະມີ Master Code ຢູ່'
     return
   }
   
-  try {
-    const pattern = new RegExp(props.masterType.code_format_pattern)
-    const isValid = pattern.test(formData.master_code)
-    
-    if (isValid) {
-      formatValidationMessage.value = {
-        type: 'success',
-        text: 'Master Code ຕົງຕາມຮູບແບບທີ່ກຳນົດ'
-      }
-    } else {
-      formatValidationMessage.value = {
-        type: 'warning',
-        text: `Master Code ບໍ່ຕົງຕາມຮູບແບບ: ${props.masterType.code_format_pattern}`
-      }
-    }
-  } catch (error) {
-    formatValidationMessage.value = {
-      type: 'error',
-      text: 'ຮູບແບບ RegEx ບໍ່ຖືກຕ້ອງ'
-    }
-  }
-}
-
-const generateCode = async () => {
-  if (!props.masterType) return
-  
-  try {
-    loading.value = true
-    
-    // Get existing codes count
-    const response = await $axios.get('/api/master-codes/', {
-      params: {
-        master_type: props.masterType.id,
-        ordering: '-id'
-      },
-      ...getAuthHeaders()
-    })
-    
-    const existingCodes = response.data.results || response.data || []
-    const nextNumber = existingCodes.length + 1
-    
-    // Generate code based on master type name
-    const prefix = props.masterType.master_type_name
-      .replace(/[^A-Z]/gi, '')
-      .toUpperCase()
-      .substring(0, 3)
-    
-    const generatedCode = `${prefix}${nextNumber.toString().padStart(3, '0')}`
-    formData.master_code = generatedCode
-    
-    validateCodeFormat()
-    
-  } catch (error) {
-    console.error('Error generating code:', error)
-    $swal.fire({
-      icon: 'warning',
-      title: 'ແຈ້ງເຕືອນ',
-      text: 'ບໍ່ສາມາດສ້າງລະຫັດອັດຕະໂນມັດໄດ້'
-    })
-  } finally {
-    loading.value = false
-  }
-}
-
-const getContrastColor = (hexColor) => {
-  if (!hexColor) return 'black'
-  
-  // Remove # if present
-  const color = hexColor.replace('#', '')
-  
-  // Calculate luminance
-  const r = parseInt(color.substr(0, 2), 16)
-  const g = parseInt(color.substr(2, 2), 16)
-  const b = parseInt(color.substr(4, 2), 16)
-  
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-  
-  return luminance > 0.5 ? 'black' : 'white'
-}
-
-const validateForm = async () => {
-  if (!form.value) return false
-  
-  const { valid: isValid } = await form.value.validate()
-  return isValid
-}
-
-const preparePayload = () => {
-  const payload = {
-    master_type: props.masterType.id,
-    master_code: formData.master_code.trim().toUpperCase(),
-    description_la: formData.description_la?.trim() || null,
-    description_en: formData.description_en?.trim() || null,
-    display_order: formData.display_order || null,
-    is_active: formData.is_active,
-    is_default: formData.is_default,
-    category: formData.category?.trim() || null,
-    color_code: formData.color_code?.trim() || null,
-    icon_name: formData.icon_name?.trim() || null,
-    level: formData.level || null,
-    notes: formData.notes?.trim() || null
-  }
-
-  // Parse additional data if provided
-  if (formData.additional_data?.trim()) {
+  if (confirm(`ທ່ານຕ້ອງການລຶບ Master Type "${masterType.M_name_en}" ແທ້ບໍ?`)) {
     try {
-      payload.additional_data = JSON.parse(formData.additional_data.trim())
-    } catch (error) {
-      throw new Error('ຂໍ້ມູນເພີ່ມເຕີມຕ້ອງຢູ່ໃນຮູບແບບ JSON ທີ່ຖືກຕ້ອງ')
-    }
-  } else {
-    payload.additional_data = null
-  }
-
-  return payload
-}
-
-const submitForm = async () => {
-  try {
-    // Validate form
-    const isValid = await validateForm()
-    if (!isValid) return
-
-    loading.value = true
-
-    // Prepare payload
-    const payload = preparePayload()
-
-    let response
-    if (isEdit.value) {
-      // Update existing master code
-      response = await $axios.put(`/api/master-codes/${props.editItem.id}/`, payload, getAuthHeaders())
-      emit('updated', response.data)
-    } else {
-      // Create new master code
-      response = await $axios.post('/api/master-codes/', payload, getAuthHeaders())
-      emit('created', response.data)
-    }
-
-    closeDialog()
-
-  } catch (error) {
-    console.error('Error submitting form:', error)
-    
-    let errorMessage = 'ເກີດຂໍ້ຜິດພາດ'
-    if (error.message) {
-      errorMessage = error.message
-    } else if (error.response?.data) {
-      if (typeof error.response.data === 'string') {
-        errorMessage = error.response.data
-      } else if (error.response.data.detail) {
-        errorMessage = error.response.data.detail
-      } else if (error.response.data.master_code) {
-        errorMessage = `Master Code: ${error.response.data.master_code.join(', ')}`
-      } else if (error.response.data.non_field_errors) {
-        errorMessage = error.response.data.non_field_errors.join(', ')
-      } else {
-        errorMessage = JSON.stringify(error.response.data)
+      await axios.delete(`api/master-types/${masterType.M_id}/`, getAuthHeaders())
+      
+      const index = masterTypes.value.findIndex(t => t.M_id === masterType.M_id)
+      if (index !== -1) {
+        masterTypes.value.splice(index, 1)
       }
+      
+      showSuccessMessage('ລຶບ Master Type ສຳເລັດແລ້ວ!')
+      
+    } catch (err: any) {
+      error.value = err.response?.data?.message || 'ບໍ່ສາມາດລຶບໄດ້'
     }
-
-    $swal.fire({
-      icon: 'error',
-      title: 'ຂໍ້ຜິດພາດ',
-      text: errorMessage,
-      confirmButtonText: 'ຕົກລົງ'
-    })
-  } finally {
-    loading.value = false
   }
 }
 
-const closeDialog = () => {
-  dialog.value = false
-  resetForm()
+const deleteMasterCode = async (masterCode: MasterCode) => {
+  if (confirm(`ທ່ານຕ້ອງການລຶບ Master Code "${masterCode.MC_code}" ແທ້ບໍ?`)) {
+    try {
+      await axios.delete(`api/master-codes/${masterCode.MC_id}/`, getAuthHeaders())
+      
+      const index = masterCodes.value.findIndex(c => c.MC_id === masterCode.MC_id)
+      if (index !== -1) {
+        masterCodes.value.splice(index, 1)
+      }
+      
+      showSuccessMessage('ລຶບ Master Code ສຳເລັດແລ້ວ!')
+      
+    } catch (err: any) {
+      error.value = err.response?.data?.message || 'ບໍ່ສາມາດລຶບໄດ້'
+    }
+  }
 }
 
-// Watch for master code changes to validate format
-watch(() => formData.master_code, () => {
-  if (formData.master_code) {
-    validateCodeFormat()
-  } else {
-    formatValidationMessage.value = null
-  }
-})
+const closeModal = () => {
+  showCreateMasterType.value = false
+  showCreateMasterCode.value = false
+  editingMasterType.value = null
+  editingMasterCode.value = null
+  selectedMasterTypeForCode.value = null
+  resetMasterTypeForm()
+  resetMasterCodeForm()
+  error.value = null
+}
 
-// Auto-generate display order
-watch(() => formData.master_code, (newCode) => {
-  if (newCode && !isEdit.value && !formData.display_order) {
-    // Simple auto-generation (you can make this more sophisticated)
-    formData.display_order = newCode.length * 10
+const resetMasterTypeForm = () => {
+  masterTypeForm.value = {
+    M_code: '',
+    M_name_en: '',
+    M_name_la: '',
+    M_detail: '',
+    Status: 'T'
   }
+}
+
+const resetMasterCodeForm = () => {
+  masterCodeForm.value = {
+    M_id: '',
+    MC_code: '',
+    MC_name_en: '',
+    MC_name_la: '',
+    MC_detail: '',
+    Status: 'T',
+    BOL_code: '',
+    BOL_name: ''
+  }
+}
+
+const showSuccessMessage = (message: string) => {
+  successMessage.value = message
+  showSuccess.value = true
+}
+
+const exportData = () => {
+  // Export functionality placeholder
+  showSuccessMessage('ຟັງຊັນສົ່ງອອກຂໍ້ມູນກຳລັງພັດທະນາ')
+}
+
+// Lifecycle
+onMounted(() => {
+  refreshData()
 })
 </script>
 
 <style scoped>
-.preview-alert {
-  border-radius: 8px;
+.master-data-create {
+  padding: 16px;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
-.preview-content {
-  padding: 8px 0;
+.page-header {
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.page-title {
+  font-size: 1.75rem;
+  font-weight: 500;
+  color: #1976d2;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.page-subtitle {
+  color: #666;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.action-bar {
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+}
+
+.master-panels {
+  border: none;
+}
+
+.master-type-header {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.master-type-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1976d2;
+}
+
+.master-type-desc {
+  margin-top: 2px;
+}
+
+.master-codes-section {
+  background: #fafafa;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 8px 0;
+}
+
+.master-code-card {
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.master-code-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.master-code-name {
+  font-size: 0.9rem;
+  color: #1976d2;
+}
+
+.master-code-desc {
+  margin-top: 2px;
+  line-height: 1.3;
+}
+
+.empty-state {
+  color: #666;
 }
 
 :deep(.v-expansion-panel-text__wrapper) {
-  padding: 16px;
+  padding: 8px 16px 16px 16px;
+}
+
+:deep(.v-expansion-panel-title) {
+  padding: 16px 20px;
 }
 
 :deep(.v-expansion-panel) {
-  border-radius: 8px;
+  margin-bottom: 8px;
+  border-radius: 8px !important;
   overflow: hidden;
 }
 
-:deep(.v-card-title) {
-  border-radius: 8px 8px 0 0;
-}
-
-:deep(.v-form) {
-  width: 100%;
-}
-
-:deep(.v-color-picker) {
-  max-width: 300px;
+:deep(.v-expansion-panel::before) {
+  box-shadow: none;
 }
 
 @media (max-width: 768px) {
-  :deep(.v-dialog) {
-    margin: 16px;
+  .master-data-create {
+    padding: 12px;
+  }
+  
+  .page-title {
+    font-size: 1.4rem;
+  }
+  
+  .master-type-name {
+    font-size: 0.9rem;
+  }
+  
+  .master-code-name {
+    font-size: 0.8rem;
   }
 }
 </style>
