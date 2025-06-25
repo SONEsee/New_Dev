@@ -66,24 +66,24 @@ const playtype = [
   },
 ];
 
-// Add flag to prevent infinite loop during auto calculation
+
 const isAutoCalculating = ref(false);
 
-// Number formatting functions
-const formatNumber = (value) => {
+
+const formatNumber = (value:any) => {
   if (!value && value !== 0) return '';
   const num = parseFloat(value);
   if (isNaN(num)) return '';
   
-  // Check if the number is a whole number
+  
   if (num % 1 === 0) {
-    // Display without decimal places for whole numbers
+    
     return new Intl.NumberFormat('en-US', {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     }).format(num);
   } else {
-    // Display with decimal places for numbers with decimals
+  
     return new Intl.NumberFormat('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
@@ -91,14 +91,14 @@ const formatNumber = (value) => {
   }
 };
 
-const parseFormattedNumber = (value) => {
+const parseFormattedNumber = (value:any) => {
   if (!value) return null;
   const cleanValue = value.toString().replace(/,/g, '');
   const num = parseFloat(cleanValue);
   return isNaN(num) ? null : num;
 };
 
-// Reactive formatted values for display
+
 const formattedAssetValue = computed({
   get: () => formatNumber(faAssetStoreInstance.form_create_fa_asset.asset_value),
   set: (val) => {
@@ -134,14 +134,14 @@ const formattedAssetValueRemainMonth = computed(() => {
   
   if (assetValue && usefulLife && usefulLife > 0) {
     const monthlyValue = assetValue / (usefulLife * 12);
-    // Round to 2 decimal places to avoid precision issues
+  
     const roundedValue = Math.round(monthlyValue * 100) / 100;
-    // Update the store value as well
+    
     faAssetStoreInstance.form_create_fa_asset.asset_value_remainMonth = roundedValue;
     return formatNumber(roundedValue);
   }
   
-  // Reset if no valid values
+  
   faAssetStoreInstance.form_create_fa_asset.asset_value_remainMonth = 0;
   return formatNumber(0);
 });
@@ -310,18 +310,19 @@ watch(
     }
   }
 );
-watch(
-  [
-    () => faAssetStoreInstance.form_create_fa_asset.asset_value,
-    () => faAssetStoreInstance.form_create_fa_asset.asset_salvage_value,
-  ],
-  ([assetValue, salvageValue]) => {
-    const value = assetValue || 0;
-    const salvage = salvageValue || 0;
-    faAssetStoreInstance.form_create_fa_asset.asset_value_remainBegin =
-      value - salvage;
-  }
-);
+// watch(
+//   [
+//     () => faAssetStoreInstance.form_create_fa_asset.asset_value,
+//     () => faAssetStoreInstance.form_create_fa_asset.asset_salvage_value,
+//   ],
+//   ([assetValue, salvageValue]) => {
+//     const value = assetValue || 0;
+//     const salvage = salvageValue || 0;
+//     faAssetStoreInstance.form_create_fa_asset.asset_value_remainBegin =
+//       value - salvage;
+      
+//   }
+// );
 watch(
   [
     () => faAssetStoreInstance.form_create_fa_asset.asset_value,
@@ -335,16 +336,16 @@ watch(
   }
 );
 
-// NEW: Watch for asset_useful_life changes to auto-calculate dpca_percentage
+
 watch(
   () => faAssetStoreInstance.form_create_fa_asset.asset_useful_life,
   (newUsefulLife) => {
-    if (isAutoCalculating.value) return; // Prevent infinite loop
+    if (isAutoCalculating.value) return;
     
     if (newUsefulLife && newUsefulLife > 0) {
       isAutoCalculating.value = true;
       const percentage = 100 / newUsefulLife;
-      // Round to 2 decimal places
+      
       faAssetStoreInstance.form_create_fa_asset.dpca_percentage = Math.round(percentage * 100) / 100;
       
       nextTick(() => {
@@ -354,16 +355,16 @@ watch(
   }
 );
 
-// NEW: Watch for dpca_percentage changes to auto-calculate asset_useful_life
+
 watch(
   () => faAssetStoreInstance.form_create_fa_asset.dpca_percentage,
   (newPercentage) => {
-    if (isAutoCalculating.value) return; // Prevent infinite loop
+    if (isAutoCalculating.value) return; 
     
     if (newPercentage && newPercentage > 0) {
       isAutoCalculating.value = true;
       const usefulLife = 100 / newPercentage;
-      // Round to nearest integer for useful life in years
+      
       faAssetStoreInstance.form_create_fa_asset.asset_useful_life = Math.round(usefulLife);
       
       nextTick(() => {
@@ -976,7 +977,7 @@ onMounted(async () => {
 
 <style scoped>
 .v-text-field input[type="number"] {
-  -moz-appearance: textfield;
+  -moz-appearance:textfield;
 }
 
 .v-text-field input[type="number"]::-webkit-outer-spin-button,
