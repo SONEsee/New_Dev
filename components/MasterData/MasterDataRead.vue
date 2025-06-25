@@ -816,12 +816,12 @@ const createMasterCode = async () => {
     if (editingMasterCode.value) {
       // Update existing
       const response = await axios.put(
-        `api/master-codes/${editingMasterCode.value.MCID}/`, 
+        `api/master-codes/${editingMasterCode.value.MC_id}/`, 
         formData, 
         getAuthHeaders()
       )
       
-      const index = masterCodes.value.findIndex(c => c.MCID === editingMasterCode.value!.MCID)
+      const index = masterCodes.value.findIndex(c => c.MC_id === editingMasterCode.value!.MC_id)
       if (index !== -1) {
         masterCodes.value[index] = response.data
       }
@@ -854,7 +854,7 @@ const openCreateMasterCodeDialog = (masterType?: MasterType) => {
   selectedMasterTypeForCode.value = masterType || null
   resetMasterCodeForm()
   if (masterType) {
-    masterCodeForm.value.M_id = masterType.MID
+    masterCodeForm.value.M_id = masterType.M_id
   }
   showCreateMasterCode.value = true
 }
@@ -874,7 +874,7 @@ const editMasterType = (masterType: MasterType) => {
 const editMasterCode = (masterCode: MasterCode) => {
   editingMasterCode.value = masterCode
   masterCodeForm.value = {
-    M_id: masterCode.MID,
+    M_id: masterCode.M_id,
     MC_code: masterCode.MC_code,
     MC_name_en: masterCode.MC_name_en,
     MC_name_la: masterCode.MC_name_la,
