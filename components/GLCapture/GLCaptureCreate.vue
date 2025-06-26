@@ -1051,13 +1051,14 @@ const generateReference = async () => {
     }
     const response = await axios.post('/api/journal-entries/generate_reference/', payload, getAuthHeaders())
     journalData.Reference_No = response.data.reference_no
-
     Swal.fire({
+      toast: true,
+      position: 'top-end',
       icon: 'success',
-      title: 'ສຳເລັດ',
-      text: `ສ້າງເລກອ້າງອີງ: ${response.data.reference_no}`,
-      timer: 2000,
-      showConfirmButton: false
+      title: `ສ້າງເລກອ້າງອີງ: ${response.data.reference_no}`,
+      showConfirmButton: false,
+      timer: 3000,
+      timerProgressBar: true
     })
   } catch (error) {
     console.error('Error generating reference:', error)
