@@ -27,16 +27,16 @@ export const faAssetStore = defineStore("faAsset", {
         asset_spec: "",
         asset_date: null as Date | null,
         asset_currency: "LAK",
-        asset_value: 0,
+        asset_value: 0 as number | null,
         warranty_end_date: null as Date | null,
         supplier_id: null as number | null,
         dpca_type: "",
         dpca_percentage: null as number | null,
         asset_useful_life: null as number | null,
-        asset_salvage_value: 0,
+        asset_salvage_value: 0 as number | null,
         dpca_start_date: null as Date | null,
-        dpca_end_date: null as Date | null |string,
-        asset_accu_dpca_value: 0,
+        dpca_end_date: null as Date | null | string,
+        asset_accu_dpca_value: 0 as number | null,
         asset_value_remain: 0,
         asset_latest_date_dpca: null as Date | null,
         asset_disposal_date: null as Date | null,
@@ -45,18 +45,11 @@ export const faAssetStore = defineStore("faAsset", {
         asset_ac_datetime: null as Date | null,
         aaset_ac_by: null as string | null,
 
-         asset_status: "UC" as
-          | "UC"
-          | "AC"
-          | "IA"
-          | "MT"
-          | "DS"
-          | "DM",
+        asset_status: "UC" as "UC" | "AC" | "IA" | "MT" | "DS" | "DM",
         has_depreciation: "Y" as "Y" | "N",
       },
       form_update_fa_asset: {
-        id: "" as string | number,
-        asset_list_id: "",
+        
         asset_type_id: null as number | null,
         asset_serial_no: "",
         asset_list_code: "",
@@ -74,13 +67,13 @@ export const faAssetStore = defineStore("faAsset", {
         warranty_end_date: null as Date | null,
         supplier_id: null as number | null,
         dpca_type: "",
-        dpca_percentage: null as number | null,
+        dpca_percentage: "",
         asset_useful_life: null as number | null,
-        asset_salvage_value: 0,
+        asset_salvage_value: "",
         dpca_start_date: null as Date | null,
         dpca_end_date: null as Date | null,
-        asset_accu_dpca_value: 0,
-        asset_value_remain: 0,
+        asset_accu_dpca_value: "",
+        asset_value_remain: "",
         asset_latest_date_dpca: null as Date | null,
         asset_disposal_date: null as Date | null,
         asset_ac_yesno: "N" as "Y" | "N",
@@ -88,13 +81,7 @@ export const faAssetStore = defineStore("faAsset", {
         asset_ac_datetime: null as Date | null,
         aaset_ac_by: null as string | null,
 
-        asset_status: "UC" as
-          | "UC"
-          | "AC"
-          | "IA"
-          | "MT"
-          | "DS"
-          | "DM",
+        asset_status: "UC" as "UC" | "AC" | "IA" | "MT" | "DS" | "DM",
         has_depreciation: "Y" as "Y" | "N",
       },
     };
@@ -286,8 +273,6 @@ export const faAssetStore = defineStore("faAsset", {
           setTimeout(() => {
             goPath("/property/faasset");
           }, 1500);
-
-          this.resetCreateForm();
         }
       } catch (error: any) {
         console.error("Error creating fa asset:", error);
@@ -314,7 +299,7 @@ export const faAssetStore = defineStore("faAsset", {
                 .toISOString()
                 .split("T")[0]
             : null,
-          asset_list_id: this.form_create_fa_asset.asset_list_id || "",
+          asset_list_id: this.form_update_fa_asset.asset_list_id || "",
           asset_type_id: this.form_update_fa_asset.asset_type_id || null,
           warranty_end_date: this.form_update_fa_asset.warranty_end_date
             ? new Date(this.form_update_fa_asset.warranty_end_date)
@@ -388,8 +373,6 @@ export const faAssetStore = defineStore("faAsset", {
           setTimeout(() => {
             goPath("/fa-assets");
           }, 1500);
-
-          this.resetUpdateForm();
         }
       } catch (error: any) {
         console.error("Error updating fa asset:", error);
@@ -516,204 +499,6 @@ export const faAssetStore = defineStore("faAsset", {
       } finally {
         this.isLoading = false;
       }
-    },
-
-    // Load data for form
-    async LoadFormData(assetId: string) {
-      this.isLoading = true;
-      try {
-        await this.GetFaAssetDetail(assetId);
-        if (this.response_fa_asset_detail) {
-          const asset = this.response_fa_asset_detail;
-          this.form_update_fa_asset = {
-            asset_serial_no: asset.asset_serial_no,
-            asset_tag: asset.asset_tag,
-            asset_type_id: asset.asset_type_id,
-            asset_location_id: asset.asset_location_id,
-            asset_spec: asset.asset_spec,
-            asset_date: asset.asset_date,
-            asset_currency: asset.asset_currency,
-            asset_value: asset.asset_value,
-            warranty_end_date: asset.warranty_end_date,
-            supplier_id: asset.supplier_id,
-            dpca_type: asset.dpca_type,
-            dpca_percentage: asset.dpca_percentage,
-            asset_useful_life: asset.asset_useful_life,
-            asset_salvage_value: asset.asset_salvage_value,
-            dpca_start_date: asset.dpca_start_date,
-            dpca_end_date: asset.dpca_end_date,
-            asset_accu_dpca_value: asset.asset_accu_dpca_value,
-            asset_value_remain: asset.asset_value_remain,
-            asset_latest_date_dpca: asset.asset_latest_date_dpca,
-            asset_disposal_date: asset.asset_disposal_date,
-            asset_ac_yesno: asset.asset_ac_yesno,
-            asset_ac_date: asset.asset_ac_date,
-            asset_ac_datetime: asset.asset_ac_datetime,
-            aaset_ac_by: asset.aaset_ac_by,
-            asset_list_code: asset.asset_list_code || "",
-            asset_status: asset.asset_status || "ACTIVE",
-            has_depreciation: asset.has_depreciation || "Y",
-          };
-        }
-      } catch (error) {
-        console.error("Error loading form data:", error);
-      } finally {
-        this.isLoading = false;
-      }
-    },
-
-    resetCreateForm() {
-      this.form_create_fa_asset = {
-        asset_serial_no: "",
-        asset_tag: "",
-        asset_location_id: null,
-        asset_spec: "",
-        asset_date: null,
-        asset_currency: "LAK",
-        asset_value: 0,
-        warranty_end_date: null,
-        supplier_id: null,
-        dpca_type: "",
-        dpca_percentage: null,
-        asset_useful_life: null,
-        asset_salvage_value: 0,
-        dpca_start_date: null,
-        dpca_end_date: null,
-        asset_accu_dpca_value: 0,
-        asset_value_remain: 0,
-        asset_latest_date_dpca: null,
-        asset_disposal_date: null,
-        asset_ac_yesno: "N",
-        asset_ac_date: null,
-        asset_ac_datetime: null,
-        aaset_ac_by: null,
-        asset_list_code: "",
-        asset_status: "ACTIVE",
-        has_depreciation: "Y",
-      };
-    },
-
-    resetUpdateForm() {
-      this.form_update_fa_asset = {
-        id: "",
-        asset_serial_no: "",
-        asset_tag: "",
-        asset_location_id: null,
-        asset_spec: "",
-        asset_date: null,
-        asset_currency: "LAK",
-        asset_value: 0,
-        warranty_end_date: null,
-        supplier_id: null,
-        dpca_type: "",
-        dpca_percentage: null,
-        asset_useful_life: null,
-        asset_salvage_value: 0,
-        dpca_start_date: null,
-        dpca_end_date: null,
-        asset_accu_dpca_value: 0,
-        asset_value_remain: 0,
-        asset_latest_date_dpca: null,
-        asset_disposal_date: null,
-        asset_ac_yesno: "N",
-        asset_ac_date: null,
-        asset_ac_datetime: null,
-        aaset_ac_by: null,
-        // ເພີ່ມຂໍ້ມູນທີ່ຂາດ
-        asset_status: "ACTIVE",
-        has_depreciation: "Y",
-      };
-    },
-  },
-
-  getters: {
-    assetsByStatus: (state) => {
-      if (!state.response_fa_asset_list) return {};
-
-      return state.response_fa_asset_list.reduce((acc, asset) => {
-        if (!acc[asset.asset_status]) {
-          acc[asset.asset_status] = [];
-        }
-        acc[asset.asset_status].push(asset);
-        return acc;
-      }, {} as Record<string, FaAssetModel.FaAsset[]>);
-    },
-
-    assetsNeedingMaintenance: (state) => {
-      if (!state.response_fa_asset_list) return [];
-      return state.response_fa_asset_list.filter(
-        (asset) => asset.asset_status === "MAINTENANCE"
-      );
-    },
-
-    assetsWithExpiredWarranty: (state) => {
-      if (!state.response_fa_asset_list) return [];
-      const today = new Date();
-      return state.response_fa_asset_list.filter(
-        (asset) =>
-          asset.warranty_end_date && new Date(asset.warranty_end_date) < today
-      );
-    },
-
-    totalAssetValue: (state) => {
-      if (!state.response_fa_asset_list) return 0;
-      return state.response_fa_asset_list.reduce(
-        (sum, asset) => sum + (asset.asset_value || 0),
-        0
-      );
-    },
-
-    totalAccumulatedDepreciation: (state) => {
-      if (!state.response_fa_asset_list) return 0;
-      return state.response_fa_asset_list.reduce(
-        (sum, asset) => sum + (asset.asset_accu_dpca_value || 0),
-        0
-      );
-    },
-
-    totalRemainingValue: (state) => {
-      if (!state.response_fa_asset_list) return 0;
-      return state.response_fa_asset_list.reduce(
-        (sum, asset) => sum + (asset.asset_value_remain || 0),
-        0
-      );
-    },
-
-    assetsNeedingDepreciation: (state) => {
-      if (!state.response_fa_asset_list) return [];
-      const today = new Date();
-      return state.response_fa_asset_list.filter((asset) => {
-        if (!asset.dpca_start_date || !asset.dpca_end_date) return false;
-        const startDate = new Date(asset.dpca_start_date);
-        const endDate = new Date(asset.dpca_end_date);
-        return startDate <= today && today <= endDate;
-      });
-    },
-
-    assetsByLocation: (state) => {
-      if (!state.response_fa_asset_list) return {};
-
-      return state.response_fa_asset_list.reduce((acc, asset) => {
-        const locationId = asset.asset_location_id || "unknown";
-        if (!acc[locationId]) {
-          acc[locationId] = [];
-        }
-        acc[locationId].push(asset);
-        return acc;
-      }, {} as Record<string | number, FaAssetModel.FaAsset[]>);
-    },
-
-    assetsBySupplier: (state) => {
-      if (!state.response_fa_asset_list) return {};
-
-      return state.response_fa_asset_list.reduce((acc, asset) => {
-        const supplierId = asset.supplier_id || "unknown";
-        if (!acc[supplierId]) {
-          acc[supplierId] = [];
-        }
-        acc[supplierId].push(asset);
-        return acc;
-      }, {} as Record<string | number, FaAssetModel.FaAsset[]>);
     },
   },
 });
