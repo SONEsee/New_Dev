@@ -935,7 +935,7 @@ onMounted(async () => {
                           faAssetStoreInstance.form_create_fa_asset
                             .dpca_start_date
                         "
-                        type="date"
+                        
                         density="compact"
                         variant="outlined"
                         hide-details="auto"

@@ -5,7 +5,6 @@ export const useMasterStore = defineStore("master", {
     return {
       respone_data_master: null as MasterModel.MasterRespons[] | null,
       respone_data_sub:null as MasterModel.Datum | null,
-      respons_data_accset_type: null as MasterModel.AccsetTypeRespons | null,
       isloading: false,
       error: null as string | null,
       res_pons_filter:{

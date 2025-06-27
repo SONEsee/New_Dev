@@ -59,3 +59,30 @@ export interface GlMasterInfo {
     Record_Status: string;
     Auth_Status:   string;
 }
+
+
+export interface AccsetTypeRespons {
+    MasterType:  MasterType;
+    MasterCodes: MasterCode[];
+}
+
+export interface MasterCode {
+    MC_id:      number;
+    M_id:       number;
+    MC_code:    string;
+    MC_name_la: string;
+    MC_name_en: string;
+    MC_detail:  string;
+    Status:     string;
+    BOL_code:   string;
+    BOL_name:   string;
+}
+
+export interface MasterType {
+    M_id:      number;
+    M_code:    string;
+    M_name_la: string;
+    M_name_en: string;
+    M_detail:  string;
+    Status:    string;
+}

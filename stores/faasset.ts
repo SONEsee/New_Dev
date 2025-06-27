@@ -276,7 +276,7 @@ export const faAssetStore = defineStore("faAsset", {
         }
       } catch (error: any) {
         console.error("Error creating fa asset:", error);
-        console.error("Error details:", error.response?.data); // Additional error info
+        console.error("Error details:", error.response?.data);
         CallSwal({
           title: "ຜິດພາດ",
           text: error.response?.data?.message || "ມີຂໍ້ຜິດພາດໃນການເພີ່ມຂໍ້ມູນ",
