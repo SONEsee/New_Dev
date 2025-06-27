@@ -83,8 +83,8 @@ const rules = {
               variant="outlined"
               density="compact"
               :items="[
-                { title: 'ມີໂຕຕົນ', value: 'Y' },
-                { title: 'ບໍ່ມີໂຕຕົນ', value: 'N' }
+                { title: 'ມີໂຕຕົນ', value: '2' },
+                { title: 'ບໍ່ມີໂຕຕົນ', value: '1' }
               ]"
               item-title="title"
               item-value="value"
@@ -92,15 +92,7 @@ const rules = {
               required
             />
           </v-col>
-          <!-- <v-col cols="12" md="6">
-            <v-textarea
-              v-model="request.description"
-              label="ຄຳອະທິບາຍ"
-              variant="outlined"
-              density="compact"
-              rows="3"
-            />
-          </v-col> -->
+        
         </v-row>
         <div class="d-flex align-center justify-center mt-4">
           <v-btn 

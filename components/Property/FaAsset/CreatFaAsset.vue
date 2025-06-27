@@ -1,7 +1,31 @@
-
 <script lang="ts" setup>
 import { CallSwal } from "#build/imports";
 import { useRouter } from "vue-router";
+
+const noaccStore = useMasterStore();
+const noacc = computed(() => {
+  return noaccStore.respone_data_master?.MasterCodes || [];
+});
+
+const subgl = computed(() => {
+  const response = noaccStore.respone_data_sub;
+
+  if (!response) return [];
+
+  if (Array.isArray(response)) {
+    return response;
+  }
+
+  if (response.data && Array.isArray(response.data)) {
+    return response.data;
+  }
+
+  if (response.items && Array.isArray(response.items)) {
+    return response.items;
+  }
+
+  return [];
+});
 
 const assetStoreInstance = assetStore();
 const mockData = computed(() => {
@@ -29,125 +53,107 @@ const title = ref("ເພີ່ມຊັບສົມບັດຄົງທີ່�
 const loading = ref(false);
 const form = ref();
 
-const assetStatusOptions = [
-  { title: "ເປີດໃຊ້ງານ", value: "ACTIVE" },
-  { title: "ປິດໃຊ້ງານ", value: "INACTIVE" },
-  { title: "ຊ່ອມແປງ", value: "MAINTENANCE" },
-  { title: "ຖອນຈຳໜ່າຍ", value: "DISPOSED" },
-];
-
 const currencyOptions = [
   { title: "ກີບລາວ (LAK)", value: "LAK" },
   { title: "ດໍລ່າສະຫະລັດ (USD)", value: "USD" },
   { title: "ບາດໄທ (THB)", value: "THB" },
 ];
+
 const doca_type = [
   { title: "ເສັ້ນຊື່", value: "SL" },
   { title: "ຍອດລົດລົງ", value: "DL" },
   { title: "ຕາມໜວຍພະລິດ", value: "PU" },
 ];
 
-const assetAcOptions = [
-  { title: "ມີ", value: "Y" },
-  { title: "ບໍ່ມີ", value: "N" },
-];
-
-const hasDepreciationOptions = [
-  { title: "ມີເສື່ອມລາຄາ", value: "Y" },
-  { title: "ບໍ່ມີເສື່ອມລາຄາ", value: "N" },
-];
-const playtype = [
-  { title: "ເງິນສົດ or Cash", value: "1101100" },
-  { title: "ເງິນສົດຄັງຍ່ອຍ or Petty cash", value: "1101200" },
-  { title: "ບັນຊີຝາກປະຢັດ Or Savings deposits ", value: "1121130" },
-  {
-    title: "ບັນຊີເງິນຝາກກະແສລາຍວັນ Or Current account deposits ",
-    value: "1121110",
-  },
-];
-
-
 const isAutoCalculating = ref(false);
 
-
-const formatNumber = (value:any) => {
-  if (!value && value !== 0) return '';
+const formatNumber = (value: any) => {
+  if (!value && value !== 0) return "";
   const num = parseFloat(value);
-  if (isNaN(num)) return '';
-  
-  
+  if (isNaN(num)) return "";
+
   if (num % 1 === 0) {
-    
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat("en-US", {
       minimumFractionDigits: 0,
-      maximumFractionDigits: 0
+      maximumFractionDigits: 0,
     }).format(num);
   } else {
-  
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat("en-US", {
       minimumFractionDigits: 2,
-      maximumFractionDigits: 2
+      maximumFractionDigits: 2,
     }).format(num);
   }
 };
 
-const parseFormattedNumber = (value:any) => {
+const parseFormattedNumber = (value: any) => {
   if (!value) return null;
-  const cleanValue = value.toString().replace(/,/g, '');
+  const cleanValue = value.toString().replace(/,/g, "");
   const num = parseFloat(cleanValue);
   return isNaN(num) ? null : num;
 };
 
-
 const formattedAssetValue = computed({
-  get: () => formatNumber(faAssetStoreInstance.form_create_fa_asset.asset_value),
+  get: () =>
+    formatNumber(faAssetStoreInstance.form_create_fa_asset.asset_value),
   set: (val) => {
-    faAssetStoreInstance.form_create_fa_asset.asset_value = parseFormattedNumber(val);
-  }
+    faAssetStoreInstance.form_create_fa_asset.asset_value =
+      parseFormattedNumber(val);
+  },
 });
 
 const formattedSalvageValue = computed({
-  get: () => formatNumber(faAssetStoreInstance.form_create_fa_asset.asset_salvage_value),
+  get: () =>
+    formatNumber(faAssetStoreInstance.form_create_fa_asset.asset_salvage_value),
   set: (val) => {
-    faAssetStoreInstance.form_create_fa_asset.asset_salvage_value = parseFormattedNumber(val);
-  }
+    faAssetStoreInstance.form_create_fa_asset.asset_salvage_value =
+      parseFormattedNumber(val);
+  },
 });
 
 const formattedAccuDpcaValue = computed({
-  get: () => formatNumber(faAssetStoreInstance.form_create_fa_asset.asset_accu_dpca_value),
+  get: () =>
+    formatNumber(
+      faAssetStoreInstance.form_create_fa_asset.asset_accu_dpca_value
+    ),
   set: (val) => {
-    faAssetStoreInstance.form_create_fa_asset.asset_accu_dpca_value = parseFormattedNumber(val);
-  }
+    faAssetStoreInstance.form_create_fa_asset.asset_accu_dpca_value =
+      parseFormattedNumber(val);
+  },
 });
 
 const formattedAssetValueRemain = computed(() => {
-  return formatNumber(faAssetStoreInstance.form_create_fa_asset.asset_value_remain);
+  return formatNumber(
+    faAssetStoreInstance.form_create_fa_asset.asset_value_remain
+  );
 });
 
 const formattedAssetValueRemainBegin = computed(() => {
-  return formatNumber(faAssetStoreInstance.form_create_fa_asset.asset_value_remainBegin);
+  return formatNumber(
+    faAssetStoreInstance.form_create_fa_asset.asset_value_remainBegin
+  );
 });
 
 const formattedAssetValueRemainMonth = computed(() => {
   const assetValue = faAssetStoreInstance.form_create_fa_asset.asset_value;
-  const usefulLife = faAssetStoreInstance.form_create_fa_asset.asset_useful_life;
-  
+  const usefulLife =
+    faAssetStoreInstance.form_create_fa_asset.asset_useful_life;
+
   if (assetValue && usefulLife && usefulLife > 0) {
     const monthlyValue = assetValue / (usefulLife * 12);
-  
     const roundedValue = Math.round(monthlyValue * 100) / 100;
-    
-    faAssetStoreInstance.form_create_fa_asset.asset_value_remainMonth = roundedValue;
+    faAssetStoreInstance.form_create_fa_asset.asset_value_remainMonth =
+      roundedValue;
     return formatNumber(roundedValue);
   }
-  
-  
+
   faAssetStoreInstance.form_create_fa_asset.asset_value_remainMonth = 0;
   return formatNumber(0);
 });
 
 const formattedAssetValueRemainLast = computed(() => {
-  return formatNumber(faAssetStoreInstance.form_create_fa_asset.asset_value_remainLast);
+  return formatNumber(
+    faAssetStoreInstance.form_create_fa_asset.asset_value_remainLast
+  );
 });
 
 const goBack = () => {
@@ -193,6 +199,7 @@ const generateNextAssetCode = () => {
   const nextNumber = maxNumber + 1;
   return nextNumber.toString().padStart(4, "0");
 };
+
 const generateSerialNumber = () => {
   const selectedAssetTypeId =
     faAssetStoreInstance.form_create_fa_asset.asset_type_id;
@@ -221,6 +228,7 @@ const generateSerialNumber = () => {
 
   return `SN-${assetCode}-${dateString}-${assetListCode}`;
 };
+
 const generateSerialtag = () => {
   const selectedAssetTypeId =
     faAssetStoreInstance.form_create_fa_asset.asset_type_id;
@@ -278,6 +286,22 @@ const generateAssetListId = () => {
   return `${assetCode}-${yearMonth}-${assetListCode}`;
 };
 
+const handleTypeOfPayChange = async (selectedValue: any) => {
+  if (selectedValue) {
+    noaccStore.res_pons_filter.query.gl_code = selectedValue;
+
+    faAssetStoreInstance.form_create_fa_asset.acc_no = "";
+
+    await noaccStore.getSubData();
+  }
+};
+
+const debugWatch = () => {
+  
+
+  
+};
+
 watch(
   [
     () => faAssetStoreInstance.form_create_fa_asset.asset_type_id,
@@ -287,7 +311,6 @@ watch(
     if (assetTypeId && assetListCode) {
       faAssetStoreInstance.form_create_fa_asset.asset_list_id =
         generateAssetListId();
-
       faAssetStoreInstance.form_create_fa_asset.asset_serial_no =
         generateSerialNumber();
       faAssetStoreInstance.form_create_fa_asset.asset_tag = generateSerialtag();
@@ -310,19 +333,7 @@ watch(
     }
   }
 );
-// watch(
-//   [
-//     () => faAssetStoreInstance.form_create_fa_asset.asset_value,
-//     () => faAssetStoreInstance.form_create_fa_asset.asset_salvage_value,
-//   ],
-//   ([assetValue, salvageValue]) => {
-//     const value = assetValue || 0;
-//     const salvage = salvageValue || 0;
-//     faAssetStoreInstance.form_create_fa_asset.asset_value_remainBegin =
-//       value - salvage;
-      
-//   }
-// );
+
 watch(
   [
     () => faAssetStoreInstance.form_create_fa_asset.asset_value,
@@ -336,18 +347,18 @@ watch(
   }
 );
 
-
 watch(
   () => faAssetStoreInstance.form_create_fa_asset.asset_useful_life,
   (newUsefulLife) => {
     if (isAutoCalculating.value) return;
-    
+
     if (newUsefulLife && newUsefulLife > 0) {
       isAutoCalculating.value = true;
       const percentage = 100 / newUsefulLife;
-      
-      faAssetStoreInstance.form_create_fa_asset.dpca_percentage = Math.round(percentage * 100) / 100;
-      
+
+      faAssetStoreInstance.form_create_fa_asset.dpca_percentage =
+        Math.round(percentage * 100) / 100;
+
       nextTick(() => {
         isAutoCalculating.value = false;
       });
@@ -355,18 +366,18 @@ watch(
   }
 );
 
-
 watch(
   () => faAssetStoreInstance.form_create_fa_asset.dpca_percentage,
   (newPercentage) => {
-    if (isAutoCalculating.value) return; 
-    
+    if (isAutoCalculating.value) return;
+
     if (newPercentage && newPercentage > 0) {
       isAutoCalculating.value = true;
       const usefulLife = 100 / newPercentage;
-      
-      faAssetStoreInstance.form_create_fa_asset.asset_useful_life = Math.round(usefulLife);
-      
+
+      faAssetStoreInstance.form_create_fa_asset.asset_useful_life =
+        Math.round(usefulLife);
+
       nextTick(() => {
         isAutoCalculating.value = false;
       });
@@ -387,6 +398,37 @@ watch(
         faAssetStoreInstance.form_create_fa_asset.asset_serial_no =
           generateSerialNumber();
       }
+    }
+  },
+  { immediate: true }
+);
+
+watch(
+  [
+    () => noacc.value,
+    () => faAssetStoreInstance.form_create_fa_asset.type_of_pay,
+  ],
+  async ([newNoacc, newTypeOfPay]) => {
+    try {
+      if (newTypeOfPay) {
+        noaccStore.res_pons_filter.query.gl_code = newTypeOfPay;
+
+        faAssetStoreInstance.form_create_fa_asset.acc_no = "";
+
+        await noaccStore.getSubData();
+      } else if (newNoacc && newNoacc.length > 0) {
+        console.log(
+          "Setting gl_code from noacc default:",
+          newNoacc[0].MC_detail
+        );
+        noaccStore.res_pons_filter.query.gl_code = newNoacc[0].MC_detail;
+
+        faAssetStoreInstance.form_create_fa_asset.acc_no = "";
+
+        await noaccStore.getSubData();
+      }
+    } catch (error) {
+      console.error("Error in watch:", error);
     }
   },
   { immediate: true }
@@ -419,12 +461,13 @@ const rules = {
 };
 
 onMounted(async () => {
-  assetStoreInstance.GetAssetList();
-  faAssetStoreInstance.GetFaAssetList();
-  loading.value = true;
-
   try {
+    loading.value = true;
+
     await Promise.all([
+      assetStoreInstance.GetAssetList(),
+      faAssetStoreInstance.GetFaAssetList(),
+      noaccStore.getModelData(),
       supplierStoreInstance.GetSupplierList(),
       locationStoreInstance.GetLocationList(),
       faAssetStoreInstance.GetAssetCharts(),
@@ -435,8 +478,12 @@ onMounted(async () => {
     faAssetStoreInstance.form_create_fa_asset.asset_list_code =
       generateNextAssetCode();
 
+    await noaccStore.getSubData();
+
     console.log("Location data:", location.value);
     console.log("Supplier data:", supplier.value);
+    console.log("NoAcc data:", noacc.value);
+    console.log("SubGL data:", subgl.value);
   } catch (error) {
     console.error("Error loading reference data:", error);
     CallSwal({
@@ -450,8 +497,6 @@ onMounted(async () => {
   }
 });
 </script>
-
-
 <template>
   <section class="pa-6">
     <v-form ref="form" @submit.prevent="submitForm">
@@ -616,6 +661,7 @@ onMounted(async () => {
                       </v-select>
                     </v-col>
                     <v-col cols="12" md="4">
+
                       <label>ລາຍລະອຽດຄຸນລັກສະນະ</label>
                       <v-textarea
                         v-model="
@@ -630,6 +676,17 @@ onMounted(async () => {
                         maxlength="500"
                         counter
                       ></v-textarea>
+                      <label>ປະເພດຊັບສົນຄົງທີ່</label>
+                      <v-text-field
+                        placeholder="ບັນລະອຽດຄຸນລັກສະນະຂອງຊັບສົມບັດ"
+                        density="compact"
+                        variant="outlined"
+                        hide-details="auto"
+                        rows="3"
+                        class=""
+                        counter
+                      >
+                      </v-text-field>
                     </v-col>
                   </v-row>
                 </v-card-text>
@@ -726,7 +783,7 @@ onMounted(async () => {
               </v-card>
             </v-col>
 
-               <v-col
+            <v-col
               cols="12"
               v-show="
                 faAssetStoreInstance.form_create_fa_asset.has_depreciation ===
@@ -808,19 +865,31 @@ onMounted(async () => {
                     <v-col cols="12" md="3">
                       <label>ປະເພດການຊຳລະ</label>
                       <v-autocomplete
-                        v-model.number="
+                        v-model="
                           faAssetStoreInstance.form_create_fa_asset.type_of_pay
                         "
-                        :items="playtype"
-                        item-value="value"
-                        item-title="title"
-                        step="0.01"
-                        placeholder="0.00"
+                        :items="noacc"
+                        item-value="MC_detail"
+                        item-title="MC_name_la"
                         density="compact"
                         variant="outlined"
                         hide-details="auto"
-                      ></v-autocomplete>
-                     <label>ມູນຄ່າຕໍ່ເດືອນ</label>
+                        placeholder="ເລືອກປະເພດການຊຳລະ"
+                      >
+                        <template v-slot:selection="{ item }">
+                          {{ item.raw.MC_name_la }}
+                        </template>
+
+                        <template v-slot:item="{ props, item }">
+                          <v-list-item
+                            v-bind="props"
+                            :title="item.raw.MC_name_la"
+                            :subtitle="item.raw.MC_detail"
+                          />
+                        </template>
+                      </v-autocomplete>
+
+                      <label>ມູນຄ່າຕໍ່ເດືອນ</label>
                       <v-text-field
                         :value="formattedAssetValueRemainMonth"
                         placeholder="ເຊັ່ນ: 1,000,000"
@@ -860,19 +929,23 @@ onMounted(async () => {
                       ></v-text-field>
                     </v-col>
                     <v-col cols="12" md="3">
-                      <label>ເລກບັນຊີ</label>
+                      <label>ເລກບັນຊີ/DR</label>
                       <v-text-field
                         v-model="
-                          faAssetStoreInstance.form_create_fa_asset.acc_no
+                          faAssetStoreInstance.form_create_fa_asset
+                            .dpca_start_date
                         "
+                        type="date"
                         density="compact"
                         variant="outlined"
                         hide-details="auto"
-                      >
-                      </v-text-field>
+                      ></v-text-field>
                       <label>ມູນຄ່າຕັ້ນ</label>
                       <v-text-field
-                        :value="faAssetStoreInstance.form_create_fa_asset.asset_value_remainBegin"
+                        :value="
+                          faAssetStoreInstance.form_create_fa_asset
+                            .asset_value_remainBegin
+                        "
                         placeholder="ມູນຄ່າຕົ້ນ"
                         density="compact"
                         variant="outlined"
@@ -907,6 +980,20 @@ onMounted(async () => {
                       ></v-text-field>
                     </v-col>
                     <v-col cols="12" md="3">
+                      <label>ເລກບັນຊີ/CR</label>
+                      <v-autocomplete
+                        v-model="
+                          faAssetStoreInstance.form_create_fa_asset.acc_no
+                        "
+                        :items="subgl"
+                        density="compact"
+                        variant="outlined"
+                        item-title="glsub_code"
+                        item-value="glsub_code"
+                        hide-details="auto"
+                        placeholder="ເລືອກເລກບັນຊີ"
+                      >
+                      </v-autocomplete>
                       <label>ມູນຄ່າຊາກ</label>
                       <v-text-field
                         v-model="formattedSalvageValue"
@@ -947,7 +1034,6 @@ onMounted(async () => {
               </v-card>
             </v-col>
 
-            
             <v-col cols="12" class="d-flex flex-wrap justify-center mt-6">
               <v-btn
                 color="error"
@@ -977,7 +1063,7 @@ onMounted(async () => {
 
 <style scoped>
 .v-text-field input[type="number"] {
-  -moz-appearance:textfield;
+  -moz-appearance: textfield;
 }
 
 .v-text-field input[type="number"]::-webkit-outer-spin-button,
@@ -986,10 +1072,9 @@ onMounted(async () => {
   margin: 0;
 }
 
-
 .formatted-number-input .v-field__input {
   text-align: right;
-  font-family: 'Roboto Mono', monospace;
+  font-family: "Roboto Mono", monospace;
   font-weight: 500;
 }
 

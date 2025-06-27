@@ -37,6 +37,7 @@ import * as AssetModels from "./asset";
 import * as RoleMasterModel from "./rolemaster";
 import * as GlModel from "./gl";
 import * as SupplierModel from "./suppliers";
+import * as MasterModel from "./master";
 
 export {
   UserModel,
@@ -74,5 +75,6 @@ export {
   AccountsModel,
   LocationModel,
   AssetModels,
+  MasterModel,
   // RoleMasterModel
 };
