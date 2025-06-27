@@ -816,12 +816,12 @@ const createMasterCode = async () => {
     if (editingMasterCode.value) {
       // Update existing
       const response = await axios.put(
-        `api/master-codes/${editingMasterCode.value.MC_id}/`, 
+        `api/master-codes/${editingMasterCode.value.MC_code}/`, 
         formData, 
         getAuthHeaders()
       )
       
-      const index = masterCodes.value.findIndex(c => c.MC_id === editingMasterCode.value!.MC_id)
+      const index = masterCodes.value.findIndex(c => c.MC_code === editingMasterCode.value!.MC_code)
       if (index !== -1) {
         masterCodes.value[index] = response.data
       }
