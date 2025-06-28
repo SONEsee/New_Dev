@@ -389,7 +389,8 @@
             <thead>
               <tr>
                 <th width="120">ບັນຊີ</th>
-                <th>ຊື່ບັນຊີ</th>
+                <th width="120">ເລກອ້າງອີງຄູ່</th>
+                <th width="120">ຊື່ບັນຊີ</th>
                 <th width="80" class="text-right">Debit (FCY)</th>
                 <th width="80" class="text-right">Credit (FCY)</th>
                 <th width="80" class="text-right">Debit (LCY)</th>
@@ -398,7 +399,9 @@
             </thead>
             <tbody>
               <tr v-for="(entry, index) in journalEntries" :key="entry.JRNLLog_id">
+                
                 <td class="font-weight-medium text-compact">{{ entry.account_code }}</td>
+                <td class="font-weight-medium text-compact">{{ entry.Reference_sub_No }}</td>
                 <td class="text-truncate text-compact" style="max-width: 180px;">
                   <span :title="entry.account_name">{{ entry.account_name }}</span>
                   <div v-if="entry.Addl_sub_text" class="text-xs text-grey">
@@ -433,7 +436,7 @@
             </tbody>
             <tfoot>
               <tr class="totals-row-thin">
-                <td colspan="2" class="text-right font-weight-bold text-compact">ລວມ:</td>
+                <td colspan="3" class="text-right font-weight-bold text-compact">ລວມ:</td>
                 <td class="text-right font-weight-bold text-compact">{{ formatNumber(totalFcyDebit) }}</td>
                 <td class="text-right font-weight-bold text-compact">{{ formatNumber(totalFcyCredit) }}</td>
                 <td class="text-right font-weight-bold text-blue text-compact">{{ formatNumber(totalLcyDebit) }}</td>
@@ -559,6 +562,7 @@ const authStatusOptions = [
 // Table headers
 const headers = [
   { title: 'ເລກອ້າງອີງ', key: 'Reference_No', sortable: true },
+  // { title: 'ເລກອ້າງອີງຄູ່ບັນຊີ', key: 'Reference_sub_No', sortable: true },
   { title: 'ໂມດູນ', key: 'module_id', sortable: true },
   { title: 'ຈຳນວນເງິນ', key: 'Fcy_Amount', align: 'end', sortable: true },
   { title: 'ຈຳນວນກີບ', key: 'Lcy_Amount', align: 'end', sortable: true },
@@ -733,7 +737,7 @@ const loadData = async () => {
     params.delete_stat__ne = 'Y' // Exclude soft deleted
     params.ordering = '-Maker_DT_Stamp' // Order by newest first
     
-    const response = await axios.get('/api/journal-log-master/', {
+    const response = await axios.get('/api/journal-log-master/?Auth_Status=U', {
       params,
       ...getAuthHeaders()
     })
