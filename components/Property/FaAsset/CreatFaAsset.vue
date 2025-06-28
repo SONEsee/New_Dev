@@ -402,7 +402,85 @@ watch(
   },
   { immediate: true }
 );
+// ເພີ່ມໃນສ່ວນ watch ທີ່ມີຢູ່ແລ້ວ
+// ເພີ່ມ computed property ເພື່ອສ້າງ MC_detail ແບບອັດຕະໂນມັດ
+const computedMCDetail = computed(() => {
+  const assetTypeId = faAssetStoreInstance.form_create_fa_asset.asset_type_id;
+  const assetListCode = faAssetStoreInstance.form_create_fa_asset.asset_list_code;
+  
+  if (!assetTypeId || !assetListCode) return "";
+  
+  const selectedAsset = mockData.value.find(
+    (asset) => asset.coa_id === assetTypeId
+  );
+  
+  if (selectedAsset?.tangible_detail?.MC_detail) {
+    return `${selectedAsset.tangible_detail.MC_detail}.${assetListCode}`;
+  }
+  
+  return "";
+});
 
+// ປັບປຸງ watcher ສຳລັບ asset_type_id
+watch(
+  () => faAssetStoreInstance.form_create_fa_asset.asset_type_id,
+  (newAssetTypeId) => {
+    if (newAssetTypeId) {
+      const selectedAsset = mockData.value.find(
+        (asset) => asset.coa_id === newAssetTypeId
+      );
+      
+      if (selectedAsset?.tangible_detail) {
+        // ຕັ້ງຄ່າ MC_name_la (ປະເພດຊັບສົນຄົງທີ່)
+        faAssetStoreInstance.form_create_fa_asset.MC_name_la = 
+          selectedAsset.tangible_detail.MC_name_la;
+        
+        // ອັບເດດ MC_detail ດ້ວຍ asset_list_code ປະຈຸບັນ
+        const assetListCode = faAssetStoreInstance.form_create_fa_asset.asset_list_code;
+        if (assetListCode) {
+          faAssetStoreInstance.form_create_fa_asset.MC_detail = 
+            `${selectedAsset.tangible_detail.MC_detail}.${assetListCode}`;
+        }
+      }
+    } else {
+      // ລົບຄ່າເມື່ອບໍ່ໄດ້ເລືອກ
+      faAssetStoreInstance.form_create_fa_asset.MC_detail = "";
+      faAssetStoreInstance.form_create_fa_asset.MC_name_la = "";
+    }
+  }
+);
+
+// ເພີ່ມ watcher ສຳລັບ asset_list_code ເພື່ອອັບເດດ MC_detail
+watch(
+  () => faAssetStoreInstance.form_create_fa_asset.asset_list_code,
+  (newAssetListCode) => {
+    const assetTypeId = faAssetStoreInstance.form_create_fa_asset.asset_type_id;
+    
+    if (assetTypeId && newAssetListCode) {
+      const selectedAsset = mockData.value.find(
+        (asset) => asset.coa_id === assetTypeId
+      );
+      
+      if (selectedAsset?.tangible_detail?.MC_detail) {
+        faAssetStoreInstance.form_create_fa_asset.MC_detail = 
+          `${selectedAsset.tangible_detail.MC_detail}.${newAssetListCode}`;
+      }
+    } else if (!newAssetListCode) {
+      // ຖ້າບໍ່ມີ asset_list_code ໃຫ້ເຄຍ MC_detail
+      faAssetStoreInstance.form_create_fa_asset.MC_detail = "";
+    }
+  }
+);
+
+// ຫຼື ໃຊ້ computed property ສຳລັບການສະແດງຜົນ
+const formattedMCDetail = computed({
+  get: () => {
+    return computedMCDetail.value;
+  },
+  set: (val) => {
+    faAssetStoreInstance.form_create_fa_asset.MC_detail = val;
+  }
+});
 watch(
   [
     () => noacc.value,
@@ -678,6 +756,8 @@ onMounted(async () => {
                       ></v-textarea>
                       <label>ປະເພດຊັບສົນຄົງທີ່</label>
                       <v-text-field
+                        v-model="
+                          faAssetStoreInstance.form_create_fa_asset.MC_name_la"
                         placeholder="ບັນລະອຽດຄຸນລັກສະນະຂອງຊັບສົມບັດ"
                         density="compact"
                         variant="outlined"
@@ -933,7 +1013,7 @@ onMounted(async () => {
                       <v-text-field
                         v-model="
                           faAssetStoreInstance.form_create_fa_asset
-                            .dpca_start_date
+                            .MC_detail
                         "
                         
                         density="compact"
