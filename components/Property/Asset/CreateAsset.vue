@@ -46,27 +46,26 @@ const extractSequenceNumber = (assetCode) => {
 
 const generateNewAssetCode = (assetData, typeCode) => {
   if (!assetData || assetData.length === 0) {
-    // If no data, start from 000001
+  
     return `${typeCode}-000001`;
   }
 
-  // Find the highest sequence number
   const maxSequence = assetData.reduce((max, item) => {
     const sequence = extractSequenceNumber(item.asset_code);
     return sequence > max ? sequence : max;
   }, 0);
 
-  // Add 1 and format to 6 digits
+
   const nextSequence = (maxSequence + 1).toString().padStart(6, '0');
   return `${typeCode}-${nextSequence}`;
 };
 
-// Navigation
+
 const goBack = () => {
   router.go(-1);
 };
 
-// Form submission
+
 const submitForm = async () => {
   try {
     console.log('Form data before validation:', assetStoreInstance.form_create_asset);
@@ -101,7 +100,7 @@ const submitForm = async () => {
   }
 };
 
-// Validation rules
+
 const rules = {
   required: (value: any) => !!value || "ກະລຸນາປ້ອນຂໍ້ມູນ",
   maxLength20: (value: string) => {
@@ -128,8 +127,7 @@ const rules = {
   },
 };
 
-// Watchers
-// Generate asset code when count data or selected type changes
+
 watch([count, selectedAssetType], ([assetData, selectedType]) => {
   console.log('Asset data:', assetData);
   console.log('Selected type:', selectedType);
@@ -141,7 +139,7 @@ watch([count, selectedAssetType], ([assetData, selectedType]) => {
   }
 }, { immediate: true });
 
-// Set asset type ID
+
 watch([mockData1, () => asset_type_id], ([data, typeId]) => {
   if (data && data.length > 0 && typeId) {
     console.log('Setting asset_type_id:', typeId);
@@ -154,7 +152,7 @@ watch([mockData1, () => asset_type_id], ([data, typeId]) => {
 
 // Lifecycle
 onMounted(async () => {
-  // Set filter for asset list
+
   assetStoreInstance.respons_filter_asset_type_id.query.asset_type_id = asset_id;
   
   // Load data
@@ -162,7 +160,7 @@ onMounted(async () => {
   await locationStores.GetLocationList();
   await proppertyStore.GetPropertyCategoryById();
   
-  // Load assets by type if type_id exists
+  
   if (asset_type_id) {
     await assetStoreInstance.GetAssetByTypeId(asset_type_id);
   }
@@ -171,10 +169,7 @@ onMounted(async () => {
 
 <template>
   <section class="pa-6">
-    <!-- Debug info -->
-    <!-- <div class="mb-4">
-      <small class="text-grey">Debug: Asset Count = {{ count.length }}</small>
-    </div> -->
+  
 
     <v-form ref="form" @submit.prevent="submitForm">
       <v-row>
@@ -184,7 +179,7 @@ onMounted(async () => {
 
         <v-col cols="12" class="pt-12">
           <v-row>
-            <!-- Left Column -->
+            
             <v-col cols="12" md="6">
               <label>ລະຫັດຊັບສິນ / Asset Code <span class="text-error">*</span></label>
               <v-text-field
@@ -212,7 +207,7 @@ onMounted(async () => {
               ></v-text-field>
             </v-col>
 
-            <!-- Right Column -->
+          
             <v-col cols="12" md="6">
               <label>ປະເພດຊັບສິນ / Asset Type <span class="text-error">*</span></label>
               <v-autocomplete
@@ -254,7 +249,7 @@ onMounted(async () => {
               ></v-text-field>
             </v-col>
             
-            <!-- Buttons -->
+     
             <v-col cols="12" class="d-flex flex-wrap justify-center">
               <v-btn 
                 color="error" 

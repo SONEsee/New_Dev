@@ -112,16 +112,7 @@ const updatePropertyType = async () => {
                 class="pb-6"
               />
 
-              <label>ຊື່ປະເພດ (ອັງກິດ) / Type Name (English)</label>
-              <v-text-field
-                v-model="update_form.type_name_en"
-                :rules="[rules.required]"
-                placeholder="ກະລຸນາປ້ອນຊື່ປະເພດພາສາອັງກິດ"
-                density="compact"
-                variant="outlined"
-                hide-details="auto"
-                class="pb-6"
-              />
+             
             </v-col>
 
             <v-col cols="12" md="6">
@@ -141,7 +132,16 @@ const updatePropertyType = async () => {
                 item-title="title"
                 item-value="value"
               />
-
+ <label>ຊື່ປະເພດ (ອັງກິດ) / Type Name (English)</label>
+              <v-text-field
+                v-model="update_form.type_name_en"
+                :rules="[rules.required]"
+                placeholder="ກະລຸນາປ້ອນຊື່ປະເພດພາສາອັງກິດ"
+                density="compact"
+                variant="outlined"
+                hide-details="auto"
+                class="pb-6"
+              />
               <!-- <label>ຄຳອະທິບາຍ / Description</label>
               <v-textarea
                 v-model="update_form.description"

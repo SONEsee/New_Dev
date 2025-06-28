@@ -7,7 +7,7 @@ const supplierStoreInstance = supplierStore();
 const route = useRoute();
 const router = useRouter();
 
-const supplier_id = route.query.supplier_id as string;
+const supplier_id = Number(route.query.supplier_id) || 0;
 
 
 const title = ref("ແກ້ໄຂຜູ້ສະໜອງ");
