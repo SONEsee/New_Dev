@@ -1,7 +1,6 @@
 import axios from "@/helpers/axios";
 import { LocationModel } from "~/models";
 import { CallSwal, goPath } from "#build/imports";
-
 export const locationStore = defineStore("location", {
   state() {
     return {
@@ -15,7 +14,7 @@ export const locationStore = defineStore("location", {
         location_name_la: "",
         location_name_en: "",
         parent_location_id: null as number | null,
-        location_type: "" as 'BUILDING' | 'FLOOR' | 'ROOM' | 'AREA' | 'WAREHOUSE' | "",
+        location_type: "" ,
         address: "",
         responsible_person: "",
         phone: "",
@@ -28,7 +27,7 @@ export const locationStore = defineStore("location", {
         location_name_la: "",
         location_name_en: "",
         parent_location_id: null as number | null,
-        location_type: "" as 'BUILDING' | 'FLOOR' | 'ROOM' | 'AREA' | 'WAREHOUSE' | "",
+        location_type: "" ,
         address: "",
         responsible_person: "",
         phone: "",

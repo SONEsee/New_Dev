@@ -235,7 +235,7 @@
       <!-- Validation Tables -->
       <v-row>
         <!-- Pending Journals -->
-        <v-col cols="12" lg="6">
+        <v-col cols="12" lg="12">
           <v-card 
             elevation="6" 
             rounded="xl" 
@@ -385,7 +385,7 @@
         </v-col>
 
         <!-- Active Users -->
-        <v-col cols="6">
+        <v-col cols="12">
           <v-card 
             elevation="6" 
             rounded="xl" 

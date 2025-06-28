@@ -75,11 +75,11 @@ const title = "ຈັດການສະຖານທີ່";
 
 const locationTypes = [
   { title: "ທັງໝົດ", value: "all" },
-  { title: "ອາຄານ", value: "BUILDING" },
-  { title: "ຊັ້ນ", value: "FLOOR" },
-  { title: "ຫ້ອງ", value: "ROOM" },
-  { title: "ພື້ນທີ່", value: "AREA" },
-  { title: "ໂກດັງ", value: "WAREHOUSE" },
+  { title: "ອາຄານ", value: "ອາຄານ" },
+  { title: "ຊັ້ນ", value: "ຊັ້ນ" },
+  { title: "ຫ້ອງ", value: "ຫ້ອງ" },
+  { title: "ລານຫຼືສວນ", value: "ສານຫຼືສວນ" },
+  { title: "ໂກດັງ", value: "ສາງເກັບເຄື່ອງ" },
 ];
 
 const headers = computed(() => [
@@ -228,22 +228,22 @@ const filteredData = computed(() => {
 
 const getLocationTypeColor = (type: string) => {
   const colors = {
-    BUILDING: "primary",
-    FLOOR: "info",
-    ROOM: "success",
-    AREA: "warning",
-    WAREHOUSE: "error",
+    ອາຄານ: "primary",
+    ຊັ້ນ: "info",
+    ຫ້ອງ: "success",
+    ລານຫຼືສວນ: "warning",
+    ສາງເກັບເຄື່ອງ: "error",
   };
   return colors[type as keyof typeof colors] || "grey";
 };
 
 const getLocationTypeText = (type: string) => {
   const types = {
-    BUILDING: "ອາຄານ",
-    FLOOR: "ຊັ້ນ",
-    ROOM: "ຫ້ອງ",
-    AREA: "ພື້ນທີ່",
-    WAREHOUSE: "ໂກດັງ",
+    ອາຄານ: "ອາຄານ",
+    ຊັ້ນ: "ຊັ້ນ",
+    ຫ້ອງ: "ຫ້ອງ",
+    ລານຫຼືສວນ: "ລານຫຼືສວນ",
+    ສາງເກັບເຄື່ອງ: "ໂກດັງ",
   };
   return types[type as keyof typeof types] || type;
 };
@@ -289,12 +289,12 @@ const statistics = computed(() => {
   const data = filteredData.value;
   return {
     total: data.length,
-    building: data.filter(item => item.location_type === 'BUILDING').length,
-    floor: data.filter(item => item.location_type === 'FLOOR').length,
-    room: data.filter(item => item.location_type === 'ROOM').length,
-    area: data.filter(item => item.location_type === 'AREA').length,
-    warehouse: data.filter(item => item.location_type === 'WAREHOUSE').length,
-    mainLocations: data.filter(item => !item.parent_location_id).length,
+    building: data.filter(item => item.location_type === 'ອາຄານ').length,
+    floor: data.filter(item => item.location_type === 'ຊັ້ນ').length,
+    room: data.filter(item => item.location_type === 'ຫ້ອງ').length,
+    area: data.filter(item => item.location_type === 'ລານຫຼືສວນ').length,
+    warehouse: data.filter(item => item.location_type === 'ສາງເກັບເຄື່ອງ').length,
+    mainLocations: data.filter(item => !item.location_id).length,
     subLocations: data.filter(item => item.parent_location_id).length,
     
   };

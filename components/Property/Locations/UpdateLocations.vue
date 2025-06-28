@@ -63,25 +63,7 @@ const parentLocations = ref([
     location_code: "HQ-001",
     location_name_la: "ສຳນັກງານໃຫຍ່",
     location_type: "BUILDING",
-  },
-  {
-    id: 2,
-    location_code: "HQ-F01",
-    location_name_la: "ຊັ້ນທີ 1",
-    location_type: "FLOOR",
-  },
-  {
-    id: 4,
-    location_code: "WH-001",
-    location_name_la: "ໂກດັງທີ 1",
-    location_type: "WAREHOUSE",
-  },
-  {
-    id: 5,
-    location_code: "BR-LPB",
-    location_name_la: "ສາຂາຫຼວງພະບາງ",
-    location_type: "BUILDING",
-  },
+  }
 ]);
 
 const goBack = () => {
@@ -232,6 +214,13 @@ onMounted(async () => {
     loading.value = false;
   }
 });
+const locationTypes = ref([
+  { title: "ອາຄານ", value: "ອາຄານ", color: "primary" },
+  { title: "ຊັ້ນ", value: "ຊັ້ນ", color: "info" },
+  { title: "ຫ້ອງ", value: "ຫ້ອງ", color: "success" },
+  { title: "ລານຫຼືສວນ", value: "ສານຫຼືສວນ", color: "warning" },
+  { title: "ສາງເກັບເຄື່ອງ", value: "ສາງເກັບເຄື່ອງ", color: "error" }
+])
 </script>
 
 <template>
@@ -294,7 +283,7 @@ onMounted(async () => {
                 v-model="
                   locationStoreInstance.form_update_location.parent_location_id
                 "
-                :items="filteredParentLocations"
+                :items="parentLocations"
                 item-title="location_name_la"
                 item-value="id"
                 placeholder="ເລືອກສະຖານທີ່ແມ່ (ຖ້າມີ)"
@@ -309,7 +298,7 @@ onMounted(async () => {
                   )
                 "
               >
-                <template #item="{ props, item }">
+                <!-- <template #item="{ props, item }">
                   <v-list-item v-bind="props">
                     <template #prepend>
                       <v-chip
@@ -327,8 +316,25 @@ onMounted(async () => {
                       item.raw.location_type
                     }}</v-list-item-subtitle>
                   </v-list-item>
-                </template>
+                </template> -->
               </v-select>
+               <label>ປະເພດສະຖານທີ່</label>
+              <v-select
+                v-model="locationStoreInstance.form_update_location.location_type"
+                :items="locationTypes"
+                item-title="title"
+                item-value="value"
+                placeholder="ເລືອກປະເພດສະຖານທີ່"
+                density="compact"
+                variant="outlined"
+                hide-details="auto"
+               
+               
+                
+              >
+                
+              </v-select>
+
             </v-col>
 
             <v-col cols="12" md="6">

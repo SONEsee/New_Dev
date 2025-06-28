@@ -5,9 +5,9 @@ import { CallSwal, goPath } from "#build/imports";
 export const accountMethodStore = defineStore("accountMethod", {
   state() {
     return {
-      response_account_method_data: null as AccountsModel.AccountMethod | null,
-      response_account_method_list: null as AccountsModel.AccountMethod[] | null,
-      response_account_method_detail: null as AccountsModel.AccountMethod | null,
+      response_account_method_data: null as AccountsModel.AccoutMethodRespons | null,
+      response_account_method_list: null as AccountsModel.AccoutMethodRespons[] | null,
+      response_account_method_detail: null as AccountsModel.AccoutMethodRespons | null,
       response_accounts: null as any[] | null,
       response_assets: null as any[] | null,
       isLoading: false,
@@ -43,8 +43,8 @@ export const accountMethodStore = defineStore("accountMethod", {
     async GetAccountMethodList() {
       this.isLoading = true;
       try {
-        const res = await axios.get<AccountsModel.AccountMethod[]>(
-          `account-methods`,
+        const res = await axios.get<AccountsModel.AccoutMethodRespons[]>(
+          `/api/asset_account/`,
           {
             headers: {
               "Content-Type": "application/json",
@@ -106,7 +106,7 @@ export const accountMethodStore = defineStore("accountMethod", {
     async GetAccountMethodDetail(id: string) {
       this.isLoading = true;
       try {
-        const res = await axios.get<AccountsModel.AccountMethod>(
+        const res = await axios.get<AccountsModel.AccoutMethodRespons>(
           `account-methods/${id}`,
           {
             headers: {
@@ -129,8 +129,8 @@ export const accountMethodStore = defineStore("accountMethod", {
     async CreateAccountMethod() {
       this.isLoading = true;
       try {
-        const res = await axios.post<AccountsModel.AccountMethod>(
-          `account-methods`,
+        const res = await axios.post<AccountsModel.AccoutMethodRespons>(
+          `/api/asset_account/`,
           this.form_create_account_method,
           {
             headers: {
@@ -172,7 +172,7 @@ export const accountMethodStore = defineStore("accountMethod", {
     async UpdateAccountMethod(id: string) {
       this.isLoading = true;
       try {
-        const res = await axios.put<AccountsModel.AccountMethod>(
+        const res = await axios.put<AccountsModel.AccoutMethodRespons>(
           `account-methods/${id}`,
           this.form_update_account_method,
           {
@@ -369,7 +369,7 @@ export const accountMethodStore = defineStore("accountMethod", {
         }
         acc[method.acc_type].push(method);
         return acc;
-      }, {} as Record<string, AccountsModel.AccountMethod[]>);
+      }, {} as Record<string, AccountsModel.AccoutMethodRespons[]>);
     },
 
    
@@ -377,18 +377,18 @@ export const accountMethodStore = defineStore("accountMethod", {
       if (!state.response_account_method_list) return {};
       
       return state.response_account_method_list.reduce((acc, method) => {
-        if (!acc[method.record_stat]) {
-          acc[method.record_stat] = [];
+        if (!acc[method.Record_Status]) {
+          acc[method.Record_Status] = [];
         }
-        acc[method.record_stat].push(method);
+        acc[method.Record_Status].push(method);
         return acc;
-      }, {} as Record<string, AccountsModel.AccountMethod[]>);
+      }, {} as Record<string, AccountsModel.AccoutMethodRespons[]>);
     },
 
   
     activeAccountMethods: (state) => {
       if (!state.response_account_method_list) return [];
-      return state.response_account_method_list.filter(method => method.record_stat === 'O');
+      return state.response_account_method_list.filter(method => method.Record_Status === 'O');
     },
 
    
