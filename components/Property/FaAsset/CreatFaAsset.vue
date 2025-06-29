@@ -1,7 +1,17 @@
 <script lang="ts" setup>
 import { CallSwal } from "#build/imports";
 import { useRouter } from "vue-router";
-
+const currencyStore = useCerrencyStore();
+const currency = computed(() => {
+  const data = currencyStore.respons_cerrency_data;
+  // ຖ້າເປັນ array ໃຫ້ໃຊ້ຕົວມັນເອງ, ຖ້າເປັນ object ໃຫ້ໃສ່ໃນ array, ຖ້າບໍ່ມີໃຫ້ໃຊ້ array ວ່າງ
+  if (Array.isArray(data)) {
+    return data;
+  } else if (data && typeof data === 'object') {
+    return [data];
+  }
+  return [];
+})
 const noaccStore = useMasterStore();
 const noacc = computed(() => {
   return noaccStore.respone_data_master?.MasterCodes || [];
@@ -33,7 +43,7 @@ const mockData = computed(() => {
 });
 
 const assetcode = computed(() => {
-  return faAssetStoreInstance.response_fa_asset_list;
+  return faAssetStoreInstance.response_fa_asset_list || [];
 });
 
 const locationStoreInstance = locationStore();
@@ -156,6 +166,28 @@ const formattedAssetValueRemainLast = computed(() => {
   );
 });
 
+// ສ້າງຟັງຊັນສຳລັບສ້າງ Reference_No
+const generateReferenceNo = () => {
+  const assetListCode = faAssetStoreInstance.form_create_fa_asset.asset_list_code;
+  
+  if (!assetListCode) {
+    return "";
+  }
+
+  const now = new Date();
+  const day = now.getDate().toString().padStart(2, "0");
+  const month = (now.getMonth() + 1).toString().padStart(2, "0");
+  const year = now.getFullYear();
+  const dateString = `${day}${month}${year}`;
+
+  return `AS-UNC-${dateString}-${assetListCode}`;
+};
+
+// ເພີ່ມ computed property ສຳລັບ Reference_No
+const computedReferenceNo = computed(() => {
+  return generateReferenceNo();
+});
+
 const goBack = () => {
   router.go(-1);
 };
@@ -173,22 +205,25 @@ const submitForm = async () => {
     });
 
     if (notification.isConfirmed) {
+      // ເພີ່ມ Reference_No ເຂົ້າໃນຟອມກ່ອນສົ່ງ
+      faAssetStoreInstance.form_create_fa_asset.Reference_No = computedReferenceNo.value;
       await faAssetStoreInstance.CreateFaAsset();
     }
   }
 };
 
 const generateNextAssetCode = () => {
-  const assetCodes = assetcode.value || [];
-
-  if (assetCodes.length === 0) {
+  const assetCodes = assetcode.value;
+  
+  // ກວດສອບວ່າ assetCodes ມີຄ່າແລະເປັນ array ບໍ່
+  if (!assetCodes || !Array.isArray(assetCodes) || assetCodes.length === 0) {
     return "0001";
   }
 
   let maxNumber = 0;
 
   assetCodes.forEach((asset) => {
-    if (asset.asset_list_code) {
+    if (asset && asset.asset_list_code) {
       const codeNumber = parseInt(asset.asset_list_code);
       if (!isNaN(codeNumber) && codeNumber > maxNumber) {
         maxNumber = codeNumber;
@@ -210,11 +245,16 @@ const generateSerialNumber = () => {
     return "";
   }
 
+  // ກວດສອບວ່າ mockData ມີຄ່າແລະເປັນ array ບໍ່
+  if (!mockData.value || !Array.isArray(mockData.value)) {
+    return "";
+  }
+
   const selectedAsset = mockData.value.find(
-    (asset) => asset.coa_id === selectedAssetTypeId
+    (asset) => asset && asset.coa_id === selectedAssetTypeId
   );
 
-  if (!selectedAsset) {
+  if (!selectedAsset || !selectedAsset.asset_code) {
     return "";
   }
 
@@ -239,11 +279,16 @@ const generateSerialtag = () => {
     return "";
   }
 
+  // ກວດສອບວ່າ mockData ມີຄ່າແລະເປັນ array ບໍ່
+  if (!mockData.value || !Array.isArray(mockData.value)) {
+    return "";
+  }
+
   const selectedAsset = mockData.value.find(
-    (asset) => asset.coa_id === selectedAssetTypeId
+    (asset) => asset && asset.coa_id === selectedAssetTypeId
   );
 
-  if (!selectedAsset) {
+  if (!selectedAsset || !selectedAsset.asset_code) {
     return "";
   }
 
@@ -268,11 +313,16 @@ const generateAssetListId = () => {
     return "";
   }
 
+  // ກວດສອບວ່າ mockData ມີຄ່າແລະເປັນ array ບໍ່
+  if (!mockData.value || !Array.isArray(mockData.value)) {
+    return "";
+  }
+
   const selectedAsset = mockData.value.find(
-    (asset) => asset.coa_id === selectedAssetTypeId
+    (asset) => asset && asset.coa_id === selectedAssetTypeId
   );
 
-  if (!selectedAsset) {
+  if (!selectedAsset || !selectedAsset.asset_code) {
     return "";
   }
 
@@ -314,6 +364,8 @@ watch(
       faAssetStoreInstance.form_create_fa_asset.asset_serial_no =
         generateSerialNumber();
       faAssetStoreInstance.form_create_fa_asset.asset_tag = generateSerialtag();
+      // ອັບເດດ Reference_No ເມື່ອ asset_list_code ປ່ຽນແປງ
+      faAssetStoreInstance.form_create_fa_asset.Reference_No = generateReferenceNo();
     }
   }
 );
@@ -388,7 +440,7 @@ watch(
 watch(
   assetcode,
   (newValue) => {
-    if (newValue && newValue.length >= 0) {
+    if (newValue && Array.isArray(newValue) && newValue.length >= 0) {
       const newCode = generateNextAssetCode();
       faAssetStoreInstance.form_create_fa_asset.asset_list_code = newCode;
 
@@ -402,16 +454,17 @@ watch(
   },
   { immediate: true }
 );
-// ເພີ່ມໃນສ່ວນ watch ທີ່ມີຢູ່ແລ້ວ
-// ເພີ່ມ computed property ເພື່ອສ້າງ MC_detail ແບບອັດຕະໂນມັດ
+
 const computedMCDetail = computed(() => {
   const assetTypeId = faAssetStoreInstance.form_create_fa_asset.asset_type_id;
   const assetListCode = faAssetStoreInstance.form_create_fa_asset.asset_list_code;
   
-  if (!assetTypeId || !assetListCode) return "";
+  if (!assetTypeId || !assetListCode || !mockData.value || !Array.isArray(mockData.value)) {
+    return "";
+  }
   
   const selectedAsset = mockData.value.find(
-    (asset) => asset.coa_id === assetTypeId
+    (asset) => asset && asset.coa_id === assetTypeId
   );
   
   if (selectedAsset?.tangible_detail?.MC_detail) {
@@ -421,44 +474,41 @@ const computedMCDetail = computed(() => {
   return "";
 });
 
-// ປັບປຸງ watcher ສຳລັບ asset_type_id
+
 watch(
   () => faAssetStoreInstance.form_create_fa_asset.asset_type_id,
   (newAssetTypeId) => {
-    if (newAssetTypeId) {
+    if (newAssetTypeId && mockData.value && Array.isArray(mockData.value)) {
       const selectedAsset = mockData.value.find(
-        (asset) => asset.coa_id === newAssetTypeId
+        (asset) => asset && asset.coa_id === newAssetTypeId
       );
       
       if (selectedAsset?.tangible_detail) {
-        // ຕັ້ງຄ່າ MC_name_la (ປະເພດຊັບສົນຄົງທີ່)
         faAssetStoreInstance.form_create_fa_asset.MC_name_la = 
-          selectedAsset.tangible_detail.MC_name_la;
+          selectedAsset.tangible_detail.MC_name_la || "";
         
-        // ອັບເດດ MC_detail ດ້ວຍ asset_list_code ປະຈຸບັນ
         const assetListCode = faAssetStoreInstance.form_create_fa_asset.asset_list_code;
-        if (assetListCode) {
+        if (assetListCode && selectedAsset.tangible_detail.MC_detail) {
           faAssetStoreInstance.form_create_fa_asset.MC_detail = 
             `${selectedAsset.tangible_detail.MC_detail}.${assetListCode}`;
         }
       }
     } else {
-      // ລົບຄ່າເມື່ອບໍ່ໄດ້ເລືອກ
       faAssetStoreInstance.form_create_fa_asset.MC_detail = "";
       faAssetStoreInstance.form_create_fa_asset.MC_name_la = "";
     }
   }
 );
 
-// ເພີ່ມ watcher ສຳລັບ asset_list_code ເພື່ອອັບເດດ MC_detail
+
 watch(
   () => faAssetStoreInstance.form_create_fa_asset.asset_list_code,
   (newAssetListCode) => {
     const assetTypeId = faAssetStoreInstance.form_create_fa_asset.asset_type_id;
     
-    if (assetTypeId && newAssetListCode) {
+    if (assetTypeId && newAssetListCode && mockData.value && Array.isArray(mockData.value)) {
       const selectedAsset = mockData.value.find(
-        (asset) => asset.coa_id === assetTypeId
+        (asset) => asset && asset.coa_id === assetTypeId
       );
       
       if (selectedAsset?.tangible_detail?.MC_detail) {
@@ -466,13 +516,12 @@ watch(
           `${selectedAsset.tangible_detail.MC_detail}.${newAssetListCode}`;
       }
     } else if (!newAssetListCode) {
-      // ຖ້າບໍ່ມີ asset_list_code ໃຫ້ເຄຍ MC_detail
       faAssetStoreInstance.form_create_fa_asset.MC_detail = "";
     }
   }
 );
 
-// ຫຼື ໃຊ້ computed property ສຳລັບການສະແດງຜົນ
+
 const formattedMCDetail = computed({
   get: () => {
     return computedMCDetail.value;
@@ -541,7 +590,7 @@ const rules = {
 onMounted(async () => {
   try {
     loading.value = true;
-
+currencyStore.getDataCerrency();
     await Promise.all([
       assetStoreInstance.GetAssetList(),
       faAssetStoreInstance.GetFaAssetList(),
@@ -602,19 +651,21 @@ onMounted(async () => {
                         >ລາຍການປະເພດຊັບສົມບັດຍອ່ຍ
                         <span class="text-error">*</span></label
                       >
+                  <pre>{{ mockData }}</pre>    
                       <v-select
                         v-model="
                           faAssetStoreInstance.form_create_fa_asset
                             .asset_type_id
                         "
                         :rules="[rules.requiredSelect]"
-                        :items="mockData"
+                        :items="mockData || []"
                         item-title="asset_name_la"
                         item-value="coa_id"
                         placeholder="ເລືອກຊັບສົມບັດ"
                         density="compact"
                         variant="outlined"
                         hide-details="auto"
+                        :disabled="!mockData || !mockData.length"
                       >
                         <template v-slot:selection="{ item }">
                           {{ item.raw.asset_name_la }} ({{
@@ -692,6 +743,20 @@ onMounted(async () => {
                         prepend-inner-icon="mdi-auto-fix"
                         placeholder="ເຊັ່ນ: FIX-001-202506-0002"
                       ></v-text-field>
+                      
+                      
+                      <!-- <label>ເລກອ້າງອີງ (Reference No) <span class="text-error">*</span></label>
+                      <v-text-field
+                        :value="computedReferenceNo"
+                        density="compact"
+                        variant="outlined"
+                        hide-details="auto"
+                        hint="ສ້າງອັດຕະໂນມັດ: AS-UNC-ວັນເດືອນປີ-AssetCode"
+                        readonly
+                        prepend-inner-icon="mdi-auto-fix"
+                        placeholder="ເຊັ່ນ: AS-UNC-28062025-0001"
+                      ></v-text-field> -->
+                      
                       <label>ເລກຊີຣີ (Serial Number)</label>
                       <v-text-field
                         v-model="
@@ -714,7 +779,7 @@ onMounted(async () => {
                           faAssetStoreInstance.form_create_fa_asset
                             .asset_location_id
                         "
-                        :items="location"
+                        :items="location || []"
                         item-title="location_name_la"
                         item-value="location_id"
                         placeholder="ເລືອກສະຖານທີ່ຕັ້ງຊັບສົມບັດ"
@@ -722,7 +787,7 @@ onMounted(async () => {
                         variant="outlined"
                         hide-details="auto"
                         clearable
-                        :disabled="!location.length"
+                        :disabled="!location || !location.length"
                       >
                         <template v-slot:selection="{ item }">
                           {{ item.raw.location_name_la }} ({{
@@ -754,7 +819,7 @@ onMounted(async () => {
                         maxlength="500"
                         counter
                       ></v-textarea>
-                      <label>ປະເພດຊັບສົນຄົງທີ່</label>
+                      <label>ປະເພດຊັບສິນນຄົງທີ່</label>
                       <v-text-field
                         v-model="
                           faAssetStoreInstance.form_create_fa_asset.MC_name_la"
@@ -804,14 +869,29 @@ onMounted(async () => {
                     <v-col cols="12" md="3">
                       <label>ສະກຸນເງິນ</label>
                       <v-autocomplete
-                        item-title="title"
-                        item-value="value"
+                        v-model="
+                          faAssetStoreInstance.form_create_fa_asset.currency_type
+                        "
+                        :items="currency"
+                        item-title="Ccy_Name_la"
+                        item-value="ccy_code"
                         placeholder="ເລືອກສະກຸນເງິນ"
                         density="compact"
                         variant="outlined"
                         hide-details="auto"
-                        :items="currencyOptions"
-                      ></v-autocomplete>
+                        :disabled="!currency || currency.length === 0"
+                      >
+                        <template v-slot:selection="{ item }">
+                          {{ item.raw.Ccy_Name_la }} ({{ item.raw.ccy_code }})
+                        </template>
+
+                        <template v-slot:item="{ props, item }">
+                          <v-list-item
+                            v-bind="props"
+                            :title="`${item.raw.Ccy_Name_la} (${item.raw.ccy_code})`"
+                          />
+                        </template>
+                      </v-autocomplete>
                     </v-col>
                     <v-col cols="12" md="3">
                       <label
@@ -834,7 +914,7 @@ onMounted(async () => {
                         v-model="
                           faAssetStoreInstance.form_create_fa_asset.supplier_id
                         "
-                        :items="supplier"
+                        :items="supplier || []"
                         item-title="supplier_name"
                         item-value="supplier_id"
                         placeholder="ເລືອກຜູ້ສະໜອງ"
@@ -842,7 +922,7 @@ onMounted(async () => {
                         variant="outlined"
                         hide-details="auto"
                         clearable
-                        :disabled="!supplier.length"
+                        :disabled="!supplier || !supplier.length"
                       >
                         <template v-slot:selection="{ item }">
                           {{ item.raw.supplier_name }}({{
@@ -892,7 +972,7 @@ onMounted(async () => {
                         variant="outlined"
                         hide-details="auto"
                         hint="SL=ເສັ້ນກົງ, DB=ລົດລົງ, UOP=ຫົວໜ່ວຍຜະລິດ"
-                        :items="doca_type"
+                        :items="doca_type || []"
                         item-title="title"
                         item-value="value"
                       ></v-autocomplete>
@@ -948,13 +1028,14 @@ onMounted(async () => {
                         v-model="
                           faAssetStoreInstance.form_create_fa_asset.type_of_pay
                         "
-                        :items="noacc"
+                        :items="noacc || []"
                         item-value="MC_detail"
                         item-title="MC_name_la"
                         density="compact"
                         variant="outlined"
                         hide-details="auto"
                         placeholder="ເລືອກປະເພດການຊຳລະ"
+                        :disabled="!noacc || !noacc.length"
                       >
                         <template v-slot:selection="{ item }">
                           {{ item.raw.MC_name_la }}
@@ -1065,13 +1146,14 @@ onMounted(async () => {
                         v-model="
                           faAssetStoreInstance.form_create_fa_asset.acc_no
                         "
-                        :items="subgl"
+                        :items="subgl || []"
                         density="compact"
                         variant="outlined"
                         item-title="glsub_code"
                         item-value="glsub_code"
                         hide-details="auto"
                         placeholder="ເລືອກເລກບັນຊີ"
+                        :disabled="!subgl || !subgl.length"
                       >
                       </v-autocomplete>
                       <label>ມູນຄ່າຊາກ</label>

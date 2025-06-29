@@ -50,8 +50,36 @@ export const faAssetStore = defineStore("faAsset", {
         asset_status: "UC" as "UC" | "AC" | "IA" | "MT" | "DS" | "DM",
         has_depreciation: "Y" as "Y" | "N",
       },
+     creat_form_jornal: {
+  Reference_No: "",
+  Ccy_cd: "",
+  Txn_code: "UNC",
+  Value_date: null as Date | null,
+  Addl_text: "",
+  fin_cycle: "",
+  module_id: "AS",
+  Period_code: "",
+  entries: [
+    {
+      Account: null as number | null, 
+      Account_no: "",
+      Amount: null as number | null, 
+      Dr_cr: "D" ,
+      Addl_sub_text: "",
+      Ac_relatives: "",
+    },
+    {
+      Account: null as number | null,
+      Account_no: "",
+      Amount: null as number | null,
+      Dr_cr: "C",
+      Addl_sub_text: "",
+      Ac_relatives: "",
+    }
+  ]
+},
+
       form_update_fa_asset: {
-        
         asset_type_id: null as number | null,
         asset_serial_no: "",
         asset_list_code: "",
@@ -61,7 +89,7 @@ export const faAssetStore = defineStore("faAsset", {
         type_of_pay: "",
         acc_no: "",
         asset_tag: "",
-         MC_detail: "",
+        MC_detail: "",
         MC_name_la: "",
         asset_location_id: null as number | null,
         asset_spec: "",
@@ -90,7 +118,112 @@ export const faAssetStore = defineStore("faAsset", {
       },
     };
   },
+  
   actions: {
+    async CreateJournal() {
+  this.isLoading = true;
+  try {
+    const formData = {
+      ...this.creat_form_jornal,
+      Value_date: this.creat_form_jornal.Value_date
+        ? new Date(this.creat_form_jornal.Value_date).toISOString()
+        : null,
+      entries: this.creat_form_jornal.entries.map(entry => ({
+        ...entry,
+        Account: entry.Account || null,
+        Amount: entry.Amount || 0,
+      }))
+    };
+
+    console.log("Sending journal data:", formData);
+
+    const res = await axios.post(
+      `/api/journal-entries/batch_create/`, 
+      formData,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
+
+    if (res.status === 200 || res.status === 201) {
+      CallSwal({
+        title: "ສຳເລັດ",
+        text: "ສຳເລັດການສ້າງ Journal Entry",
+        icon: "success",
+        showCancelButton: false,
+        showConfirmButton: false,
+      });
+      
+     
+      this.resetJournalForm();
+    }
+  } catch (error: any) {
+    console.error("Error creating journal:", error);
+    CallSwal({
+      title: "ຜິດພາດ",
+      text: error.response?.data?.message || "ມີຂໍ້ຜິດພາດໃນການສ້າງ Journal",
+      icon: "error",
+      showCancelButton: false,
+      confirmButtonText: "ຕົກລົງ",
+    });
+  } finally {
+    this.isLoading = false;
+  }
+},
+
+
+resetJournalForm() {
+  this.creat_form_jornal = {
+    Reference_No: "",
+    Ccy_cd: "",
+    Txn_code: "UNC",
+    Value_date: null,
+    Addl_text: "",
+    fin_cycle: "",
+    module_id: "AS",
+    Period_code: "",
+    entries: [
+      {
+        Account: null,
+        Account_no: "",
+        Amount: null,
+        Dr_cr: "D",
+        Addl_sub_text: "",
+        Ac_relatives: "",
+      },
+      {
+        Account: null,
+        Account_no: "",
+        Amount: null,
+        Dr_cr: "C",
+        Addl_sub_text: "",
+        Ac_relatives: "",
+      }
+    ]
+  };
+},
+
+
+addJournalEntry() {
+  this.creat_form_jornal.entries.push({
+    Account: null,
+    Account_no: "",
+    Amount: null,
+    Dr_cr: "D",
+    Addl_sub_text: "",
+    Ac_relatives: "",
+  });
+},
+
+
+removeJournalEntry(index: number) {
+  if (this.creat_form_jornal.entries.length > 2) {
+    this.creat_form_jornal.entries.splice(index, 1);
+  }
+},
     async GetFaAssetList() {
       this.isLoading = true;
       try {

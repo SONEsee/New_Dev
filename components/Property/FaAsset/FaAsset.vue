@@ -375,6 +375,7 @@ const formatNumber = (value) => {
   <GlobalTextTitleLine :title="title" />
 
   <v-col cols="12">
+   
     <v-row>
       <v-col cols="12" md="3">
         <div class="d-flex">

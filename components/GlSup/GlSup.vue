@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import Swal from "sweetalert2";
-
+import axios from "@/helpers/axios";
 const roleStore = RoleStore();
 
 const router = useRoute();
@@ -24,7 +24,108 @@ const categoryOptions = [
   { title: "7 = ບັນຊີເງົາ", value: "7" },
   { title: "8 = ບັນຊີນອກພັງ", value: "8" },
 ];
+const isUpdatingStatus = ref(false);
+const updateAdproveStatus = async (id: string) => {
+  try {
+    isUpdatingStatus.value = true;
+    const notification = await CallSwal({
+      icon: "warning",
+      title: "ຄຳເຕືອນ",
+      text: `ທ່ານກຳລັງອະນຸມັດຜູ້ໃຊ້ງານ ທ່ານແນ່ໃຈແລ້ວບໍ?`,
+      showCancelButton: true,
+      confirmButtonText: "ຕົກລົງ",
+      cancelButtonText: "ຍົກເລີກ",
+    });
+    
+    if (notification.isConfirmed) {
+      const res = await axios.post(
+        `api/gl-sub/${id}/authorize/`,
+        {},
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
 
+      if (res.status === 200) {
+        await glStore.getGlsup();
+        await CallSwal({
+          icon: "success",
+          title: "ສຳເລັດ",
+          text: "ອະນຸມັດຜູ້ໃຊ້ງານແລ້ວ",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+      }
+      if (res.status === 406) {
+        await CallSwal({
+          icon: "warning",
+          title: "ບໍ່ສາມາດອະນຸມັດໄດ້",
+          text: "ບໍ່ສາມາດເປີດໄດ້ ເນື່ອງຈາກ ຍັງບໍ່ທັນອະນຸມັດ",
+        });
+      }
+    }
+  } catch (error) {
+    console.error("Error updating approve status:", error);
+    await CallSwal({
+      icon: "error",
+      title: "ເກີດຂໍ້ຜິດພາດ",
+      text: "ບໍ່ສາມາດອະນຸມັດຜູ້ໃຊ້ງານໄດ້",
+    });
+  } finally {
+    isUpdatingStatus.value = false;
+  }
+};
+
+
+const unupdateAdproveStatus = async (id: string) => {
+  try {
+    isUpdatingStatus.value = true;
+    const notification = await CallSwal({
+      icon: "warning",
+      title: "ຄຳເຕືອນ",
+      text: `ທ່ານກຳລັງຍົກເລີກອະນຸມັດຜູ້ໃຊ້ງານ ທ່ານແນ່ໃຈແລ້ວບໍ?`,
+      showCancelButton: true,
+      confirmButtonText: "ຕົກລົງ",
+      cancelButtonText: "ຍົກເລີກ",
+    });
+    
+    if (notification.isConfirmed) {
+      const res = await axios.post(
+        `api/gl-sub/${id}/unauthorize/`,
+        {},
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      if (res.status === 200) {
+        await glStore.getGl();
+        await CallSwal({
+          icon: "success",
+          title: "ສຳເລັດ",
+          text: "ຍົກເລີກອະນຸມັດຜູ້ໃຊ້ງານແລ້ວ",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+      }
+    }
+  } catch (error) {
+    console.error("Error updating approve status:", error);
+    await CallSwal({
+      icon: "error",
+      title: "ເກີດຂໍ້ຜິດພາດ",
+      text: "ບໍ່ສາມາດຍົກເລີກອະນຸມັດຜູ້ໃຊ້ງານໄດ້",
+    });
+  } finally {
+    isUpdatingStatus.value = false;
+  }
+};
 const datares = computed((): any[] => {
   return (glStore.tree_gl_sup_response as any) || [];
 });
@@ -455,7 +556,7 @@ const user = localStorage.getItem("user");
           <div v-else-if="item.status === 'U'" class="d-flex gap-1">
             <v-btn
               v-if="(role as any)?.[0]?.Auth_Detail === 1"
-              @click="goPath(`#`)"
+              @click="updateAdproveStatus(item.rawData.glsub_id || item.rawData.id)"
               title="ອະນຸມັດ"
               flat
               class="text-success"
