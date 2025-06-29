@@ -407,9 +407,9 @@ removeJournalEntry(index: number) {
             showCancelButton: false,
             showConfirmButton: false,
           });
-          setTimeout(() => {
-            goPath("/property/faasset");
-          }, 1500);
+          // setTimeout(() => {
+          //   goPath("/property/faasset");
+          // }, 1500);
         }
       } catch (error: any) {
         console.error("Error creating fa asset:", error);
@@ -637,5 +637,7 @@ removeJournalEntry(index: number) {
         this.isLoading = false;
       }
     },
+
+    
   },
 });

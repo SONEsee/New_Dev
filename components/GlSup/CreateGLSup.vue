@@ -8,7 +8,7 @@ const router = useRouter();
 const route = useRoute();
 const glStore = useGlStore();
 
-const id = route.query.id as string;
+const id = route.query.data_id as string;
 const glsub_id = route.query.glsub_id as string;
 
 

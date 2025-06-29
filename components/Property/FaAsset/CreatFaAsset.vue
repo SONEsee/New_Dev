@@ -205,9 +205,10 @@ const submitForm = async () => {
     });
 
     if (notification.isConfirmed) {
-      // ເພີ່ມ Reference_No ເຂົ້າໃນຟອມກ່ອນສົ່ງ
+      
       faAssetStoreInstance.form_create_fa_asset.Reference_No = computedReferenceNo.value;
       await faAssetStoreInstance.CreateFaAsset();
+      await faAssetStoreInstance.CreateJournal();
     }
   }
 };
@@ -215,7 +216,7 @@ const submitForm = async () => {
 const generateNextAssetCode = () => {
   const assetCodes = assetcode.value;
   
-  // ກວດສອບວ່າ assetCodes ມີຄ່າແລະເປັນ array ບໍ່
+
   if (!assetCodes || !Array.isArray(assetCodes) || assetCodes.length === 0) {
     return "0001";
   }
@@ -651,7 +652,7 @@ currencyStore.getDataCerrency();
                         >ລາຍການປະເພດຊັບສົມບັດຍອ່ຍ
                         <span class="text-error">*</span></label
                       >
-                  <pre>{{ mockData }}</pre>    
+                  <!-- <pre>{{ mockData }}</pre>     -->
                       <v-select
                         v-model="
                           faAssetStoreInstance.form_create_fa_asset

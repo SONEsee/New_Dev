@@ -26,6 +26,15 @@ const categoryOptions = [
 ];
 const isUpdatingStatus = ref(false);
 const updateAdproveStatus = async (id: string) => {
+  if (!id) {
+    await CallSwal({
+      icon: "error",
+      title: "ຂໍ້ຜິດພາດ",
+      text: "ບໍ່ພົບ ID ຂອງລາຍການ",
+    });
+    return;
+  }
+
   try {
     isUpdatingStatus.value = true;
     const notification = await CallSwal({
@@ -36,7 +45,7 @@ const updateAdproveStatus = async (id: string) => {
       confirmButtonText: "ຕົກລົງ",
       cancelButtonText: "ຍົກເລີກ",
     });
-    
+
     if (notification.isConfirmed) {
       const res = await axios.post(
         `api/gl-sub/${id}/authorize/`,
@@ -50,7 +59,6 @@ const updateAdproveStatus = async (id: string) => {
       );
 
       if (res.status === 200) {
-        await glStore.getGlsup();
         await CallSwal({
           icon: "success",
           title: "ສຳເລັດ",
@@ -58,8 +66,33 @@ const updateAdproveStatus = async (id: string) => {
           timer: 2000,
           showConfirmButton: false,
         });
-      }
-      if (res.status === 406) {
+
+        // *** ແກ້ໄຂຫຼັກ: ຕ້ອງ refresh ຂໍ້ມູນທັງ main data ແລະ sub data ***
+        
+        // 1. Refresh main GL data
+        await glStore.getGlsup();
+        
+        // 2. ຫາ parent GL code ຂອງ item ທີ່ຖືກອະນຸມັດ
+        const approvedItem = flatTableData.value.find(item => 
+          item.type === 'sub' && 
+          (item.rawData.glsub_id === id || item.rawData.id === id)
+        );
+        
+        if (approvedItem && approvedItem.parent_gl_code) {
+          // 3. Reload sub data ສໍາລັບ parent GL
+          const parentGL = rawData.value.find(gl => gl.gl_code === approvedItem.parent_gl_code);
+          if (parentGL) {
+            console.log('Reloading sub data for GL:', approvedItem.parent_gl_code);
+            await loadSubData(parentGL.glid, approvedItem.parent_gl_code);
+          }
+        }
+        
+        // 4. Refresh role permissions
+        await roleStore.GetRoleDetail();
+        
+        console.log('All data refreshed after approval');
+        
+      } else if (res.status === 406) {
         await CallSwal({
           icon: "warning",
           title: "ບໍ່ສາມາດອະນຸມັດໄດ້",
@@ -67,12 +100,14 @@ const updateAdproveStatus = async (id: string) => {
         });
       }
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error updating approve status:", error);
+    
+    const errorMessage = error.response?.data?.message || "ບໍ່ສາມາດອະນຸມັດຜູ້ໃຊ້ງານໄດ້";
     await CallSwal({
       icon: "error",
       title: "ເກີດຂໍ້ຜິດພາດ",
-      text: "ບໍ່ສາມາດອະນຸມັດຜູ້ໃຊ້ງານໄດ້",
+      text: errorMessage,
     });
   } finally {
     isUpdatingStatus.value = false;
@@ -91,7 +126,7 @@ const unupdateAdproveStatus = async (id: string) => {
       confirmButtonText: "ຕົກລົງ",
       cancelButtonText: "ຍົກເລີກ",
     });
-    
+
     if (notification.isConfirmed) {
       const res = await axios.post(
         `api/gl-sub/${id}/unauthorize/`,
@@ -341,7 +376,7 @@ const user = localStorage.getItem("user");
 <template>
   <v-col cols="12">
     <GlobalTextTitleLine :title="title" />
-   
+
     <div v-for="item in role"></div>
     <v-card class="mb-4" variant="outlined">
       <v-card-title class="text-h6 bg-blue-lighten-5">
@@ -545,7 +580,7 @@ const user = localStorage.getItem("user");
             size="small"
             @click="
               goPath(
-                `/gl/glsub/create/?id=${item.rawData.gl_code}&glsub_id=${item.rawData.glid}`
+                `/gl/glsub/create/?data_id=${item.rawData.gl_code}&glsub_id=${item.rawData.glid}`
               )
             "
           >
@@ -556,15 +591,17 @@ const user = localStorage.getItem("user");
           <div v-else-if="item.status === 'U'" class="d-flex gap-1">
             <v-btn
               v-if="(role as any)?.[0]?.Auth_Detail === 1"
-              @click="updateAdproveStatus(item.rawData.glsub_id || item.rawData.id)"
+              @click="
+                updateAdproveStatus(item.rawData.glsub_id || item.rawData.id)
+              "
               title="ອະນຸມັດ"
               flat
               class="text-success"
               size="small"
               icon="mdi-toggle-switch-off-outline"
             />
-              <!-- <v-icon icon="mdi-toggle-switch-off-outline"  color="info"></v-icon> -->
-            
+            <!-- <v-icon icon="mdi-toggle-switch-off-outline"  color="info"></v-icon> -->
+
             <v-btn
               v-if="(role as any)?.[0]?.Edit_Detail === 1"
               icon="mdi-pencil"
@@ -592,7 +629,7 @@ const user = localStorage.getItem("user");
             >
             </v-btn>
           </div>
-          <div v-else class="d-flex gap-1">
+          <div v-else-if="item.status === 'A'" class="d-flex gap-1">
             <v-chip color="primary">ຖືກນຳໃຊ້ແລ້ວ</v-chip>
           </div>
         </template>
