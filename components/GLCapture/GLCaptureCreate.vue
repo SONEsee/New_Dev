@@ -20,16 +20,28 @@
             </h3>
             <v-row dense>
               <v-col cols="12" md="2">
-                <v-text-field v-model="journalData.Reference_No" label="ເລກອ້າງອີງ *" :rules="referenceRules"
-                  :disabled="autoReferenceMode" variant="outlined" density="comfortable" counter="30"
-                  prepend-inner-icon="mdi-identifier" hide-details="auto"
-                  :placeholder="referencePlaceholder"></v-text-field>
+                <v-text-field v-model="journalData.Value_date" label="ວັນທີ *" type="date" variant="outlined"
+                  density="comfortable" @change="updateReferenceNumber" prepend-inner-icon="mdi-calendar"
+                  hide-details="auto"/>
               </v-col>
+
               <v-col cols="12" md="2">
                 <v-select v-model="journalData.module_id" :items="modules" item-title="module_name_la"
                   item-value="module_Id" label="ໂມດູນ *" :rules="requiredRules" variant="outlined" density="comfortable"
                   :loading="loading.modules" @update:model-value="onModuleChange" prepend-inner-icon="mdi-cube-outline"
                   hide-details="auto" no-data-text="ບໍ່ມີຂໍ້ມູນໂມດູນ" class="module-field">
+                  <template #item="{ props, item }">
+                    <v-list-item v-bind="props"></v-list-item>
+                  </template>
+                </v-select>
+              </v-col>
+
+              <v-col cols="12" md="2">
+                <v-select v-model="journalData.Txn_code" :items="transactionCodes" item-title="txn_display"
+                  item-value="trn_code" label="ລະຫັດການເຄື່ອນໄຫວ *" :rules="requiredRules" variant="outlined"
+                  density="comfortable" :loading="loading.transactionCodes"
+                  @update:model-value="onTransactionCodeChange" prepend-inner-icon="mdi-code-tags" hide-details="auto"
+                  no-data-text="ບໍ່ມີຂໍ້ມູນລະຫັດການເຄື່ອນໄຫວ">
                   <template #item="{ props, item }">
                     <v-list-item v-bind="props"></v-list-item>
                   </template>
@@ -47,47 +59,24 @@
                 </v-select>
               </v-col>
               <v-col cols="12" md="2">
-                <v-select v-model="journalData.Txn_code" :items="transactionCodes" item-title="txn_display"
-                  item-value="trn_code" label="ລະຫັດການເຄື່ອນໄຫວ *" :rules="requiredRules" variant="outlined"
-                  density="comfortable" :loading="loading.transactionCodes"
-                  @update:model-value="onTransactionCodeChange" prepend-inner-icon="mdi-code-tags" hide-details="auto"
-                  no-data-text="ບໍ່ມີຂໍ້ມູນລະຫັດການເຄື່ອນໄຫວ">
-                  <template #item="{ props, item }">
-                    <v-list-item v-bind="props"></v-list-item>
-                  </template>
-                </v-select>
+                <v-text-field v-model="journalData.Reference_No" label="ເລກອ້າງອີງ *" :rules="referenceRules"
+                  :disabled="autoReferenceMode" variant="outlined" density="comfortable" counter="30"
+                  prepend-inner-icon="mdi-identifier" hide-details="auto"
+                  :placeholder="referencePlaceholder"></v-text-field>
               </v-col>
-              <v-col cols="12" md="2">
-                <v-text-field v-model="journalData.Value_date" label="ວັນທີ *" type="date" variant="outlined"
-                  density="comfortable" @change="updateReferenceNumber" prepend-inner-icon="mdi-calendar"
-                  hide-details="auto"/>
-              </v-col>
-              <v-col cols="12" md="2">
+              <!-- <v-col cols="12" md="2">
                 <v-btn color="success" variant="outlined" size="default" @click="generateReference"
                   :disabled="!journalData.Txn_code || !journalData.module_id || loading.generateRef"
                   :loading="loading.generateRef" class="generate-btn" block>
                   <v-icon left>mdi-auto-fix</v-icon>
                   ສ້າງອ້າງອີງ
                 </v-btn>
-              </v-col>
+              </v-col> -->
             </v-row>
 
             <!-- Enhanced Description Fields Row -->
             <v-row dense class="mt-2">
-              <v-col cols="12" md="4">
-                <v-text-field
-                    v-model="journalData.Addl_text"
-                    label="ຂໍ້ຄວາມເພີ່ມເຕີມ (ຫຼັກ)"
-                    variant="outlined"
-                    density="comfortable"
-                    counter="255"
-                    :rules="addlTextRules"
-                    prepend-inner-icon="mdi-text"
-                    hide-details="auto"
-                    placeholder="ໃສ່ຂໍ້ຄວາມເພີ່ມເຕີມຫຼັກ..."
-                    @input="onMainDescriptionChange"
-                  />
-              </v-col>
+
               <v-col cols="12" md="4">
                 <v-select 
                   v-model="journalData.fin_cycle" 
@@ -144,6 +133,20 @@
                     <v-list-item v-bind="props"></v-list-item>
                   </template>
                 </v-select>
+              </v-col>
+              <v-col cols="12" md="4">
+                <v-text-field
+                    v-model="journalData.Addl_text"
+                    label="ຂໍ້ຄວາມເພີ່ມເຕີມ (ຫຼັກ)"
+                    variant="outlined"
+                    density="comfortable"
+                    counter="255"
+                    :rules="addlTextRules"
+                    prepend-inner-icon="mdi-text"
+                    hide-details="auto"
+                    placeholder="ໃສ່ຂໍ້ຄວາມເພີ່ມເຕີມຫຼັກ..."
+                    @input="onMainDescriptionChange"
+                  />
               </v-col>
             </v-row>
           </div>
@@ -452,6 +455,11 @@
             <v-btn variant="outlined" size="large" @click="resetForm" :disabled="loading.submit" class="reset-btn">
               <v-icon left>mdi-refresh</v-icon>
               ລ້າງຟອມ
+            </v-btn>
+
+            <v-btn variant="outlined" size="large" @click="backpage" :disabled="loading.submit" class="back-btn">
+              <v-icon left>mdi-back</v-icon>
+              ກັບຄືນ
             </v-btn>
           </div>
         </v-form>

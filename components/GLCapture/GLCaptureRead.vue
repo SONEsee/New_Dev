@@ -97,7 +97,7 @@
 
     <!-- Summary Cards - Thinner -->
     <v-row dense class="mb-3">
-      <v-col cols="6" sm="3" md="3">
+      <v-col cols="6" sm="3" md="2">
         <v-card class="summary-card-thin" elevation="1">
           <v-card-text class="pa-2">
             <div class="d-flex align-center">
@@ -110,7 +110,7 @@
           </v-card-text>
         </v-card>
       </v-col>
-      <v-col cols="6" sm="3" md="3">
+      <v-col cols="6" sm="3" md="2">
         <v-card class="summary-card-thin" elevation="1">
           <v-card-text class="pa-2">
             <div class="d-flex align-center">
@@ -123,7 +123,7 @@
           </v-card-text>
         </v-card>
       </v-col>
-      <v-col cols="6" sm="3" md="3">
+      <v-col cols="6" sm="3" md="2">
         <v-card class="summary-card-thin" elevation="1">
           <v-card-text class="pa-2">
             <div class="d-flex align-center">
@@ -136,7 +136,7 @@
           </v-card-text>
         </v-card>
       </v-col>
-      <v-col cols="6" sm="3" md="3">
+      <v-col cols="6" sm="3" md="2">
         <v-card class="summary-card-thin" elevation="1">
           <v-card-text class="pa-2">
             <div class="d-flex align-center">
@@ -144,6 +144,19 @@
               <div>
                 <div class="summary-value-thin">{{ summary.rejected }}</div>
                 <div class="summary-label-thin">ປະຕິເສດ</div>
+              </div>
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+      <v-col cols="6" sm="3" md="2">
+        <v-card class="summary-card-thin" elevation="1">
+          <v-card-text class="pa-2">
+            <div class="d-flex align-center">
+              <v-icon size="20" color="info" class="mr-2">mdi-pencil-circle</v-icon>
+              <div>
+                <div class="summary-value-thin">{{ summary.correction }}</div>
+                <div class="summary-label-thin">ຖ້າເເກ້ໄຂ</div>
               </div>
             </div>
           </v-card-text>
@@ -293,30 +306,6 @@
           </v-btn>
           
           <v-btn
-            v-if="item.Auth_Status === 'U' && canApprove"
-            icon
-            size="x-small"
-            variant="text"
-            color="success"
-            @click="approveItem(item)"
-            title="ອະນຸມັດ"
-          >
-            <v-icon size="14">mdi-check</v-icon>
-          </v-btn>
-          
-          <v-btn
-            v-if="item.Auth_Status === 'U' && canApprove"
-            icon
-            size="x-small"
-            variant="text"
-            color="error"
-            @click="rejectItem(item)"
-            title="ປະຕິເສດ"
-          >
-            <v-icon size="14">mdi-close</v-icon>
-          </v-btn>
-          
-          <v-btn
             v-if="item.delete_stat !== 'Y'"
             icon
             size="x-small"
@@ -330,191 +319,6 @@
         </template>
       </v-data-table>
     </v-card>
-
-<!-- Details Dialog - Thinner and more compact -->
-<v-dialog v-model="detailsDialog" max-width="900px" scrollable>
-  <v-card class="elevation-1 rounded-lg">
-    <!-- Minimal Header -->
-    <v-card-title class="px-4 py-2 bg-primary text-white">
-      <div class="d-flex align-center justify-space-between w-100">
-        <div class="text-h6 font-weight-medium">{{ selectedItem?.Reference_No }}</div>
-        <v-btn 
-          icon="mdi-close" 
-          variant="text" 
-          size="x-small"
-          color="white"
-          @click="detailsDialog = false"
-        ></v-btn>
-      </div>
-    </v-card-title>
-    
-    <v-card-text v-if="selectedItem" class="px-4 py-3">
-      <!-- Compact Main Information -->
-      <div class="mb-4">
-        <div class="section-title-thin mb-2">ຂໍ້ມູນຫຼັກ</div>
-        <div class="info-grid-thin">
-          <div class="info-item-thin">
-            <span class="info-label-thin">ໂມດູນ:</span>
-            <span class="info-value-thin">{{ getModuleName(selectedItem.module_id) }}</span>
-          </div>
-          <div class="info-item-thin">
-            <span class="info-label-thin">ວັນທີ:</span>
-            <span class="info-value-thin">{{ formatDate(selectedItem.Value_date) }}</span>
-          </div>
-          <div class="info-item-thin">
-            <span class="info-label-thin">ສະຖານະ:</span>
-            <v-chip
-              :color="getStatusColor(selectedItem.Auth_Status)"
-              size="x-small"
-              variant="flat"
-              class="ml-1"
-            >
-              {{ getStatusText(selectedItem.Auth_Status) }}
-            </v-chip>
-          </div>
-          <div class="info-item-thin">
-            <span class="info-label-thin">ລະຫັດ:</span>
-            <span class="info-value-thin">{{ selectedItem.Txn_code }}</span>
-          </div>
-        </div>
-      </div>
-
-     <!-- Journal Entries - Thinner table -->
-      <div>
-        <div class="section-title-thin mb-2">
-          ລາຍການບັນທຶກ ({{ journalEntries.length }} ລາຍການ)
-        </div>
-        <div class="journal-table-container-thin">
-          <table class="journal-table-ultra-thin">
-            <thead>
-              <tr>
-                <th width="120">ບັນຊີ</th>
-                <th width="120">ເລກອ້າງອີງຄູ່</th>
-                <th width="120">ຊື່ບັນຊີ</th>
-                <th width="80" class="text-right">Debit (FCY)</th>
-                <th width="80" class="text-right">Credit (FCY)</th>
-                <th width="80" class="text-right">Debit (LCY)</th>
-                <th width="80" class="text-right">Credit (LCY)</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(entry, index) in journalEntries" :key="entry.JRNLLog_id">
-                
-                <td class="font-weight-medium text-compact">{{ entry.account_code }}</td>
-                <td class="font-weight-medium text-compact">{{ entry.Reference_sub_No }}</td>
-                <td class="text-truncate text-compact" style="max-width: 180px;">
-                  <span :title="entry.account_name">{{ entry.account_name }}</span>
-                  <div v-if="entry.Addl_sub_text" class="text-xs text-grey">
-                    {{ entry.Addl_sub_text }}
-                  </div>
-                </td>
-                <td class="text-right text-compact">
-                  <span v-if="parseFloat(entry.fcy_dr) > 0" class="font-weight-medium">
-                    {{ formatNumber(entry.fcy_dr) }}
-                  </span>
-                  <span v-else class="text-grey">-</span>
-                </td>
-                <td class="text-right text-compact">
-                  <span v-if="parseFloat(entry.fcy_cr) > 0" class="font-weight-medium">
-                    {{ formatNumber(entry.fcy_cr) }}
-                  </span>
-                  <span v-else class="text-grey">-</span>
-                </td>
-                <td class="text-right text-compact">
-                  <span v-if="parseFloat(entry.lcy_dr) > 0" class="font-weight-medium text-blue">
-                    {{ formatNumber(entry.lcy_dr) }}
-                  </span>
-                  <span v-else class="text-grey">-</span>
-                </td>
-                <td class="text-right text-compact">
-                  <span v-if="parseFloat(entry.lcy_cr) > 0" class="font-weight-medium text-blue">
-                    {{ formatNumber(entry.lcy_cr) }}
-                  </span>
-                  <span v-else class="text-grey">-</span>
-                </td>
-              </tr>
-            </tbody>
-            <tfoot>
-              <tr class="totals-row-thin">
-                <td colspan="3" class="text-right font-weight-bold text-compact">ລວມ:</td>
-                <td class="text-right font-weight-bold text-compact">{{ formatNumber(totalFcyDebit) }}</td>
-                <td class="text-right font-weight-bold text-compact">{{ formatNumber(totalFcyCredit) }}</td>
-                <td class="text-right font-weight-bold text-blue text-compact">{{ formatNumber(totalLcyDebit) }}</td>
-                <td class="text-right font-weight-bold text-blue text-compact">{{ formatNumber(totalLcyCredit) }}</td>
-              </tr>
-              <tr>
-                <td colspan="6" class="text-center py-1">
-                  <v-chip 
-                    size="x-small" 
-                    :color="isBalanced ? 'success' : 'error'"
-                    variant="flat"
-                  >
-                    <v-icon size="12" class="mr-1">{{ isBalanced ? 'mdi-check' : 'mdi-alert' }}</v-icon>
-                    {{ isBalanced ? 'ສົມດຸນ' : 'ບໍ່ສົມດຸນ' }}
-                  </v-chip>
-                </td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-      </div>
-
-      <!-- Compact Financial Information -->
-      <div class="mb-4">
-        <div class="section-title-thin mb-2">ຂໍ້ມູນການເງິນ</div>
-        <div class="amount-summary-thin">
-          <div class="amount-item-thin">
-            <div class="amount-label-thin">FCY Amount</div>
-            <div class="amount-value-thin">{{ formatNumber(selectedItem.Fcy_Amount) }} {{ selectedItem.Ccy_cd }}</div>
-          </div>
-          <div class="amount-item-thin">
-            <div class="amount-label-thin">LCY Amount</div>
-            <div class="amount-value-thin">{{ formatNumber(selectedItem.Lcy_Amount) }} LAK</div>
-          </div>
-          <div class="amount-item-thin">
-            <div class="amount-label-thin">Rate</div>
-            <div class="amount-value-thin">{{ formatNumber(selectedItem.Exch_rate, 6) }}</div>
-          </div>
-        </div>
-      </div>
-    </v-card-text>
-    
-    <!-- Minimal Actions -->
-    <v-divider></v-divider>
-    <v-card-actions class="px-4 py-2">
-      <v-spacer></v-spacer>
-      <v-btn
-        v-if="selectedItem?.Auth_Status === 'U' && canApprove"
-        color="success"
-        variant="flat"
-        size="x-small"
-        @click="approveItem(selectedItem)"
-      >
-        <v-icon start size="12">mdi-check</v-icon>
-        ອະນຸມັດ
-      </v-btn>
-      <v-btn
-        v-if="selectedItem?.Auth_Status === 'U' && canApprove"
-        color="error"
-        variant="flat"
-        size="x-small"
-        class="ml-2"
-        @click="rejectItem(selectedItem)"
-      >
-        <v-icon start size="12">mdi-close</v-icon>
-        ປະຕິເສດ
-      </v-btn>
-      <v-btn
-        variant="outlined"
-        size="x-small"
-        class="ml-2"
-        @click="detailsDialog = false"
-      >
-        ປິດ
-      </v-btn>
-    </v-card-actions>
-  </v-card>
-</v-dialog>
 
   </div>
 </template>
@@ -530,9 +334,6 @@ const loading = ref(false)
 const items = ref([])
 const modules = ref([])
 const currencies = ref([])
-const detailsDialog = ref(false)
-const selectedItem = ref(null)
-const journalEntries = ref([])
 
 // Filters
 const filters = reactive({
@@ -549,14 +350,16 @@ const summary = reactive({
   total: 0,
   pending: 0,
   approved: 0,
-  rejected: 0
+  rejected: 0,
+  correction: 0
 })
 
 // Auth status options
 const authStatusOptions = [
   { value: 'U', text: 'ລໍຖ້າອະນຸມັດ' },
   { value: 'A', text: 'ອະນຸມັດແລ້ວ' },
-  { value: 'R', text: 'ປະຕິເສດ' }
+  { value: 'R', text: 'ປະຕິເສດ' },
+  { value: 'P', text: 'ຖ້າເເກ້ໄຂ' }
 ]
 
 // Table headers
@@ -581,93 +384,19 @@ const getAuthHeaders = () => ({
   }
 })
 
+// API base URL
+const API_BASE_URL = 'http://127.0.0.1:8000'
+
 // Computed
 const canApprove = computed(() => {
   // Check user permissions - implement based on your auth system
   return true // Placeholder
 })
 
-const totalFcyDebit = computed(() => {
-  return journalEntries.value.reduce((sum, entry) => {
-    return sum + parseFloat(entry.fcy_dr || 0)
-  }, 0)
-})
-
-const totalFcyCredit = computed(() => {
-  return journalEntries.value.reduce((sum, entry) => {
-    return sum + parseFloat(entry.fcy_cr || 0)
-  }, 0)
-})
-
-const totalLcyDebit = computed(() => {
-  return journalEntries.value.reduce((sum, entry) => {
-    return sum + parseFloat(entry.lcy_dr || 0)
-  }, 0)
-})
-
-const totalLcyCredit = computed(() => {
-  return journalEntries.value.reduce((sum, entry) => {
-    return sum + parseFloat(entry.lcy_cr || 0)
-  }, 0)
-})
-
-const isBalanced = computed(() => {
-  const fcyBalance = Math.abs(totalFcyDebit.value - totalFcyCredit.value) < 0.01
-  const lcyBalance = Math.abs(totalLcyDebit.value - totalLcyCredit.value) < 0.01
-  return fcyBalance && lcyBalance
-})
-
-// Method to get maker name from journal entries
-const getMakerName = () => {
-  if (!selectedItem.value || !journalEntries.value.length) {
-    return selectedItem.value?.Maker_Id || '-'
-  }
-  
-  // Get maker name from the first journal entry (they should all have the same maker)
-  const firstEntry = journalEntries.value[0]
-  return firstEntry?.maker_name || selectedItem.value?.Maker_Id || '-'
-}
-
-// Updated viewDetails method to handle the new structure
-  const viewDetails = async (item) => {
-  selectedItem.value = item
-  detailsDialog.value = true
-  
-  console.log('Viewing details for item:', selectedItem.value);
-  
-  // Load journal entries with proper error handling
-  try {
-    loading.value = true
-    const response = await axios.get('/api/journal-entries/', {
-      params: { 
-        Reference_No: item.Reference_No,
-        ordering: 'Dr_cr' // Order by Dr_cr to show debits first
-      },
-      ...getAuthHeaders()
-    })
-    
-    journalEntries.value = response.data.results || response.data || []
-    
-    // Log the structure for debugging
-    console.log('Journal entries loaded:', journalEntries.value)
-    console.log('Maker name:', getMakerName())
-    console.log('FCY Totals - Debit:', totalFcyDebit.value, 'Credit:', totalFcyCredit.value)
-    console.log('LCY Totals - Debit:', totalLcyDebit.value, 'Credit:', totalLcyCredit.value)
-    console.log('Is Balanced:', isBalanced.value)
-    
-  } catch (error) {
-    console.error('Error loading journal entries:', error)
-    journalEntries.value = []
-    
-    Swal.fire({
-      icon: 'warning',
-      title: 'ແຈ້ງເຕືອນ',
-      text: 'ບໍ່ສາມາດໂຫຼດລາຍການບັນທຶກໄດ້',
-      confirmButtonText: 'ຕົກລົງ'
-    })
-  } finally {
-    loading.value = false
-  }
+// Navigate to details page
+const viewDetails = (item) => {
+  // Navigate to the detail page with the item's Reference_No as a parameter
+  navigateTo(`/glcapture/detail?Reference_No=${item.Reference_No}`)
 }
 
 // Methods
@@ -694,6 +423,7 @@ const getStatusColor = (status) => {
     case 'A': return 'success'
     case 'R': return 'error'
     case 'U': return 'warning'
+    case 'P': return 'info'
     default: return 'grey'
   }
 }
@@ -703,6 +433,7 @@ const getStatusIcon = (status) => {
     case 'A': return 'mdi-check-circle'
     case 'R': return 'mdi-close-circle'
     case 'U': return 'mdi-clock-outline'
+    case 'P': return 'mdi-pencil-circle'
     default: return 'mdi-help-circle'
   }
 }
@@ -712,6 +443,7 @@ const getStatusText = (status) => {
     case 'A': return 'ອະນຸມັດແລ້ວ'
     case 'R': return 'ປະຕິເສດ'
     case 'U': return 'ລໍຖ້າອະນຸມັດ'
+    case 'P': return 'ຖ້າເເກ້ໄຂ'
     default: return 'ບໍ່ຮູ້'
   }
 }
@@ -737,7 +469,7 @@ const loadData = async () => {
     params.delete_stat__ne = 'Y' // Exclude soft deleted
     params.ordering = '-Maker_DT_Stamp' // Order by newest first
     
-    const response = await axios.get('/api/journal-log-master/?Auth_Status=U', {
+    const response = await axios.get('/api/journal-log-master/', {
       params,
       ...getAuthHeaders()
     })
@@ -768,6 +500,7 @@ const updateSummary = () => {
   summary.pending = items.value.filter(i => i.Auth_Status === 'U').length
   summary.approved = items.value.filter(i => i.Auth_Status === 'A').length
   summary.rejected = items.value.filter(i => i.Auth_Status === 'R').length
+  summary.correction = items.value.filter(i => i.Auth_Status === 'P').length
 }
 
 const loadModules = async () => {
@@ -785,101 +518,6 @@ const loadCurrencies = async () => {
     currencies.value = response.data.results || response.data || []
   } catch (error) {
     console.error('Error loading currencies:', error)
-  }
-}
-
-const approveItem = async (item) => {
-  const result = await Swal.fire({
-    icon: 'question',
-    title: 'ຢືນຢັນການອະນຸມັດ',
-    text: `ທ່ານຕ້ອງການອະນຸມັດລາຍການ ${item.Reference_No} ແທ້ບໍ?`,
-    showCancelButton: true,
-    confirmButtonText: 'ອະນຸມັດ',
-    cancelButtonText: 'ຍົກເລີກ',
-    confirmButtonColor: '#4caf50',
-    cancelButtonColor: '#9e9e9e'
-  })
-  
-  if (result.isConfirmed) {
-    try {
-      const response = await axios.patch(`/api/journal-log-master/${item.JRNLLog_id}/`, {
-        Auth_Status: 'A',
-        Checker_Id: localStorage.getItem('userId'), // Get from your auth system
-        Checker_DT_Stamp: new Date().toISOString()
-      }, getAuthHeaders())
-      
-      Swal.fire({
-        icon: 'success',
-        title: 'ສຳເລັດ',
-        text: 'ອະນຸມັດລາຍການສຳເລັດແລ້ວ',
-        timer: 2000,
-        showConfirmButton: false
-      })
-      
-      detailsDialog.value = false
-      loadData()
-      
-    } catch (error) {
-      console.error('Error approving item:', error)
-      Swal.fire({
-        icon: 'error',
-        title: 'ຂໍ້ຜິດພາດ',
-        text: 'ບໍ່ສາມາດອະນຸມັດລາຍການໄດ້',
-        confirmButtonText: 'ຕົກລົງ'
-      })
-    }
-  }
-}
-
-const rejectItem = async (item) => {
-  const result = await Swal.fire({
-    icon: 'warning',
-    title: 'ຢືນຢັນການປະຕິເສດ',
-    text: `ທ່ານຕ້ອງການປະຕິເສດລາຍການ ${item.Reference_No} ແທ້ບໍ?`,
-    input: 'textarea',
-    inputLabel: 'ເຫດຜົນໃນການປະຕິເສດ',
-    inputPlaceholder: 'ກະລຸນາໃສ່ເຫດຜົນ...',
-    inputValidator: (value) => {
-      if (!value) {
-        return 'ກະລຸນາໃສ່ເຫດຜົນໃນການປະຕິເສດ!'
-      }
-    },
-    showCancelButton: true,
-    confirmButtonText: 'ປະຕິເສດ',
-    cancelButtonText: 'ຍົກເລີກ',
-    confirmButtonColor: '#f44336',
-    cancelButtonColor: '#9e9e9e'
-  })
-  
-  if (result.isConfirmed) {
-    try {
-      const response = await axios.patch(`/api/journal-log-master/${item.JRNLLog_id}/`, {
-        Auth_Status: 'R',
-        Checker_Id: localStorage.getItem('userId'), // Get from your auth system
-        Checker_DT_Stamp: new Date().toISOString(),
-        Addl_text: item.Addl_text + '\nເຫດຜົນປະຕິເສດ: ' + result.value
-      }, getAuthHeaders())
-      
-      Swal.fire({
-        icon: 'success',
-        title: 'ສຳເລັດ',
-        text: 'ປະຕິເສດລາຍການສຳເລັດແລ້ວ',
-        timer: 2000,
-        showConfirmButton: false
-      })
-      
-      detailsDialog.value = false
-      loadData()
-      
-    } catch (error) {
-      console.error('Error rejecting item:', error)
-      Swal.fire({
-        icon: 'error',
-        title: 'ຂໍ້ຜິດພາດ',
-        text: 'ບໍ່ສາມາດປະຕິເສດລາຍການໄດ້',
-        confirmButtonText: 'ຕົກລົງ'
-      })
-    }
   }
 }
 
@@ -1024,139 +662,6 @@ onMounted(() => {
 
 .cursor-pointer {
   cursor: pointer;
-}
-
-/* Dialog styles - thinner */
-.section-title-thin {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #1976d2;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  border-bottom: 1px solid #e3f2fd;
-  padding-bottom: 2px;
-  line-height: 1;
-}
-
-.info-grid-thin {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4px;
-}
-
-.info-item-thin {
-  display: flex;
-  align-items: center;
-  padding: 1px 0;
-  line-height: 1.1;
-}
-
-.info-label-thin {
-  font-size: 0.75rem;
-  color: #666;
-  font-weight: 500;
-  min-width: 60px;
-  line-height: 1;
-}
-
-.info-value-thin {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #1a1a1a;
-  margin-left: 6px;
-  line-height: 1;
-}
-
-/* Thinner amount summary */
-.amount-summary-thin {
-  display: flex;
-  gap: 16px;
-  justify-content: space-around;
-  background: #f9f9f9;
-  padding: 8px;
-  border-radius: 6px;
-  border: 1px solid #e0e0e0;
-}
-
-.amount-item-thin {
-  text-align: center;
-  flex: 1;
-}
-
-.amount-label-thin {
-  font-size: 0.65rem;
-  color: #666;
-  font-weight: 600;
-  margin-bottom: 2px;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  line-height: 1;
-}
-
-.amount-value-thin {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: #1976d2;
-  line-height: 1;
-}
-
-/* Ultra-thin journal table */
-.journal-table-container-thin {
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  overflow: hidden;
-  background: white;
-}
-
-.journal-table-ultra-thin {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.journal-table-ultra-thin thead {
-  background: #f7f7f7;
-}
-
-.journal-table-ultra-thin th {
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: #333;
-  padding: 6px 4px;
-  border-bottom: 1px solid #e0e0e0;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  line-height: 1;
-}
-
-.journal-table-ultra-thin td {
-  padding: 4px;
-  border-bottom: 1px solid #f5f5f5;
-  font-size: 0.75rem;
-  line-height: 1.1;
-}
-
-.journal-table-ultra-thin tbody tr:hover {
-  background-color: #f9f9f9;
-}
-
-.journal-table-ultra-thin tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.totals-row-thin {
-  background: #f7f7f7;
-  font-weight: 700;
-}
-
-.totals-row-thin td {
-  padding: 6px 4px;
-  font-size: 0.75rem;
-  border-top: 1px solid #ddd;
-  line-height: 1;
-}
-
-.text-blue {
-  color: #1976d2;
 }
 
 /* Vuetify overrides for compact design */
