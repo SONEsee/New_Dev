@@ -296,11 +296,7 @@ const handleTypeOfPayChange = async (selectedValue: any) => {
   }
 };
 
-const debugWatch = () => {
-  
-
-  
-};
+const debugWatch = () => {};
 
 watch(
   [
@@ -661,7 +657,6 @@ onMounted(async () => {
                       </v-select>
                     </v-col>
                     <v-col cols="12" md="4">
-
                       <label>ລາຍລະອຽດຄຸນລັກສະນະ</label>
                       <v-textarea
                         v-model="
@@ -678,7 +673,8 @@ onMounted(async () => {
                       ></v-textarea>
                       <label>ປະເພດຊັບສົນຄົງທີ່</label>
                       <v-text-field
-                        placeholder="ບັນລະອຽດຄຸນລັກສະນະຂອງຊັບສົມບັດ"
+                        readonly
+                        placeholder="ຊັບສົມບັດຄົງທີ່ມີໂຕຕົນ/ບໍ່ມີໂຕຕົນ"
                         density="compact"
                         variant="outlined"
                         hide-details="auto"
@@ -935,7 +931,7 @@ onMounted(async () => {
                           faAssetStoreInstance.form_create_fa_asset
                             .dpca_start_date
                         "
-                        
+                        readonly
                         density="compact"
                         variant="outlined"
                         hide-details="auto"
