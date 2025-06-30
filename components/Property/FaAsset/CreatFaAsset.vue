@@ -882,14 +882,9 @@ currencyStore.getDataCerrency();
                       ></v-textarea>
                       <label>ປະເພດຊັບສິນນຄົງທີ່</label>
                       <v-text-field
-<<<<<<< HEAD
-                        readonly
-                        placeholder="ຊັບສົມບັດຄົງທີ່ມີໂຕຕົນ/ບໍ່ມີໂຕຕົນ"
-=======
                         v-model="
                           faAssetStoreInstance.form_create_fa_asset.MC_name_la"
                         placeholder="ບັນລະອຽດຄຸນລັກສະນະຂອງຊັບສົມບັດ"
->>>>>>> 229f3bf77a321390e7d65b0feb6da292dbbf667d
                         density="compact"
                         variant="outlined"
                         hide-details="auto"

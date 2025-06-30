@@ -138,7 +138,7 @@ export const faAssetStore = defineStore("faAsset", {
     console.log("Sending journal data:", formData);
 
     const res = await axios.post(
-      `/api/journal-entries/batch_create/`, 
+      `/api/process-journal/`, 
       formData,
       {
         headers: {
