@@ -4,7 +4,7 @@ import { useRouter } from "vue-router";
 const currencyStore = useCerrencyStore();
 const currency = computed(() => {
   const data = currencyStore.respons_cerrency_data;
-  // ຖ້າເປັນ array ໃຫ້ໃຊ້ຕົວມັນເອງ, ຖ້າເປັນ object ໃຫ້ໃສ່ໃນ array, ຖ້າບໍ່ມີໃຫ້ໃຊ້ array ວ່າງ
+ 
   if (Array.isArray(data)) {
     return data;
   } else if (data && typeof data === 'object') {
@@ -278,6 +278,47 @@ const submitForm = async () => {
   }
 };
 
+
+
+const computedAssetDisplayName = computed(() => {
+  const assetTypeId = faAssetStoreInstance.form_create_fa_asset.asset_type_id;
+  const mcNameLa = faAssetStoreInstance.form_create_fa_asset.MC_name_la;
+  
+  if (!assetTypeId || !mockData.value || !Array.isArray(mockData.value)) {
+    return "";
+  }
+  
+  const selectedAsset = mockData.value.find(
+    (asset) => asset && asset.coa_id === assetTypeId
+  );
+  
+  if (selectedAsset?.asset_name_la && mcNameLa) {
+    return `ພວມຊື້ພວມກໍ່ສ້າງ-${mcNameLa} - ${selectedAsset.asset_name_la}`;
+  }
+  
+  return mcNameLa || "";
+});
+
+
+const computedAssetSpecName = computed(() => {
+  const assetTypeId = faAssetStoreInstance.form_create_fa_asset.asset_type_id;
+  const mcNameLa = faAssetStoreInstance.form_create_fa_asset.MC_name_la;
+  
+  if (!assetTypeId || !mockData.value || !Array.isArray(mockData.value)) {
+    return "";
+  }
+  
+  const selectedAsset = mockData.value.find(
+    (asset) => asset && asset.coa_id === assetTypeId
+  );
+  
+  if (selectedAsset?.asset_name_la && mcNameLa) {
+    // ເພີ່ມ asset_name_la (ຕົວຢ່າງ: ລະບົບບັນຊີຫຼັກຫ້ອງການ) ເຂົ້າໄປໃນ format
+    return `ພວມຊື້ພວມກໍ່ສ້າງ${mcNameLa} - ${selectedAsset.asset_name_la} - ${selectedAsset.asset_name_la}`;
+  }
+  
+  return mcNameLa || "";
+});
 const generateNextAssetCode = () => {
   const assetCodes = assetcode.value;
   
@@ -549,6 +590,17 @@ watch(
         faAssetStoreInstance.form_create_fa_asset.MC_name_la = 
           selectedAsset.tangible_detail.MC_name_la || "";
         
+        
+        const displayName = selectedAsset.tangible_detail.MC_name_la && selectedAsset.asset_name_la
+          ? `ພວມຊື້ພວມກໍ່ສ້າງ-${selectedAsset.tangible_detail.MC_name_la}  - ${selectedAsset.asset_name_la}`
+          : selectedAsset.tangible_detail.MC_name_la || "";
+        
+        const specDisplayName = selectedAsset.tangible_detail.MC_name_la && selectedAsset.asset_name_la
+          ? `ພວມຊື້ພວມກໍ່ສ້າງ-${selectedAsset.tangible_detail.MC_name_la}  - ${selectedAsset.asset_name_la}`
+          : selectedAsset.tangible_detail.MC_name_la || "";
+        
+        faAssetStoreInstance.form_create_fa_asset.asset_spec = specDisplayName;
+        
         const assetListCode = faAssetStoreInstance.form_create_fa_asset.asset_list_code;
         if (assetListCode && selectedAsset.tangible_detail.MC_detail) {
           faAssetStoreInstance.form_create_fa_asset.MC_detail = 
@@ -558,6 +610,7 @@ watch(
     } else {
       faAssetStoreInstance.form_create_fa_asset.MC_detail = "";
       faAssetStoreInstance.form_create_fa_asset.MC_name_la = "";
+      faAssetStoreInstance.form_create_fa_asset.asset_spec = "";
     }
   }
 );
@@ -880,19 +933,18 @@ currencyStore.getDataCerrency();
                         maxlength="500"
                         counter
                       ></v-textarea>
-                      <label>ປະເພດຊັບສິນນຄົງທີ່</label>
-                      <v-text-field
-                        v-model="
-                          faAssetStoreInstance.form_create_fa_asset.MC_name_la"
-                        placeholder="ບັນລະອຽດຄຸນລັກສະນະຂອງຊັບສົມບັດ"
-                        density="compact"
-                        variant="outlined"
-                        hide-details="auto"
-                        rows="3"
-                        class=""
-                        counter
-                      >
-                      </v-text-field>
+                      <label>ປະເພດຊັບສິນຄົງທີ່</label>
+<v-text-field
+  :value="computedAssetDisplayName"
+  placeholder="ຊັບສົມບັດພວມຊື້ພວມກໍ່ສ້າງ - ປະເພດຊັບສິນ"
+  density="compact"
+  variant="outlined"
+  hide-details="auto"
+  readonly
+  prepend-inner-icon="mdi-auto-fix"
+  hint="ສ້າງອັດຕະໂນມັດຈາກການເລືອກປະເພດຊັບສິນ"
+>
+</v-text-field>
                     </v-col>
                   </v-row>
                 </v-card-text>
