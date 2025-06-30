@@ -1342,6 +1342,7 @@ const submitJournal = async () => {
       module_id: journalData.module_id || 'GL',
       entries: []
     }
+    // let subNoCounter = 1 
 
     journalEntries.value.forEach(entry => {
       calculateLcyAmount(entry)
@@ -1357,6 +1358,7 @@ const submitJournal = async () => {
           Account: entry.DebitAccount,
           Account_no: getAccountCode(entry.DebitAccount),
           Amount: amount,
+          // Reference_sub_No: `${journalData.Reference_No}-${String(subNoCounter).padStart(3, '0')}`,
           Dr_cr: 'D',
           Addl_sub_text: entry.Addl_sub_text || batchPayload.Addl_sub_text || '',
           Ac_relatives: getAccountCode(entry.CreditAccount)
@@ -1368,6 +1370,7 @@ const submitJournal = async () => {
           Account: entry.CreditAccount,
           Account_no: getAccountCode(entry.CreditAccount),
           Amount: amount,
+          // Reference_sub_No: `${journalData.Reference_No}-${String(subNoCounter).padStart(3, '0')}`,
           Dr_cr: 'C',
           Addl_sub_text: entry.Addl_sub_text || batchPayload.Addl_sub_text || '',
           Ac_relatives: getAccountCode(entry.DebitAccount)
