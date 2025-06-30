@@ -166,7 +166,7 @@ const formattedAssetValueRemainLast = computed(() => {
   );
 });
 
-// ສ້າງຟັງຊັນສຳລັບສ້າງ Reference_No
+
 const generateReferenceNo = () => {
   const assetListCode = faAssetStoreInstance.form_create_fa_asset.asset_list_code;
   
@@ -183,7 +183,7 @@ const generateReferenceNo = () => {
   return `AS-UNC-${dateString}-${assetListCode}`;
 };
 
-// ເພີ່ມ computed property ສຳລັບ Reference_No
+
 const computedReferenceNo = computed(() => {
   return generateReferenceNo();
 });
@@ -205,10 +205,75 @@ const submitForm = async () => {
     });
 
     if (notification.isConfirmed) {
-      
-      faAssetStoreInstance.form_create_fa_asset.Reference_No = computedReferenceNo.value;
-      await faAssetStoreInstance.CreateFaAsset();
-      await faAssetStoreInstance.CreateJournal();
+      try {
+        
+        faAssetStoreInstance.form_create_fa_asset.Reference_No = computedReferenceNo.value;
+        
+        
+        const currentDate = new Date();
+        const currentYear = currentDate.getFullYear().toString();
+        const currentYearMonth = `${currentDate.getFullYear()}${(currentDate.getMonth() + 1).toString().padStart(2, '0')}`;
+        
+       
+        faAssetStoreInstance.creat_form_jornal = {
+          Reference_No: computedReferenceNo.value,
+          Ccy_cd: faAssetStoreInstance.form_create_fa_asset.currency_type || "LAK",
+          Txn_code: "UNC",
+          Value_date: faAssetStoreInstance.form_create_fa_asset.asset_date,
+          Addl_text: faAssetStoreInstance.form_create_fa_asset.asset_spec || "",
+          fin_cycle: currentYear,
+          module_id: "AS",
+          Period_code: currentYearMonth,
+          entries: [
+            {
+              Account: faAssetStoreInstance.form_create_fa_asset.asset_type_id,
+              Account_no: faAssetStoreInstance.form_create_fa_asset.MC_detail,
+              Amount: parseFormattedNumber(formattedAssetValue.value),
+              Dr_cr: "D",
+              Addl_sub_text: `ຊັບສົມບັດ: ${faAssetStoreInstance.form_create_fa_asset.MC_name_la}`,
+              Ac_relatives: "",
+            },
+            {
+              Account: null,
+              Account_no: faAssetStoreInstance.form_create_fa_asset.acc_no,
+              Amount: parseFormattedNumber(formattedAssetValue.value),
+              Dr_cr: "C",
+              Addl_sub_text: `ການຊື້ຊັບສົມບັດ: ${faAssetStoreInstance.form_create_fa_asset.MC_name_la}`,
+              Ac_relatives: "",
+            }
+          ]
+        };
+
+        
+        await faAssetStoreInstance.CreateFaAsset();
+        
+        
+        await faAssetStoreInstance.CreateJournal();
+        
+       
+        CallSwal({
+          title: "ສຳເລັດ",
+          text: "ສຳເລັດການເພີ່ມຊັບສົມບັດແລະບັນທຶກ Journal",
+          icon: "success",
+          showCancelButton: false,
+          showConfirmButton: false,
+        });
+
+        
+        setTimeout(() => {
+          goPath("/property/faasset");
+        }, 2000);
+
+      } catch (error) {
+        console.error("Error in submit process:", error);
+        CallSwal({
+          title: "ຜິດພາດ",
+          text: "ມີຂໍ້ຜິດພາດໃນການບັນທຶກຂໍ້ມູນ",
+          icon: "error",
+          showCancelButton: false,
+          confirmButtonText: "ຕົກລົງ",
+        });
+      }
     }
   }
 };
@@ -246,7 +311,7 @@ const generateSerialNumber = () => {
     return "";
   }
 
-  // ກວດສອບວ່າ mockData ມີຄ່າແລະເປັນ array ບໍ່
+  
   if (!mockData.value || !Array.isArray(mockData.value)) {
     return "";
   }

@@ -120,7 +120,7 @@ export const faAssetStore = defineStore("faAsset", {
   },
   
   actions: {
-    async CreateJournal() {
+   async CreateJournal(showSuccessMessage = false) {
   this.isLoading = true;
   try {
     const formData = {
@@ -149,16 +149,19 @@ export const faAssetStore = defineStore("faAsset", {
     );
 
     if (res.status === 200 || res.status === 201) {
-      CallSwal({
-        title: "ສຳເລັດ",
-        text: "ສຳເລັດການສ້າງ Journal Entry",
-        icon: "success",
-        showCancelButton: false,
-        showConfirmButton: false,
-      });
+      if (showSuccessMessage) {
+        CallSwal({
+          title: "ສຳເລັດ",
+          text: "ສຳເລັດການສ້າງ Journal Entry",
+          icon: "success",
+          showCancelButton: false,
+          showConfirmButton: false,
+        });
+      }
       
-     
+      // ລີເຊັດຟອມ journal
       this.resetJournalForm();
+      return res.data;
     }
   } catch (error: any) {
     console.error("Error creating journal:", error);
@@ -169,6 +172,102 @@ export const faAssetStore = defineStore("faAsset", {
       showCancelButton: false,
       confirmButtonText: "ຕົກລົງ",
     });
+    throw error;
+  } finally {
+    this.isLoading = false;
+  }
+}, // ແກ້ໄຂ CreateFaAsset function ໃນ store ໃຫ້ຮັບ parameter ສຳລັບບໍ່ສະແດງ message
+async CreateFaAsset(showSuccessMessage = false) {
+  this.isLoading = true;
+  try {
+    const formData = {
+      ...this.form_create_fa_asset,
+      asset_date: this.form_create_fa_asset.asset_date
+        ? new Date(this.form_create_fa_asset.asset_date)
+            .toISOString()
+            .split("T")[0]
+        : null,
+      asset_type_id: this.form_create_fa_asset.asset_type_id || null,
+      asset_list_id: this.form_create_fa_asset.asset_list_id || "",
+      asset_value_remainLast: this.form_create_fa_asset.asset_value_remainLast || 0,
+      asset_value_remainBegin: this.form_create_fa_asset.asset_value_remainBegin || 0,
+      asset_value_remainMonth: this.form_create_fa_asset.asset_value_remainMonth || 0,
+      acc_no: this.form_create_fa_asset.acc_no || "",
+      warranty_end_date: this.form_create_fa_asset.warranty_end_date
+        ? new Date(this.form_create_fa_asset.warranty_end_date)
+            .toISOString()
+            .split("T")[0]
+        : null,
+      asset_list_code: this.form_create_fa_asset.asset_list_code || "",
+      dpca_start_date: this.form_create_fa_asset.dpca_start_date
+        ? new Date(this.form_create_fa_asset.dpca_start_date)
+            .toISOString()
+            .split("T")[0]
+        : null,
+      dpca_end_date: this.form_create_fa_asset.dpca_end_date
+        ? new Date(this.form_create_fa_asset.dpca_end_date)
+            .toISOString()
+            .split("T")[0]
+        : null,
+      asset_latest_date_dpca: this.form_create_fa_asset.asset_latest_date_dpca
+        ? new Date(this.form_create_fa_asset.asset_latest_date_dpca)
+            .toISOString()
+            .split("T")[0]
+        : null,
+      asset_disposal_date: this.form_create_fa_asset.asset_disposal_date
+        ? new Date(this.form_create_fa_asset.asset_disposal_date)
+            .toISOString()
+            .split("T")[0]
+        : null,
+      asset_ac_date: this.form_create_fa_asset.asset_ac_date
+        ? new Date(this.form_create_fa_asset.asset_ac_date)
+            .toISOString()
+            .split("T")[0]
+        : null,
+      asset_ac_datetime: this.form_create_fa_asset.asset_ac_datetime
+        ? new Date(this.form_create_fa_asset.asset_ac_datetime).toISOString()
+        : null,
+      dpca_type: this.form_create_fa_asset.dpca_type || null,
+      aaset_ac_by: this.form_create_fa_asset.aaset_ac_by || null,
+    };
+
+    console.log("Sending data:", formData);
+
+    const res = await axios.post<FaAssetModel.FaAsset>(
+      `/api/asset_list/`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
+    
+    if (res.status === 200 || res.status === 201) {
+      // ສະແດງ success message ໄດ້ແຕ່ຖ້າກຳນົດໄວ້
+      if (showSuccessMessage) {
+        CallSwal({
+          title: "ສຳເລັດ",
+          text: "ສຳເລັດການເພີ່ມຊັບສົມບັດ",
+          icon: "success",
+          showCancelButton: false,
+          showConfirmButton: false,
+        });
+      }
+      return res.data; // return ຂໍ້ມູນທີ່ສ້າງແລ້ວ
+    }
+  } catch (error: any) {
+    console.error("Error creating fa asset:", error);
+    console.error("Error details:", error.response?.data);
+    CallSwal({
+      title: "ຜິດພາດ",
+      text: error.response?.data?.message || "ມີຂໍ້ຜິດພາດໃນການເພີ່ມຂໍ້ມູນ",
+      icon: "error",
+      showCancelButton: false,
+      confirmButtonText: "ຕົກລົງ",
+    });
+    throw error; // throw error ເພື່ອໃຫ້ submitForm ຈັບການໄດ້
   } finally {
     this.isLoading = false;
   }
@@ -325,106 +424,106 @@ removeJournalEntry(index: number) {
       }
     },
 
-    async CreateFaAsset() {
-      this.isLoading = true;
-      try {
-        const formData = {
-          ...this.form_create_fa_asset,
+    // async CreateFaAsset() {
+    //   this.isLoading = true;
+    //   try {
+    //     const formData = {
+    //       ...this.form_create_fa_asset,
 
-          asset_date: this.form_create_fa_asset.asset_date
-            ? new Date(this.form_create_fa_asset.asset_date)
-                .toISOString()
-                .split("T")[0]
-            : null,
-          asset_type_id: this.form_create_fa_asset.asset_type_id || null,
-          asset_list_id: this.form_create_fa_asset.asset_list_id || "",
-          asset_value_remainLast:
-            this.form_create_fa_asset.asset_value_remainLast || 0,
-          asset_value_remainBegin:
-            this.form_create_fa_asset.asset_value_remainBegin || 0,
-          asset_value_remainMonth:
-            this.form_create_fa_asset.asset_value_remainMonth || 0,
-          acc_no: this.form_create_fa_asset.acc_no || "",
-          warranty_end_date: this.form_create_fa_asset.warranty_end_date
-            ? new Date(this.form_create_fa_asset.warranty_end_date)
-                .toISOString()
-                .split("T")[0]
-            : null,
-          asset_list_code: this.form_create_fa_asset.asset_list_code || "",
-          dpca_start_date: this.form_create_fa_asset.dpca_start_date
-            ? new Date(this.form_create_fa_asset.dpca_start_date)
-                .toISOString()
-                .split("T")[0]
-            : null,
-          dpca_end_date: this.form_create_fa_asset.dpca_end_date
-            ? new Date(this.form_create_fa_asset.dpca_end_date)
-                .toISOString()
-                .split("T")[0]
-            : null,
-          asset_latest_date_dpca: this.form_create_fa_asset
-            .asset_latest_date_dpca
-            ? new Date(this.form_create_fa_asset.asset_latest_date_dpca)
-                .toISOString()
-                .split("T")[0]
-            : null,
-          asset_disposal_date: this.form_create_fa_asset.asset_disposal_date
-            ? new Date(this.form_create_fa_asset.asset_disposal_date)
-                .toISOString()
-                .split("T")[0]
-            : null,
-          asset_ac_date: this.form_create_fa_asset.asset_ac_date
-            ? new Date(this.form_create_fa_asset.asset_ac_date)
-                .toISOString()
-                .split("T")[0]
-            : null,
-          asset_ac_datetime: this.form_create_fa_asset.asset_ac_datetime
-            ? new Date(
-                this.form_create_fa_asset.asset_ac_datetime
-              ).toISOString()
-            : null,
+    //       asset_date: this.form_create_fa_asset.asset_date
+    //         ? new Date(this.form_create_fa_asset.asset_date)
+    //             .toISOString()
+    //             .split("T")[0]
+    //         : null,
+    //       asset_type_id: this.form_create_fa_asset.asset_type_id || null,
+    //       asset_list_id: this.form_create_fa_asset.asset_list_id || "",
+    //       asset_value_remainLast:
+    //         this.form_create_fa_asset.asset_value_remainLast || 0,
+    //       asset_value_remainBegin:
+    //         this.form_create_fa_asset.asset_value_remainBegin || 0,
+    //       asset_value_remainMonth:
+    //         this.form_create_fa_asset.asset_value_remainMonth || 0,
+    //       acc_no: this.form_create_fa_asset.acc_no || "",
+    //       warranty_end_date: this.form_create_fa_asset.warranty_end_date
+    //         ? new Date(this.form_create_fa_asset.warranty_end_date)
+    //             .toISOString()
+    //             .split("T")[0]
+    //         : null,
+    //       asset_list_code: this.form_create_fa_asset.asset_list_code || "",
+    //       dpca_start_date: this.form_create_fa_asset.dpca_start_date
+    //         ? new Date(this.form_create_fa_asset.dpca_start_date)
+    //             .toISOString()
+    //             .split("T")[0]
+    //         : null,
+    //       dpca_end_date: this.form_create_fa_asset.dpca_end_date
+    //         ? new Date(this.form_create_fa_asset.dpca_end_date)
+    //             .toISOString()
+    //             .split("T")[0]
+    //         : null,
+    //       asset_latest_date_dpca: this.form_create_fa_asset
+    //         .asset_latest_date_dpca
+    //         ? new Date(this.form_create_fa_asset.asset_latest_date_dpca)
+    //             .toISOString()
+    //             .split("T")[0]
+    //         : null,
+    //       asset_disposal_date: this.form_create_fa_asset.asset_disposal_date
+    //         ? new Date(this.form_create_fa_asset.asset_disposal_date)
+    //             .toISOString()
+    //             .split("T")[0]
+    //         : null,
+    //       asset_ac_date: this.form_create_fa_asset.asset_ac_date
+    //         ? new Date(this.form_create_fa_asset.asset_ac_date)
+    //             .toISOString()
+    //             .split("T")[0]
+    //         : null,
+    //       asset_ac_datetime: this.form_create_fa_asset.asset_ac_datetime
+    //         ? new Date(
+    //             this.form_create_fa_asset.asset_ac_datetime
+    //           ).toISOString()
+    //         : null,
 
-          dpca_type: this.form_create_fa_asset.dpca_type || null,
-          aaset_ac_by: this.form_create_fa_asset.aaset_ac_by || null,
-        };
+    //       dpca_type: this.form_create_fa_asset.dpca_type || null,
+    //       aaset_ac_by: this.form_create_fa_asset.aaset_ac_by || null,
+    //     };
 
-        console.log("Sending data:", formData);
+    //     console.log("Sending data:", formData);
 
-        const res = await axios.post<FaAssetModel.FaAsset>(
-          `/api/asset_list/`,
-          formData,
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          }
-        );
-        if (res.status === 200 || res.status === 201) {
-          CallSwal({
-            title: "ສຳເລັດ",
-            text: "ສຳເລັດການເພີ່ມຊັບສົມບັດ",
-            icon: "success",
-            showCancelButton: false,
-            showConfirmButton: false,
-          });
-          // setTimeout(() => {
-          //   goPath("/property/faasset");
-          // }, 1500);
-        }
-      } catch (error: any) {
-        console.error("Error creating fa asset:", error);
-        console.error("Error details:", error.response?.data);
-        CallSwal({
-          title: "ຜິດພາດ",
-          text: error.response?.data?.message || "ມີຂໍ້ຜິດພາດໃນການເພີ່ມຂໍ້ມູນ",
-          icon: "error",
-          showCancelButton: false,
-          confirmButtonText: "ຕົກລົງ",
-        });
-      } finally {
-        this.isLoading = false;
-      }
-    },
+    //     const res = await axios.post<FaAssetModel.FaAsset>(
+    //       `/api/asset_list/`,
+    //       formData,
+    //       {
+    //         headers: {
+    //           "Content-Type": "application/json",
+    //           Authorization: `Bearer ${localStorage.getItem("token")}`,
+    //         },
+    //       }
+    //     );
+    //     if (res.status === 200 || res.status === 201) {
+    //       CallSwal({
+    //         title: "ສຳເລັດ",
+    //         text: "ສຳເລັດການເພີ່ມຊັບສົມບັດ",
+    //         icon: "success",
+    //         showCancelButton: false,
+    //         showConfirmButton: false,
+    //       });
+    //       // setTimeout(() => {
+    //       //   goPath("/property/faasset");
+    //       // }, 1500);
+    //     }
+    //   } catch (error: any) {
+    //     console.error("Error creating fa asset:", error);
+    //     console.error("Error details:", error.response?.data);
+    //     CallSwal({
+    //       title: "ຜິດພາດ",
+    //       text: error.response?.data?.message || "ມີຂໍ້ຜິດພາດໃນການເພີ່ມຂໍ້ມູນ",
+    //       icon: "error",
+    //       showCancelButton: false,
+    //       confirmButtonText: "ຕົກລົງ",
+    //     });
+    //   } finally {
+    //     this.isLoading = false;
+    //   }
+    // },
 
     async UpdateFaAsset(id: string) {
       this.isLoading = true;
