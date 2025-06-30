@@ -245,7 +245,7 @@ async CreateFaAsset(showSuccessMessage = false) {
     );
     
     if (res.status === 200 || res.status === 201) {
-      // ສະແດງ success message ໄດ້ແຕ່ຖ້າກຳນົດໄວ້
+      
       if (showSuccessMessage) {
         CallSwal({
           title: "ສຳເລັດ",
@@ -255,7 +255,7 @@ async CreateFaAsset(showSuccessMessage = false) {
           showConfirmButton: false,
         });
       }
-      return res.data; // return ຂໍ້ມູນທີ່ສ້າງແລ້ວ
+      return res.data; 
     }
   } catch (error: any) {
     console.error("Error creating fa asset:", error);
@@ -267,7 +267,7 @@ async CreateFaAsset(showSuccessMessage = false) {
       showCancelButton: false,
       confirmButtonText: "ຕົກລົງ",
     });
-    throw error; // throw error ເພື່ອໃຫ້ submitForm ຈັບການໄດ້
+    throw error; 
   } finally {
     this.isLoading = false;
   }
