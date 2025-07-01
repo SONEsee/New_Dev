@@ -285,7 +285,7 @@ const submitForm = async () => {
         Ccy_cd: faAssetStoreInstance.form_create_fa_asset.currency_type || "LAK",
         Txn_code: "UNC",
         Value_date: faAssetStoreInstance.form_create_fa_asset.asset_date,
-        Addl_text: faAssetStoreInstance.form_create_fa_asset.MC_name_la || "",
+        Addl_text: `ພວມຊື້ພວມກໍ່ສ້າງ${faAssetStoreInstance.form_create_fa_asset.MC_name_la}` || "",
         fin_cycle: currentYear,
         module_id: "AS",
         Period_code: currentYearMonth,
@@ -503,7 +503,7 @@ const handleTypeOfPayChange = async (selectedValue: any) => {
   }
 };
 
-// ⭐ ເພີ່ມ watch ສຳລັບ mockData ໂດຍສະເພາະ
+
 watch(
   () => mockData.value,
   (newMockData) => {
@@ -526,11 +526,11 @@ watch(
 
 watch(
   () => route.query.asset_type_id,
-  (newAssetTypeId) => {
-    console.log("🔗 URL asset_type_id changed:", newAssetTypeId);
+  (newAssetTypeId:any) => {
+   
     if (newAssetTypeId && newAssetTypeId !== faAssetStoreInstance.form_create_fa_asset.asset_type_id) {
       faAssetStoreInstance.form_create_fa_asset.asset_type_id = newAssetTypeId as string;
-      console.log("✅ Asset code updated from URL:", newAssetTypeId);
+     
     }
   },
   { immediate: true }
@@ -675,7 +675,7 @@ watch(
         const specDisplayName =
           selectedAsset.tangible_detail.MC_name_la &&
           selectedAsset.asset_name_la
-            ? `ພວມຊື້ພວມກໍ່ສ້າງ-${selectedAsset.tangible_detail.MC_name_la}  - ${selectedAsset.asset_name_la}`
+            ? ` ${selectedAsset.asset_name_la}`
             : selectedAsset.tangible_detail.MC_name_la || "";
 
         faAssetStoreInstance.form_create_fa_asset.asset_spec = specDisplayName;
