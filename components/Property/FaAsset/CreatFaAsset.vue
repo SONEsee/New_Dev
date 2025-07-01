@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { CallSwal } from "#build/imports";
-import { useRouter, useRoute } from "vue-router"; 
+import { useRouter, useRoute } from "vue-router";
 import { nextTick } from "vue";
 
 const currencyStore = useCerrencyStore();
@@ -61,7 +61,7 @@ const supplier = computed(() => {
 
 const faAssetStoreInstance = faAssetStore();
 const router = useRouter();
-const route = useRoute(); 
+const route = useRoute();
 
 const title = ref("ເພີ່ມຊັບສົມບັດຄົງທີ່ໃໝ່");
 const loading = ref(false);
@@ -203,7 +203,7 @@ const goBack = () => {
 
 const submitForm = async () => {
   const isValid = await form.value.validate();
-  
+
   if (!isValid) {
     await CallSwal({
       icon: "error",
@@ -212,36 +212,73 @@ const submitForm = async () => {
       confirmButtonText: "ຕົກລົງ",
       showCancelButton: false,
     });
-    return; 
+    return;
   }
 
   const requiredFields = [
-    { field: faAssetStoreInstance.form_create_fa_asset.asset_type_id, name: "ປະເພດຊັບສົມບັດ" },
-    { field: faAssetStoreInstance.form_create_fa_asset.asset_value, name: "ມູນຄ່າເລີ່ມຕົ້ນ" },
-    { field: faAssetStoreInstance.form_create_fa_asset.currency_type, name: "ສະກຸນເງິນ" },
-    { field: faAssetStoreInstance.form_create_fa_asset.asset_date, name: "ວັນທີ່ຊື້" },
-    { field: faAssetStoreInstance.form_create_fa_asset.supplier_id, name: "ຜູ້ສະໜອງ" },
-    { field: faAssetStoreInstance.form_create_fa_asset.asset_location_id, name: "ສະຖານທີ່ຕັ້ງ" },
+    {
+      field: faAssetStoreInstance.form_create_fa_asset.asset_type_id,
+      name: "ປະເພດຊັບສົມບັດ",
+    },
+    {
+      field: faAssetStoreInstance.form_create_fa_asset.asset_value,
+      name: "ມູນຄ່າເລີ່ມຕົ້ນ",
+    },
+    {
+      field: faAssetStoreInstance.form_create_fa_asset.currency_type,
+      name: "ສະກຸນເງິນ",
+    },
+    {
+      field: faAssetStoreInstance.form_create_fa_asset.asset_date,
+      name: "ວັນທີ່ຊື້",
+    },
+    {
+      field: faAssetStoreInstance.form_create_fa_asset.supplier_id,
+      name: "ຜູ້ສະໜອງ",
+    },
+    {
+      field: faAssetStoreInstance.form_create_fa_asset.asset_location_id,
+      name: "ສະຖານທີ່ຕັ້ງ",
+    },
   ];
 
-  if (faAssetStoreInstance.form_create_fa_asset.has_depreciation === 'Y') {
+  if (faAssetStoreInstance.form_create_fa_asset.has_depreciation === "Y") {
     requiredFields.push(
-      { field: faAssetStoreInstance.form_create_fa_asset.dpca_type, name: "ວິທີຫັກຄ່າເສື່ອມລາຄາ" },
-      { field: faAssetStoreInstance.form_create_fa_asset.asset_useful_life, name: "ອາຍຸການໃຊ້ງານ" },
-      { field: faAssetStoreInstance.form_create_fa_asset.type_of_pay, name: "ປະເພດການຊຳລະ" },
-      { field: faAssetStoreInstance.form_create_fa_asset.acc_no, name: "ເລກບັນຊີ" }
+      {
+        field: faAssetStoreInstance.form_create_fa_asset.dpca_type,
+        name: "ວິທີຫັກຄ່າເສື່ອມລາຄາ",
+      },
+      {
+        field: faAssetStoreInstance.form_create_fa_asset.asset_useful_life,
+        name: "ອາຍຸການໃຊ້ງານ",
+      },
+      {
+        field: faAssetStoreInstance.form_create_fa_asset.type_of_pay,
+        name: "ປະເພດການຊຳລະ",
+      },
+      {
+        field: faAssetStoreInstance.form_create_fa_asset.acc_no,
+        name: "ເລກບັນຊີ",
+      }
     );
   }
 
-  const missingFields = requiredFields.filter(item => !item.field || item.field === "");
-  
+  const missingFields = requiredFields.filter(
+    (item) => !item.field || item.field === ""
+  );
+
   if (missingFields.length > 0) {
-    const missingFieldNames = missingFields.map(item => `• ${item.name}`).join('\n');
-    
+    const missingFieldNames = missingFields
+      .map((item) => `• ${item.name}`)
+      .join("\n");
+
     await CallSwal({
       icon: "warning",
       title: "ຂາດຂໍ້ມູນທີ່ຈຳເປັນ",
-      html: `ກະລຸນາປ້ອນຂໍ້ມູນໃນຟີລດັ່ງລຸ່ມນີ້:<br><br><div style="text-align: left;">${missingFieldNames.replace(/\n/g, '<br>')}</div>`,
+      html: `ກະລຸນາປ້ອນຂໍ້ມູນໃນຟີລດັ່ງລຸ່ມນີ້:<br><br><div style="text-align: left;">${missingFieldNames.replace(
+        /\n/g,
+        "<br>"
+      )}</div>`,
       confirmButtonText: "ຕົກລົງ",
       showCancelButton: false,
     });
@@ -270,7 +307,8 @@ const submitForm = async () => {
 
   if (notification.isConfirmed) {
     try {
-      faAssetStoreInstance.form_create_fa_asset.Reference_No = computedReferenceNo.value;
+      faAssetStoreInstance.form_create_fa_asset.Reference_No =
+        computedReferenceNo.value;
 
       const currentDate = new Date();
       const currentYear = currentDate.getFullYear().toString();
@@ -279,13 +317,16 @@ const submitForm = async () => {
       )
         .toString()
         .padStart(2, "0")}`;
-        
+
       faAssetStoreInstance.creat_form_jornal = {
         Reference_No: computedReferenceNo.value,
-        Ccy_cd: faAssetStoreInstance.form_create_fa_asset.currency_type || "LAK",
+        Ccy_cd:
+          faAssetStoreInstance.form_create_fa_asset.currency_type || "LAK",
         Txn_code: "UNC",
         Value_date: faAssetStoreInstance.form_create_fa_asset.asset_date,
-        Addl_text: `ພວມຊື້ພວມກໍ່ສ້າງ${faAssetStoreInstance.form_create_fa_asset.MC_name_la}` || "",
+        Addl_text:
+          `ພວມຊື້ພວມກໍ່ສ້າງ${faAssetStoreInstance.form_create_fa_asset.MC_name_la}` ||
+          "",
         fin_cycle: currentYear,
         module_id: "AS",
         Period_code: currentYearMonth,
@@ -323,7 +364,6 @@ const submitForm = async () => {
       setTimeout(() => {
         goPath("/property/faasset");
       }, 2000);
-      
     } catch (error) {
       console.error("Error in submit process:", error);
       CallSwal({
@@ -503,34 +543,56 @@ const handleTypeOfPayChange = async (selectedValue: any) => {
   }
 };
 
-
 watch(
   () => mockData.value,
   (newMockData) => {
     console.log("📦 MockData changed, length:", newMockData?.length);
-    if (newMockData && Array.isArray(newMockData) && newMockData.length > 0 && urlAssetCode.value) {
-      const foundAsset = newMockData.find(asset => asset && asset.coa_id === urlAssetCode.value);
-      
-      if (foundAsset && !faAssetStoreInstance.form_create_fa_asset.asset_type_id) {
-        faAssetStoreInstance.form_create_fa_asset.asset_type_id = urlAssetCode.value;
-        console.log("✅ Asset set from mockData watch:", urlAssetCode.value, "Asset:", foundAsset.asset_name_la);
+    if (
+      newMockData &&
+      Array.isArray(newMockData) &&
+      newMockData.length > 0 &&
+      urlAssetCode.value
+    ) {
+      const foundAsset = newMockData.find(
+        (asset) => asset && asset.coa_id === urlAssetCode.value
+      );
+
+      if (
+        foundAsset &&
+        !faAssetStoreInstance.form_create_fa_asset.asset_type_id
+      ) {
+        faAssetStoreInstance.form_create_fa_asset.asset_type_id =
+          urlAssetCode.value;
+        console.log(
+          "✅ Asset set from mockData watch:",
+          urlAssetCode.value,
+          "Asset:",
+          foundAsset.asset_name_la
+        );
       } else if (!foundAsset) {
-        console.warn("❌ Asset not found for asset_type_id:", urlAssetCode.value);
-        console.log("📋 Available assets:", newMockData.map(a => ({ coa_id: a.coa_id, name: a.asset_name_la })));
+        console.warn(
+          "❌ Asset not found for asset_type_id:",
+          urlAssetCode.value
+        );
+        console.log(
+          "📋 Available assets:",
+          newMockData.map((a) => ({ coa_id: a.coa_id, name: a.asset_name_la }))
+        );
       }
     }
   },
   { immediate: true, deep: true }
 );
 
-
 watch(
   () => route.query.asset_type_id,
-  (newAssetTypeId:any) => {
-   
-    if (newAssetTypeId && newAssetTypeId !== faAssetStoreInstance.form_create_fa_asset.asset_type_id) {
-      faAssetStoreInstance.form_create_fa_asset.asset_type_id = newAssetTypeId as string;
-     
+  (newAssetTypeId: any) => {
+    if (
+      newAssetTypeId &&
+      newAssetTypeId !== faAssetStoreInstance.form_create_fa_asset.asset_type_id
+    ) {
+      faAssetStoreInstance.form_create_fa_asset.asset_type_id =
+        newAssetTypeId as string;
     }
   },
   { immediate: true }
@@ -739,14 +801,11 @@ watch(
         faAssetStoreInstance.form_create_fa_asset.acc_no = "";
         await noaccStore.getSubData();
       } else if (newNoacc && newNoacc.length > 0) {
-        
         noaccStore.res_pons_filter.query.gl_code = newNoacc[0].MC_detail;
         faAssetStoreInstance.form_create_fa_asset.acc_no = "";
         await noaccStore.getSubData();
       }
-    } catch (error) {
-      
-    }
+    } catch (error) {}
   },
   { immediate: true }
 );
@@ -777,13 +836,10 @@ const rules = {
   },
 };
 
-
 onMounted(async () => {
   try {
     loading.value = true;
-    
 
-    
     currencyStore.getDataCerrency();
     await Promise.all([
       assetStoreInstance.GetAssetList(),
@@ -803,26 +859,48 @@ onMounted(async () => {
 
     await noaccStore.getSubData();
 
-    
     await nextTick();
-    
-   
-    if (urlAssetCode.value && mockData.value && Array.isArray(mockData.value) && mockData.value.length > 0) {
-      const foundAsset = mockData.value.find(asset => asset && asset.coa_id === urlAssetCode.value);
-      
+
+    if (
+      urlAssetCode.value &&
+      mockData.value &&
+      Array.isArray(mockData.value) &&
+      mockData.value.length > 0
+    ) {
+      const foundAsset = mockData.value.find(
+        (asset) => asset && asset.coa_id === urlAssetCode.value
+      );
+
       if (foundAsset) {
-        faAssetStoreInstance.form_create_fa_asset.asset_type_id = urlAssetCode.value;
-        console.log("🔧 Manually set asset_type_id in onMounted:", urlAssetCode.value, "Asset:", foundAsset.asset_name_la);
-        
-        
+        faAssetStoreInstance.form_create_fa_asset.asset_type_id =
+          urlAssetCode.value;
+        console.log(
+          "🔧 Manually set asset_type_id in onMounted:",
+          urlAssetCode.value,
+          "Asset:",
+          foundAsset.asset_name_la
+        );
+
         await nextTick();
       } else {
-        console.warn("❌ Asset not found in onMounted for asset_type_id:", urlAssetCode.value);
-        console.log("📋 Available assets:", mockData.value.map(a => ({ coa_id: a.coa_id, name: a.asset_name_la })));
+        console.warn(
+          "❌ Asset not found in onMounted for asset_type_id:",
+          urlAssetCode.value
+        );
+        console.log(
+          "📋 Available assets:",
+          mockData.value.map((a) => ({
+            coa_id: a.coa_id,
+            name: a.asset_name_la,
+          }))
+        );
       }
     }
 
-    console.log("🎯 Final asset_type_id value:", faAssetStoreInstance.form_create_fa_asset.asset_type_id);
+    console.log(
+      "🎯 Final asset_type_id value:",
+      faAssetStoreInstance.form_create_fa_asset.asset_type_id
+    );
     console.log("Location data:", location.value?.length);
     console.log("Supplier data:", supplier.value?.length);
     console.log("NoAcc data:", noacc.value?.length);
@@ -847,7 +925,7 @@ onMounted(async () => {
         <v-col cols="12">
           <GlobalTextTitleLine :title="title" />
         </v-col>
-
+        <!-- <pre>{{ currency }}</pre>     -->
         <v-col cols="12" class="">
           <v-row>
             <v-col cols="12">
@@ -868,7 +946,7 @@ onMounted(async () => {
                         <span class="text-error">*</span></label
                       >
 
-                      <v-select
+                      <v-autocomplete
                         v-model="
                           faAssetStoreInstance.form_create_fa_asset
                             .asset_type_id
@@ -895,7 +973,7 @@ onMounted(async () => {
                             :title="`${item.raw.asset_name_la} (${item.raw.asset_code})`"
                           />
                         </template>
-                      </v-select>
+                      </v-autocomplete>
 
                       <label>
                         ລຳດັບ (Asset Code)
@@ -1036,7 +1114,7 @@ onMounted(async () => {
                         v-model="
                           faAssetStoreInstance.form_create_fa_asset.asset_spec
                         "
-                        :rules="[rules.maxLength500 , rules.required]"
+                        :rules="[rules.maxLength500, rules.required]"
                         placeholder="ບັນລະອຽດຄຸນລັກສະນະຂອງຊັບສົມບັດ"
                         density="compact"
                         variant="outlined"
@@ -1045,9 +1123,13 @@ onMounted(async () => {
                         maxlength="500"
                         counter
                       ></v-textarea>
-                      <label>ປະເພດຊັບສິນຄົງທີ່<span class="text-error">*</span></label>
+                      <label
+                        >ປະເພດຊັບສິນຄົງທີ່<span class="text-error"
+                          >*</span
+                        ></label
+                      >
                       <v-text-field
-                      :rules="[rules.required]"
+                        :rules="[rules.required]"
                         :value="computedAssetDisplayName"
                         placeholder="ຊັບສົມບັດພວມຊື້ພວມກໍ່ສ້າງ - ປະເພດຊັບສິນ"
                         density="compact"
@@ -1137,7 +1219,9 @@ onMounted(async () => {
                       ></v-text-field>
                     </v-col>
                     <v-col cols="12" md="3">
-                      <label>ຜູ້ສະໜອງ/ຜູ້ຂາຍ<span class="text-error">*</span></label>
+                      <label
+                        >ຜູ້ສະໜອງ/ຜູ້ຂາຍ<span class="text-error">*</span></label
+                      >
                       <v-select
                         v-model="
                           faAssetStoreInstance.form_create_fa_asset.supplier_id
@@ -1191,7 +1275,11 @@ onMounted(async () => {
                 <v-card-text class="pt-4">
                   <v-row>
                     <v-col cols="12" md="3">
-                      <label>ວິທີຫັກຄ່າຫຼຸຍຫຽ້ນ<span class="text-error">*</span></label>
+                      <label
+                        >ວິທີຫັກຄ່າຫຼຸຍຫຽ້ນ<span class="text-error"
+                          >*</span
+                        ></label
+                      >
                       <v-autocomplete
                         v-model="
                           faAssetStoreInstance.form_create_fa_asset.dpca_type
@@ -1206,13 +1294,17 @@ onMounted(async () => {
                         item-title="title"
                         item-value="value"
                       ></v-autocomplete>
-                      <label>ອາຍຸການໃຊ້ງານ (ປີ)<span class="text-error">*</span></label>
+                      <label
+                        >ອາຍຸການໃຊ້ງານ (ປີ)<span class="text-error"
+                          >*</span
+                        ></label
+                      >
                       <v-text-field
                         v-model.number="
                           faAssetStoreInstance.form_create_fa_asset
                             .asset_useful_life
                         "
-                        :rules="[rules.positiveNumber , rules.required]"
+                        :rules="[rules.positiveNumber, rules.required]"
                         type="number"
                         min="1"
                         placeholder="0"
@@ -1254,12 +1346,14 @@ onMounted(async () => {
                       ></v-text-field>
                     </v-col>
                     <v-col cols="12" md="3">
-                      <label>ປະເພດການຊຳລະ<span class="text-error">*</span></label>
+                      <label
+                        >ປະເພດການຊຳລະ<span class="text-error">*</span></label
+                      >
                       <v-autocomplete
                         v-model="
                           faAssetStoreInstance.form_create_fa_asset.type_of_pay
                         "
-                        :rules="[rules.requiredSelect , rules.required]"
+                        :rules="[rules.requiredSelect, rules.required]"
                         :items="noacc || []"
                         item-value="MC_detail"
                         item-title="MC_name_la"
@@ -1282,9 +1376,11 @@ onMounted(async () => {
                         </template>
                       </v-autocomplete>
 
-                      <label>ມູນຄ່າຕໍ່ເດືອນ<span class="text-error">*</span></label>
+                      <label
+                        >ມູນຄ່າຕໍ່ເດືອນ<span class="text-error">*</span></label
+                      >
                       <v-text-field
-                      :rules="[rules.required]"
+                        :rules="[rules.required]"
                         :value="formattedAssetValueRemainMonth"
                         placeholder="ເຊັ່ນ: 1,000,000"
                         density="compact"
@@ -1325,7 +1421,9 @@ onMounted(async () => {
                       ></v-text-field>
                     </v-col>
                     <v-col cols="12" md="3">
-                      <label>ເລກບັນຊີ/DR <span class="text-error">*</span></label>
+                      <label
+                        >ເລກບັນຊີ/DR <span class="text-error">*</span></label
+                      >
                       <v-text-field
                         v-model="
                           faAssetStoreInstance.form_create_fa_asset.MC_detail
@@ -1352,7 +1450,7 @@ onMounted(async () => {
                       ></v-text-field>
                       <label>ມູນຄ່າຫຼູ້ຍຫຽ້ນລາຄາສະສົມ</label>
                       <v-text-field
-                      :disabled="true"
+                        :disabled="true"
                         v-model="formattedAccuDpcaValue"
                         :rules="[rules.positiveNumber]"
                         placeholder="0"
@@ -1366,7 +1464,7 @@ onMounted(async () => {
 
                       <label>ວັນທີ່ຖອນຈຳໜ່າຍຊັບສົມບັດ</label>
                       <v-text-field
-                      :disabled="true"
+                        :disabled="true"
                         v-model="
                           faAssetStoreInstance.form_create_fa_asset
                             .asset_disposal_date
@@ -1378,12 +1476,14 @@ onMounted(async () => {
                       ></v-text-field>
                     </v-col>
                     <v-col cols="12" md="3">
-                      <label>ເລກບັນຊີ/CR<span class="text-error">*</span></label>
+                     
+                      <label
+                        >ເລກບັນຊີ/CR<span class="text-error" v-for="item in subgl">*({{ item.glsub_Desc_la }})</span></label
+                      >
                       <v-autocomplete
                         v-model="
                           faAssetStoreInstance.form_create_fa_asset.acc_no
                         "
-                        
                         :items="subgl || []"
                         density="compact"
                         variant="outlined"
@@ -1396,7 +1496,7 @@ onMounted(async () => {
                       </v-autocomplete>
                       <label>ມູນຄ່າຊາກ</label>
                       <v-text-field
-                      :disabled="true"
+                        :disabled="true"
                         v-model="formattedSalvageValue"
                         :rules="[rules.positiveNumber]"
                         placeholder="0"
@@ -1408,7 +1508,7 @@ onMounted(async () => {
                       ></v-text-field>
                       <label>ມູນຄ່າທ້າຍ</label>
                       <v-text-field
-                      :disabled="true"
+                        :disabled="true"
                         :value="formattedAssetValueRemainLast"
                         placeholder="ເຊັ່ນ: 1,000,000"
                         density="compact"

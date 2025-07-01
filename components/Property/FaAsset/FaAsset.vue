@@ -53,7 +53,7 @@ const errorMessage = ref("");
 const selectedStatus = ref("all");
 const selectedassetCode = ref("all");
 
-// ຕອນນີ້ເອົາ watch ມາວາງຫຼັງຈາກປະກາດ ref ແລ້ວ
+
 watch([selectedStatus, selectedassetCode, search], () => {
   saveFiltersToStorage();
 }, { deep: true });
@@ -462,7 +462,7 @@ onMounted(async () => {
         </div>
       </v-col>
  <v-col cols="12" md="3" class="text-no-wrap">
-        <v-select
+        <v-autocomplete
           v-model="selectedassetCode"
           :items="response || []"
           item-title="asset_name_la"
@@ -473,7 +473,7 @@ onMounted(async () => {
           clearable
           placeholder="ເລືອກສະຖານະ"
           :loading="loading"
-        ></v-select>
+        ></v-autocomplete>
       </v-col>
 
       <v-col cols="12" md="3" class="text-no-wrap">
@@ -766,7 +766,7 @@ onMounted(async () => {
     {{ successMessage }}
   </v-snackbar>
 
-  <!-- Error notification -->
+ 
   <v-snackbar v-model="showError" color="error" timeout="5000" location="top">
     <v-icon class="mr-2">mdi-alert-circle</v-icon>
     {{ errorMessage }}

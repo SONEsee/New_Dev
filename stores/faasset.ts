@@ -267,7 +267,7 @@ async CreateFaAsset(showSuccessMessage = false) {
       showCancelButton: false,
       confirmButtonText: "ຕົກລົງ",
     });
-    throw error; 
+    throw error; // throw error ເພື່ອໃຫ້ submitForm ຈັບການໄດ້
   } finally {
     this.isLoading = false;
   }
