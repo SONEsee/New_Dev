@@ -104,7 +104,7 @@
               <v-icon size="20" color="primary" class="mr-2">mdi-file-document-multiple</v-icon>
               <div>
                 <div class="summary-value-thin">{{ summary.total }}</div>
-                <div class="summary-label-thin">ລາຍການທັງໝົດ</div>
+                <div class="summary-label-thin text-styles">ລາຍການທັງໝົດ</div>
               </div>
             </div>
           </v-card-text>
@@ -269,7 +269,7 @@
 
         <!-- Value Date -->
         <template v-slot:item.Value_date="{ item }">
-          <span class="text-compact">{{ formatDate(item.Value_date) }}</span>
+          <span class="text-compact text-grey">{{ formatDate(item.Value_date) }}</span>
         </template>
 
         <!-- Auth Status -->
@@ -287,7 +287,7 @@
         <!-- Maker Info -->
         <template v-slot:item.Maker_Id="{ item }">
           <div class="text-caption-thin">
-            <div v-if="item.Maker_Id" class="text-compact">{{ item.Maker_Id.Username }}</div>
+            <div v-if="item.Maker_Id" class="text-compact">{{ item.Maker_Id.maker_name }}</div>
             <div class="text-grey text-xs">{{ formatDateTime(item.Maker_DT_Stamp) }}</div>
           </div>
         </template>
@@ -364,16 +364,18 @@ const authStatusOptions = [
 
 // Table headers
 const headers = [
+
+    { title: 'ໂມດູນ', key: 'module_id', sortable: true },
+        { title: 'ລະຫັດ', key: 'Txn_code', sortable: true },
   { title: 'ເລກອ້າງອີງ', key: 'Reference_No', sortable: true },
   // { title: 'ເລກອ້າງອີງຄູ່ບັນຊີ', key: 'Reference_sub_No', sortable: true },
-  { title: 'ໂມດູນ', key: 'module_id', sortable: true },
+  
   { title: 'ຈຳນວນເງິນ', key: 'Fcy_Amount', align: 'end', sortable: true },
-  { title: 'ຈຳນວນກີບ', key: 'Lcy_Amount', align: 'end', sortable: true },
   { title: 'ເນື້ອໃນ', key: 'Addl_text', sortable: true },
-  { title: 'ລະຫັດ', key: 'Txn_code', sortable: true },
+  { title: 'ຜູ້ສ້າງ', key: 'maker_name', sortable: true },
   { title: 'ວັນທີ', key: 'Value_date', sortable: true },
   { title: 'ສະຖານະ', key: 'Auth_Status', sortable: true },
-  { title: 'ຜູ້ສ້າງ', key: 'Maker_Id', sortable: true },
+
   { title: 'ການກະທຳ', key: 'actions', sortable: false, align: 'center' }
 ]
 
@@ -466,7 +468,7 @@ const loadData = async () => {
     if (filters.Auth_Status) params.Auth_Status = filters.Auth_Status
     if (filters.dateFrom) params.Value_date__gte = filters.dateFrom
     if (filters.dateTo) params.Value_date__lte = filters.dateTo
-    params.delete_stat__ne = 'Y' // Exclude soft deleted
+    params.delete_stat__ne = 'D' // Exclude soft deleted
     params.ordering = '-Maker_DT_Stamp' // Order by newest first
     
     const response = await axios.get('/api/journal-log-master/', {

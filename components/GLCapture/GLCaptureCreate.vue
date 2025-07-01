@@ -20,63 +20,110 @@
             </h3>
             <v-row dense>
               <v-col cols="12" md="2">
-                <v-text-field v-model="journalData.Value_date" label="ວັນທີ *" type="date" variant="outlined"
-                  density="comfortable" @change="updateReferenceNumber" prepend-inner-icon="mdi-calendar"
-                  hide-details="auto"/>
+                <v-text-field 
+                  v-model="journalData.Value_date" 
+                  label="ວັນທີ *" 
+                  type="date" 
+                  variant="outlined"
+                  density="compact" 
+                  @change="updateReferenceNumber" 
+                  prepend-inner-icon="mdi-calendar"
+                  hide-details="auto"
+                />
               </v-col>
 
               <v-col cols="12" md="2">
-                <v-select v-model="journalData.module_id" :items="modules" item-title="module_name_la"
-                  item-value="module_Id" label="ໂມດູນ *" :rules="requiredRules" variant="outlined" density="comfortable"
-                  :loading="loading.modules" @update:model-value="onModuleChange" prepend-inner-icon="mdi-cube-outline"
-                  hide-details="auto" no-data-text="ບໍ່ມີຂໍ້ມູນໂມດູນ" class="module-field">
+                <v-autocomplete
+                  v-model="journalData.module_id" 
+                  :items="modules" 
+                  item-title="module_name_la"
+                  item-value="module_Id" 
+                  label="ໂມດູນ *" 
+                  :rules="requiredRules" 
+                  variant="outlined" 
+                  density="compact"
+                  :loading="loading.modules" 
+                  @update:model-value="onModuleChange" 
+                  prepend-inner-icon="mdi-cube-outline"
+                  hide-details="auto" 
+                  no-data-text="ບໍ່ມີຂໍ້ມູນໂມດູນ" 
+                  class="module-field"
+                  clearable
+                  hide-no-data
+                >
                   <template #item="{ props, item }">
-                    <v-list-item v-bind="props"></v-list-item>
+                    <v-list-item v-bind="props" class="compact-item"></v-list-item>
                   </template>
-                </v-select>
+                </v-autocomplete>
+              </v-col>
+
+              <v-col cols="12" md="3">
+                <v-autocomplete
+                  v-model="journalData.Txn_code" 
+                  :items="transactionCodes" 
+                  item-title="txn_display"
+                  item-value="trn_code" 
+                  label="ລະຫັດການເຄື່ອນໄຫວ *" 
+                  :rules="requiredRules" 
+                  variant="outlined"
+                  density="compact" 
+                  :loading="loading.transactionCodes"
+                  @update:model-value="onTransactionCodeChange" 
+                  prepend-inner-icon="mdi-code-tags" 
+                  hide-details="auto"
+                  no-data-text="ບໍ່ມີຂໍ້ມູນລະຫັດການເຄື່ອນໄຫວ"
+                  clearable
+                  hide-no-data
+                >
+                  <template #item="{ props, item }">
+                    <v-list-item v-bind="props" class="compact-item"></v-list-item>
+                  </template>
+                </v-autocomplete>
               </v-col>
 
               <v-col cols="12" md="2">
-                <v-select v-model="journalData.Txn_code" :items="transactionCodes" item-title="txn_display"
-                  item-value="trn_code" label="ລະຫັດການເຄື່ອນໄຫວ *" :rules="requiredRules" variant="outlined"
-                  density="comfortable" :loading="loading.transactionCodes"
-                  @update:model-value="onTransactionCodeChange" prepend-inner-icon="mdi-code-tags" hide-details="auto"
-                  no-data-text="ບໍ່ມີຂໍ້ມູນລະຫັດການເຄື່ອນໄຫວ">
+                <v-autocomplete
+                  v-model="journalData.Ccy_cd" 
+                  :items="currencies" 
+                  item-title="Ccy_Name_la"
+                  item-value="ccy_code" 
+                  label="ສະກຸນເງິນ *" 
+                  :rules="requiredRules" 
+                  variant="outlined"
+                  density="compact" 
+                  :loading="loading.currencies" 
+                  @update:model-value="onMainCurrencyChange"
+                  prepend-inner-icon="mdi-currency-usd" 
+                  hide-details="auto" 
+                  no-data-text="ບໍ່ມີຂໍ້ມູນສະກຸນເງິນ"
+                  class="currency-field"
+                  clearable
+                  hide-no-data
+                >
                   <template #item="{ props, item }">
-                    <v-list-item v-bind="props"></v-list-item>
+                    <v-list-item v-bind="props" class="compact-item"></v-list-item>
                   </template>
-                </v-select>
+                </v-autocomplete>
               </v-col>
-              <v-col cols="12" md="2">
-                <v-select v-model="journalData.Ccy_cd" :items="currencies" item-title="Ccy_Name_la"
-                  item-value="ccy_code" label="ສະກຸນເງິນ *" :rules="requiredRules" variant="outlined"
-                  density="comfortable" :loading="loading.currencies" @update:model-value="onMainCurrencyChange"
-                  prepend-inner-icon="mdi-currency-usd" hide-details="auto" no-data-text="ບໍ່ມີຂໍ້ມູນສະກຸນເງິນ"
-                  class="currency-field">
-                  <template #item="{ props, item }">
-                    <v-list-item v-bind="props"></v-list-item>
-                  </template>
-                </v-select>
+
+              <v-col cols="12" md="3">
+                <v-text-field 
+                  v-model="journalData.Reference_No" 
+                  label="ເລກອ້າງອີງ *" 
+                  :rules="referenceRules"
+                  :disabled="autoReferenceMode" 
+                  variant="outlined" 
+                  density="compact" 
+                  counter="30"
+                  prepend-inner-icon="mdi-identifier" 
+                  hide-details="auto"
+                  :placeholder="referencePlaceholder"
+                />
               </v-col>
-              <v-col cols="12" md="2">
-                <v-text-field v-model="journalData.Reference_No" label="ເລກອ້າງອີງ *" :rules="referenceRules"
-                  :disabled="autoReferenceMode" variant="outlined" density="comfortable" counter="30"
-                  prepend-inner-icon="mdi-identifier" hide-details="auto"
-                  :placeholder="referencePlaceholder"></v-text-field>
-              </v-col>
-              <!-- <v-col cols="12" md="2">
-                <v-btn color="success" variant="outlined" size="default" @click="generateReference"
-                  :disabled="!journalData.Txn_code || !journalData.module_id || loading.generateRef"
-                  :loading="loading.generateRef" class="generate-btn" block>
-                  <v-icon left>mdi-auto-fix</v-icon>
-                  ສ້າງອ້າງອີງ
-                </v-btn>
-              </v-col> -->
             </v-row>
 
             <!-- Enhanced Description Fields Row -->
             <v-row dense class="mt-2">
-
               <v-col cols="12" md="4">
                 <v-select 
                   v-model="journalData.fin_cycle" 
@@ -86,12 +133,13 @@
                   label="ຮອບການເງິນ" 
                   :rules="finCycleRules"
                   variant="outlined" 
-                  density="comfortable"
+                  density="compact"
                   :loading="loading.finCycles" 
                   @update:model-value="loadPeriodCodes"
                   prepend-inner-icon="mdi-calendar-range" 
                   hide-details="auto" 
-                  no-data-text="ບໍ່ມີຂໍ້ມູນຮອບການເງິນ">
+                  no-data-text="ບໍ່ມີຂໍ້ມູນຮອບການເງິນ"
+                >
                   <template #append-inner>
                     <v-btn 
                       icon 
@@ -99,7 +147,8 @@
                       variant="text" 
                       color="info" 
                       @click="refreshAutoSelection"
-                      title="ເລືອກອັດຕະໂນມັດຕາມປີປັດຈຸບັນ">
+                      title="ເລືອກອັດຕະໂນມັດຕາມປີປັດຈຸບັນ"
+                    >
                       <v-icon size="small">mdi-refresh-auto</v-icon>
                     </v-btn>
                   </template>
@@ -116,19 +165,21 @@
                 </v-select>
               </v-col>
               <v-col cols="12" md="4">
-                <v-select v-model="journalData.Period_code" 
+                <v-select 
+                  v-model="journalData.Period_code" 
                   :items="periodCodes" 
                   item-title="period_display"
                   item-value="period_code" 
                   label="ລະຫັດໄລຍະ" 
                   :rules="periodCodeRules"
                   variant="outlined" 
-                  density="comfortable"
+                  density="compact"
                   :loading="loading.periodCodes" 
                   :disabled="!journalData.fin_cycle"
                   prepend-inner-icon="mdi-calendar-clock" 
                   hide-details="auto" 
-                  no-data-text="ບໍ່ມີຂໍ້ມູນລະຫັດໄລຍະ">
+                  no-data-text="ບໍ່ມີຂໍ້ມູນລະຫັດໄລຍະ"
+                >
                   <template #item="{ props, item }">
                     <v-list-item v-bind="props"></v-list-item>
                   </template>
@@ -136,17 +187,17 @@
               </v-col>
               <v-col cols="12" md="4">
                 <v-text-field
-                    v-model="journalData.Addl_text"
-                    label="ຂໍ້ຄວາມເພີ່ມເຕີມ (ຫຼັກ)"
-                    variant="outlined"
-                    density="comfortable"
-                    counter="255"
-                    :rules="addlTextRules"
-                    prepend-inner-icon="mdi-text"
-                    hide-details="auto"
-                    placeholder="ໃສ່ຂໍ້ຄວາມເພີ່ມເຕີມຫຼັກ..."
-                    @input="onMainDescriptionChange"
-                  />
+                  v-model="journalData.Addl_text"
+                  label="ຂໍ້ຄວາມເພີ່ມເຕີມ (ຫຼັກ)"
+                  variant="outlined"
+                  density="compact"
+                  counter="255"
+                  :rules="addlTextRules"
+                  prepend-inner-icon="mdi-text"
+                  hide-details="auto"
+                  placeholder="ໃສ່ຂໍ້ຄວາມເພີ່ມເຕີມຫຼັກ..."
+                  @input="onMainDescriptionChange"
+                />
               </v-col>
             </v-row>
           </div>
@@ -157,8 +208,14 @@
               <v-icon left size="small">mdi-calculator</v-icon>
               ອັດຕາແລກປ່ຽນ: 1 {{ journalData.Ccy_cd }} = {{ formatNumber(exchangeRate) }} LAK
             </v-chip>
-            <v-btn size="x-small" variant="text" color="info" @click="onMainCurrencyChange"
-              :loading="loading.exchangeRate" class="ml-2">
+            <v-btn 
+              size="x-small" 
+              variant="text" 
+              color="info" 
+              @click="onMainCurrencyChange"
+              :loading="loading.exchangeRate" 
+              class="ml-2"
+            >
               <v-icon size="small">mdi-refresh</v-icon>
               ໂຫລດໃໝ່
             </v-btn>
@@ -172,18 +229,36 @@
                 ລາຍການບັນທຶກ (Journal Entries)
               </h3>
               <div class="section-actions">
-                <v-btn color="primary" size="small" variant="outlined" @click="addJournalEntry"
-                  :disabled="loading.submit" class="mr-2">
+                <v-btn 
+                  color="primary" 
+                  size="small" 
+                  variant="outlined" 
+                  @click="addJournalEntry"
+                  :disabled="loading.submit" 
+                  class="action-btn"
+                >
                   <v-icon left size="small">mdi-plus</v-icon>
                   ເພີ່ມແຖວ
                 </v-btn>
-                <v-btn color="secondary" size="small" variant="text" @click="addQuickEntry" :disabled="loading.submit"
-                  class="mr-2">
+                <v-btn 
+                  color="secondary" 
+                  size="small" 
+                  variant="text" 
+                  @click="addQuickEntry" 
+                  :disabled="loading.submit"
+                  class="action-btn"
+                >
                   <v-icon left size="small">mdi-lightning-bolt</v-icon>
                   ເພີ່ມໄວ
                 </v-btn>
-                <v-btn color="info" size="small" variant="text" @click="fillSubTextFromMain"
-                  :disabled="loading.submit || !journalData.Addl_sub_text">
+                <v-btn 
+                  color="info" 
+                  size="small" 
+                  variant="text" 
+                  @click="fillSubTextFromMain"
+                  :disabled="loading.submit || !journalData.Addl_sub_text"
+                  class="action-btn"
+                >
                   <v-icon left size="small">mdi-format-text</v-icon>
                   ຕື່ມລາຍລະອຽດ
                 </v-btn>
@@ -230,7 +305,7 @@
                         item-value="glsub_id"
                         label="ບັນຊີເດບິດ"
                         variant="outlined"
-                        density="comfortable"
+                        density="compact"
                         :loading="loading.accounts || loading.debitValidation"
                         clearable
                         hide-details="auto"
@@ -251,7 +326,7 @@
                         item-value="glsub_id"
                         label="ບັນຊີເຄຣດິດ"
                         variant="outlined"
-                        density="comfortable"
+                        density="compact"
                         :loading="loading.accounts || loading.creditValidation"
                         clearable
                         hide-details="auto"
@@ -271,7 +346,7 @@
                         type="number"
                         :rules="amountRules"
                         variant="outlined"
-                        density="comfortable"
+                        density="compact"
                         step="0.001"
                         @update:model-value="() => calculateLcyAmount(entry)"
                         @blur="() => calculateLcyAmount(entry)"
@@ -287,7 +362,7 @@
                         v-model="entry.Addl_sub_text"
                         label="ຂໍ້ຄວາມເພີ່ມເຕີມ"
                         variant="outlined"
-                        density="comfortable"
+                        density="compact"
                         hide-details="auto"
                         counter="255"
                         :rules="entrySubTextRules"
@@ -390,77 +465,77 @@
             </div>
           </div>
 
-          <!-- Summary Section -->
-          <div class="summary-section" v-if="journalEntries.length > 0">
-            <v-row dense align="stretch" class="summary-row">
-              <v-col cols="12" md="3">
-                <v-card class="summary-card" elevation="1" color="primary-lighten-5">
-                  <v-card-text class="pa-3 text-center">
-                    <div class="summary-label">ລາຍການທັງໝົດ</div>
-                    <div class="summary-value text-primary">{{ journalEntries.length }}</div>
-                    <div class="summary-meta">{{ entriesWithDescription }} ມີລາຍລະອຽດ</div>
-                  </v-card-text>
-                </v-card>
+          <!-- Compact Summary Section -->
+          <div class="summary-section-compact" v-if="journalEntries.length > 0">
+            <v-row dense class="summary-row-compact">
+              <v-col cols="6" sm="3">
+                <div class="summary-item-compact primary">
+                  <div class="summary-label-compact">ລາຍການ</div>
+                  <div class="summary-value-compact">{{ journalEntries.length }}</div>
+                </div>
               </v-col>
-              <v-col cols="12" md="3">
-                <v-card class="summary-card" elevation="1" color="success-lighten-5">
-                  <v-card-text class="pa-3 text-center">
-                    <div class="summary-label">ລວມເດບິດ</div>
-                    <div class="summary-value text-success">{{ formatNumber(totalDebitAmount) }} LAK</div>
-                    <div class="summary-currency"></div>
-                    <div v-if="journalData.Ccy_cd !== 'LAK'" class="summary-fcy text-caption">
-                      ({{ formatNumber(totalDebitAmount / (exchangeRate || 1)) }} {{ journalData.Ccy_cd }})
-                    </div>
-                  </v-card-text>
-                </v-card>
+              <v-col cols="6" sm="3">
+                <div class="summary-item-compact success">
+                  <div class="summary-label-compact">ເດບິດ</div>
+                  <div class="summary-value-compact">{{ formatNumber(totalDebitAmount) }}</div>
+                </div>
               </v-col>
-              <v-col cols="12" md="3">
-                <v-card class="summary-card" elevation="1" color="info-lighten-5">
-                  <v-card-text class="pa-3 text-center">
-                    <div class="summary-label">ລວຮກເຄັດິດ</div>
-                    <div class="summary-value text-info">{{ formatNumber(totalCreditAmount) }} LAK</div>
-                    <div class="summary-currency"></div>
-                    <div v-if="journalData.Ccy_cd !== 'LAK'" class="summary-fcy text-caption">
-                      ({{ formatNumber(totalCreditAmount / (exchangeRate || 1)) }} {{ journalData.Ccy_cd }})
-                    </div>
-                  </v-card-text>
-                </v-card>
+              <v-col cols="6" sm="3">
+                <div class="summary-item-compact info">
+                  <div class="summary-label-compact">ເຄຣດິດ</div>
+                  <div class="summary-value-compact">{{ formatNumber(totalCreditAmount) }}</div>
+                </div>
               </v-col>
-              <v-col cols="12" md="3">
-                <v-card class="summary-card" elevation="1"
-                  :color="isBalanced ? 'success-lighten-5' : 'error-lighten-5'">
-                  <v-card-text class="pa-3 text-center">
-                    <div class="summary-label">Status</div>
-                    <v-chip size="small" :color="isBalanced ? 'success' : 'error'" variant="flat">
-                      <v-icon left size="x-small">{{ isBalanced ? 'mdi-check' : 'mdi-alert' }}</v-icon>
-                      {{ isBalanced ? 'ສົມດຸນ' : 'ບໍ່ສົມດຸນ' }}
-                    </v-chip>
-                    <div v-if="!isBalanced && balanceDifference !== 0" class="balance-difference">
-                      ຕ່າງ: {{ formatNumber(Math.abs(balanceDifference)) }}
-                    </div>
-                  </v-card-text>
-                </v-card>
+              <v-col cols="6" sm="3">
+                <div class="summary-item-compact" :class="isBalanced ? 'success' : 'error'">
+                  <div class="summary-label-compact">ສະຖານະ</div>
+                  <div class="summary-value-compact">
+                    <v-icon size="x-small" class="mr-1">{{ isBalanced ? 'mdi-check' : 'mdi-alert' }}</v-icon>
+                    {{ isBalanced ? 'ສົມດຸນ' : 'ບໍ່ສົມດຸນ' }}
+                  </div>
+                </div>
               </v-col>
             </v-row>
           </div>
 
-          <!-- Action Buttons -->
-          <div class="action-buttons">
-            <v-btn color="primary" size="large" :disabled="!isFormValid || loading.submit"
-              @click="submitJournal" class="submit-btn" :loading="loading.submit">
-              <v-icon left>mdi-content-save</v-icon>
-              ບັນທຶກ ({{ apiEntriesCount }} ລາຍການ API)
-            </v-btn>
-
-            <v-btn variant="outlined" size="large" @click="resetForm" :disabled="loading.submit" class="reset-btn">
-              <v-icon left>mdi-refresh</v-icon>
-              ລ້າງຟອມ
-            </v-btn>
-
-            <v-btn variant="outlined" size="large" @click="backpage" :disabled="loading.submit" class="back-btn">
-              <v-icon left>mdi-back</v-icon>
-              ກັບຄືນ
-            </v-btn>
+          <!-- Compact Action Buttons -->
+          <div class="action-buttons-compact">
+            <div class="primary-actions">
+              <v-btn 
+                color="primary" 
+                size="default" 
+                :disabled="!isFormValid || loading.submit"
+                @click="submitJournal" 
+                :loading="loading.submit"
+                class="submit-btn-compact"
+              >
+                <v-icon left size="small">mdi-content-save</v-icon>
+                ບັນທຶກ ({{ apiEntriesCount }})
+              </v-btn>
+              
+              <v-btn 
+                variant="outlined" 
+                size="default" 
+                @click="resetForm" 
+                :disabled="loading.submit"
+                class="secondary-btn-compact"
+              >
+                <v-icon left size="small">mdi-refresh</v-icon>
+                ລ້າງຟອມ
+              </v-btn>
+            </div>
+            
+            <div class="secondary-actions">
+              <v-btn
+                variant="outlined"
+                size="default"
+                @click="$router.go(-1)"
+                prepend-icon="mdi-arrow-left"
+                class="secondary-btn-compact"
+              >
+                ກັບ
+              </v-btn>
+            </div>
           </div>
         </v-form>
       </v-card-text>
@@ -470,6 +545,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue'
+import { useRouter } from 'vue-router'  
 import axios from '@/helpers/axios'
 import Swal from 'sweetalert2'
 
@@ -513,7 +589,6 @@ const modules = ref([])
 const currencies = ref([])
 const accounts = ref([])
 const transactionCodes = ref([])
-// FIX: was "const finCycles = value([])" (incorrect), should be:
 const finCycles = ref([])
 const periodCodes = ref([])
 const subTextSuggestions = ref([])
@@ -909,6 +984,15 @@ const duplicateEntry = (index) => {
   }
   journalEntries.value.splice(index + 1, 0, newEntry)
   setupEntryWatchers(newEntry)
+}
+
+const goBack = () => {
+  const router = useRouter()
+  if (window.history.length > 1) {
+    router.back()
+  } else {
+    router.push('glcapture/') // fallback if no history
+  }
 }
 
 const validateDescriptions = () => {
@@ -1580,24 +1664,18 @@ onMounted(async () => {
 
 .page-header {
   text-align: center;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .page-title {
-  font-size: 1.8rem;
+  font-size: 1.6rem;
   font-weight: 300;
   color: #1976d2;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 12px;
-}
-
-.page-subtitle {
-  color: #666;
-  font-size: 1rem;
-  margin: 0;
 }
 
 .form-card {
@@ -1607,15 +1685,15 @@ onMounted(async () => {
 }
 
 .form-section {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .section-title {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 500;
   color: #424242;
-  margin-bottom: 12px;
-  padding-bottom: 6px;
+  margin-bottom: 10px;
+  padding-bottom: 4px;
   border-bottom: 1px solid #f5f5f5;
   display: flex;
   align-items: center;
@@ -1623,44 +1701,47 @@ onMounted(async () => {
 
 .module-field {
   background: linear-gradient(135deg, #fff3e0 0%, #ffffff 100%);
-  /* border: 2px solid #ff9800 !important; */
 }
 
 .currency-field {
   background: linear-gradient(135deg, #e8f5e8 0%, #ffffff 100%);
-  /* border: 2px solid #4caf50 !important; */
-}
-
-.generate-btn {
-  height: 56px;
 }
 
 .exchange-rate-info {
-  margin: 12px 0;
+  margin: 10px 0;
   text-align: center;
 }
 
 .entries-section {
-  margin: 24px 0;
+  margin: 20px 0;
   background: #fafafa;
   border-radius: 8px;
-  padding: 16px;
+  padding: 12px;
 }
 
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .section-actions {
   display: flex;
-  gap: 8px;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  min-width: 80px;
+  height: 32px;
+  font-size: 0.8rem;
 }
 
 .entries-title {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 500;
   color: #424242;
   margin: 0;
@@ -1677,44 +1758,30 @@ onMounted(async () => {
     display: flex;
     background: #e3f2fd;
     border-radius: 6px;
-    padding: 8px 12px;
-    margin-bottom: 12px;
+    padding: 6px 10px;
+    margin-bottom: 10px;
     font-weight: 500;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: #1976d2;
   }
 }
 
 .header-cell {
-  padding: 0 4px;
+  padding: 0 3px;
 }
 
-.account-col {
-  width: 20%;
-}
-
-.amount-col {
-  width: 15%;
-}
-
-.lcy-col {
-  width: 15%;
-}
-
-.text-col {
-  width: 25%;
-}
-
-.action-col {
-  width: 5%;
-}
+.account-col { width: 20%; }
+.amount-col { width: 15%; }
+.lcy-col { width: 15%; }
+.text-col { width: 25%; }
+.action-col { width: 5%; }
 
 .empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px;
+  padding: 32px;
   text-align: center;
   background: white;
   border-radius: 8px;
@@ -1722,18 +1789,19 @@ onMounted(async () => {
 }
 
 .empty-text h4 {
-  margin: 12px 0 8px 0;
+  margin: 10px 0 6px 0;
   color: #666;
+  font-size: 1rem;
 }
 
 .empty-text p {
   margin: 0;
   color: #999;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
 .journal-entry-row {
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   animation: slideIn 0.3s ease;
 }
 
@@ -1744,123 +1812,28 @@ onMounted(async () => {
 }
 
 .entry-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
 }
 
 .row-number {
-  min-width: 60px;
+  min-width: 55px;
 }
 
 .amount-field {
   background: linear-gradient(135deg, #fff3e0 0%, #ffffff 100%);
 }
 
-.lcy-field {
-  background-color: #f8f9fa;
-}
-
-.lcy-field :deep(.v-text-field__details) {
-  min-height: 20px;
-  padding-top: 4px;
-}
-
-.lcy-field :deep(.v-messages) {
-  font-size: 0.75rem;
-  color: #666;
-}
-
 .entry-status {
-  margin-top: 8px;
-  padding-top: 8px;
+  margin-top: 6px;
+  padding-top: 6px;
   border-top: 1px solid #f0f0f0;
   display: flex;
   align-items: center;
 }
 
-.summary-row {
-  align-items: stretch !important;
-}
-.summary-section {
-  margin: 24px 0;
-}
-
-.summary-card {
-  border-radius: 8px;
-  transition: all 0.2s ease;
-}
-.summary-card .v-card-text {
-  padding: 12px 6px !important;
-  font-size: 0.95rem;
-}
-
-.summary-card:hover {
-  transform: translateY(-1px);
-}
-
-.summary-label {
-  font-size: 0.85rem;
-  margin-bottom: 2px;
-}
-
-.summary-value {
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin-bottom: 2px;
-}
-
-.summary-currency {
-  font-size: 0.75rem;
-  color: #666;
-  margin-top: 0px;
-}
-
-.summary-meta,
-.summary-fcy,
-.summary-currency,
-.balance-difference {
-  font-size: 0.75rem;
-  margin-top: 2px;
-}
-.balance-difference {
-  font-size: 0.75rem;
-  color: #f44336;
-  margin-top: 4px;
-}
-
-.debug-section {
-  margin: 16px 0;
-  background: #f8f9fa;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.debug-section :deep(.v-expansion-panel-title) {
-  background: #e3f2fd;
-  min-height: 40px;
-}
-
-.debug-section .text-caption {
-  margin: 2px 0;
-}
-
-.action-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 24px;
-  padding-top: 20px;
-  border-top: 1px solid #f0f0f0;
-}
-
-.submit-btn,
-.reset-btn,
-.balance-btn {
-  min-width: 160px;
-  border-radius: 6px;
-}
-
 .compact-item {
-  min-height: 70px !important;
+  min-height: 48px !important;
+  padding: 4px 8px !important;
 }
 
 .compact-item :deep(.v-list-item-title) {
@@ -1868,12 +1841,106 @@ onMounted(async () => {
   line-height: 1.2;
 }
 
-.compact-item :deep(.v-list-item-subtitle) {
-  font-size: 0.7rem;
-  line-height: 1;
+/* Compact Summary Section */
+.summary-section-compact {
+  margin: 16px 0;
+  padding: 8px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
 }
 
+.summary-row-compact {
+  align-items: stretch !important;
+}
 
+.summary-item-compact {
+  background: white;
+  border-radius: 6px;
+  padding: 8px 10px;
+  text-align: center;
+  border: 1px solid #e0e0e0;
+  transition: all 0.2s ease;
+  min-height: 50px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.summary-item-compact:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.summary-item-compact.primary {
+  border-left: 3px solid #1976d2;
+}
+
+.summary-item-compact.success {
+  border-left: 3px solid #4caf50;
+}
+
+.summary-item-compact.info {
+  border-left: 3px solid #2196f3;
+}
+
+.summary-item-compact.error {
+  border-left: 3px solid #f44336;
+}
+
+.summary-label-compact {
+  font-size: 0.7rem;
+  color: #666;
+  margin-bottom: 2px;
+  font-weight: 500;
+}
+
+.summary-value-compact {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+}
+
+/* Compact Action Buttons */
+.action-buttons-compact {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #f0f0f0;
+  flex-wrap: wrap;
+}
+
+.primary-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.secondary-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.submit-btn-compact,
+.secondary-btn-compact {
+  height: 36px;
+  min-width: 100px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.submit-btn-compact {
+  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+}
 
 /* Responsive design */
 @media (max-width: 768px) {
@@ -1882,31 +1949,38 @@ onMounted(async () => {
   }
 
   .page-title {
-    font-size: 1.4rem;
+    font-size: 1.3rem;
   }
 
-  .action-buttons {
+  .action-buttons-compact {
     flex-direction: column;
-    align-items: center;
+    align-items: stretch;
   }
 
-  .submit-btn,
-  .reset-btn,
-  .balance-btn {
+  .primary-actions,
+  .secondary-actions {
+    justify-content: center;
     width: 100%;
-    max-width: 280px;
+  }
+
+  .submit-btn-compact,
+  .secondary-btn-compact {
+    min-width: 120px;
   }
 
   .section-header {
     flex-direction: column;
-    gap: 8px;
     align-items: flex-start;
   }
 
   .section-actions {
-    flex-direction: column;
     width: 100%;
-    gap: 8px;
+    justify-content: center;
+  }
+
+  .action-btn {
+    flex: 1;
+    min-width: 90px;
   }
 
   .entry-status {
@@ -1914,18 +1988,49 @@ onMounted(async () => {
     align-items: flex-start;
     gap: 4px;
   }
+
+  .summary-row-compact {
+    gap: 8px;
+  }
+
+  .summary-item-compact {
+    padding: 6px 8px;
+    min-height: 45px;
+  }
+
+  .summary-label-compact {
+    font-size: 0.65rem;
+  }
+
+  .summary-value-compact {
+    font-size: 0.8rem;
+  }
 }
 
 /* Animation */
 @keyframes slideIn {
   from {
     opacity: 0;
-    transform: translateY(-10px);
+    transform: translateY(-8px);
   }
-
   to {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Enhanced density for compact layout */
+:deep(.v-field--density-compact .v-field__input) {
+  min-height: 36px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+:deep(.v-field--density-compact .v-field__prepend-inner) {
+  padding-top: 2px;
+}
+
+:deep(.v-field--density-compact .v-field__append-inner) {
+  padding-top: 2px;
 }
 </style>

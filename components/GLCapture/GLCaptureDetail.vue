@@ -168,25 +168,30 @@
             <table class="journal-table">
               <thead>
                 <tr>
-                  <th width="120">ບັນຊີ</th>
                   <th width="180">ເລກອ້າງອີງຄູ່</th>
-                  <th width="250">ຊື່ບັນຊີ</th>
+                  <th width="180">ບັນຊີ</th>
+                  <th width="200">ເນື້ອໃນ</th>
                   <th width="140" class="text-right">Debit (FCY)</th>
                   <th width="140" class="text-right">Credit (FCY)</th>
+                  <th width="40" class="text-center">ສະຖານະ</th>
                   <th width="140" class="text-center">ການກະທຳ</th>
+                  
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="(entry, index) in journalEntries" :key="entry.JRNLLog_id" 
                     :class="{ 'correction-row': entry.Auth_Status === 'P' }">
-                  <td class="font-weight-medium">{{ entry.account_code }}</td>
+        
                   <td>
                     <v-chip size="small" variant="outlined" color="primary">
                       {{ entry.Reference_sub_No }}
                     </v-chip>
                   </td>
-                  <td class="text-truncate" style="max-width: 250px;">
+                  <td class="font-weight-medium">{{ entry.account_code }}
                     <span :title="entry.account_name">{{ entry.account_name }}</span>
+                  </td>
+                  <td class="text-truncate" style="max-width: 250px;">
+                    
                     <div v-if="entry.Addl_sub_text" class="text-xs text-grey mt-1">
                       {{ entry.Addl_sub_text }}
                     </div>
@@ -202,6 +207,15 @@
                       {{ formatNumber(entry.fcy_cr) }}
                     </span>
                     <span v-else class="text-grey">-</span>
+                  </td>
+                  <td>
+                    <v-chip 
+                      :color="getStatusColor(entry.Auth_Status)"
+                      variant="flat"
+                      size="small"
+                    >
+                      <v-icon size="16">{{ getStatusIcon(entry.Auth_Status) }}</v-icon>
+                    </v-chip>
                   </td>
                   <td class="text-center">
                     <div class="d-flex justify-center gap-1">
@@ -475,7 +489,7 @@
                   placeholder="ກະລຸນາອະທິບາຍເຫດຜົນການແກ້ໄຂ..."
                   :rules="[
                     v => !!v || 'ກະລຸນາໃສ່ເຫດຜົນການແກ້ໄຂ',
-                    v => v && v.length >= 10 || 'ເຫດຜົນຕ້ອງມີຢ່າງນ້ອຍ 10 ຕົວອັກສອນ',
+                    v => v && v.length >= 1 || 'ເຫດຜົນຕ້ອງມີຢ່າງນ້ອຍ 1 ຕົວອັກສອນ',
                     v => !v || v.length <= 1000 || 'ເຫດຜົນຕ້ອງບໍ່ເກີນ 1000 ຕົວອັກສອນ'
                   ]"
                   required
@@ -585,7 +599,7 @@ const isBalanced = computed(() => {
 // Form validation computed
 const isEditFormValid = computed(() => {
   const hasAmount = editForm.value.Fcy_Amount && editForm.value.Fcy_Amount > 0
-  const hasComments = editForm.value.comments && editForm.value.comments.trim().length >= 10
+  const hasComments = editForm.value.comments && editForm.value.comments.trim().length >= 1
   const accountsValid = (!editForm.value.glsub_id && !editForm.value.relative_glsub_id) || 
                        (editForm.value.glsub_id && editForm.value.relative_glsub_id)
   
@@ -636,8 +650,10 @@ const loadData = async () => {
     }
 
     // Load master data
-    const masterResponse = await axios.get('/api/journal-log-master/', {
-      params: { Reference_No: referenceNo.value },
+    const masterResponse = await axios.get('/api/journal-entries/', {
+      params: { 
+        Reference_No: referenceNo.value,
+      },
       ...getAuthHeaders()
     })
 
@@ -880,7 +896,7 @@ const rejectByPairAccount = async (referenceSubNo) => {
       if (!value || value.trim().length === 0) {
         return 'ກະລຸນາໃສ່ເຫດຜົນໃນການປະຕິເສດ'
       }
-      if (value.trim().length < 10) {
+      if (value.trim().length < 1) {
         return 'ເຫດຜົນຕ້ອງມີຢ່າງນ້ອຍ 10 ຕົວອັກສອນ'
       }
       if (value.length > 500) {
@@ -1066,7 +1082,7 @@ const fixRejectedEntry = async () => {
       throw new Error('ກະລຸນາໃສ່ຈຳນວນເງິນທີ່ຖືກຕ້ອງ')
     }
 
-    if (!editForm.value.comments || editForm.value.comments.trim().length < 10) {
+    if (!editForm.value.comments || editForm.value.comments.trim().length < 1) {
       throw new Error('ກະລຸນາໃສ່ເຫດຜົນການແກ້ໄຂທີ່ມີຄວາມຍາວຢ່າງນ້ອຍ 10 ຕົວອັກສອນ')
     }
 
@@ -1220,6 +1236,8 @@ const fixRejectedEntry = async () => {
     editingRefSubNo.value = null
   }
 }
+// Corrected approve function - using master table endpoint and ID
+// Simplified approve function - updates MASTER, LOG, and HIST tables
 const approveItem = async (item) => {
   const result = await Swal.fire({
     icon: 'question',
@@ -1234,47 +1252,72 @@ const approveItem = async (item) => {
   
   if (result.isConfirmed) {
     try {
-      await axios.patch(`/api/journal-log-master/${item.JRNLLog_id}/`, {
-        Auth_Status: 'A',
-        Checker_Id: localStorage.getItem('userId'),
-        Checker_DT_Stamp: new Date().toISOString()
+      // Call endpoint that updates MASTER, LOG, and HIST tables
+      const response = await axios.post('/api/journal-entries/approve-all/', {
+        Reference_No: item.Reference_No
       }, getAuthHeaders())
       
       Swal.fire({
         icon: 'success',
         title: 'ສຳເລັດ',
-        text: 'ອະນຸມັດລາຍການສຳເລັດແລ້ວ',
+        text: response.data.message || 'ອະນຸມັດລາຍການສຳເລັດແລ້ວ',
         timer: 2000,
         showConfirmButton: false
       })
       
-      // Reload data or navigate back
+      // Reload data to show updated status
       await loadData()
       
     } catch (error) {
       console.error('Error approving item:', error)
+      
+      let errorMessage = 'ບໍ່ສາມາດອະນຸມັດລາຍການໄດ້'
+      
+      if (error.response?.data?.error) {
+        const backendError = error.response.data.error
+        if (backendError.includes('already approved')) {
+          errorMessage = 'ລາຍການນີ້ໄດ້ຮັບການອະນຸມັດແລ້ວ'
+        } else if (backendError.includes('problematic entries')) {
+          errorMessage = 'ມີລາຍການທີ່ມີບັນຫາ (P ຫຼື R) ບໍ່ສາມາດອະນຸມັດໄດ້'
+        } else {
+          errorMessage = backendError
+        }
+      } else if (error.response?.status === 404) {
+        errorMessage = 'ບໍ່ພົບລາຍການທີ່ຕ້ອງການອະນຸມັດ'
+      } else if (error.response?.status === 400) {
+        errorMessage = error.response.data?.detail || 'ຂໍ້ມູນບໍ່ຖືກຕ້ອງ'
+      }
+      
       Swal.fire({
         icon: 'error',
         title: 'ຂໍ້ຜິດພາດ',
-        text: 'ບໍ່ສາມາດອະນຸມັດລາຍການໄດ້',
+        text: errorMessage,
         confirmButtonText: 'ຕົກລົງ'
       })
     }
   }
 }
 
-// Reject item
+// Simplified reject function - updates MASTER, LOG, and HIST tables  
 const rejectItem = async (item) => {
   const result = await Swal.fire({
     icon: 'warning',
     title: 'ຢືນຢັນການປະຕິເສດ',
     text: `ທ່ານຕ້ອງການປະຕິເສດລາຍການ ${item.Reference_No} ແທ້ບໍ?`,
     input: 'textarea',
-    inputLabel: 'ເຫດຜົນໃນການປະຕິເສດ',
+    inputLabel: 'ເຫດຜົນໃນການປະຕິເສດ *',
     inputPlaceholder: 'ກະລຸນາໃສ່ເຫດຜົນ...',
+    inputAttributes: {
+      'aria-label': 'Rejection reason',
+      'rows': 3,
+      'maxlength': 500
+    },
     inputValidator: (value) => {
-      if (!value) {
-        return 'ກະລຸນາໃສ່ເຫດຜົນໃນການປະຕິເສດ!'
+      if (!value || value.trim().length === 0) {
+        return 'ກະລຸນາໃສ່ເຫດຜົນໃນການປະຕິເສດ'
+      }
+      if (value.trim().length < 1) {
+        return 'ເຫດຜົນຕ້ອງມີຢ່າງນ້ອຍ 10 ຕົວອັກສອນ'
       }
     },
     showCancelButton: true,
@@ -1286,36 +1329,45 @@ const rejectItem = async (item) => {
   
   if (result.isConfirmed) {
     try {
-      await axios.patch(`/api/journal-log-master/${item.JRNLLog_id}/`, {
-        Auth_Status: 'R',
-        Checker_Id: localStorage.getItem('userId'),
-        Checker_DT_Stamp: new Date().toISOString(),
-        Addl_text: item.Addl_text + '\nເຫດຜົນປະຕິເສດ: ' + result.value
+      // Call endpoint that updates MASTER, LOG, and HIST tables
+      const response = await axios.post('/api/journal-entries/reject-all/', {
+        Reference_No: item.Reference_No,
+        rejection_reason: result.value.trim()
       }, getAuthHeaders())
       
       Swal.fire({
         icon: 'success',
         title: 'ສຳເລັດ',
-        text: 'ປະຕິເສດລາຍການສຳເລັດແລ້ວ',
+        text: response.data.message || 'ປະຕິເສດລາຍການສຳເລັດແລ້ວ',
         timer: 2000,
         showConfirmButton: false
       })
       
-      // Reload data
+      // Reload data to show updated status
       await loadData()
       
     } catch (error) {
       console.error('Error rejecting item:', error)
+      
+      let errorMessage = 'ບໍ່ສາມາດປະຕິເສດລາຍການໄດ້'
+      
+      if (error.response?.data?.error) {
+        errorMessage = error.response.data.error
+      } else if (error.response?.status === 404) {
+        errorMessage = 'ບໍ່ພົບລາຍການທີ່ຕ້ອງການປະຕິເສດ'
+      } else if (error.response?.status === 400) {
+        errorMessage = error.response.data?.detail || 'ຂໍ້ມູນບໍ່ຖືກຕ້ອງ'
+      }
+      
       Swal.fire({
         icon: 'error',
         title: 'ຂໍ້ຜິດພາດ',
-        text: 'ບໍ່ສາມາດປະຕິເສດລາຍການໄດ້',
+        text: errorMessage,
         confirmButtonText: 'ຕົກລົງ'
       })
     }
   }
 }
-
 // Lifecycle
 onMounted(() => {
   console.log('Detail page mounted with query:', route.query)
