@@ -1,14 +1,69 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue";
+// ແກ້ໄຂການ import ໃຫ້ຄົບຖ້ວນ
+import { ref, onMounted, computed, watch } from "vue";
 import { CallSwal } from "#build/imports";
 
+const assetStores = assetStore();
 const faAssetStoreInstance = faAssetStore();
+const typeAssetStore = propertyStore()
+const response = computed(()=>{
+  return assetStores.response_asset_list || [];
+})
 const mockData = computed(() => {
-  return faAssetStoreInstance.response_fa_asset_list;
+  return faAssetStoreInstance.response_fa_asset_list || [];
 });
+
+// ເພີ່ມ localStorage constants ແລະ functions
+const STORAGE_KEY = 'asset_filters';
+
+const loadFiltersFromStorage = () => {
+  try {
+    const savedFilters = localStorage.getItem(STORAGE_KEY);
+    if (savedFilters) {
+      const filters = JSON.parse(savedFilters);
+      selectedStatus.value = filters.selectedStatus || 'all';
+      selectedassetCode.value = filters.selectedassetCode || 'all';
+      search.value = filters.search || '';
+    }
+  } catch (error) {
+    console.error('Error loading filters from localStorage:', error);
+  }
+};
+
+const saveFiltersToStorage = () => {
+  try {
+    const filters = {
+      selectedStatus: selectedStatus.value,
+      selectedassetCode: selectedassetCode.value,
+      search: search.value
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(filters));
+  } catch (error) {
+    console.error('Error saving filters to localStorage:', error);
+  }
+};
+
+// ປ່ຽນລຳດັບໃຫ້ເປັນ: ປະກາດ ref ກ່ອນ, ຈຶ່ງໃຊ້ໃນ watch
+const search = ref("");
+const loading = ref(false);
+const showSuccess = ref(false);
+const showError = ref(false);
+const successMessage = ref("");
+const errorMessage = ref("");
+const selectedStatus = ref("all");
+const selectedassetCode = ref("all");
+
+// ຕອນນີ້ເອົາ watch ມາວາງຫຼັງຈາກປະກາດ ref ແລ້ວ
+watch([selectedStatus, selectedassetCode, search], () => {
+  saveFiltersToStorage();
+}, { deep: true });
+
 onMounted(() => {
+  assetStores.GetAssetList();
+  typeAssetStore.GetPropertyCategoryById();
   faAssetStoreInstance.GetFaAssetList();
 });
+
 const handleStatusChange = async (item: any, newStatus: string) => {
   try {
     const statusTexts = {
@@ -54,14 +109,6 @@ const calculateDepreciation = async (item: any) => {
   }
 };
 
-const search = ref("");
-const loading = ref(false);
-const showSuccess = ref(false);
-const showError = ref(false);
-const successMessage = ref("");
-const errorMessage = ref("");
-const selectedStatus = ref("all");
-
 const {
   canEdit,
   canDelete,
@@ -87,7 +134,7 @@ const assetStatuses = [
   { title: "ບຳລຸງຮັກສາ", value: "MT" },
   { title: "ຖອນຈຳໜ່າຍ", value: "DS" },
   { title: "ເສຍຫາຍ", value: "DM" },
-  { title: "ພວມຊື້ພວມກໍ່ສ້າງ", value: "DM" },
+  { title: "ພວມຊື້ພວມກໍ່ສ້າງ", value: "UC" }, 
 ];
 
 const currencies = [
@@ -244,6 +291,11 @@ const headers = computed(() => [
 const filteredData = computed(() => {
   let data = mockData.value;
 
+
+  if (!Array.isArray(data)) {
+    return [];
+  }
+
   if (selectedStatus.value !== "all") {
     data = data.filter((item) => item.asset_status === selectedStatus.value);
   }
@@ -251,7 +303,7 @@ const filteredData = computed(() => {
   if (search.value) {
     data = data.filter(
       (item) =>
-        item.asset_tag.toLowerCase().includes(search.value.toLowerCase()) ||
+        item.asset_tag?.toLowerCase().includes(search.value.toLowerCase()) ||
         item.asset_serial_no
           ?.toLowerCase()
           .includes(search.value.toLowerCase()) ||
@@ -260,6 +312,10 @@ const filteredData = computed(() => {
           .includes(search.value.toLowerCase()) ||
         item.asset_spec?.toLowerCase().includes(search.value.toLowerCase())
     );
+  }
+
+  if(selectedassetCode.value !== "all") {
+    data = data.filter((item) => item.asset_id_detail?.coa_id === selectedassetCode.value);
   }
 
   return data;
@@ -331,12 +387,47 @@ const confirmDelete = async (item: any) => {
 
 const clearFilters = async () => {
   selectedStatus.value = "all";
+  selectedassetCode.value = "all";
   search.value = "";
+  
+  // ລຶບຂໍ້ມູນຈາກ localStorage
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch (error) {
+    console.error('Error clearing filters from localStorage:', error);
+  }
 };
+
+const formatNumber = (value) => {
+  if (!value && value !== 0) return '0';
+  const num = parseFloat(value);
+  if (isNaN(num)) return '0';
+  
+  if (num % 1 === 0) {
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(num);
+  } else {
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(num);
+  }
+};
+
 
 onMounted(async () => {
   loading.value = true;
   try {
+   
+    loadFiltersFromStorage();
+    
+   
+    assetStores.GetAssetList();
+    typeAssetStore.GetPropertyCategoryById();
+    faAssetStoreInstance.GetFaAssetList();
+    
     initializeRole();
     roleStore.GetRoleDetail();
 
@@ -348,45 +439,41 @@ onMounted(async () => {
     loading.value = false;
   }
 });
-const formatNumber = (value) => {
-  if (!value && value !== 0) return '0';
-  const num = parseFloat(value);
-  if (isNaN(num)) return '0';
-  
- 
-  if (num % 1 === 0) {
-   
-    return new Intl.NumberFormat('en-US', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(num);
-  } else {
-    
-    return new Intl.NumberFormat('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(num);
-  }
-};
-
 </script>
 
 <template>
+  <div class="pa-2">
   <GlobalTextTitleLine :title="title" />
-
+<pre>
+<!-- {{ response }} -->
+</pre>
   <v-col cols="12">
    
     <v-row>
-      <v-col cols="12" md="3">
+      <v-col cols="12" md="2">
         <div class="d-flex">
-          <v-btn
-            color="primary"
-            @click="goPath(`/property/faasset/create`)"
-            v-if="canAdd"
-          >
-            <v-icon icon="mdi-plus"></v-icon> ເພີ່ມຊັບສົມບັດ
-          </v-btn>
+         <v-btn
+  color="primary"
+  @click="goPath(`/property/faasset/create${selectedassetCode !== 'all' ? '?asset_type_id=' + selectedassetCode : ''}`)"
+  v-if="canAdd"
+>
+  <v-icon icon="mdi-plus"></v-icon> ເພີ່ມຊັບສົມບັດ
+</v-btn>
         </div>
+      </v-col>
+ <v-col cols="12" md="3" class="text-no-wrap">
+        <v-select
+          v-model="selectedassetCode"
+          :items="response || []"
+          item-title="asset_name_la"
+          item-value="coa_id"
+          label="ເລືອກຕາມປະເພດຊັບສົມບັດຍອ່ຍ"
+          variant="outlined"
+          density="compact"
+          clearable
+          placeholder="ເລືອກສະຖານະ"
+          :loading="loading"
+        ></v-select>
       </v-col>
 
       <v-col cols="12" md="3" class="text-no-wrap">
@@ -403,8 +490,8 @@ const formatNumber = (value) => {
           :loading="loading"
         ></v-select>
       </v-col>
-
-      <v-col cols="12" md="4">
+     
+      <v-col cols="12" md="2">
         <v-text-field
           v-model="search"
           label="ຄົ້ນຫາ"
@@ -515,7 +602,7 @@ const formatNumber = (value) => {
         <v-chip color="primary">{{ item.asset_accu_dpca_value || "-" }}</v-chip>
       </template>
       <template v-slot:item.asset_type_id="{ item }">
-        <v-chip color="primary">{{ item.asset_type_id || "-" }}</v-chip>
+        <v-chip color="primary">{{ item.asset_id_detail.asset_name_la || "-" }}</v-chip>
       </template>
 
       <template v-slot:item.type_of_pay="{ item }">
@@ -683,5 +770,5 @@ const formatNumber = (value) => {
   <v-snackbar v-model="showError" color="error" timeout="5000" location="top">
     <v-icon class="mr-2">mdi-alert-circle</v-icon>
     {{ errorMessage }}
-  </v-snackbar>
+  </v-snackbar></div>
 </template>

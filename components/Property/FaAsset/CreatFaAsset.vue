@@ -1,6 +1,8 @@
 <script lang="ts" setup>
 import { CallSwal } from "#build/imports";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router"; 
+import { nextTick } from "vue";
+
 const currencyStore = useCerrencyStore();
 const currency = computed(() => {
   const data = currencyStore.respons_cerrency_data;
@@ -12,6 +14,7 @@ const currency = computed(() => {
   }
   return [];
 });
+
 const noaccStore = useMasterStore();
 const noacc = computed(() => {
   return noaccStore.respone_data_master?.MasterCodes || [];
@@ -58,10 +61,17 @@ const supplier = computed(() => {
 
 const faAssetStoreInstance = faAssetStore();
 const router = useRouter();
+const route = useRoute(); 
 
 const title = ref("ເພີ່ມຊັບສົມບັດຄົງທີ່ໃໝ່");
 const loading = ref(false);
 const form = ref();
+
+// ⭐ ແກ້ໄຂການຮັບ asset_type_id ຈາກ URL - ແປງເປັນ number
+const urlAssetCode = computed(() => {
+  const param = route.query.asset_type_id as string;
+  return param ? parseInt(param) : null;
+});
 
 const currencyOptions = [
   { title: "ກີບລາວ (LAK)", value: "LAK" },
@@ -192,11 +202,9 @@ const goBack = () => {
 };
 
 const submitForm = async () => {
- 
   const isValid = await form.value.validate();
   
   if (!isValid) {
-    
     await CallSwal({
       icon: "error",
       title: "ຂໍ້ມູນບໍ່ຄົບຖ້ວນ",
@@ -207,7 +215,6 @@ const submitForm = async () => {
     return; 
   }
 
- 
   const requiredFields = [
     { field: faAssetStoreInstance.form_create_fa_asset.asset_type_id, name: "ປະເພດຊັບສົມບັດ" },
     { field: faAssetStoreInstance.form_create_fa_asset.asset_value, name: "ມູນຄ່າເລີ່ມຕົ້ນ" },
@@ -217,7 +224,6 @@ const submitForm = async () => {
     { field: faAssetStoreInstance.form_create_fa_asset.asset_location_id, name: "ສະຖານທີ່ຕັ້ງ" },
   ];
 
- 
   if (faAssetStoreInstance.form_create_fa_asset.has_depreciation === 'Y') {
     requiredFields.push(
       { field: faAssetStoreInstance.form_create_fa_asset.dpca_type, name: "ວິທີຫັກຄ່າເສື່ອມລາຄາ" },
@@ -242,7 +248,6 @@ const submitForm = async () => {
     return;
   }
 
-  
   if (faAssetStoreInstance.form_create_fa_asset.asset_value <= 0) {
     await CallSwal({
       icon: "error",
@@ -254,7 +259,6 @@ const submitForm = async () => {
     return;
   }
 
- 
   const notification = await CallSwal({
     icon: "warning",
     title: "ຄຳເຕືອນ",
@@ -275,7 +279,7 @@ const submitForm = async () => {
       )
         .toString()
         .padStart(2, "0")}`;
-
+        
       faAssetStoreInstance.creat_form_jornal = {
         Reference_No: computedReferenceNo.value,
         Ccy_cd: faAssetStoreInstance.form_create_fa_asset.currency_type || "LAK",
@@ -291,7 +295,7 @@ const submitForm = async () => {
             Account_no: faAssetStoreInstance.form_create_fa_asset.MC_detail,
             Amount: parseFormattedNumber(formattedAssetValue.value),
             Dr_cr: "D",
-            Addl_sub_text: `ຊັບສົມບັດ: ${faAssetStoreInstance.form_create_fa_asset.asset_spec}`,
+            Addl_sub_text: `${faAssetStoreInstance.form_create_fa_asset.asset_spec}`,
             Ac_relatives: "",
           },
           {
@@ -299,7 +303,7 @@ const submitForm = async () => {
             Account_no: faAssetStoreInstance.form_create_fa_asset.acc_no,
             Amount: parseFormattedNumber(formattedAssetValue.value),
             Dr_cr: "C",
-            Addl_sub_text: `ການຊື້ຊັບສົມບັດ: ${faAssetStoreInstance.form_create_fa_asset.asset_spec}`,
+            Addl_sub_text: `${faAssetStoreInstance.form_create_fa_asset.asset_spec}`,
             Ac_relatives: "",
           },
         ],
@@ -332,6 +336,7 @@ const submitForm = async () => {
     }
   }
 };
+
 const computedAssetDisplayName = computed(() => {
   const assetTypeId = faAssetStoreInstance.form_create_fa_asset.asset_type_id;
   const mcNameLa = faAssetStoreInstance.form_create_fa_asset.MC_name_la;
@@ -346,7 +351,6 @@ const computedAssetDisplayName = computed(() => {
 
   if (selectedAsset?.asset_name_la && mcNameLa) {
     return `ພວມຊື້ພວມກໍ່ສ້າງ-${mcNameLa}`;
-    // return `ພວມຊື້ພວມກໍ່ສ້າງ-${mcNameLa} - ${selectedAsset.asset_name_la}`;
   }
 
   return mcNameLa || "";
@@ -370,6 +374,7 @@ const computedAssetSpecName = computed(() => {
 
   return mcNameLa || "";
 });
+
 const generateNextAssetCode = () => {
   const assetCodes = assetcode.value;
 
@@ -493,14 +498,43 @@ const generateAssetListId = () => {
 const handleTypeOfPayChange = async (selectedValue: any) => {
   if (selectedValue) {
     noaccStore.res_pons_filter.query.gl_code = selectedValue;
-
     faAssetStoreInstance.form_create_fa_asset.acc_no = "";
-
     await noaccStore.getSubData();
   }
 };
 
-const debugWatch = () => {};
+// ⭐ ເພີ່ມ watch ສຳລັບ mockData ໂດຍສະເພາະ
+watch(
+  () => mockData.value,
+  (newMockData) => {
+    console.log("📦 MockData changed, length:", newMockData?.length);
+    if (newMockData && Array.isArray(newMockData) && newMockData.length > 0 && urlAssetCode.value) {
+      const foundAsset = newMockData.find(asset => asset && asset.coa_id === urlAssetCode.value);
+      
+      if (foundAsset && !faAssetStoreInstance.form_create_fa_asset.asset_type_id) {
+        faAssetStoreInstance.form_create_fa_asset.asset_type_id = urlAssetCode.value;
+        console.log("✅ Asset set from mockData watch:", urlAssetCode.value, "Asset:", foundAsset.asset_name_la);
+      } else if (!foundAsset) {
+        console.warn("❌ Asset not found for asset_type_id:", urlAssetCode.value);
+        console.log("📋 Available assets:", newMockData.map(a => ({ coa_id: a.coa_id, name: a.asset_name_la })));
+      }
+    }
+  },
+  { immediate: true, deep: true }
+);
+
+
+watch(
+  () => route.query.asset_type_id,
+  (newAssetTypeId) => {
+    console.log("🔗 URL asset_type_id changed:", newAssetTypeId);
+    if (newAssetTypeId && newAssetTypeId !== faAssetStoreInstance.form_create_fa_asset.asset_type_id) {
+      faAssetStoreInstance.form_create_fa_asset.asset_type_id = newAssetTypeId as string;
+      console.log("✅ Asset code updated from URL:", newAssetTypeId);
+    }
+  },
+  { immediate: true }
+);
 
 watch(
   [
@@ -514,7 +548,6 @@ watch(
       faAssetStoreInstance.form_create_fa_asset.asset_serial_no =
         generateSerialNumber();
       faAssetStoreInstance.form_create_fa_asset.asset_tag = generateSerialtag();
-
       faAssetStoreInstance.form_create_fa_asset.Reference_No =
         generateReferenceNo();
     }
@@ -558,10 +591,8 @@ watch(
     if (newUsefulLife && newUsefulLife > 0) {
       isAutoCalculating.value = true;
       const percentage = 100 / newUsefulLife;
-
       faAssetStoreInstance.form_create_fa_asset.dpca_percentage =
         Math.round(percentage * 100) / 100;
-
       nextTick(() => {
         isAutoCalculating.value = false;
       });
@@ -577,10 +608,8 @@ watch(
     if (newPercentage && newPercentage > 0) {
       isAutoCalculating.value = true;
       const usefulLife = 100 / newPercentage;
-
       faAssetStoreInstance.form_create_fa_asset.asset_useful_life =
         Math.round(usefulLife);
-
       nextTick(() => {
         isAutoCalculating.value = false;
       });
@@ -643,12 +672,6 @@ watch(
         faAssetStoreInstance.form_create_fa_asset.MC_name_la =
           selectedAsset.tangible_detail.MC_name_la || "";
 
-        const displayName =
-          selectedAsset.tangible_detail.MC_name_la &&
-          selectedAsset.asset_name_la
-            ? `ພວມຊື້ພວມກໍ່ສ້າງ-${selectedAsset.tangible_detail.MC_name_la}  - ${selectedAsset.asset_name_la}`
-            : selectedAsset.tangible_detail.MC_name_la || "";
-
         const specDisplayName =
           selectedAsset.tangible_detail.MC_name_la &&
           selectedAsset.asset_name_la
@@ -703,6 +726,7 @@ const formattedMCDetail = computed({
     faAssetStoreInstance.form_create_fa_asset.MC_detail = val;
   },
 });
+
 watch(
   [
     () => noacc.value,
@@ -712,23 +736,16 @@ watch(
     try {
       if (newTypeOfPay) {
         noaccStore.res_pons_filter.query.gl_code = newTypeOfPay;
-
         faAssetStoreInstance.form_create_fa_asset.acc_no = "";
-
         await noaccStore.getSubData();
       } else if (newNoacc && newNoacc.length > 0) {
-        console.log(
-          "Setting gl_code from noacc default:",
-          newNoacc[0].MC_detail
-        );
+        
         noaccStore.res_pons_filter.query.gl_code = newNoacc[0].MC_detail;
-
         faAssetStoreInstance.form_create_fa_asset.acc_no = "";
-
         await noaccStore.getSubData();
       }
     } catch (error) {
-      console.error("Error in watch:", error);
+      
     }
   },
   { immediate: true }
@@ -760,9 +777,13 @@ const rules = {
   },
 };
 
+
 onMounted(async () => {
   try {
     loading.value = true;
+    
+
+    
     currencyStore.getDataCerrency();
     await Promise.all([
       assetStoreInstance.GetAssetList(),
@@ -775,15 +796,37 @@ onMounted(async () => {
       faAssetStoreInstance.GetSuppliers(),
     ]);
 
+    console.log("📦 Data loaded, mockData length:", mockData.value?.length);
+
     faAssetStoreInstance.form_create_fa_asset.asset_list_code =
       generateNextAssetCode();
 
     await noaccStore.getSubData();
 
-    console.log("Location data:", location.value);
-    console.log("Supplier data:", supplier.value);
-    console.log("NoAcc data:", noacc.value);
-    console.log("SubGL data:", subgl.value);
+    
+    await nextTick();
+    
+   
+    if (urlAssetCode.value && mockData.value && Array.isArray(mockData.value) && mockData.value.length > 0) {
+      const foundAsset = mockData.value.find(asset => asset && asset.coa_id === urlAssetCode.value);
+      
+      if (foundAsset) {
+        faAssetStoreInstance.form_create_fa_asset.asset_type_id = urlAssetCode.value;
+        console.log("🔧 Manually set asset_type_id in onMounted:", urlAssetCode.value, "Asset:", foundAsset.asset_name_la);
+        
+        
+        await nextTick();
+      } else {
+        console.warn("❌ Asset not found in onMounted for asset_type_id:", urlAssetCode.value);
+        console.log("📋 Available assets:", mockData.value.map(a => ({ coa_id: a.coa_id, name: a.asset_name_la })));
+      }
+    }
+
+    console.log("🎯 Final asset_type_id value:", faAssetStoreInstance.form_create_fa_asset.asset_type_id);
+    console.log("Location data:", location.value?.length);
+    console.log("Supplier data:", supplier.value?.length);
+    console.log("NoAcc data:", noacc.value?.length);
+    console.log("SubGL data:", subgl.value?.length);
   } catch (error) {
     console.error("Error loading reference data:", error);
     CallSwal({
