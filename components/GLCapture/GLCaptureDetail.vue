@@ -17,6 +17,52 @@
           </div>
         </div>
         <div class="header-actions">
+          <!-- Permission indicators -->
+          <div class="permission-indicators" v-if="permissions">
+            <v-tooltip text="ສິດເຂົ້າເຖິງຂອງທ່ານ" location="bottom">
+              <template #activator="{ props }">
+                <div v-bind="props" class="d-flex gap-1">
+                  <v-chip
+                    v-if="canView"
+                    color="info"
+                    size="x-small"
+                    variant="flat"
+                  >
+                    <v-icon size="12">mdi-eye</v-icon>
+                    ເບິ່ງ
+                  </v-chip>
+                  <v-chip
+                    v-if="canEdit"
+                    color="warning"
+                    size="x-small"
+                    variant="flat"
+                  >
+                    <v-icon size="12">mdi-pencil</v-icon>
+                    ແກ້
+                  </v-chip>
+                  <v-chip
+                    v-if="canDelete"
+                    color="error"
+                    size="x-small"
+                    variant="flat"
+                  >
+                    <v-icon size="12">mdi-delete</v-icon>
+                    ລຶບ
+                  </v-chip>
+                  <v-chip
+                    v-if="canAuthorize"
+                    color="success"
+                    size="x-small"
+                    variant="flat"
+                  >
+                    <v-icon size="12">mdi-check-circle</v-icon>
+                    ອະນຸມັດ
+                  </v-chip>
+                </div>
+              </template>
+            </v-tooltip>
+          </div>
+
           <v-btn
             variant="outlined"
             @click="$router.go(-1)"
@@ -79,6 +125,27 @@
             ກັບໄປໜ້າກ່ອນ
           </v-btn>
         </div>
+      </v-card>
+    </div>
+
+    <!-- Permission Denied State -->
+    <div v-else-if="permissions && !canView" class="permission-denied-state">
+      <v-card class="text-center py-12" elevation="1">
+        <v-icon size="80" color="error" class="mb-6">mdi-shield-lock</v-icon>
+        <div class="text-h5 mb-3 text-error">ບໍ່ມີສິດເຂົ້າເຖິງ</div>
+        <div class="text-body-1 mb-4 text-grey">ທ່ານບໍ່ມີສິດເຂົ້າເຖິງໜ້ານີ້</div>
+        <div class="text-caption text-grey mb-6 px-4">
+          <v-icon size="16" class="mr-1">mdi-information-outline</v-icon>
+          ກະລຸນາຕິດຕໍ່ຜູ້ດູແລລະບົບເພື່ອຂໍສິດເຂົ້າເຖິງ
+        </div>
+        <v-btn
+          variant="outlined"
+          @click="$router.go(-1)"
+          prepend-icon="mdi-arrow-left"
+          size="large"
+        >
+          ກັບໄປໜ້າກ່ອນ
+        </v-btn>
       </v-card>
     </div>
 
@@ -275,7 +342,7 @@
                     
                     <td class="td-account">
                       <div class="account-info">
-                        <div class="account-code">{{ entry.Account_no }}</div>
+                        <div class="account-code">{{ entry.account_code }}</div>
                         <div class="account-name">{{ entry.account_name }}</div>
                       </div>
                     </td>
@@ -314,60 +381,73 @@
                     
                     <td class="td-actions">
                       <div class="action-buttons">
-                        <v-tooltip text="ແກ້ໄຂຄູ່ບັນທຶກ" location="top">
-                          <template #activator="{ props }">
-                            <v-btn
-                              v-if="entry.Auth_Status === 'P'"
-                              v-bind="props"
-                              icon
-                              size="small"
-                              variant="text"
-                              color="info"
-                              @click="editByPairAccount(entry)"
-                              :disabled="isEditingPair"
-                              :loading="editingRefSubNo === entry.Reference_sub_No"
-                              class="action-btn-small"
-                            >
-                              <v-icon size="16">mdi-pencil</v-icon>
-                            </v-btn>
-                          </template>
-                        </v-tooltip>
+                        <!-- Show actions only if user has permissions -->
+                        <template v-if="canView">
+                          <v-tooltip text="ແກ້ໄຂຄູ່ບັນທຶກ" location="top">
+                            <template #activator="{ props }">
+                              <v-btn
+                                v-if="entry.Auth_Status === 'P' && canEdit"
+                                v-bind="props"
+                                icon
+                                size="small"
+                                variant="text"
+                                color="info"
+                                @click="editByPairAccount(entry)"
+                                :disabled="isEditingPair"
+                                :loading="editingRefSubNo === entry.Reference_sub_No"
+                                class="action-btn-small"
+                              >
+                                <v-icon size="16">mdi-pencil</v-icon>
+                              </v-btn>
+                            </template>
+                          </v-tooltip>
 
-                        <v-tooltip text="ປະຕິເສດຄູ່ບັນທຶກ" location="top">
-                          <template #activator="{ props }">
-                            <v-btn
-                              v-bind="props"
-                              icon
-                              size="small"
-                              variant="text"
-                              color="warning"
-                              @click="rejectByPairAccount(entry.Reference_sub_No)"
-                              :disabled="isRejectingPair || entry.Auth_Status === 'R'"
-                              :loading="rejectingRefSubNo === entry.Reference_sub_No"
-                              class="action-btn-small"
-                            >
-                              <v-icon size="16">mdi-close-circle</v-icon>
-                            </v-btn>
-                          </template>
-                        </v-tooltip>
+                          <v-tooltip text="ປະຕິເສດຄູ່ບັນທຶກ" location="top">
+                            <template #activator="{ props }">
+                              <v-btn
+                                v-if="canAuthorize"
+                                v-bind="props"
+                                icon
+                                size="small"
+                                variant="text"
+                                color="warning"
+                                @click="rejectByPairAccount(entry.Reference_sub_No)"
+                                :disabled="isRejectingPair || entry.Auth_Status === 'R'"
+                                :loading="rejectingRefSubNo === entry.Reference_sub_No"
+                                class="action-btn-small"
+                              >
+                                <v-icon size="16">mdi-close-circle</v-icon>
+                              </v-btn>
+                            </template>
+                          </v-tooltip>
 
-                        <v-tooltip text="ລຶບຄູ່ບັນທຶກ" location="top">
-                          <template #activator="{ props }">
-                            <v-btn
-                              v-bind="props"
-                              icon
-                              size="small"
-                              variant="text"
-                              color="error"
-                              @click="deleteByPairAccount(entry.Reference_sub_No)"
-                              :disabled="isDeletingPair || entry.Auth_Status === 'R'"
-                              :loading="deletingRefSubNo === entry.Reference_sub_No"
-                              class="action-btn-small"
-                            >
-                              <v-icon size="16">mdi-delete</v-icon>
-                            </v-btn>
-                          </template>
-                        </v-tooltip>
+                          <v-tooltip text="ລຶບຄູ່ບັນທຶກ" location="top">
+                            <template #activator="{ props }">
+                              <v-btn
+                                v-if="canDelete"
+                                v-bind="props"
+                                icon
+                                size="small"
+                                variant="text"
+                                color="error"
+                                @click="deleteByPairAccount(entry.Reference_sub_No)"
+                                :disabled="isDeletingPair || entry.Auth_Status === 'R'"
+                                :loading="deletingRefSubNo === entry.Reference_sub_No"
+                                class="action-btn-small"
+                              >
+                                <v-icon size="16">mdi-delete</v-icon>
+                              </v-btn>
+                            </template>
+                          </v-tooltip>
+                        </template>
+
+                        <!-- Show message if no permissions -->
+                        <template v-else>
+                          <v-chip size="x-small" color="grey" variant="flat">
+                            <v-icon size="12">mdi-lock</v-icon>
+                            ບໍ່ມີສິດ
+                          </v-chip>
+                        </template>
                       </div>
                     </td>
                   </tr>
@@ -480,7 +560,7 @@
           <div class="action-buttons-main">
             <div class="buttons-group">
               <v-btn
-                v-if="canApproveMaster"
+                v-if="canApproveMaster && canAuthorize"
                 color="success"
                 variant="flat"
                 @click="approveItem(selectedItem)"
@@ -492,7 +572,7 @@
               </v-btn>
               
               <v-btn
-                v-if="selectedItem?.Auth_Status === 'U' && canApprove"
+                v-if="selectedItem?.Auth_Status === 'U' && canAuthorize"
                 color="error"
                 variant="flat"
                 @click="rejectItem(selectedItem)"
@@ -502,6 +582,20 @@
               >
                 ປະຕິເສດລາຍການ
               </v-btn>
+
+              <!-- Show permission info if user doesn't have auth permissions -->
+              <v-alert
+                v-if="!canAuthorize && (selectedItem?.Auth_Status === 'U' || canApproveMaster)"
+                type="info"
+                variant="tonal"
+                density="compact"
+                class="mt-3"
+              >
+                <template #prepend>
+                  <v-icon>mdi-shield-lock</v-icon>
+                </template>
+                <strong>ສິດເຂົ້າເຖິງຈຳກັດ:</strong> ທ່ານບໍ່ມີສິດອະນຸມັດ/ປະຕິເສດລາຍການ
+              </v-alert>
             </div>
           </div>
         </v-card-text>
@@ -707,10 +801,23 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from '@/helpers/axios'
 import Swal from 'sweetalert2'
+import { useRolePermissions } from '@/composables/useRolePermissions'
 
 // Router and route
 const route = useRoute()
 const router = useRouter()
+
+// Role Permissions
+const {
+  initializeRole,
+  canView,
+  canEdit,
+  canDelete,
+  canAuthorize,
+  canAdd,
+  hasPermission,
+  permissions
+} = useRolePermissions()
 
 // State
 const loading = ref(false)
@@ -751,8 +858,8 @@ const getAuthHeaders = () => ({
 
 // Computed
 const canApprove = computed(() => {
-  // Check user permissions - implement based on your auth system
-  return true // Placeholder
+  // Check both user permissions and authorization capability
+  return canAuthorize.value && hasPermission('Auth_Detail')
 })
 
 const totalFcyDebit = computed(() => {
@@ -792,7 +899,7 @@ const isEditFormValid = computed(() => {
 
 // Check if master entry can be approved
 const canApproveMaster = computed(() => {
-  if (!selectedItem.value || !canApprove.value) return false
+  if (!selectedItem.value || !canAuthorize.value) return false
   
   // Can only approve if master status is 'U' (pending approval)
   const isMasterPending = selectedItem.value.Auth_Status === 'U'
@@ -804,7 +911,9 @@ const canApproveMaster = computed(() => {
     isMasterPending,
     hasCorrectionsNeeded,
     masterStatus: selectedItem.value.Auth_Status,
-    entriesWithP: journalEntries.value.filter(entry => entry.Auth_Status === 'P').length
+    entriesWithP: journalEntries.value.filter(entry => entry.Auth_Status === 'P').length,
+    canAuthorize: canAuthorize.value,
+    permissions: permissions.value
   })
   
   return isMasterPending && !hasCorrectionsNeeded
@@ -826,7 +935,7 @@ const loadData = async () => {
     }
 
     // Load master data
-    const masterResponse = await axios.get('/api/journal-entries/', {
+    const masterResponse = await axios.get('/api/journal-log-master/', {
       params: { 
         Reference_No: referenceNo.value,
       },
@@ -1545,9 +1654,12 @@ const rejectItem = async (item) => {
   }
 }
 // Lifecycle
-onMounted(() => {
+onMounted(async () => {
   console.log('Detail page mounted with query:', route.query)
   console.log('Reference_No:', referenceNo.value)
+  
+  // Initialize role permissions first
+  await initializeRole()
   
   loadModules()
   loadAccounts()
@@ -1564,6 +1676,20 @@ watch(() => route.query.Reference_No, (newVal, oldVal) => {
     loadData()
   }
 }, { immediate: false })
+
+// Watch for permission changes (for debugging)
+watch(permissions, (newPermissions) => {
+  if (newPermissions) {
+    console.log('Permissions loaded:', {
+      canView: canView.value,
+      canEdit: canEdit.value,
+      canDelete: canDelete.value,
+      canAuthorize: canAuthorize.value,
+      canAdd: canAdd.value,
+      rawPermissions: newPermissions
+    })
+  }
+}, { immediate: true, deep: true })
 </script>
 
 <style scoped>
@@ -1606,6 +1732,20 @@ watch(() => route.query.Reference_No, (newVal, oldVal) => {
   display: flex;
   gap: 12px;
   align-items: center;
+  flex-wrap: wrap;
+}
+
+.permission-indicators {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 4px 8px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.permission-indicators .v-chip {
+  font-weight: 600;
+  font-size: 0.7rem;
 }
 
 .action-btn {
@@ -1618,7 +1758,8 @@ watch(() => route.query.Reference_No, (newVal, oldVal) => {
 
 /* Loading and Error States */
 .loading-state,
-.error-state {
+.error-state,
+.permission-denied-state {
   max-width: 600px;
   margin: 40px auto;
 }
@@ -2304,6 +2445,10 @@ watch(() => route.query.Reference_No, (newVal, oldVal) => {
   
   .action-buttons {
     display: none;
+  }
+  .totals-row {
+    font-weight: 700;
+    background: #f1f5f9;
   }
 }
 </style>

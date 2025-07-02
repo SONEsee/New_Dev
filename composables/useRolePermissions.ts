@@ -8,7 +8,7 @@ export interface RolePermissions {
   Del_Detail: number;
   Auth_Detail: number;
   New_Detail?: number;
-  Auth_Status?: string;
+  Auth_Status?: number;
   Record_Status?: string;
   [key: string]: any;
 }
@@ -41,7 +41,7 @@ export const useRolePermissions = () => {
   const canDelete = computed(() => permissions.value?.Del_Detail === 1);
   const canAuthorize = computed(() => permissions.value?.Auth_Detail === 1);
   const canAdd = computed(() => permissions.value?.New_Detail === 1);
-  const canAuthStatus = computed(() => permissions.value?.Auth_Status === 'A');
+  const canAuthStatus = computed(() => permissions.value?.Auth_Status === 0);
   const canRecordStatus = computed(() => permissions.value?.Record_Status === 'O');
 
   

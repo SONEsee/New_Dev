@@ -328,7 +328,10 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import axios from '@/helpers/axios'
 import Swal from 'sweetalert2'
 import { debounce } from 'lodash'
-
+import { useRoute } from 'vue-router'
+const route = useRoute()
+const submenu_id = route.query.sub_menu_id || String
+console.log('Submenu ID:', submenu_id)
 // State
 const loading = ref(false)
 const items = ref([])
@@ -398,7 +401,7 @@ const canApprove = computed(() => {
 // Navigate to details page
 const viewDetails = (item) => {
   // Navigate to the detail page with the item's Reference_No as a parameter
-  navigateTo(`/glcapture/detail?Reference_No=${item.Reference_No}`)
+  navigateTo(`/glcapture/detail?Reference_No=${item.Reference_No} &submenu_id=${submenu_id}`)
 }
 
 // Methods

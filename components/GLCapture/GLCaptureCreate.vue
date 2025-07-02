@@ -262,6 +262,18 @@
                   <v-icon left size="small">mdi-format-text</v-icon>
                   ຕື່ມລາຍລະອຽດ
                 </v-btn>
+                <v-btn 
+                  color="success" 
+                  size="small" 
+                  variant="text" 
+                  @click="refreshAccounts"
+                  :loading="loading.debitAccounts || loading.creditAccounts"
+                  class="action-btn"
+                  title="Refresh account lists"
+                >
+                  <v-icon left size="small">mdi-refresh</v-icon>
+                  ໂຫລດບັນຊີ
+                </v-btn>
               </div>
             </div>
 
@@ -300,20 +312,26 @@
                     <v-col cols="12" sm="6" md="3">
                       <v-autocomplete
                         v-model="entry.DebitAccount"
-                        :items="getValidDebitAccounts(entry)"
+                        :items="debitAccounts"
                         item-title="account_display"
                         item-value="glsub_id"
                         label="ບັນຊີເດບິດ"
                         variant="outlined"
                         density="compact"
-                        :loading="loading.accounts || loading.debitValidation"
+                        :loading="loading.debitAccounts"
                         clearable
                         hide-details="auto"
-                        @update:model-value="validateAccountSelection(entry, 'DebitAccount')"
+                        @update:model-value="onAccountChange(entry, 'DebitAccount')"
                         no-data-text="ບໍ່ມີຂໍ້ມູນບັນຊີ"
-                      ></v-autocomplete>
+                        :disabled="loading.debitAccounts"
+                      >
+
+                      </v-autocomplete>
                       <div v-if="entry.DebitAccount" class="text-caption text-grey-darken-1 pl-2 pb-1 text-styles">
-                        {{ getAccountDescLa(entry.DebitAccount) }}
+                        {{ getAccountDesc(entry.DebitAccount, 'debit') }}
+                        <span class="ml-2 text-primary">
+                          ({{ getAccountPostSide(entry.DebitAccount, 'debit') }})
+                        </span>
                       </div>
                     </v-col>
 
@@ -321,20 +339,26 @@
                     <v-col cols="12" sm="6" md="3">
                       <v-autocomplete
                         v-model="entry.CreditAccount"
-                        :items="getValidCreditAccounts(entry)"
+                        :items="creditAccounts"
                         item-title="account_display"
                         item-value="glsub_id"
                         label="ບັນຊີເຄຣດິດ"
                         variant="outlined"
                         density="compact"
-                        :loading="loading.accounts || loading.creditValidation"
+                        :loading="loading.creditAccounts"
                         clearable
                         hide-details="auto"
-                        @update:model-value="validateAccountSelection(entry, 'CreditAccount')"
-                        no-data-text="ບໍ່ມີຂໍ້ຮມູນບັນຊີ"
-                      ></v-autocomplete>
+                        @update:model-value="onAccountChange(entry, 'CreditAccount')"
+                        no-data-text="ບໍ່ມີຂໍ້ມູນບັນຊີ"
+                        :disabled="loading.creditAccounts"
+                      >
+
+                      </v-autocomplete>
                       <div v-if="entry.CreditAccount" class="text-caption text-grey-darken-1 pl-2 pb-1 text-styles">
-                        {{ getAccountDescLa_2(entry.CreditAccount) }}
+                        {{ getAccountDesc(entry.CreditAccount, 'credit') }}
+                        <span class="ml-2 text-secondary">
+                          ({{ getAccountPostSide(entry.CreditAccount, 'credit') }})
+                        </span>
                       </div>
                     </v-col>
 
@@ -537,6 +561,16 @@
               </v-btn>
             </div>
           </div>
+
+          <!-- Loading States -->
+          <v-row v-if="loading.debitAccounts || loading.creditAccounts">
+            <v-col cols="12">
+              <v-alert type="info" variant="tonal">
+                <v-progress-circular indeterminate size="small" class="mr-2"></v-progress-circular>
+                ກຳລັງໂຫຼດຂໍ້ມູນບັນຊີ...
+              </v-alert>
+            </v-col>
+          </v-row>
         </v-form>
       </v-card-text>
     </v-card>
@@ -554,6 +588,8 @@ const valid = ref(true)
 const formRef = ref(null)
 const autoReferenceMode = ref(false)
 const selectedTemplate = ref(null)
+const debitAccounts = ref([])
+const creditAccounts = ref([])
 
 const journalData = reactive({
   Reference_No: '',
@@ -580,8 +616,8 @@ const loading = reactive({
   generateRef: false,
   checkBalance: false,
   exchangeRate: false,
-  debitValidation: false,
-  creditValidation: false
+  debitAccounts: false,
+  creditAccounts: false,
 })
 
 const journalEntries = ref([])
@@ -798,90 +834,109 @@ const calculateLcyAmount = (entry) => {
   }
 }
 
-const validateAccountSelection = async (entry, field) => {
-  const accountId = entry[field]
-  if (!accountId) return
-
-  const account = accounts.value.find(a => a.glsub_id === accountId)
-  if (!account) return
-
-  const transactionSide = field === 'DebitAccount' ? 'dr' : 'cr'
+// Simplified account fetching using the backend's display_item_by_postside endpoint
+const fetchDebitAccounts = async () => {
   try {
-    loading[`${transactionSide}Validation`] = true
-    const response = await axios.post(
-      '/api/gl-sub/validate-selection/',
-      {
-        glsub_code: account.glsub_code,
-        transaction_side: transactionSide
-      },
-      getAuthHeaders()
-    )
-
-    if (!response.data.valid) {
-      entry[field] = null
-      Swal.fire({
-        icon: 'error',
-        title: 'ຂໍ້ຜິດພາດ',
-        text: response.data.message || `ບັນຊີນີ້ບໍ່ສາມາດໃຊ້ສຳລັບ ${transactionSide === 'dr' ? 'ເດບິດ' : 'ເຄຣດິດ'}`,
-        confirmButtonText: 'ຕົກລົງ'
-      })
-    }
-
-    if (
-      field === 'DebitAccount' &&
-      entry.DebitAccount &&
-      entry.CreditAccount &&
-      entry.DebitAccount === entry.CreditAccount
-    ) {
-      entry.DebitAccount = null
-      Swal.fire({
-        icon: 'warning',
-        title: 'ຂໍ້ຜິດພາດ',
-        text: 'ບໍ່ສາມາດເລືອກບັນຊີດຽວກັນສຳລັບເດບິດ ແລະ ເຄຣດິດ',
-        confirmButtonText: 'ຕົກລົງ'
-      })
-    } else if (
-      field === 'CreditAccount' &&
-      entry.DebitAccount &&
-      entry.CreditAccount &&
-      entry.DebitAccount === entry.CreditAccount
-    ) {
-      entry.CreditAccount = null
-      Swal.fire({
-        icon: 'warning',
-        title: 'ຂໍ້ຜິດພາດ',
-        text: 'ບໍ່ສາມາດເລືອກບັນຊີດຽວກັນສຳລັບເດບິດ ແລະ ເຄຣດິດ',
-        confirmButtonText: 'ຕົກາງ'
-      })
+    loading.debitAccounts = true
+    console.log('Fetching debit accounts using display_item_by_postside...')
+    
+    const response = await axios.post('/api/gl-sub/display_item_by_postside/', {
+      post_side: 'dr'
+    }, getAuthHeaders())
+    
+    console.log('Debit accounts response:', response.data)
+    
+    if (response.data.items) {
+      debitAccounts.value = response.data.items.map(account => ({
+        ...account,
+        account_display: `${account.glsub_code} - ${account.glsub_Desc_la || account.glsub_Desc}`,
+        post_side: account.gl_code?.post_side || 'dr'
+      }))
+      console.log(`Loaded ${debitAccounts.value.length} debit accounts`)
+    } else {
+      console.error('No items in debit accounts response')
+      debitAccounts.value = []
     }
   } catch (error) {
-    console.error('Error validating account:', error)
-    entry[field] = null
+    console.error('Error fetching debit accounts:', error)
     Swal.fire({
       icon: 'error',
       title: 'ຂໍ້ຜິດພາດ',
-      text: 'ບໍ່ສາມາດກວດສອບຄວາມຖືກຕ້ອງຂອງບັນຊີໄດ້',
+      text: 'ບໍ່ສາມາດດຶງຂໍ້ມູນບັນຊີເດບິດໄດ້',
       confirmButtonText: 'ຕົກລົງ'
     })
+    debitAccounts.value = []
   } finally {
-    loading[`${transactionSide}Validation`] = false
+    loading.debitAccounts = false
   }
 }
 
-const getValidDebitAccounts = (entry) => {
-  return accounts.value.filter(account => {
-    // Assume all accounts are potentially valid unless restricted
-    // Actual validation happens on selection
-    return true
-  })
+const fetchCreditAccounts = async () => {
+  try {
+    loading.creditAccounts = true
+    console.log('Fetching credit accounts using display_item_by_postside...')
+    
+    const response = await axios.post('/api/gl-sub/display_item_by_postside/', {
+      post_side: 'cr'
+    }, getAuthHeaders())
+    
+    console.log('Credit accounts response:', response.data)
+    
+    if (response.data.items) {
+      creditAccounts.value = response.data.items.map(account => ({
+        ...account,
+        account_display: `${account.glsub_code} - ${account.glsub_Desc_la || account.glsub_desc}`,
+        post_side: account.gl_code?.post_side || 'cr'
+      }))
+      console.log(`Loaded ${creditAccounts.value.length} credit accounts`)
+    } else {
+      console.error('No items in credit accounts response')
+      creditAccounts.value = []
+    }
+  } catch (error) {
+    console.error('Error fetching credit accounts:', error)
+    Swal.fire({
+      icon: 'error',
+      title: 'ຂໍ້ຜິດພາດ',
+      text: 'ບໍ່ສາມາດດຶງຂໍ້ມູນບັນຊີເຄຣດິດໄດ້',
+      confirmButtonText: 'ຕົກລົງ'
+    })
+    creditAccounts.value = []
+  } finally {
+    loading.creditAccounts = false
+  }
 }
 
-const getValidCreditAccounts = (entry) => {
-  return accounts.value.filter(account => {
-    // Assume all accounts are potentially valid unless restricted
-    // Actual validation happens on selection
-    return true
-  })
+// Simplified account change handler
+const onAccountChange = (entry, field) => {
+  const accountId = entry[field]
+  if (!accountId) return
+
+  // Simple validation to prevent same account selection
+  if (entry.DebitAccount && entry.CreditAccount && entry.DebitAccount === entry.CreditAccount) {
+    entry[field] = null
+    Swal.fire({
+      icon: 'warning',
+      title: 'ຂໍ້ຜິດພາດ',
+      text: 'ບໍ່ສາມາດເລືອກບັນຊີດຽວກັນສຳລັບເດບິດ ແລະ ເຄຣດິດ',
+      confirmButtonText: 'ຕົກລົງ'
+    })
+  }
+}
+
+// Simplified account description methods
+const getAccountDesc = (accountId, type) => {
+  const accountsList = type === 'debit' ? debitAccounts.value : creditAccounts.value
+  const account = accountsList.find(a => a.glsub_id === accountId) ||
+                  accounts.value.find(a => a.glsub_id === accountId)
+  return account ? (account.glsub_desc_la || account.glsub_desc || '') : ''
+}
+
+const getAccountPostSide = (accountId, type) => {
+  const accountsList = type === 'debit' ? debitAccounts.value : creditAccounts.value
+  const account = accountsList.find(a => a.glsub_id === accountId) ||
+                  accounts.value.find(a => a.glsub_id === accountId)
+  return account?.post_side?.toUpperCase() || type.toUpperCase()
 }
 
 const copyMainToSub = () => {
@@ -958,8 +1013,10 @@ const updateSubTextSuggestions = () => {
 }
 
 const generateAutoDescription = (entry) => {
-  const debitAccount = accounts.value.find(a => a.glsub_id === entry.DebitAccount)
-  const creditAccount = accounts.value.find(a => a.glsub_id === entry.CreditAccount)
+  const debitAccount = debitAccounts.value.find(a => a.glsub_id === entry.DebitAccount) ||
+                      accounts.value.find(a => a.glsub_id === entry.DebitAccount)
+  const creditAccount = creditAccounts.value.find(a => a.glsub_id === entry.CreditAccount) ||
+                       accounts.value.find(a => a.glsub_id === entry.CreditAccount)
   const amount = formatNumber(entry.Fcy_Amount || 0)
 
   if (debitAccount && creditAccount) {
@@ -1062,7 +1119,7 @@ const onMainCurrencyChange = async () => {
       Swal.fire({
         icon: 'warning',
         title: 'ບໍ່ສາມາດໂຫລດອັດຕາແລກປ່ຽນ',
-        text: `ใช้อัตราแลกเปลี่ยนเริ่มต้น 1:1 สำหรับ ${journalData.Ccy_cd}`,
+        text: `ໃຊ້ອັດຕາແລກປ່ຽນເริ່ມຕົ້ນ 1:1 ສໍາລັບ ${journalData.Ccy_cd}`,
         timer: 3000,
         showConfirmButton: false
       })
@@ -1109,25 +1166,17 @@ const getEntryStatusColor = (entry) => {
 }
 
 const getAccountName = (accountId) => {
-  const account = accounts.value.find(a => a.glsub_id === accountId)
+  const account = debitAccounts.value.find(a => a.glsub_id === accountId) ||
+                  creditAccounts.value.find(a => a.glsub_id === accountId) ||
+                  accounts.value.find(a => a.glsub_id === accountId)
   return account ? account.glsub_code : null
-}
-
-const getAccountDescLa = (accountId) => {
-  const account = accounts.value.find(a => a.glsub_id === accountId)
-  return account ? account.glsub_Desc_la : ''
-}
-
-const getAccountDescLa_2 = (accountId) => {
-  const account = accounts.value.find(a => a.glsub_id === accountId)
-  return account ? account.glsub_Desc_la : ''
 }
 
 const generateReference = async () => {
   if (!journalData.Txn_code || !journalData.module_id) {
     Swal.fire({
       icon: 'warning',
-      title: 'ขโอຮມູນບ໊ຄັບ',
+      title: 'ຂໍ້ມູນບໍ່ຄົບ',
       text: 'ກະລຸນາເລືອກໂມດູນ ແລະ ລະຫັດການເຄື່ອນໄຫວກ່ອນ',
       confirmButtonText: 'ຕົກລົງ'
     })
@@ -1297,7 +1346,7 @@ const loadAccounts = async () => {
     const data = response.data.results || response.data || []
     accounts.value = data.map(account => ({
       ...account,
-      account_display: `${account.glsub_code} - ${account.glsub_Desc_la || account.glsub_Desc_en}`,
+      account_display: `${account.glsub_code} - ${account.glsub_Desc_la || account.glsub_Desc_en || account.glsub_desc}`,
     }))
   } catch (error) {
     console.error('Error loading accounts:', error)
@@ -1434,12 +1483,13 @@ const submitJournal = async () => {
       module_id: journalData.module_id || 'GL',
       entries: []
     }
-    // let subNoCounter = 1 
 
     journalEntries.value.forEach(entry => {
       calculateLcyAmount(entry)
       const getAccountCode = (accountId) => {
-        const account = accounts.value.find(a => a.glsub_id === accountId)
+        const account = debitAccounts.value.find(a => a.glsub_id === accountId) ||
+                        creditAccounts.value.find(a => a.glsub_id === accountId) ||
+                        accounts.value.find(a => a.glsub_id === accountId)
         return account ? account.glsub_code : ''
       }
       const amount = parseFloat(entry.Fcy_Amount) || 0
@@ -1450,7 +1500,6 @@ const submitJournal = async () => {
           Account: entry.DebitAccount,
           Account_no: getAccountCode(entry.DebitAccount),
           Amount: amount,
-          // Reference_sub_No: `${journalData.Reference_No}-${String(subNoCounter).padStart(3, '0')}`,
           Dr_cr: 'D',
           Addl_sub_text: entry.Addl_sub_text || batchPayload.Addl_sub_text || '',
           Ac_relatives: getAccountCode(entry.CreditAccount)
@@ -1462,7 +1511,6 @@ const submitJournal = async () => {
           Account: entry.CreditAccount,
           Account_no: getAccountCode(entry.CreditAccount),
           Amount: amount,
-          // Reference_sub_No: `${journalData.Reference_No}-${String(subNoCounter).padStart(3, '0')}`,
           Dr_cr: 'C',
           Addl_sub_text: entry.Addl_sub_text || batchPayload.Addl_sub_text || '',
           Ac_relatives: getAccountCode(entry.DebitAccount)
@@ -1573,6 +1621,24 @@ const submitJournal = async () => {
   }
 }
 
+// Refresh accounts function
+const refreshAccounts = async () => {
+  await Promise.all([
+    fetchDebitAccounts(),
+    fetchCreditAccounts()
+  ])
+  
+  Swal.fire({
+    toast: true,
+    position: 'top-end',
+    icon: 'info',
+    title: `ໂຫລດບັນຊີແລ້ວ: ${debitAccounts.value.length} ເດບິດ, ${creditAccounts.value.length} ເຄຣດິດ`,
+    showConfirmButton: false,
+    timer: 3000,
+    timerProgressBar: true
+  })
+}
+
 const resetForm = () => {
   const currentTxnCode = journalData.Txn_code
   const currentCurrency = journalData.Ccy_cd
@@ -1643,6 +1709,12 @@ onMounted(async () => {
     loadAccounts(),
     loadTransactionCodes(),
     loadFinCycles()
+  ])
+
+  // Load debit and credit accounts separately using the new endpoint
+  await Promise.all([
+    fetchDebitAccounts(),
+    fetchCreditAccounts()
   ])
 
   if (journalData.Ccy_cd && journalData.Ccy_cd !== 'LAK') {
@@ -1831,6 +1903,11 @@ onMounted(async () => {
   align-items: center;
 }
 
+.text-styles {
+  font-size: 0.75rem;
+  line-height: 1.2;
+}
+
 .compact-item {
   min-height: 48px !important;
   padding: 4px 8px !important;
@@ -1942,6 +2019,26 @@ onMounted(async () => {
   background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
 }
 
+/* Entry Actions */
+.entry-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+}
+
+.entry-description {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Chip Styles */
+.v-chip {
+  font-size: 0.625rem !important;
+  height: 16px !important;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
   .journal-entry-container {
@@ -2005,6 +2102,52 @@ onMounted(async () => {
   .summary-value-compact {
     font-size: 0.8rem;
   }
+
+  .entry-actions {
+    flex-direction: row;
+    gap: 2px;
+  }
+}
+
+@media (max-width: 480px) {
+  .journal-entry-container {
+    padding: 4px;
+  }
+
+  .page-title {
+    font-size: 1.1rem;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .form-card {
+    border-radius: 8px;
+  }
+
+  .entries-section {
+    padding: 8px;
+  }
+
+  .entry-card {
+    border-radius: 6px;
+  }
+
+  .row-number {
+    min-width: 45px;
+  }
+
+  .summary-item-compact {
+    padding: 4px 6px;
+    min-height: 40px;
+  }
+
+  .summary-label-compact {
+    font-size: 0.6rem;
+  }
+
+  .summary-value-compact {
+    font-size: 0.75rem;
+  }
 }
 
 /* Animation */
@@ -2032,5 +2175,41 @@ onMounted(async () => {
 
 :deep(.v-field--density-compact .v-field__append-inner) {
   padding-top: 2px;
+}
+
+/* Custom scrollbar for better UX */
+:deep(.v-autocomplete__content) {
+  max-height: 300px;
+}
+
+:deep(.v-list) {
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+/* Loading states */
+.v-progress-circular {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Focus states */
+.v-field--focused {
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.12);
+}
+
+/* Error states */
+.v-field--error {
+  box-shadow: 0 0 0 2px rgba(244, 67, 54, 0.12);
+}
+
+/* Success states */
+.success-border {
+  border-color: #4caf50 !important;
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.12);
 }
 </style>
