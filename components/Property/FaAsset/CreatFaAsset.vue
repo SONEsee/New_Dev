@@ -67,7 +67,7 @@ const title = ref("ເພີ່ມຊັບສົມບັດຄົງທີ່�
 const loading = ref(false);
 const form = ref();
 
-// ⭐ ແກ້ໄຂການຮັບ asset_type_id ຈາກ URL - ແປງເປັນ number
+
 const urlAssetCode = computed(() => {
   const param = route.query.asset_type_id as string;
   return param ? parseInt(param) : null;
@@ -419,7 +419,7 @@ const generateNextAssetCode = () => {
   const assetCodes = assetcode.value;
 
   if (!assetCodes || !Array.isArray(assetCodes) || assetCodes.length === 0) {
-    return "0001";
+    return "0000001";
   }
 
   let maxNumber = 0;
@@ -434,7 +434,7 @@ const generateNextAssetCode = () => {
   });
 
   const nextNumber = maxNumber + 1;
-  return nextNumber.toString().padStart(4, "0");
+  return nextNumber.toString().padStart(7, "0");
 };
 
 const generateSerialNumber = () => {
@@ -1476,9 +1476,12 @@ onMounted(async () => {
                       ></v-text-field>
                     </v-col>
                     <v-col cols="12" md="3">
-                     
                       <label
-                        >ເລກບັນຊີ/CR<span class="text-error" v-for="item in subgl">*({{ item.glsub_Desc_la }})</span></label
+                        >ເລກບັນຊີ/CR<span
+                          class="text-error"
+                          v-for="item in subgl"
+                          >*({{ item.glsub_Desc_la }})</span
+                        ></label
                       >
                       <v-autocomplete
                         v-model="

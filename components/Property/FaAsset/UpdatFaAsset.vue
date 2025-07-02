@@ -8,7 +8,7 @@ const faAssetStoreInstance = faAssetStore();
 const router = useRouter();
 const id = rout.query.id_faasset as string;
 
-// Enhanced store integrations like in create form
+
 const currencyStore = useCerrencyStore();
 const currency = computed(() => {
   const data = currencyStore.respons_cerrency_data;
@@ -172,7 +172,7 @@ const formattedAssetValueRemainLast = computed(() => {
   return formatNumber(faAssetStoreInstance.form_update_fa_asset.asset_value_remainLast);
 });
 
-// Enhanced computed values like in create form
+
 const computedAssetDisplayName = computed(() => {
   const assetTypeId = faAssetStoreInstance.form_update_fa_asset.asset_type_id;
   const mcNameLa = faAssetStoreInstance.form_update_fa_asset.MC_name_la;
@@ -326,7 +326,7 @@ const goBack = () => {
   router.go(-1);
 };
 
-// Enhanced submit function with better validation like create form
+
 const submitForm = async () => {
   const isValid = await form.value.validate();
   
@@ -396,7 +396,7 @@ const submitForm = async () => {
 
   if (notification.isConfirmed) {
     try {
-      // Update Reference No if needed
+     
       if (!faAssetStoreInstance.form_update_fa_asset.Reference_No) {
         faAssetStoreInstance.form_update_fa_asset.Reference_No = computedReferenceNo.value;
       }
@@ -428,7 +428,7 @@ const submitForm = async () => {
   }
 };
 
-// Enhanced computed values for MC_detail
+
 const computedMCDetail = computed(() => {
   const assetTypeId = faAssetStoreInstance.form_update_fa_asset.asset_type_id;
   const assetListCode = faAssetStoreInstance.form_update_fa_asset.asset_list_code;
@@ -462,7 +462,7 @@ const formattedMCDetail = computed({
   },
 });
 
-// Enhanced watchers
+
 watch(
   [
     () => faAssetStoreInstance.form_update_fa_asset.asset_type_id,
@@ -506,7 +506,7 @@ watch(
   }
 );
 
-// Enhanced watch for loading existing data
+
 watch(
   () => faAssetStoreInstance.response_fa_asset_detail,
   (req) => {
