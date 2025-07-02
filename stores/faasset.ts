@@ -176,7 +176,7 @@ export const faAssetStore = defineStore("faAsset", {
   } finally {
     this.isLoading = false;
   }
-}, // ແກ້ໄຂ CreateFaAsset function ໃນ store ໃຫ້ຮັບ parameter ສຳລັບບໍ່ສະແດງ message
+},
 async CreateFaAsset(showSuccessMessage = false) {
   this.isLoading = true;
   try {

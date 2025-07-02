@@ -3,6 +3,7 @@ import dayjs from "#build/dayjs.imports.mjs";
 import { formats } from "numeral";
 const title = "ໜ້າຈັດການການຮັບຮູ້ຊັບສິນ";
 const faassetStore = faAssetStore();
+const selectAssetType = ref("all");
 const {
   canEdit,
   canDelete,
@@ -13,11 +14,37 @@ const {
   hasPermission,
   initializeRole,
 } = useRolePermissions();
+// const respons = computed(() => {
+//   return faassetStore.response_fa_asset_list;
+// });
+const assetStores = assetStore();
+const response = computed(()=>{
+  return assetStores.response_asset_list || [];
+})
 const respons = computed(() => {
-  return faassetStore.response_fa_asset_list;
+  const data = faassetStore.response_fa_asset_list;
+  return data ? data.filter((item) => item.asset_status === "UC") : [];
+});
+const roleStore = RoleStore();
+const role1 = computed(() => {
+  return roleStore.responst_data_detail;
+});
+const filterAssetType = computed(() => {
+  let data = respons.value;
+
+  if (selectAssetType.value !== "all") {
+    data = data.filter(
+      (item: any) => item.asset_type_id === selectAssetType.value
+    );
+  }
+
+  return data;
 });
 onMounted(() => {
+    assetStores.GetAssetList();
   faassetStore.GetFaAssetList();
+  initializeRole();
+  roleStore.GetRoleDetail();
 });
 const headers = computed(() => {
   return [
@@ -122,49 +149,59 @@ const headers = computed(() => {
       width: "120px",
       class: "text-center",
     },
+    {
+      title: "ຈັດການ",
+      value: "action",
+      key: "action",
+      align: "center",
+      sortable: true,
+      filterable: true,
+      width: "120px",
+      class: "text-center",
+    },
 
-    ...(canView.value
-      ? [
-          {
-            title: "ເບິ່ງ",
-            value: "view",
-            key: "view",
-            align: "center",
-            sortable: false,
-            filterable: false,
-            width: "80px",
-            class: "text-center",
-          },
-        ]
-      : []),
-    ...(canEdit.value
-      ? [
-          {
-            title: "ແກ້ໄຂ",
-            value: "edit",
-            key: "edit",
-            align: "center",
-            sortable: false,
-            filterable: false,
-            width: "80px",
-            class: "text-center",
-          },
-        ]
-      : []),
-    ...(canDelete.value
-      ? [
-          {
-            title: "ລົບ",
-            value: "delete",
-            key: "delete",
-            align: "center",
-            sortable: false,
-            filterable: false,
-            width: "80px",
-            class: "text-center",
-          },
-        ]
-      : []),
+    // ...(canView.value
+    //   ? [
+    //       {
+    //         title: "ເບິ່ງ",
+    //         value: "view",
+    //         key: "view",
+    //         align: "center",
+    //         sortable: false,
+    //         filterable: false,
+    //         width: "80px",
+    //         class: "text-center",
+    //       },
+    //     ]
+    //   : []),
+    // ...(canEdit.value
+    //   ? [
+    //       {
+    //         title: "ແກ້ໄຂ",
+    //         value: "edit",
+    //         key: "edit",
+    //         align: "center",
+    //         sortable: false,
+    //         filterable: false,
+    //         width: "80px",
+    //         class: "text-center",
+    //       },
+    //     ]
+    //   : []),
+    // ...(canDelete.value
+    //   ? [
+    //       {
+    //         title: "ລົບ",
+    //         value: "delete",
+    //         key: "delete",
+    //         align: "center",
+    //         sortable: false,
+    //         filterable: false,
+    //         width: "80px",
+    //         class: "text-center",
+    //       },
+    //     ]
+    //   : []),
     // {
     //   title: "ຄິດເສື່ອມ",
     //   value: "depreciation",
@@ -176,13 +213,27 @@ const headers = computed(() => {
     // },
   ] as any;
 });
+
 </script>
 <template>
   <div class="pa-4">
-    <pre> {{ respons }}</pre>
+    <!-- <pre> {{ respons }}</pre> -->
     <GlobalTextTitleLine :title="title" />
+    <v-col cols="12" md="3"><v-autocomplete
+          v-model="selectAssetType"
+          :items="response || []"
+          item-title="asset_name_la"
+          item-value="coa_id"
+          label="ເລືອກຕາມປະເພດຊັບສົມບັດຍອ່ຍ"
+          variant="outlined"
+          density="compact"
+          clearable
+          placeholder="ເລືອກສະຖານະ"
+          
+        ></v-autocomplete></v-col>
+    
     <v-data-table
-      :items="respons || []"
+      :items="filterAssetType || []"
       :headers="headers"
       class="text-no-wrap"
     >
@@ -248,6 +299,9 @@ const headers = computed(() => {
       <template v-slot:header.asset_accu_dpca_value="{ column }">
         <b style="color: blue">{{ column.title }}</b>
       </template>
+      <template v-slot:header.action="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
+      </template>
 
       <template v-slot:item.asset_list_id="{ item }">
         <v-chip style="border: 1px #76ff03 solid" color="primary">{{
@@ -261,18 +315,34 @@ const headers = computed(() => {
       </template>
       <template v-slot:item.asset_value="{ item }">
         <v-chip style="border: 1px solid" color="info">
-          {{ Number(item.asset_value).toLocaleString("en-US") }} {{ item.asset_currency }}
+          {{ Number(item.asset_value).toLocaleString("en-US") }}
+          {{ item.asset_currency }}
         </v-chip>
       </template>
       <template v-slot:item.asset_value_remain="{ item }">
         <v-chip style="border: 1px solid" color="primary">
-          {{ Number(item.asset_value_remain).toLocaleString("en-US") }} {{ item.asset_currency }}
+          {{ Number(item.asset_value_remain).toLocaleString("en-US") }}
+          {{ item.asset_currency }}
         </v-chip>
       </template>
       <template v-slot:item.asset_value_remainMonth="{ item }">
         <v-chip style="border: 1px solid" color="primary">
-          {{ Number(item.asset_value_remainMonth).toLocaleString("en-US") }} {{ item.asset_currency }}
+          {{ Number(item.asset_value_remainMonth).toLocaleString("en-US") }}
+          {{ item.asset_currency }}
         </v-chip>
+      </template>
+      <template v-slot:item.asset_status="{ item }">
+        <v-chip style="border: 1px solid" color="primary">
+          {{ item.asset_status_detail.MC_name_la }}
+        </v-chip>
+      </template>
+      <template v-slot:item.type_of_pay="{ item }">
+        <v-chip style="border: 1px solid" color="primary">
+          {{ item.type_of_pay_detail.MC_name_la }}
+        </v-chip>
+      </template>
+      <template v-slot:item.action="{ item }">
+       <v-btn class="" color="primary" @click="goPath(`/property/realizetheproperty/create?asset_list_id=${item.asset_list_id}`)">ຢັ້ງຢືນ</v-btn>
       </template>
     </v-data-table>
   </div>

@@ -3,6 +3,8 @@ export interface FaAsset{
     asset_id_detail:         AssetIDDetail;
     location_detail:         LocationDetail;
     supplier_detail:         SupplierDetail;
+    type_of_pay_detail:      Detail;
+    asset_status_detail:     Detail;
     asset_list_code:         string;
     asset_serial_no:         string;
     asset_tag:               string;
@@ -21,11 +23,11 @@ export interface FaAsset{
     dpca_end_date:           null;
     asset_accu_dpca_value:   string;
     asset_value_remain:      string;
-    asset_value_remainMonth: null;
-    asset_value_remainBegin: null;
-    asset_value_remainLast:  null;
-    acc_no:                  null;
-    type_of_pay:             null;
+    asset_value_remainMonth: string;
+    asset_value_remainBegin: string;
+    asset_value_remainLast:  string;
+    acc_no:                  string;
+    type_of_pay:             string;
     asset_latest_date_dpca:  null;
     asset_disposal_date:     null;
     asset_ac_yesno:          string;
@@ -34,6 +36,7 @@ export interface FaAsset{
     Record_Status:           string;
     Maker_DT_Stamp:          Date;
     Checker_DT_Stamp:        null;
+    Auth_Status:             string;
     asset_type_id:           number;
     asset_location_id:       number;
     supplier_id:             number;
@@ -70,4 +73,11 @@ export interface SupplierDetail {
     supplier_id:   number;
     supplier_code: string;
     supplier_name: string;
+}
+export interface Detail {
+    MC_id:      number;
+    M_id:       number;
+    MC_code:    string;
+    MC_name_la: string;
+    MC_name_en: string;
 }
