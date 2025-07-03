@@ -1471,6 +1471,8 @@ const submitJournal = async () => {
 
   try {
     loading.submit = true
+    const selectedCurrency = currencies.value.find(c => c.ccy_code === journalData.Ccy_cd)
+    const altCcyCode = selectedCurrency?.ALT_Ccy_Code || ''
     const batchPayload = {
       Reference_No: journalData.Reference_No,
       Ccy_cd: journalData.Ccy_cd,
@@ -1495,25 +1497,42 @@ const submitJournal = async () => {
       const amount = parseFloat(entry.Fcy_Amount) || 0
       if (amount <= 0) return
 
+      const buildAccountNo = (accountId) => {
+        let code = getAccountCode(accountId)
+        if (altCcyCode) {
+          code = `${altCcyCode}.${code}`
+        }
+        return code
+      }
+      const buildRelativeAccountNo = (accountId) => {
+        let code = getAccountCode(accountId)
+        if (altCcyCode) {
+          code = `${altCcyCode}.${code}`
+        }
+          return code
+        }
+
       if (entry.DebitAccount) {
         batchPayload.entries.push({
           Account: entry.DebitAccount,
-          Account_no: getAccountCode(entry.DebitAccount),
+          // Account_no: getAccountCode(entry.DebitAccount),
+          Account_no: buildAccountNo(entry.DebitAccount),
           Amount: amount,
           Dr_cr: 'D',
           Addl_sub_text: entry.Addl_sub_text || batchPayload.Addl_sub_text || '',
-          Ac_relatives: getAccountCode(entry.CreditAccount)
+          Ac_relatives: buildRelativeAccountNo(entry.CreditAccount)
         })
       }
 
       if (entry.CreditAccount) {
         batchPayload.entries.push({
           Account: entry.CreditAccount,
-          Account_no: getAccountCode(entry.CreditAccount),
+          // Account_no: getAccountCode(entry.CreditAccount),
+          Account_no: buildAccountNo(entry.CreditAccount),
           Amount: amount,
           Dr_cr: 'C',
           Addl_sub_text: entry.Addl_sub_text || batchPayload.Addl_sub_text || '',
-          Ac_relatives: getAccountCode(entry.DebitAccount)
+          Ac_relatives: buildRelativeAccountNo(entry.DebitAccount)
         })
       }
     })
@@ -2022,7 +2041,7 @@ onMounted(async () => {
 /* Entry Actions */
 .entry-actions {
   display: flex;
-  flex-direction: column;
+  flex-direction: row; /* Change from column to row */
   gap: 4px;
   align-items: center;
 }

@@ -935,13 +935,15 @@ const loadData = async () => {
     }
 
     // Load master data
-    const masterResponse = await axios.get('/api/journal-log-master/', {
+    const masterResponse = await axios.get('/api/journal-log-master/journal-log-active/', {
       params: { 
         Reference_No: referenceNo.value,
       },
       ...getAuthHeaders()
     })
 
+    console.log('Master data response:', masterResponse);
+    
     const masterData = masterResponse.data.results || masterResponse.data || []
     if (masterData.length === 0) {
       throw new Error('ບໍ່ພົບຂໍ້ມູນລາຍການນີ້')
