@@ -664,6 +664,7 @@ onMounted(async () => {
         <div class="text-center">
           <v-menu>
             <template v-slot:activator="{ props }">
+              
               <v-chip
                 :color="getStatusColor(item.asset_status)"
                 variant="flat"
@@ -674,20 +675,7 @@ onMounted(async () => {
                 {{ getStatusText(item.asset_status) }}
               </v-chip>
             </template>
-            <v-list>
-              <v-list-item @click="handleStatusChange(item, 'ACTIVE')">
-                <v-list-item-title>ເປີດໃຊ້ງານ</v-list-item-title>
-              </v-list-item>
-              <v-list-item @click="handleStatusChange(item, 'INACTIVE')">
-                <v-list-item-title>ປິດໃຊ້ງານ</v-list-item-title>
-              </v-list-item>
-              <v-list-item @click="handleStatusChange(item, 'MAINTENANCE')">
-                <v-list-item-title>ບຳລຸງຮັກສາ</v-list-item-title>
-              </v-list-item>
-              <v-list-item @click="handleStatusChange(item, 'DISPOSED')">
-                <v-list-item-title>ຖອນຈຳໜ່າຍ</v-list-item-title>
-              </v-list-item>
-            </v-list>
+            
           </v-menu>
         </div>
       </template>
@@ -738,21 +726,7 @@ onMounted(async () => {
         />
       </template>
 
-      <template v-slot:item.depreciation="{ item }">
-        <v-btn
-          v-if="item.has_depreciation === 'Y' && item.asset_status === 'ACTIVE'"
-          small
-          flat
-          icon="mdi-calculator"
-          @click="calculateDepreciation(item)"
-        >
-          <v-icon icon="mdi-calculator"></v-icon>
-          <v-tooltip activator="parent" location="top">ຄິດເສື່ອມລາຄາ</v-tooltip>
-        </v-btn>
-        <v-chip v-else color="primary"
-          ><p class="text-primary">ຍັງບໍ່ມີຄ່າເສືອມ</p></v-chip
-        >
-      </template>
+      
     </v-data-table>
   </v-col>
 

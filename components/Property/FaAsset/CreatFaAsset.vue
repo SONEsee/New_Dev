@@ -1499,7 +1499,7 @@ onMounted(async () => {
                       </v-autocomplete>
                       <label>ມູນຄ່າຊາກ</label>
                       <v-text-field
-                        :disabled="true"
+                        
                         v-model="formattedSalvageValue"
                         :rules="[rules.positiveNumber]"
                         placeholder="0"
