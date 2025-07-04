@@ -5,6 +5,11 @@ const router = useRouter();
 const title = "ຈົດບັນທຶກຮັບຮູ້ຊັບສິນ";
 const id = route.query.asset_list_id as string;
 const assetStore = faAssetStore();
+const masterStore = useMasterStore();
+
+const masterdata = computed(() => {
+  return masterStore.respone_data_master;
+});
 
 const request = assetStore.form_create_realizthe_property;
 const editableValues = ref({
@@ -21,6 +26,363 @@ const response = computed(() => {
   return assetStore.response_fa_asset_detail;
 });
 
+// ຟັງຊັນກັ່ນຕອງ masterdata ຕາມ asset_type_detail.type_code
+const matchedMasterCode = computed(() => {
+  if (
+    !response.value?.asset_id_detail?.asset_type_detail?.type_code ||
+    !masterdata.value
+  ) {
+    return null;
+  }
+
+  const typeCode = response.value.asset_id_detail.asset_type_detail.type_code;
+
+  // ຫາ masterdata object ທີ່ມີ MasterCodes (ເພາະ masterdata.value ເປັນ array)
+  const masterObject = Array.isArray(masterdata.value)
+    ? masterdata.value.find((item) => item.MasterCodes)
+    : masterdata.value;
+
+  if (!masterObject?.MasterCodes) {
+    return null;
+  }
+
+  // ຫາ MasterCode ທີ່ match ກັບ type_code
+  const matched = masterObject.MasterCodes.find(
+    (item) => item.MC_code === typeCode
+  );
+
+  return matched;
+});
+
+// ຟັງຊັນສຳລັບແຍກເລກບັນຊີ DR ແລະ CR
+const getAccountNumbers = computed(() => {
+  if (!matchedMasterCode.value?.MC_detail) {
+    return { dr: "", cr: "" };
+  }
+
+  const accounts = matchedMasterCode.value.MC_detail.split("|");
+  const assetListCode = response.value?.asset_list_code || "";
+
+  return {
+    dr: accounts[0] ? `${accounts[0]}.${assetListCode}` : "",
+    cr: accounts[1] ? `${accounts[1]}.${assetListCode}` : "",
+  };
+});
+
+const updateAccountNumbers = () => {
+  if (matchedMasterCode.value) {
+    const accounts = getAccountNumbers.value;
+
+    request.acc_no = accounts.cr;
+  }
+};
+
+watch(
+  () => response.value?.asset_id_detail?.asset_type_detail?.type_code,
+  (newTypeCode) => {
+    if (newTypeCode) {
+      updateAccountNumbers();
+    }
+  },
+  { immediate: true }
+);
+
+const formatAssetValueRemain = computed({
+  get: () => formatNumber(request.asset_value_remain || 0),
+  set: (value: string) => {
+    const numericValue = value.replace(/[,\s]/g, "").replace(/[^\d.]/g, "");
+    const parsed = parseFloat(numericValue);
+    request.asset_value_remain = isNaN(parsed) ? 0 : parsed;
+  },
+});
+
+const getDailyValue = () => {
+  if (!response.value) return 0;
+
+  if (response.value.asset_value_remainMonth) {
+    return parseFloat(response.value.asset_value_remainMonth) / 30;
+  }
+
+  const assetValue = parseFloat(response.value.asset_value || "0");
+  const salvageValue = parseFloat(response.value.asset_salvage_value || "0");
+  const usefulLife = parseInt(String(response.value.asset_useful_life || "0"));
+
+  if (usefulLife > 0) {
+    const depreciableAmount = assetValue - salvageValue;
+    const annualDepreciation = depreciableAmount / usefulLife;
+    const monthlyDepreciation = annualDepreciation / 12;
+    return monthlyDepreciation / 30;
+  }
+
+  return 0;
+};
+
+const monthlySetupValue = computed(() => {
+  if (!response.value) return 0;
+
+  const dailyDepreciation = getDailyValue();
+
+  const startDate =
+    request.dpca_start_date ||
+    (response.value.asset_date
+      ? new Date(response.value.asset_date)
+      : new Date());
+
+  const endDate = request.dpca_end_date
+    ? new Date(request.dpca_end_date)
+    : null;
+
+  const currentDate = new Date();
+  const currentMonth = currentDate.getMonth();
+  const currentYear = currentDate.getFullYear();
+  const startDateObj = new Date(startDate);
+
+  if (startDateObj > currentDate) return 0;
+
+  if (endDate && endDate < new Date(currentYear, currentMonth, 1)) return 0;
+
+  let daysToCount = 0;
+
+  if (
+    startDateObj.getMonth() === currentMonth &&
+    startDateObj.getFullYear() === currentYear
+  ) {
+    const endOfMonth = new Date(currentYear, currentMonth + 1, 0);
+    let actualEndDate = endOfMonth;
+
+    if (
+      endDate &&
+      endDate.getMonth() === currentMonth &&
+      endDate.getFullYear() === currentYear
+    ) {
+      actualEndDate = endDate < endOfMonth ? endDate : endOfMonth;
+    }
+
+    const timeDiff = actualEndDate.getTime() - startDateObj.getTime();
+    daysToCount = Math.max(0, Math.ceil(timeDiff / (1000 * 3600 * 24)));
+  } else if (startDateObj < new Date(currentYear, currentMonth, 1)) {
+    const currentMonthStart = new Date(currentYear, currentMonth, 1);
+    let actualEndDate = currentDate;
+
+    if (
+      endDate &&
+      endDate.getMonth() === currentMonth &&
+      endDate.getFullYear() === currentYear
+    ) {
+      actualEndDate = endDate < currentDate ? endDate : currentDate;
+    }
+
+    const timeDiff = actualEndDate.getTime() - currentMonthStart.getTime();
+    daysToCount = Math.ceil(timeDiff / (1000 * 3600 * 24));
+  }
+
+  return Math.round(dailyDepreciation * daysToCount * 100) / 100;
+});
+const monthlyEndValue = computed(() => {
+  if (!response.value || !depreciationCalculator.value) return 0;
+
+  
+  const monthlyDepreciation = depreciationCalculator.value.monthlyDepreciation || 0;
+
+ 
+  const setupValue = monthlySetupValue.value || 0;
+
+  
+  const endValue = monthlyDepreciation - setupValue;
+
+ 
+  return Math.max(0, Math.round(endValue * 100) / 100);
+});
+// const monthlyEndValue = computed(() => {
+//   if (!response.value) return 0;
+
+//   const dailyDepreciation = getDailyValue();
+
+//   const startDate =
+//     request.dpca_start_date ||
+//     (response.value.asset_date
+//       ? new Date(response.value.asset_date)
+//       : new Date());
+
+//   const endDate = request.dpca_end_date
+//     ? new Date(request.dpca_end_date)
+//     : null;
+
+//   const currentDate = new Date();
+//   const currentMonth = currentDate.getMonth();
+//   const currentYear = currentDate.getFullYear();
+//   const startDateObj = new Date(startDate);
+
+//   if (startDateObj > currentDate) return 0;
+
+//   const endOfMonth = new Date(currentYear, currentMonth + 1, 0);
+
+//   let daysToCount = 0;
+
+//   if (
+//     startDateObj.getMonth() === currentMonth &&
+//     startDateObj.getFullYear() === currentYear
+//   ) {
+//     let actualEndDate = endOfMonth;
+
+//     if (
+//       endDate &&
+//       endDate.getMonth() === currentMonth &&
+//       endDate.getFullYear() === currentYear
+//     ) {
+//       actualEndDate = endDate < endOfMonth ? endDate : endOfMonth;
+//     }
+
+//     const timeDiff = actualEndDate.getTime() - startDateObj.getTime();
+//     daysToCount = Math.max(0, Math.ceil(timeDiff / (1000 * 3600 * 24)));
+//   } else if (startDateObj < new Date(currentYear, currentMonth, 1)) {
+//     const currentMonthStart = new Date(currentYear, currentMonth, 1);
+//     let actualEndDate = endOfMonth;
+
+//     if (
+//       endDate &&
+//       endDate.getMonth() === currentMonth &&
+//       endDate.getFullYear() === currentYear
+//     ) {
+//       actualEndDate = endDate < endOfMonth ? endDate : endOfMonth;
+//     }
+
+//     const timeDiff = actualEndDate.getTime() - currentMonthStart.getTime();
+//     daysToCount = Math.ceil(timeDiff / (1000 * 3600 * 24));
+//   }
+
+//   return Math.round(dailyDepreciation * daysToCount * 100) / 100;
+// });
+
+const getCurrentMonthDays = () => {
+  if (!response.value) return 0;
+
+  const startDate =
+    request.dpca_start_date ||
+    (response.value.asset_date
+      ? new Date(response.value.asset_date)
+      : new Date());
+
+  const endDate = request.dpca_end_date
+    ? new Date(request.dpca_end_date)
+    : null;
+
+  const currentDate = new Date();
+  const currentMonth = currentDate.getMonth();
+  const currentYear = currentDate.getFullYear();
+  const startDateObj = new Date(startDate);
+
+  if (startDateObj > currentDate) return 0;
+
+  if (endDate && endDate < new Date(currentYear, currentMonth, 1)) return 0;
+
+  if (
+    startDateObj.getMonth() === currentMonth &&
+    startDateObj.getFullYear() === currentYear
+  ) {
+    const endOfMonth = new Date(currentYear, currentMonth + 1, 0);
+    let actualEndDate = endOfMonth;
+
+    if (
+      endDate &&
+      endDate.getMonth() === currentMonth &&
+      endDate.getFullYear() === currentYear
+    ) {
+      actualEndDate = endDate < endOfMonth ? endDate : endOfMonth;
+    }
+
+    const timeDiff = actualEndDate.getTime() - startDateObj.getTime();
+    return Math.max(0, Math.ceil(timeDiff / (1000 * 3600 * 24)));
+  } else if (startDateObj < new Date(currentYear, currentMonth, 1)) {
+    const currentMonthStart = new Date(currentYear, currentMonth, 1);
+    let actualEndDate = currentDate;
+
+    if (
+      endDate &&
+      endDate.getMonth() === currentMonth &&
+      endDate.getFullYear() === currentYear
+    ) {
+      actualEndDate = endDate < currentDate ? endDate : currentDate;
+    }
+
+    const timeDiff = actualEndDate.getTime() - currentMonthStart.getTime();
+    return Math.ceil(timeDiff / (1000 * 3600 * 24));
+  }
+
+  return 0;
+};
+
+const getEndOfMonthDays = () => {
+  if (!response.value) return 0;
+
+  const startDate =
+    request.dpca_start_date ||
+    (response.value.asset_date
+      ? new Date(response.value.asset_date)
+      : new Date());
+
+  const endDate = request.dpca_end_date
+    ? new Date(request.dpca_end_date)
+    : null;
+
+  const currentDate = new Date();
+  const currentMonth = currentDate.getMonth();
+  const currentYear = currentDate.getFullYear();
+  const startDateObj = new Date(startDate);
+
+  if (startDateObj > currentDate) return 0;
+
+  const endOfMonth = new Date(currentYear, currentMonth + 1, 0);
+
+  if (
+    startDateObj.getMonth() === currentMonth &&
+    startDateObj.getFullYear() === currentYear
+  ) {
+    let actualEndDate = endOfMonth;
+
+    if (
+      endDate &&
+      endDate.getMonth() === currentMonth &&
+      endDate.getFullYear() === currentYear
+    ) {
+      actualEndDate = endDate < endOfMonth ? endDate : endOfMonth;
+    }
+
+    const timeDiff = actualEndDate.getTime() - startDateObj.getTime();
+    return Math.max(0, Math.ceil(timeDiff / (1000 * 3600 * 24)));
+  } else if (startDateObj < new Date(currentYear, currentMonth, 1)) {
+    const currentMonthStart = new Date(currentYear, currentMonth, 1);
+    let actualEndDate = endOfMonth;
+
+    if (
+      endDate &&
+      endDate.getMonth() === currentMonth &&
+      endDate.getFullYear() === currentYear
+    ) {
+      actualEndDate = endDate < endOfMonth ? endDate : endOfMonth;
+    }
+
+    const timeDiff = actualEndDate.getTime() - currentMonthStart.getTime();
+    return Math.ceil(timeDiff / (1000 * 3600 * 24));
+  }
+
+  return 0;
+};
+
+const calculateDaysFromStart = () => {
+  if (!response.value) return 0;
+
+  const startDate =
+    request.dpca_start_date ||
+    (response.value.asset_date
+      ? new Date(response.value.asset_date)
+      : new Date());
+  const currentDate = new Date();
+
+  const timeDifference = currentDate.getTime() - new Date(startDate).getTime();
+  return Math.max(0, Math.ceil(timeDifference / (1000 * 3600 * 24)));
+};
+
 const calculateDepreciationEndDate = (
   startDate: Date | string | null,
   usefulLifeYears: number
@@ -35,7 +397,6 @@ const calculateDepreciationEndDate = (
 
   return endDate.toISOString().split("T")[0];
 };
-
 
 const calculateMonthsDifference = (
   startDate: Date | string,
@@ -72,14 +433,12 @@ watch(
         ? Number(req.asset_value_remainLast)
         : 0;
 
-     
       request.dpca_start_date = req.dpca_start_date
         ? new Date(req.dpca_start_date)
         : req.asset_date
         ? new Date(req.asset_date)
         : new Date();
 
-   
       if (req.asset_useful_life) {
         const endDate = calculateDepreciationEndDate(
           request.dpca_start_date,
@@ -90,7 +449,6 @@ watch(
     }
   }
 );
-
 
 watch(
   () => request.dpca_start_date,
@@ -134,7 +492,6 @@ const depreciationCalculator = computed(() => {
     parseFloat(response.value.dpca_percentage || "0") / 100;
   const depreciationType = response.value.dpca_type || "SL";
 
-  
   const startDate =
     request.dpca_start_date ||
     new Date(response.value.asset_date || new Date());
@@ -144,7 +501,6 @@ const depreciationCalculator = computed(() => {
   let annualDepreciation = 0;
   let monthlyDepreciation = 0;
 
-
   if (
     depreciationType === "PU" &&
     unitsOfProduction.value.totalExpectedUnits === 0
@@ -153,19 +509,18 @@ const depreciationCalculator = computed(() => {
     unitsOfProduction.value.yearlyUsage = Array(usefulLife).fill(1000);
   }
 
- 
   switch (depreciationType) {
-    case "SL": 
+    case "SL":
       annualDepreciation = depreciableAmount / usefulLife;
       monthlyDepreciation = annualDepreciation / 12;
       break;
 
-    case "DL": 
+    case "DL":
       annualDepreciation = assetValue * depreciationRate;
       monthlyDepreciation = annualDepreciation / 12;
       break;
 
-    case "PU": 
+    case "PU":
       if (unitsOfProduction.value.totalExpectedUnits > 0) {
         const depreciationPerUnit =
           depreciableAmount / unitsOfProduction.value.totalExpectedUnits;
@@ -174,7 +529,6 @@ const depreciationCalculator = computed(() => {
         annualDepreciation = depreciationPerUnit * averageYearlyUnits;
         monthlyDepreciation = annualDepreciation / 12;
       } else {
-     
         annualDepreciation = depreciableAmount / usefulLife;
         monthlyDepreciation = annualDepreciation / 12;
       }
@@ -185,7 +539,6 @@ const depreciationCalculator = computed(() => {
       monthlyDepreciation = annualDepreciation / 12;
   }
 
-  
   const currentAccumulated = parseFloat(
     response.value.asset_accu_dpca_value || "0"
   );
@@ -244,7 +597,7 @@ const depreciationSchedule = computed(() => {
 
       case "DL":
         currentYearDepreciation = beginningBookValue * depreciationRate;
-       
+
         if (beginningBookValue - currentYearDepreciation < salvageValue) {
           currentYearDepreciation = beginningBookValue - salvageValue;
         }
@@ -264,12 +617,10 @@ const depreciationSchedule = computed(() => {
         break;
     }
 
-   
     if (year === usefulLife && depreciationType !== "DL") {
       currentYearDepreciation = Math.max(0, beginningBookValue - salvageValue);
     }
 
-   
     currentYearDepreciation = Math.max(0, currentYearDepreciation);
     if (beginningBookValue - currentYearDepreciation < salvageValue) {
       currentYearDepreciation = Math.max(0, beginningBookValue - salvageValue);
@@ -278,7 +629,6 @@ const depreciationSchedule = computed(() => {
     totalAccumulatedDepreciation += currentYearDepreciation;
     bookValue = assetValue - totalAccumulatedDepreciation;
 
-   
     if (bookValue < salvageValue) {
       bookValue = salvageValue;
     }
@@ -296,7 +646,6 @@ const depreciationSchedule = computed(() => {
           : (currentYearDepreciation / assetValue) * 100,
     });
 
-   
     if (bookValue <= salvageValue && year < usefulLife) {
       break;
     }
@@ -365,6 +714,7 @@ const getDepreciationMethodName = (type: string) => {
   }
 };
 
+// ແກ້ໄຂບັນຫາ nested function
 const getDepreciationMethodDescription = (type: string) => {
   switch (type) {
     case "SL":
@@ -376,12 +726,6 @@ const getDepreciationMethodDescription = (type: string) => {
     default:
       return "ບໍ່ມີຂໍ້ມູນວິທີການຄຳນວນ";
   }
-};
-
-const exportToExcel = () => {};
-
-const printReport = () => {
-  window.print();
 };
 
 const saveCalculation = async () => {
@@ -405,8 +749,16 @@ const saveCalculation = async () => {
   }
 };
 
+const formatOnBlur = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  if (request.asset_value_remain && request.asset_value_remain > 0) {
+    target.value = formatNumber(request.asset_value_remain);
+  }
+};
+
 onMounted(() => {
   assetStore.GetFaAssetDetail(id);
+  masterStore.getDataAsset();
 });
 
 const goBack = () => {
@@ -421,17 +773,6 @@ const goBack = () => {
         <v-row>
           <v-col cols="12">
             <GlobalTextTitleLine :title="title" />
-          </v-col>
-
-          <v-col cols="12" v-if="validationErrors.length > 0">
-            <v-alert type="error" prominent border="start">
-              <v-alert-title>ຂໍ້ຜິດພາດໃນຂໍ້ມູນ</v-alert-title>
-              <ul class="mt-2">
-                <li v-for="error in validationErrors" :key="error">
-                  {{ error }}
-                </li>
-              </ul>
-            </v-alert>
           </v-col>
 
           <v-col cols="12" class="">
@@ -507,7 +848,7 @@ const goBack = () => {
                 <v-card variant="outlined" style="border: 2px solid #ff5722">
                   <v-card-title class="text-h6 pb-2 bg-deep-orange-lighten-4">
                     <v-icon class="mr-2">mdi-chart-line</v-icon>
-                    ສະຫຼຸບການຄຳນວນການຫຼູຍຫຽ້ນລາຄາ
+                    ສະຫຼຸບຂໍ້ມູນຫຼູຍຫຽ້ນ
                   </v-card-title>
                   <v-card-text class="pt-4">
                     <v-row>
@@ -548,7 +889,7 @@ const goBack = () => {
                               )
                             }}
                           </div>
-                          <div class="text-caption">ຄ່าຫຼູຍຫຽ້ນສະສົມ</div>
+                          <div class="text-caption">ຄ່າຫຼູຍຫຽ້ນສະສົມ</div>
                         </v-card>
                       </v-col>
                       <v-col cols="12" md="3">
@@ -561,7 +902,7 @@ const goBack = () => {
                               )
                             }}
                           </div>
-                          <div class="text-caption">ມູນຄ່າຄົງເຫຼືອ</div>
+                          <div class="text-caption">ມູນຄ່າຊັບສົມບັດເຫຼືອ</div>
                         </v-card>
                       </v-col>
                     </v-row>
@@ -577,11 +918,23 @@ const goBack = () => {
                 >
                   <v-card-title class="text-h6 pb-2 bg-warning text-dark">
                     <v-icon class="mr-2">mdi-shield-check</v-icon>
-                    ສະຖານະແລະການຮັບປະກັນ
+                    ຂໍ້ມູນຊັບສົມບັດ
                   </v-card-title>
                   <v-card-text class="pt-4">
                     <v-row>
-                      <v-col cols="12" md="3">
+                      <v-col cols="12" md="2">
+                        <GlobalCardTitle
+                          v-if="depreciationSummary"
+                          :title="'ມູນຄ່າຫັກຊັບສິນ'"
+                          :text="
+                            formatCurrency(
+                              depreciationSummary.totalDepreciation,
+                              response?.asset_currency || ''
+                            )
+                          "
+                        />
+                      </v-col>
+                      <v-col cols="12" md="2">
                         <GlobalCardTitle
                           :title="'ມູນຄ່າຊັບສິນ'"
                           :text="
@@ -592,13 +945,13 @@ const goBack = () => {
                           "
                         />
                       </v-col>
-                      <v-col cols="12" md="3">
+                      <v-col cols="12" md="2">
                         <GlobalCardTitle
                           :title="'ສະກຸນເງິນ'"
                           :text="response?.asset_currency"
                         />
                       </v-col>
-                      <v-col cols="12" md="3">
+                      <v-col cols="12" md="2">
                         <GlobalCardTitle
                           :title="'ວັນທີ່ຊື້ຊັບສົມບັດ'"
                           :text="
@@ -606,7 +959,7 @@ const goBack = () => {
                           "
                         />
                       </v-col>
-                      <v-col cols="12" md="3">
+                      <v-col cols="12" md="2">
                         <GlobalCardTitle
                           :title="'ຜູ້ສະໜອງ/ຜູ້ຂາຍ'"
                           :text="response?.supplier_detail.supplier_name"
@@ -625,7 +978,7 @@ const goBack = () => {
                 >
                   <v-card-title class="text-h6 pb-2 bg-purple text-white">
                     <v-icon class="mr-2">mdi-calculator</v-icon>
-                    ຂໍ້ມູນການຫຼູຍຫຽ້ນລາຄາ
+                    ຂໍ້ມູນຄ່າຫຼູຍຫຽ້ນ
                   </v-card-title>
                   <v-card-text class="pt-4">
                     <v-row>
@@ -656,6 +1009,9 @@ const goBack = () => {
                           density="compact"
                           variant="outlined"
                           hide-details="auto"
+                          :placeholder="new Date().toISOString().split('T')[0]"
+                          hint="ຖ້າບໍ່ເລືອກຈະໃຊ້ວັນປະຈຸບັນ"
+                          persistent-hint
                         />
                       </v-col>
 
@@ -676,10 +1032,14 @@ const goBack = () => {
                         />
                         <label>ມູນຄ່າຊັບສົມບັດເຫຼືອ</label>
                         <v-text-field
-                          v-model="request.asset_value_remain"
+                          v-model="formatAssetValueRemain"
                           density="compact"
                           variant="outlined"
                           hide-details="auto"
+                          :suffix="response?.asset_currency || ''"
+                          class="formatted-number-input"
+                          placeholder="0.00"
+                          @blur="formatOnBlur"
                         />
 
                         <label>ວັນທີ່ສິ້ນສຸດການລາຄາຫຼູຍຫຽ້ນ</label>
@@ -696,16 +1056,25 @@ const goBack = () => {
                       </v-col>
 
                       <v-col cols="12" md="3">
-                        <GlobalCardTitle :title="'ເລກບັນຊີ/DR'" :text="'N/A'" />
                         <GlobalCardTitle
-                          :title="'ມູນຄ່າຕັ້ນ'"
-                          :text="
-                            formatCurrency(
-                              response?.asset_value || '0',
-                              response?.asset_currency || ''
-                            )
-                          "
+                          :title="'ເລກບັນຊີ/DR'"
+                          :text="getAccountNumbers.dr || 'N/A'"
                         />
+
+                        <label
+                          >ມູນຄ່າຕົ້ນງວດ
+                          <span class="text-error">*</span></label
+                        >
+                        <v-text-field
+                          :value="formatNumber(monthlySetupValue)"
+                          variant="outlined"
+                          density="compact"
+                          readonly
+                          :suffix="response?.asset_currency || ''"
+                          class="formatted-number-input"
+                          persistent-hint
+                        />
+
                         <v-label
                           >ມູນຄ່າຫຼູ້ຍຫຽ້ນລາຄາສະສົມ
                           <span style="color: red">*</span></v-label
@@ -720,17 +1089,25 @@ const goBack = () => {
                       <v-col cols="12" md="3">
                         <GlobalCardTitle
                           :title="'ເລກບັນຊີ/CR'"
-                          :text="response?.acc_no ?? ''"
-                        />
-                        <GlobalCardTitle
-                          :title="'ມູນຄ່າທ້າຍ'"
                           :text="
-                            formatCurrency(
-                              response?.asset_value_remainLast || '0',
-                              response?.asset_currency || ''
-                            )
+                            getAccountNumbers.cr || response?.acc_no || 'N/A'
                           "
                         />
+
+                        <label
+                          >ມູນຄ່າທ້າຍງວດ
+                          <span class="text-success">*</span></label
+                        >
+                        <v-text-field
+                          :value="formatNumber(monthlyEndValue)"
+                          variant="outlined"
+                          density="compact"
+                          readonly
+                          :suffix="response?.asset_currency || ''"
+                          class="formatted-number-input"
+                          persistent-hint
+                        />
+
                         <GlobalCardTitle
                           :title="'ມູນຄ່າຊາກ'"
                           :text="
@@ -790,83 +1167,6 @@ const goBack = () => {
                   </v-card-text>
                 </v-card>
               </v-col>
-
-              <!-- ຕາລາງເສື່ອມລາຄາ -->
-              <!-- <v-col cols="12" v-if="depreciationSchedule.length > 0">
-                <v-card variant="outlined" style="border: 2px solid #2196f3">
-                  <v-card-title class="text-h6 pb-2 bg-blue-lighten-5">
-                    <v-icon class="mr-2">mdi-table</v-icon>
-                    ຕາລາງແຜນການຫຼູຍຫຽ້ນລາຄາ
-                    <v-spacer></v-spacer>
-                    <v-btn
-                      size="small"
-                      color="success"
-                      prepend-icon="mdi-microsoft-excel"
-                      @click="exportToExcel"
-                      class="mr-2"
-                    >
-                      Export Excel
-                    </v-btn>
-                  </v-card-title>
-                  <v-card-text class="pt-4">
-                    <v-data-table
-                      :headers="[
-                        { title: 'ປີ', key: 'year', align: 'center', width: '80px' },
-                        { title: 'ມູນຄ່າເລີ່ມຕົ້ນ', key: 'beginningBookValue', align: 'end', width: '150px' },
-                        { title: 'ຄ່າຫຼູຍຫຽ້ນປີນີ້', key: 'depreciationExpense', align: 'end', width: '150px' },
-                        { title: 'ອັດຕາຫຼູຍຫຽ້ນ (%)', key: 'depreciationRate', align: 'end', width: '120px' },
-                        { title: 'ຫຼູຍຫຽ້ນສະສົມ', key: 'accumulatedDepreciation', align: 'end', width: '150px' },
-                        { title: 'ມູນຄ່າສຸດທ້າຍ', key: 'endingBookValue', align: 'end', width: '150px' }
-                      ]"
-                      :items="depreciationSchedule"
-                      :items-per-page="-1"
-                      hide-default-footer
-                      class="elevation-1"
-                      density="compact"
-                    >
-                      <template v-slot:item.year="{ item }">
-                        <v-chip size="small" color="primary">{{ item.year }}</v-chip>
-                      </template>
-                      <template v-slot:item.beginningBookValue="{ item }">
-                        <span class="font-weight-medium">{{ formatNumber(item.beginningBookValue) }}</span>
-                      </template>
-                      <template v-slot:item.depreciationExpense="{ item }">
-                        <span class="text-red-darken-2 font-weight-medium">{{ formatNumber(item.depreciationExpense) }}</span>
-                      </template>
-                      <template v-slot:item.depreciationRate="{ item }">
-                        <span class="text-blue-darken-2">{{ formatPercentage(item.depreciationRate) }}</span>
-                      </template>
-                      <template v-slot:item.accumulatedDepreciation="{ item }">
-                        <span class="text-orange-darken-2 font-weight-medium">{{ formatNumber(item.accumulatedDepreciation) }}</span>
-                      </template>
-                      <template v-slot:item.endingBookValue="{ item }">
-                        <span class="text-green-darken-2 font-weight-bold">{{ formatNumber(item.endingBookValue) }}</span>
-                      </template>
-                    </v-data-table>
-                    
-                    <v-divider class="my-4"></v-divider>
-                    <v-row class="bg-grey-lighten-4 pa-3 rounded">
-                      <v-col cols="12" md="6">
-                        <div class="text-subtitle-2 mb-2">ສະຫຼຸບການຄຳນວນ:</div>
-                        <div class="text-body-2">
-                          • ວິທີການຫຼູຍຫຽ້ນລາຄາ: <strong>{{ getDepreciationMethodName(response?.dpca_type || '') }}</strong>
-                        </div>
-                        <div class="text-body-2">
-                          • ມູນຄ່າທີ່ສາມາດຫຼູຍຫຽ້ນໄດ້: <strong>{{ formatCurrency(depreciationCalculator?.totalDepreciableAmount || '0', response?.asset_currency || '') }}</strong>
-                        </div>
-                      </v-col>
-                      <v-col cols="12" md="6">
-                        <div class="text-body-2">
-                          • ຄ່າຫຼູຍຫຽ້ນທັງໝົດ: <strong class="text-red-darken-2">{{ formatCurrency(depreciationSummary?.totalDepreciation || '0', response?.asset_currency || '') }}</strong>
-                        </div>
-                        <div class="text-body-2">
-                          • ມູນຄ່າຊາກສຸດທ້າຍ: <strong class="text-green-darken-2">{{ formatCurrency(depreciationSummary?.finalBookValue || '0', response?.asset_currency || '') }}</strong>
-                        </div>
-                      </v-col>
-                    </v-row>
-                  </v-card-text>
-                </v-card>
-              </v-col> -->
 
               <!-- Units of Production Settings (if applicable) -->
               <v-col cols="12" v-if="response?.dpca_type === 'PU'">
@@ -1021,6 +1321,10 @@ label {
 
 .bg-brown-lighten-4 {
   background-color: #d7ccc8 !important;
+}
+
+.bg-deep-purple-lighten-4 {
+  background-color: #d1c4e9 !important;
 }
 
 .text-white {

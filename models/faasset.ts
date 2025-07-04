@@ -1,5 +1,5 @@
 export interface FaAsset{
-    asset_list_id:           string;
+   asset_list_id:           string;
     asset_id_detail:         AssetIDDetail;
     location_detail:         LocationDetail;
     supplier_detail:         SupplierDetail;
@@ -21,6 +21,7 @@ export interface FaAsset{
     asset_salvage_value:     string;
     dpca_start_date:         null;
     dpca_end_date:           null;
+    accu_dpca_value_total:   null;
     asset_accu_dpca_value:   string;
     asset_value_remain:      string;
     asset_value_remainMonth: string;
@@ -80,4 +81,39 @@ export interface Detail {
     MC_code:    string;
     MC_name_la: string;
     MC_name_en: string;
+}
+
+export interface AssetIDDetail {
+    coa_id:            number;
+    asset_code:        string;
+    asset_name_en:     string;
+    asset_name_la:     string;
+    asset_type_detail: AssetTypeDetail;
+}
+
+export interface AssetTypeDetail {
+    type_code:    string;
+    type_name_la: string;
+    type_name_en: string;
+}
+
+export interface Detail {
+    MC_id:      number;
+    M_id:       number;
+    MC_code:    string;
+    MC_name_la: string;
+    MC_name_en: string;
+}
+
+export interface LocationDetail {
+    location_id:      number;
+    location_code:    string;
+    location_name_en: string;
+    location_name_la: string;
+}
+
+export interface SupplierDetail {
+    supplier_id:   number;
+    supplier_code: string;
+    supplier_name: string;
 }
