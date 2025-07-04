@@ -5,8 +5,8 @@
       <v-col cols="12">
         <div class="d-flex justify-space-between align-center">
           <div>
-            <h1 class="text-h4 font-weight-light mb-1">ການຈັດການ EOC Maintain</h1>
-            <p class="text-body-2 text-grey">ຈັດການການຕັ້ງຄ່າ EOC Functions ທັງໝົດໃນລະບົບ</p>
+            <h1 class="text-h4 font-weight-light mb-1 text-styles">ການຈັດການ EOC Maintain</h1>
+            <p class="text-body-2 text-grey text-styles">ຈັດການການຕັ້ງຄ່າ EOC Functions ທັງໝົດໃນລະບົບ</p>
           </div>
           <v-btn
             color="primary"
@@ -262,7 +262,6 @@
                   variant="text"
                   color="primary"
                   @click="goPath(`/eocfunction/update?eoc_id=${item.eoc_id}`)"
-                  :disabled="item.Auth_Status === 'A'"
                 />
               </template>
             </v-tooltip>
@@ -276,7 +275,7 @@
                   variant="text"
                   color="error"
                   @click="deleteItem(item)"
-                  :disabled="item.Auth_Status === 'A'"
+            
                 />
               </template>
             </v-tooltip>

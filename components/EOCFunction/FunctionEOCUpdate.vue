@@ -1,195 +1,251 @@
 <template>
-  <v-container fluid class="pa-4">
-    <v-row justify="center">
-      <v-col cols="12" lg="8">
-        <!-- Header -->
-        <div class="d-flex align-center mb-6">
+  <v-container fluid class="pa-0">
+    <!-- Header Section -->
+    <div class="header-section">
+      <v-container class="py-6">
+        <div class="d-flex align-center">
           <v-btn
             @click="$router.go(-1)"
             icon="mdi-arrow-left"
             variant="text"
-            class="mr-3"
+            size="large"
+            class="mr-4"
+            color="primary"
           />
           <div>
-            <h2 class="text-h4 font-weight-medium text-primary">ແກ້ໄຂ EOC Maintain</h2>
-            <div class="text-subtitle-1 text-grey-darken-1 mt-1">
-              ID: {{ $route.params.id }}
-            </div>
+            <h1 class="text-h4 font-weight-light text-primary mb-1 text-styles">ແກ້ໄຂ EOC Maintain</h1>
+            <p class="text-subtitle-1 text-medium-emphasis mb-0">
+              ລະຫັັດການປິດບັນຊີ: {{ $route.query.eoc_id }}
+            </p>
           </div>
         </div>
+      </v-container>
+    </div>
 
-        <!-- Loading State -->
-        <v-card v-if="loadingData" outlined class="pa-6">
-          <div class="text-center">
-            <v-progress-circular indeterminate color="primary" />
-            <div class="mt-3">ກໍາລັງໂຫລດຂໍ້ມູນ...</div>
+    <!-- Main Content -->
+    <v-container class="py-8">
+      <v-row justify="center">
+        <v-col cols="12" lg="8" xl="6">
+          
+          <!-- Loading State -->
+          <div v-if="loadingData" class="text-center py-12">
+            <v-progress-circular 
+              indeterminate 
+              color="primary" 
+              size="48"
+              width="3"
+            />
+            <p class="text-body-1 text-medium-emphasis mt-4 mb-0">ກໍາລັງໂຫລດຂໍ້ມູນ...</p>
           </div>
-        </v-card>
 
-        <!-- Form Card -->
-        <v-card v-else outlined class="pa-6">
-          <!-- Authorization Status Alert -->
-          <v-alert
-            v-if="originalData.Auth_Status === 'A'"
-            type="warning"
-            variant="tonal"
-            class="mb-4"
-          >
-            <template v-slot:title>ຂໍ້ມູນນີ້ຖືກອະນຸມັດແລ້ວ</template>
-            Record ນີ້ຖືກອະນຸມັດແລ້ວ ບໍ່ສາມາດແກ້ໄຂໄດ້
-          </v-alert>
+          <!-- Form Content -->
+          <div v-else>
+            
+            <!-- Status Alert -->
+            <v-alert
+              v-if="originalData.Auth_Status === 'A'"
+              type="warning"
+              variant="tonal"
+              class="mb-6 rounded-lg"
+              border="start"
+              border-color="warning"
+            >
+              <div class="d-flex align-center">
+                <v-icon icon="mdi-lock" class="mr-3" />
+                <div>
+                  <div class="font-weight-medium">ຂໍ້ມູນນີ້ຖືກອະນຸມັດແລ້ວ</div>
+                  <div class="text-caption">Record ນີ້ຖືກອະນຸມັດແລ້ວ ບໍ່ສາມາດແກ້ໄຂໄດ້</div>
+                </div>
+              </div>
+            </v-alert>
 
-          <v-form ref="formRef" v-model="formValid" @submit.prevent="submitForm">
-            <v-row>
-              <!-- Module Selection -->
-              <v-col cols="12" md="6">
-                <v-select
-                  v-model="form.module_id"
-                  :items="moduleOptions"
-                  :loading="loadingModules"
-                  :disabled="isReadOnly"
-                  label="ເລືອກ Module *"
-                  item-title="module_name"
-                  item-value="module_id"
-                  required
-                  outlined
-                  :rules="[rules.required]"
-                  @change="loadFunctions"
-                />
-              </v-col>
+            <!-- Main Form Card -->
+            <v-card class="main-card" elevation="0" variant="outlined">
+              <v-card-text class="pa-8">
+                <v-form ref="formRef" v-model="formValid" @submit.prevent="submitForm">
+                  
+                  <!-- Section: Module & Function -->
+                  <div class="form-section">
+                    <h3 class="section-title">ຂໍ້ມູນ Module ແລະ Function</h3>
+                    <v-row>
+                      <v-col cols="12" md="6">
+                        <v-select
+                          v-model="form.module_id"
+                          :items="moduleOptions"
+                          :loading="loadingModules"
+                          :disabled="isReadOnly"
+                          label="ເລືອກ Module"
+                          item-title="module_name_la"
+                          item-value="module_id"
+                          variant="outlined"
+                          density="comfortable"
+                          :rules="[rules.required]"
+                          @change="loadFunctions"
+                          prepend-inner-icon="mdi-view-module"
+                          hide-details="auto"
+                        >
+                          <template v-slot:prepend-inner>
+                            <v-icon color="primary" size="20">mdi-view-module</v-icon>
+                          </template>
+                        </v-select>
+                      </v-col>
 
-              <!-- Function Selection -->
-              <v-col cols="12" md="6">
-                <v-select
-                  v-model="form.function_id"
-                  :items="functionOptions"
-                  :loading="loadingFunctions"
-                  :disabled="!form.module_id || isReadOnly"
-                  label="ເລືອກ Function *"
-                  item-title="function_name"
-                  item-value="function_id"
-                  required
-                  outlined
-                  :rules="[rules.required]"
-                />
-              </v-col>
+                      <v-col cols="12" md="6">
+                        <v-select
+                          v-model="form.function_id"
+                          :items="functionOptions"
+                          :loading="loadingFunctions"
+                          :disabled="!form.module_id || isReadOnly"
+                          label="ເລືອກ Function"
+                          item-title="description_la"
+                          item-value="function_id"
+                          variant="outlined"
+                          density="comfortable"
+                          :rules="[rules.required]"
+                          hide-details="auto"
+                        >
+                          <template v-slot:prepend-inner>
+                            <v-icon color="primary" size="20">mdi-function</v-icon>
+                          </template>
+                        </v-select>
+                      </v-col>
+                    </v-row>
+                  </div>
 
-              <!-- Sequence Number -->
-              <v-col cols="12" md="6">
-                <v-text-field
-                  v-model.number="form.eoc_seq_no"
-                  :disabled="isReadOnly"
-                  label="ລໍາດັບ EOC *"
-                  type="number"
-                  required
-                  outlined
-                  :rules="[rules.required, rules.positiveNumber]"
-                />
-              </v-col>
+                  <!-- Section: EOC Details -->
+                  <div class="form-section">
+                    <h3 class="section-title">ລາຍລະອຽດ EOC</h3>
+                    <v-row>
+                      <v-col cols="12" md="6">
+                        <v-text-field
+                          v-model.number="form.eoc_seq_no"
+                          :disabled="isReadOnly"
+                          label="ລໍາດັບ EOC"
+                          type="number"
+                          variant="outlined"
+                          density="comfortable"
+                          :rules="[rules.required, rules.positiveNumber]"
+                          hide-details="auto"
+                        >
+                          <template v-slot:prepend-inner>
+                            <v-icon color="primary" size="20">mdi-numeric</v-icon>
+                          </template>
+                        </v-text-field>
+                      </v-col>
 
-              <!-- EOC Type -->
-              <v-col cols="12" md="6">
-                <v-select
-                  v-model="form.eoc_type"
-                  :items="eocTypeOptions"
-                  :disabled="isReadOnly"
-                  label="ປະເພດ EOC *"
-                  required
-                  outlined
-                  :rules="[rules.required]"
-                />
-              </v-col>
+                      <v-col cols="12" md="6">
+                        <v-select
+                          v-model="form.eoc_type"
+                          :items="eocTypeOptions"
+                          :loading="loadingEocTypes"      
+                          :disabled="isReadOnly"
+                          label="ປະເພດ EOC"
+                          item-title="MC_name_la"         
+                          item-value="MC_code"             
+                          variant="outlined"
+                          density="comfortable"
+                          :rules="[rules.required]"
+                          hide-details="auto"
+                        >
+                          <template v-slot:prepend-inner>
+                            <v-icon color="primary" size="20">mdi-tag</v-icon>
+                          </template>
+                        </v-select>
+                      </v-col>
 
-              <!-- Modification Number -->
-              <v-col cols="12" md="6">
-                <v-text-field
-                  v-model.number="form.mod_no"
-                  :disabled="isReadOnly"
-                  label="ຫມາຍເລກການແກ້ໄຂ"
-                  type="number"
-                  outlined
-                />
-              </v-col>
+                      <v-col cols="12" md="6">
+                        <v-text-field
+                          v-model.number="form.mod_no"
+                          :disabled="isReadOnly"
+                          label="ຫມາຍເລກການແກ້ໄຂ"
+                          type="number"
+                          variant="outlined"
+                          density="comfortable"
+                          hide-details="auto"
+                        >
+                          <template v-slot:prepend-inner>
+                            <v-icon color="primary" size="20">mdi-pencil</v-icon>
+                          </template>
+                        </v-text-field>
+                      </v-col>
 
-              <!-- Record Status -->
-              <v-col cols="12" md="6">
-                <v-select
-                  v-model="form.Record_Status"
-                  :items="recordStatOptions"
-                  label="ສະຖານະ Record"
-                  outlined
-                  disabled
-                />
-              </v-col>
+                      <v-col cols="12" md="6">
+                        <v-select
+                          v-model="form.Record_Status"
+                          :items="recordStatOptions"
+                          label="ສະຖານະ Record"
+                          variant="outlined"
+                          density="comfortable"
+                          disabled
+                          hide-details="auto"
+                        >
+                          <template v-slot:prepend-inner>
+                            <v-icon color="primary" size="20">mdi-database</v-icon>
+                          </template>
+                        </v-select>
+                      </v-col>
+                    </v-row>
+                  </div>
 
-              <!-- Authorization Status (Read Only) -->
-              <v-col cols="12" md="6">
-                <v-text-field
-                  :model-value="getAuthStatusText(originalData.Auth_Status)"
-                  label="ສະຖານະການອະນຸມັດ"
-                  outlined
-                  readonly
-                />
-              </v-col>
+                  <!-- Section: Status Information -->
+                  <div class="form-section">
+                    <h3 class="section-title">ຂໍ້ມູນສະຖານະ</h3>
+                    <v-row>
+                      <v-col cols="12" md="6">
+                        <div class="status-field">
+                          <div class="d-flex align-center">
+                            <v-icon 
+                              :color="originalData.Auth_Status === 'A' ? 'success' : 'warning'" 
+                              size="20" 
+                              class="mr-3"
+                            >
+                              {{ originalData.Auth_Status === 'A' ? 'mdi-check-circle' : 'mdi-clock' }}
+                            </v-icon>
+                            <div>
+                              <div class="text-medium-emphasis text-styles">ສະຖານະການອະນຸມັດ</div>
+                              <div class="text-body-1 font-weight-medium text-styles">
+                                {{ getAuthStatusText(originalData.Auth_Status) }}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </v-col>
 
-              <!-- Once Auth (Read Only) -->
-              <v-col cols="12" md="6">
-                <v-text-field
-                  :model-value="originalData.Once_Auth === 'Y' ? 'ອະນຸມັດແລ້ວ' : 'ຍັງບໍ່ອະນຸມັດ'"
-                  label="ອະນຸມັດຄັ້ງດຽວ"
-                  outlined
-                  readonly
-                />
-              </v-col>
-            </v-row>
+                      <v-col cols="12" md="6">
+                        <div class="status-field">
+                          <div class="d-flex align-center">
+                            <v-icon 
+                              :color="originalData.Once_Auth === 'Y' ? 'success' : 'grey'" 
+                              size="20" 
+                              class="mr-3"
+                            >
+                              {{ originalData.Once_Auth === 'Y' ? 'mdi-shield-check' : 'mdi-shield-outline' }}
+                            </v-icon>
+                            <div>
+                              <div class=".text-styles text-medium-emphasis">ອະນຸມັດຄັ້ງດຽວ</div>
+                              <div class="text-body-1 font-weight-medium text-styles">
+                                {{ originalData.Once_Auth === 'Y' ? 'ອະນຸມັດແລ້ວ' : 'ຍັງບໍ່ອະນຸມັດ' }}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </v-col>
+                    </v-row>
+                  </div>
+                </v-form>
+              </v-card-text>
 
-            <!-- Audit Information -->
-            <v-divider class="my-6" />
-            <h3 class="text-h6 mb-4">ຂໍ້ມູນການກວດສອບ</h3>
-            <v-row>
-              <v-col cols="12" md="6">
-                <v-text-field
-                  :model-value="originalData.maker_name || 'N/A'"
-                  label="ຜູ້ສ້າງ"
-                  outlined
-                  readonly
-                />
-              </v-col>
-              <v-col cols="12" md="6">
-                <v-text-field
-                  :model-value="formatDateTime(originalData.Maker_DT_Stamp)"
-                  label="ວັນທີສ້າງ"
-                  outlined
-                  readonly
-                />
-              </v-col>
-              <v-col cols="12" md="6">
-                <v-text-field
-                  :model-value="originalData.checker_name || 'N/A'"
-                  label="ຜູ້ກວດສອບ"
-                  outlined
-                  readonly
-                />
-              </v-col>
-              <v-col cols="12" md="6">
-                <v-text-field
-                  :model-value="formatDateTime(originalData.Checker_DT_Stamp)"
-                  label="ວັນທີກວດສອບ"
-                  outlined
-                  readonly
-                />
-              </v-col>
-            </v-row>
-
-            <!-- Action Buttons -->
-            <v-row class="mt-4">
-              <v-col cols="12">
-                <div class="d-flex justify-end gap-3">
+              <!-- Action Footer -->
+              <v-divider />
+              <v-card-actions class="pa-6">
+                <v-spacer />
+                <div class="d-flex gap-3">
                   <v-btn
                     @click="resetForm"
                     variant="outlined"
-                    color="grey"
+                    color="grey-darken-1"
                     :disabled="loading || isReadOnly"
+                    prepend-icon="mdi-refresh"
                   >
                     ລ້າງຂໍ້ມູນ
                   </v-btn>
@@ -197,6 +253,7 @@
                     @click="$router.go(-1)"
                     variant="outlined"
                     :disabled="loading"
+                    prepend-icon="mdi-close"
                   >
                     ຍົກເລີກ
                   </v-btn>
@@ -207,20 +264,42 @@
                     variant="elevated"
                     :loading="loading"
                     :disabled="!formValid || !hasChanges"
+                    prepend-icon="mdi-content-save"
+                    @click="submitForm"
                   >
                     ອັບເດດ
                   </v-btn>
                 </div>
-              </v-col>
-            </v-row>
-          </v-form>
-        </v-card>
-      </v-col>
-    </v-row>
+              </v-card-actions>
+            </v-card>
+          </div>
+        </v-col>
+      </v-row>
+    </v-container>
 
-    <!-- Snackbar for notifications -->
-    <v-snackbar v-model="snackbar.show" :color="snackbar.color" timeout="3000">
-      {{ snackbar.message }}
+    <!-- Enhanced Snackbar -->
+    <v-snackbar 
+      v-model="snackbar.show" 
+      :color="snackbar.color" 
+      timeout="4000"
+      location="top"
+      class="snackbar-custom"
+    >
+      <div class="d-flex align-center">
+        <v-icon 
+          :icon="snackbar.color === 'success' ? 'mdi-check-circle' : 'mdi-alert-circle'" 
+          class="mr-3"
+        />
+        {{ snackbar.message }}
+      </div>
+      <template v-slot:actions>
+        <v-btn
+          variant="text"
+          size="small"
+          @click="snackbar.show = false"
+          icon="mdi-close"
+        />
+      </template>
     </v-snackbar>
   </v-container>
 </template>
@@ -228,6 +307,7 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import axios from '@/helpers/axios'
 
 const router = useRouter()
 const route = useRoute()
@@ -237,8 +317,10 @@ const loading = ref(false)
 const loadingData = ref(true)
 const loadingModules = ref(false)
 const loadingFunctions = ref(false)
+const eocTypeOptions = ref([])
 const formValid = ref(false)
 const formRef = ref(null)
+const loadingEocTypes = ref(false)
 
 // Form data
 const form = ref({
@@ -255,12 +337,6 @@ const originalData = ref({})
 // Options
 const moduleOptions = ref([])
 const functionOptions = ref([])
-
-const eocTypeOptions = ref([
-  { title: 'Type A', value: 'A' },
-  { title: 'Type B', value: 'B' },
-  { title: 'Type C', value: 'C' }
-])
 
 const recordStatOptions = ref([
   { title: 'ປິດ', value: 'C' },
@@ -298,36 +374,31 @@ const hasChanges = computed(() => {
 const loadData = async () => {
   loadingData.value = true
   try {
-    const token = localStorage.getItem('authToken')
-    const response = await fetch(`/api/eoc-maintain/${route.params.id}/`, {
+    const token = localStorage.getItem('token')
+    const response = await axios.get(`/api/eoc-maintain/${route.query.eoc_id}/`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       }
     })
 
-    if (response.ok) {
-      const data = await response.json()
-      originalData.value = data
-      form.value = {
-        module_id: data.module_id,
-        function_id: data.function_id,
-        eoc_seq_no: data.eoc_seq_no,
-        eoc_type: data.eoc_type,
-        mod_no: data.mod_no,
-        Record_Status: data.Record_Status
-      }
-      
-      // Load functions for the selected module
-      if (data.module_id) {
-        await loadFunctions()
-      }
-    } else {
-      showSnackbar('ເກີດຂໍ້ຜິດພາດໃນການໂຫລດຂໍ້ມູນ', 'error')
-      router.go(-1)
+    originalData.value = response.data
+    form.value = {
+      module_id: response.data.module_id,
+      function_id: response.data.function_id,
+      eoc_seq_no: response.data.eoc_seq_no,
+      eoc_type: response.data.eoc_type,
+      mod_no: response.data.mod_no,
+      Record_Status: response.data.Record_Status
+    }
+    
+    // Load functions for the selected module
+    if (response.data.module_id) {
+      await loadFunctions()
     }
   } catch (error) {
-    showSnackbar('ເກີດຂໍ້ຜິດພາດໃນການເຊື່ອມຕໍ່', 'error')
+    console.error('Error loading data:', error)
+    showSnackbar('ເກີດຂໍ້ຜິດພາດໃນການໂຫລດຂໍ້ມູນ', 'error')
     router.go(-1)
   } finally {
     loadingData.value = false
@@ -337,24 +408,49 @@ const loadData = async () => {
 const loadModules = async () => {
   loadingModules.value = true
   try {
-    const token = localStorage.getItem('authToken')
-    const response = await fetch('/api/modules/', {
+    const token = localStorage.getItem('token')
+    const response = await axios.get('/api/modules/', {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       }
     })
 
-    if (response.ok) {
-      const data = await response.json()
-      moduleOptions.value = data.results || data
-    } else {
-      showSnackbar('ເກີດຂໍ້ຜິດພາດໃນການໂຫລດ Modules', 'error')
-    }
+    moduleOptions.value = response.data.results || response.data
   } catch (error) {
-    showSnackbar('ເກີດຂໍ້ຜິດພາດໃນການເຊື່ອມຕໍ່', 'error')
+    console.error('Error loading modules:', error)
+    showSnackbar('ເກີດຂໍ້ຜິດພາດໃນການໂຫລດ Modules', 'error')
   } finally {
     loadingModules.value = false
+  }
+}
+
+const loadEocTypes = async () => {
+  loadingEocTypes.value = true
+  try {
+    const token = localStorage.getItem('token')
+    const response = await axios.get('/api/master-types/tree/EOC/', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    })
+
+    // Filter only active items and format for v-select
+    if (response.data.MasterCodes) {
+      eocTypeOptions.value = response.data.MasterCodes
+        .filter(item => item.Status === 'T') // Only active
+        .map(item => ({
+          MC_id: item.MC_id,
+          MC_code: item.MC_code,        // Value: EOD, EOM, EOY
+          MC_name_la: item.MC_name_la,  // Display: ປິດບັນຊີປະຈຳວັນ, etc.
+          MC_name_en: item.MC_name_en
+        }))
+    }
+  } catch (error) {
+    showSnackbar('ເກີດຂໍ້ຜິດພາດໃນການໂຫລດປະເພດ EOC', 'error')
+  } finally {
+    loadingEocTypes.value = false
   }
 }
 
@@ -366,22 +462,18 @@ const loadFunctions = async () => {
 
   loadingFunctions.value = true
   try {
-    const token = localStorage.getItem('authToken')
-    const response = await fetch(`/api/functions/?module_id=${form.value.module_id}`, {
+    const token = localStorage.getItem('token')
+    const response = await axios.get(`/api/function-desc/`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       }
     })
 
-    if (response.ok) {
-      const data = await response.json()
-      functionOptions.value = data.results || data
-    } else {
-      showSnackbar('ເກີດຂໍ້ຜິດພາດໃນການໂຫລດ Functions', 'error')
-    }
+    functionOptions.value = response.data.results || response.data
   } catch (error) {
-    showSnackbar('ເກີດຂໍ້ຜິດພາດໃນການເຊື່ອມຕໍ່', 'error')
+    console.error('Error loading functions:', error)
+    showSnackbar('ເກີດຂໍ້ຜິດພາດໃນການໂຫລດ Functions', 'error')
   } finally {
     loadingFunctions.value = false
   }
@@ -392,34 +484,27 @@ const submitForm = async () => {
 
   loading.value = true
   try {
-    const token = localStorage.getItem('authToken')
-    const response = await fetch(`/api/eoc-maintain/${route.params.id}/`, {
-      method: 'PUT',
+    const token = localStorage.getItem('token')
+    const response = await axios.put(`/api/eoc-maintain/${route.query.eoc_id}/`, form.value, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(form.value)
+      }
     })
 
-    if (response.ok) {
-      const data = await response.json()
-      showSnackbar(data.message || 'ອັບເດດສໍາເລັດແລ້ວ', 'success')
-      setTimeout(() => {
-        router.push('/eoc-maintain')
-      }, 1500)
-    } else {
-      const errorData = await response.json()
-      if (errorData.errors) {
-        Object.keys(errorData.errors).forEach(field => {
-          showSnackbar(`${field}: ${errorData.errors[field][0]}`, 'error')
-        })
-      } else {
-        showSnackbar(errorData.error || 'ເກີດຂໍ້ຜິດພາດໃນການອັບເດດ', 'error')
-      }
-    }
+    showSnackbar(response.data.message || 'ອັບເດດສໍາເລັດແລ້ວ', 'success')
+    setTimeout(() => {
+      router.push('/eoc-maintain')
+    }, 1500)
   } catch (error) {
-    showSnackbar('ເກີດຂໍ້ຜິດພາດໃນການເຊື່ອມຕໍ່', 'error')
+    console.error('Error updating data:', error)
+    if (error.response?.data?.errors) {
+      Object.keys(error.response.data.errors).forEach(field => {
+        showSnackbar(`${field}: ${error.response.data.errors[field][0]}`, 'error')
+      })
+    } else {
+      showSnackbar(error.response?.data?.error || 'ເກີດຂໍ້ຜິດພາດໃນການອັບເດດ', 'error')
+    }
   } finally {
     loading.value = false
   }
@@ -441,11 +526,6 @@ const getAuthStatusText = (status) => {
   return status === 'A' ? 'ອະນຸມັດແລ້ວ' : 'ລໍຖ້າອະນຸມັດ'
 }
 
-const formatDateTime = (dateTime) => {
-  if (!dateTime) return 'N/A'
-  return new Date(dateTime).toLocaleString('lo-LA')
-}
-
 const showSnackbar = (message, color = 'success') => {
   snackbar.value = { show: true, message, color }
 }
@@ -459,26 +539,140 @@ watch(() => form.value.module_id, (newVal, oldVal) => {
 
 // Lifecycle
 onMounted(async () => {
+  // Check if eoc_id exists in query parameters
+  if (!route.query.eoc_id) {
+    showSnackbar('ບໍ່ພົບ ID ຂອງ EOC', 'error')
+    router.push('/eoc-maintain')
+    return
+  }
+  
   await loadModules()
   await loadData()
+  await loadEocTypes()  
 })
 </script>
 
 <style scoped>
-.v-card {
+/* Header Section */
+.header-section {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* Main Card */
+.main-card {
+  border-radius: 16px !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04) !important;
+  overflow: hidden;
+}
+
+/* Form Sections */
+.form-section {
+  margin-bottom: 2rem;
+}
+
+.form-section:last-of-type {
+  margin-bottom: 0;
+}
+
+.section-title {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: rgb(var(--v-theme-primary));
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid rgba(var(--v-theme-primary), 0.1);
+}
+
+/* Status Fields */
+.status-field {
+  background: rgba(var(--v-theme-surface), 0.6);
+  border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 12px;
+  padding: 1rem;
+  height: 100%;
+  transition: all 0.2s ease;
 }
 
-.v-btn {
+.status-field:hover {
+  background: rgba(var(--v-theme-surface), 0.8);
+  border-color: rgba(var(--v-theme-primary), 0.2);
+}
+
+/* Form Controls */
+:deep(.v-field__outline) {
+  border-radius: 12px !important;
+}
+
+:deep(.v-field--focused .v-field__outline) {
+  border-width: 2px !important;
+}
+
+:deep(.v-btn) {
   text-transform: none !important;
-  border-radius: 8px;
+  border-radius: 12px !important;
+  font-weight: 500 !important;
 }
 
+:deep(.v-alert) {
+  border-radius: 12px !important;
+}
+
+/* Snackbar */
+.snackbar-custom {
+  border-radius: 12px !important;
+}
+
+/* Gaps */
 .gap-3 {
   gap: 12px;
 }
 
-.v-alert {
-  border-radius: 8px;
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .header-section .v-container {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+  }
+  
+  .main-card .v-card-text {
+    padding: 1.5rem !important;
+  }
+  
+  .main-card .v-card-actions {
+    padding: 1.5rem !important;
+    flex-direction: column;
+  }
+  
+  .d-flex.gap-3 {
+    width: 100%;
+    flex-direction: column;
+  }
+  
+  .d-flex.gap-3 .v-btn {
+    width: 100%;
+  }
+}
+
+/* Loading state improvements */
+:deep(.v-progress-circular) {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+/* Animation for form sections */
+.form-section {
+  animation: fadeInUp 0.4s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>
