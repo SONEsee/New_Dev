@@ -845,8 +845,6 @@ const editFormRef = ref(null)
 const accounts = ref([])
 const loadingAccounts = ref(false)
 
-// API configuration
-const API_BASE_URL = 'http://127.0.0.1:8000'
 
 const getAuthHeaders = () => ({
   headers: {
