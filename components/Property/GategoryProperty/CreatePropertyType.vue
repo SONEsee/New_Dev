@@ -77,7 +77,7 @@ const rules = {
             />
           </v-col>
           <v-col cols="12" md="6">
-            <v-select
+            <v-autocomplete
               v-model="request.is_tangible"
               label="ປະເພດຊັບສິນ"
               variant="outlined"

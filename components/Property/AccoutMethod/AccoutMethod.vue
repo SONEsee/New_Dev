@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
 import { CallSwal } from "#build/imports";
+import { useRoute } from "vue-router";
+const route = useRoute();
+const sub_menu_id = route.query.sub_menu_id as string;
+console.log("sub_menu_id:", sub_menu_id);
 
 const accountMethodStoreInstance = accountMethodStore();
 const mockData = computed(()=>{
@@ -472,7 +476,7 @@ onMounted(async () => {
         <div class="d-flex">
           <v-btn
             color="primary"
-            @click="goPath(`/property/accountmethod/create`)"
+            @click="goPath(`/property/accountmethod/create?sub_menu_id=${sub_menu_id}`)"
             v-if="canAdd"
           >
             <v-icon icon="mdi-plus"></v-icon> ເພີ່ມວິທີການບັນຊີໃໝ່

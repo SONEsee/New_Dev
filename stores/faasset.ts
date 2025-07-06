@@ -12,6 +12,19 @@ export const faAssetStore = defineStore("faAsset", {
       response_locations: null as any[] | null,
       response_suppliers: null as any[] | null,
       isLoading: false,
+
+      form_create_realizthe_property: {
+        asset_value_remainBegin: 0,
+        asset_value_remainLast: 0,
+        asset_value_remain: 0,
+        asset_accu_dpca_value: 0 as number | null,
+        dpca_start_date: null as Date | null,
+        dpca_end_date: null as Date | null | string,
+        asset_disposal_date: null as Date | null,
+        asset_latest_date_dpca: null as Date | null,
+        acc_no: "",
+        asset_status: "AC"
+      },
       form_create_fa_asset: {
         asset_type_id: null as number | null,
         asset_list_id: "",
@@ -50,34 +63,34 @@ export const faAssetStore = defineStore("faAsset", {
         asset_status: "UC" as "UC" | "AC" | "IA" | "MT" | "DS" | "DM",
         has_depreciation: "Y" as "Y" | "N",
       },
-     creat_form_jornal: {
-  Reference_No: "",
-  Ccy_cd: "",
-  Txn_code: "UNC",
-  Value_date: null as Date | null,
-  Addl_text: "",
-  fin_cycle: "",
-  module_id: "AS",
-  Period_code: "",
-  entries: [
-    {
-      Account: null as number | null, 
-      Account_no: "",
-      Amount: null as number | null, 
-      Dr_cr: "D" ,
-      Addl_sub_text: "",
-      Ac_relatives: "",
-    },
-    {
-      Account: null as number | null,
-      Account_no: "",
-      Amount: null as number | null,
-      Dr_cr: "C",
-      Addl_sub_text: "",
-      Ac_relatives: "",
-    }
-  ]
-},
+      creat_form_jornal: {
+        Reference_No: "",
+        Ccy_cd: "",
+        Txn_code: "UNC",
+        Value_date: null as Date | null,
+        Addl_text: "",
+        fin_cycle: "",
+        module_id: "AS",
+        Period_code: "",
+        entries: [
+          {
+            Account: null as number | null,
+            Account_no: "",
+            Amount: null as number | null,
+            Dr_cr: "D",
+            Addl_sub_text: "",
+            Ac_relatives: "",
+          },
+          {
+            Account: null as number | null,
+            Account_no: "",
+            Amount: null as number | null,
+            Dr_cr: "C",
+            Addl_sub_text: "",
+            Ac_relatives: "",
+          },
+        ],
+      },
 
       form_update_fa_asset: {
         asset_type_id: null as number | null,
@@ -118,211 +131,287 @@ export const faAssetStore = defineStore("faAsset", {
       },
     };
   },
-  
+
   actions: {
-   async CreateJournal(showSuccessMessage = false) {
-  this.isLoading = true;
-  try {
-    const formData = {
-      ...this.creat_form_jornal,
-      Value_date: this.creat_form_jornal.Value_date
-        ? new Date(this.creat_form_jornal.Value_date).toISOString()
-        : null,
-      entries: this.creat_form_jornal.entries.map(entry => ({
-        ...entry,
-        Account: entry.Account || null,
-        Amount: entry.Amount || 0,
-      }))
-    };
+    async Update(id: string) {
+      this.isLoading = true;
+      try {
+        const formData = {
+          ...this.form_create_realizthe_property,
+         
 
-    console.log("Sending journal data:", formData);
+          asset_accu_dpca_value:
+            this.form_create_realizthe_property.asset_accu_dpca_value || 0,
 
-    const res = await axios.post(
-      `/api/journal-entries/batch_create/`, 
-      formData,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      }
-    );
+          dpca_start_date: this.form_create_realizthe_property.dpca_start_date
+            ? new Date(this.form_create_realizthe_property.dpca_start_date)
+                .toISOString()
+                .split("T")[0]
+            : null,
+          dpca_end_date: this.form_create_realizthe_property.dpca_end_date
+            ? new Date(this.form_create_realizthe_property.dpca_end_date)
+                .toISOString()
+                .split("T")[0]
+            : null,
+          asset_latest_date_dpca: this.form_create_realizthe_property
+            .asset_latest_date_dpca
+            ? new Date(this.form_create_realizthe_property.asset_latest_date_dpca)
+                .toISOString()
+                .split("T")[0]
+            : null,
+          asset_disposal_date: this.form_create_realizthe_property.asset_disposal_date
+            ? new Date(this.form_create_realizthe_property.asset_disposal_date)
+                .toISOString()
+                .split("T")[0]
+            : null,
 
-    if (res.status === 200 || res.status === 201) {
-      if (showSuccessMessage) {
+          acc_no: this.form_create_realizthe_property.acc_no || "", 
+          asset_value_remainLast:
+            this.form_create_realizthe_property.asset_value_remainLast || 0, 
+          asset_value_remainBegin:
+            this.form_create_realizthe_property.asset_value_remainBegin || 0, 
+
+          asset_value_remain:
+            this.form_create_realizthe_property.asset_value_remain || 0, 
+        };
+
+        const res = await axios.patch<FaAssetModel.FaAsset>(
+          `/api/asset_list/${id}/`,
+          formData,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+        if (res.status === 200) {
+          CallSwal({
+            title: "ສຳເລັດ",
+            text: "ສຳເລັດການແກ້ໄຂຊັບສົມບັດ",
+            icon: "success",
+            showCancelButton: false,
+            showConfirmButton: false,
+          });
+          setTimeout(() => {
+            goPath("/property/realizetheproperty");
+          }, 1500);
+        }
+      } catch (error: any) {
+        console.error("Error updating fa asset:", error);
+        console.error("Error details:", error.response?.data);
         CallSwal({
-          title: "ສຳເລັດ",
-          text: "ສຳເລັດການສ້າງ Journal Entry",
-          icon: "success",
+          title: "ຜິດພາດ",
+          text: error.response?.data?.message || "ມີຂໍ້ຜິດພາດໃນການແກ້ໄຂຂໍ້ມູນ",
+          icon: "error",
           showCancelButton: false,
-          showConfirmButton: false,
+          confirmButtonText: "ຕົກລົງ",
         });
+      } finally {
+        this.isLoading = false;
       }
-      
-      // ລີເຊັດຟອມ journal
-      this.resetJournalForm();
-      return res.data;
-    }
-  } catch (error: any) {
-    console.error("Error creating journal:", error);
-    CallSwal({
-      title: "ຜິດພາດ",
-      text: error.response?.data?.message || "ມີຂໍ້ຜິດພາດໃນການສ້າງ Journal",
-      icon: "error",
-      showCancelButton: false,
-      confirmButtonText: "ຕົກລົງ",
-    });
-    throw error;
-  } finally {
-    this.isLoading = false;
-  }
-}, // ແກ້ໄຂ CreateFaAsset function ໃນ store ໃຫ້ຮັບ parameter ສຳລັບບໍ່ສະແດງ message
-async CreateFaAsset(showSuccessMessage = false) {
-  this.isLoading = true;
-  try {
-    const formData = {
-      ...this.form_create_fa_asset,
-      asset_date: this.form_create_fa_asset.asset_date
-        ? new Date(this.form_create_fa_asset.asset_date)
-            .toISOString()
-            .split("T")[0]
-        : null,
-      asset_type_id: this.form_create_fa_asset.asset_type_id || null,
-      asset_list_id: this.form_create_fa_asset.asset_list_id || "",
-      asset_value_remainLast: this.form_create_fa_asset.asset_value_remainLast || 0,
-      asset_value_remainBegin: this.form_create_fa_asset.asset_value_remainBegin || 0,
-      asset_value_remainMonth: this.form_create_fa_asset.asset_value_remainMonth || 0,
-      acc_no: this.form_create_fa_asset.acc_no || "",
-      warranty_end_date: this.form_create_fa_asset.warranty_end_date
-        ? new Date(this.form_create_fa_asset.warranty_end_date)
-            .toISOString()
-            .split("T")[0]
-        : null,
-      asset_list_code: this.form_create_fa_asset.asset_list_code || "",
-      dpca_start_date: this.form_create_fa_asset.dpca_start_date
-        ? new Date(this.form_create_fa_asset.dpca_start_date)
-            .toISOString()
-            .split("T")[0]
-        : null,
-      dpca_end_date: this.form_create_fa_asset.dpca_end_date
-        ? new Date(this.form_create_fa_asset.dpca_end_date)
-            .toISOString()
-            .split("T")[0]
-        : null,
-      asset_latest_date_dpca: this.form_create_fa_asset.asset_latest_date_dpca
-        ? new Date(this.form_create_fa_asset.asset_latest_date_dpca)
-            .toISOString()
-            .split("T")[0]
-        : null,
-      asset_disposal_date: this.form_create_fa_asset.asset_disposal_date
-        ? new Date(this.form_create_fa_asset.asset_disposal_date)
-            .toISOString()
-            .split("T")[0]
-        : null,
-      asset_ac_date: this.form_create_fa_asset.asset_ac_date
-        ? new Date(this.form_create_fa_asset.asset_ac_date)
-            .toISOString()
-            .split("T")[0]
-        : null,
-      asset_ac_datetime: this.form_create_fa_asset.asset_ac_datetime
-        ? new Date(this.form_create_fa_asset.asset_ac_datetime).toISOString()
-        : null,
-      dpca_type: this.form_create_fa_asset.dpca_type || null,
-      aaset_ac_by: this.form_create_fa_asset.aaset_ac_by || null,
-    };
+    },
+    async CreateJournal(showSuccessMessage = false) {
+      this.isLoading = true;
+      try {
+        const formData = {
+          ...this.creat_form_jornal,
+          Value_date: this.creat_form_jornal.Value_date
+            ? new Date(this.creat_form_jornal.Value_date).toISOString()
+            : null,
+          entries: this.creat_form_jornal.entries.map((entry) => ({
+            ...entry,
+            Account: entry.Account || null,
+            Amount: entry.Amount || 0,
+          })),
+        };
 
-    console.log("Sending data:", formData);
+        console.log("Sending journal data:", formData);
 
-    const res = await axios.post<FaAssetModel.FaAsset>(
-      `/api/asset_list/`,
-      formData,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      }
-    );
-    
-    if (res.status === 200 || res.status === 201) {
-      // ສະແດງ success message ໄດ້ແຕ່ຖ້າກຳນົດໄວ້
-      if (showSuccessMessage) {
+        const res = await axios.post(`/api/process-journal/`, formData, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+
+        if (res.status === 200 || res.status === 201) {
+          if (showSuccessMessage) {
+            CallSwal({
+              title: "ສຳເລັດ",
+              text: "ສຳເລັດການສ້າງ Journal Entry",
+              icon: "success",
+              showCancelButton: false,
+              showConfirmButton: false,
+            });
+          }
+
+          // ລີເຊັດຟອມ journal
+          this.resetJournalForm();
+          return res.data;
+        }
+      } catch (error: any) {
+        console.error("Error creating journal:", error);
         CallSwal({
-          title: "ສຳເລັດ",
-          text: "ສຳເລັດການເພີ່ມຊັບສົມບັດ",
-          icon: "success",
+          title: "ຜິດພາດ",
+          text: error.response?.data?.message || "ມີຂໍ້ຜິດພາດໃນການສ້າງ Journal",
+          icon: "error",
           showCancelButton: false,
-          showConfirmButton: false,
+          confirmButtonText: "ຕົກລົງ",
         });
+        throw error;
+      } finally {
+        this.isLoading = false;
       }
-      return res.data; // return ຂໍ້ມູນທີ່ສ້າງແລ້ວ
-    }
-  } catch (error: any) {
-    console.error("Error creating fa asset:", error);
-    console.error("Error details:", error.response?.data);
-    CallSwal({
-      title: "ຜິດພາດ",
-      text: error.response?.data?.message || "ມີຂໍ້ຜິດພາດໃນການເພີ່ມຂໍ້ມູນ",
-      icon: "error",
-      showCancelButton: false,
-      confirmButtonText: "ຕົກລົງ",
-    });
-    throw error; // throw error ເພື່ອໃຫ້ submitForm ຈັບການໄດ້
-  } finally {
-    this.isLoading = false;
-  }
-},
+    },
+    async CreateFaAsset(showSuccessMessage = false) {
+      this.isLoading = true;
+      try {
+        const formData = {
+          ...this.form_create_fa_asset,
+          asset_date: this.form_create_fa_asset.asset_date
+            ? new Date(this.form_create_fa_asset.asset_date)
+                .toISOString()
+                .split("T")[0]
+            : null,
+          asset_type_id: this.form_create_fa_asset.asset_type_id || null,
+          asset_list_id: this.form_create_fa_asset.asset_list_id || "",
+          asset_value_remainLast:
+            this.form_create_fa_asset.asset_value_remainLast || 0,
+          asset_value_remainBegin:
+            this.form_create_fa_asset.asset_value_remainBegin || 0,
+          asset_value_remainMonth:
+            this.form_create_fa_asset.asset_value_remainMonth || 0,
+          acc_no: this.form_create_fa_asset.acc_no || "",
+          warranty_end_date: this.form_create_fa_asset.warranty_end_date
+            ? new Date(this.form_create_fa_asset.warranty_end_date)
+                .toISOString()
+                .split("T")[0]
+            : null,
+          asset_list_code: this.form_create_fa_asset.asset_list_code || "",
+          dpca_start_date: this.form_create_fa_asset.dpca_start_date
+            ? new Date(this.form_create_fa_asset.dpca_start_date)
+                .toISOString()
+                .split("T")[0]
+            : null,
+          dpca_end_date: this.form_create_fa_asset.dpca_end_date
+            ? new Date(this.form_create_fa_asset.dpca_end_date)
+                .toISOString()
+                .split("T")[0]
+            : null,
+          asset_latest_date_dpca: this.form_create_fa_asset
+            .asset_latest_date_dpca
+            ? new Date(this.form_create_fa_asset.asset_latest_date_dpca)
+                .toISOString()
+                .split("T")[0]
+            : null,
+          asset_disposal_date: this.form_create_fa_asset.asset_disposal_date
+            ? new Date(this.form_create_fa_asset.asset_disposal_date)
+                .toISOString()
+                .split("T")[0]
+            : null,
+          asset_ac_date: this.form_create_fa_asset.asset_ac_date
+            ? new Date(this.form_create_fa_asset.asset_ac_date)
+                .toISOString()
+                .split("T")[0]
+            : null,
+          asset_ac_datetime: this.form_create_fa_asset.asset_ac_datetime
+            ? new Date(
+                this.form_create_fa_asset.asset_ac_datetime
+              ).toISOString()
+            : null,
+          dpca_type: this.form_create_fa_asset.dpca_type || null,
+          aaset_ac_by: this.form_create_fa_asset.aaset_ac_by || null,
+        };
 
+        console.log("Sending data:", formData);
 
-resetJournalForm() {
-  this.creat_form_jornal = {
-    Reference_No: "",
-    Ccy_cd: "",
-    Txn_code: "UNC",
-    Value_date: null,
-    Addl_text: "",
-    fin_cycle: "",
-    module_id: "AS",
-    Period_code: "",
-    entries: [
-      {
+        const res = await axios.post<FaAssetModel.FaAsset>(
+          `/api/asset_list/`,
+          formData,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+
+        if (res.status === 200 || res.status === 201) {
+          if (showSuccessMessage) {
+            CallSwal({
+              title: "ສຳເລັດ",
+              text: "ສຳເລັດການເພີ່ມຊັບສົມບັດ",
+              icon: "success",
+              showCancelButton: false,
+              showConfirmButton: false,
+            });
+          }
+          return res.data;
+        }
+      } catch (error: any) {
+        console.error("Error creating fa asset:", error);
+        console.error("Error details:", error.response?.data);
+        CallSwal({
+          title: "ຜິດພາດ",
+          text: error.response?.data?.message || "ມີຂໍ້ຜິດພາດໃນການເພີ່ມຂໍ້ມູນ",
+          icon: "error",
+          showCancelButton: false,
+          confirmButtonText: "ຕົກລົງ",
+        });
+        throw error;
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    resetJournalForm() {
+      this.creat_form_jornal = {
+        Reference_No: "",
+        Ccy_cd: "",
+        Txn_code: "UNC",
+        Value_date: null,
+        Addl_text: "",
+        fin_cycle: "",
+        module_id: "AS",
+        Period_code: "",
+        entries: [
+          {
+            Account: null,
+            Account_no: "",
+            Amount: null,
+            Dr_cr: "D",
+            Addl_sub_text: "",
+            Ac_relatives: "",
+          },
+          {
+            Account: null,
+            Account_no: "",
+            Amount: null,
+            Dr_cr: "C",
+            Addl_sub_text: "",
+            Ac_relatives: "",
+          },
+        ],
+      };
+    },
+
+    addJournalEntry() {
+      this.creat_form_jornal.entries.push({
         Account: null,
         Account_no: "",
         Amount: null,
         Dr_cr: "D",
         Addl_sub_text: "",
         Ac_relatives: "",
-      },
-      {
-        Account: null,
-        Account_no: "",
-        Amount: null,
-        Dr_cr: "C",
-        Addl_sub_text: "",
-        Ac_relatives: "",
+      });
+    },
+
+    removeJournalEntry(index: number) {
+      if (this.creat_form_jornal.entries.length > 2) {
+        this.creat_form_jornal.entries.splice(index, 1);
       }
-    ]
-  };
-},
-
-
-addJournalEntry() {
-  this.creat_form_jornal.entries.push({
-    Account: null,
-    Account_no: "",
-    Amount: null,
-    Dr_cr: "D",
-    Addl_sub_text: "",
-    Ac_relatives: "",
-  });
-},
-
-
-removeJournalEntry(index: number) {
-  if (this.creat_form_jornal.entries.length > 2) {
-    this.creat_form_jornal.entries.splice(index, 1);
-  }
-},
+    },
     async GetFaAssetList() {
       this.isLoading = true;
       try {
@@ -535,7 +624,7 @@ removeJournalEntry(index: number) {
                 .toISOString()
                 .split("T")[0]
             : null,
-          asset_list_id: this.form_update_fa_asset.asset_list_id || "",
+         
           asset_type_id: this.form_update_fa_asset.asset_type_id || null,
           warranty_end_date: this.form_update_fa_asset.warranty_end_date
             ? new Date(this.form_update_fa_asset.warranty_end_date)
@@ -736,7 +825,5 @@ removeJournalEntry(index: number) {
         this.isLoading = false;
       }
     },
-
-    
   },
 });

@@ -1,4 +1,127 @@
-<script lang="ts" setup>
+<script setup lang="ts">
+const form = ref();
+const valid = ref(false);
+const title = "ເພີ່ມຕັ້ງຄ່າບັນທຶກບັນຊີຊັບສົມບັດໃໝ່";
+const assetStores = assetStore();
+const accounStore = accountMethodStore();
+const request = accounStore.form_create_account_method;
+const handleSubmit = async () => {
+  const isValid = await form.value.validate();
+  if (isValid) {
+    console.log("Form is valid, proceed with submission", request);
+  }
+};
+const asset = computed(() => {
+  return assetStores.response_asset_list;
+});
+onMounted(() => {
+  assetStores.GetAssetList();
+});
+</script>
+<template>
+  <div class="pa-2">
+    <GlobalTextTitleLine :title="title" />
+    <v-form ref="form" @submit.prevent="handleSubmit">
+      <v-row>
+        <v-col cols="12" md="4">
+          <v-label class="mb-1"
+            >ລະຫັດຊັບສົມບັດ <span class="text-error">*</span></v-label
+          >
+          <v-autocomplete
+            v-model="request.asset_id"
+            density="compact"
+            label="ລະຫັດຊັບສົມບັດ"
+            :items="asset || []"
+            item-title="asset_name_la"
+            item-value="coa_id"
+            variant="outlined"
+          ></v-autocomplete>
+          <v-label class="mb-1"
+            >ເລກ Reference ID <span class="text-error">*</span></v-label
+          >
+          <v-text-field
+            v-model="request.ref_id"
+            density="compact"
+            variant="outlined"
+            label="Reference ID"
+            placeholder="ລະຫັດອ້າງອີງ"
+          />
+           <v-label class="mb-1"
+            >ເລກ Reference ID <span class="text-error">*</span></v-label
+          >
+          <v-text-field
+            v-model="request.ref_id"
+            density="compact"
+            variant="outlined"
+            label="ມູນຄ່າຕົ້ນ"
+            placeholder="ມູນຄ່າຕົ້ນ"
+          />
+          <!-- 
+          <v-text-field
+            density="compact"
+            variant="outlined"
+            label="ວັນທີ່ທຸລະກຳ"
+            placeholder="ວັນທີ່ທຸລະກຳ"
+            type="date"
+          /> -->
+        </v-col>
+        <v-col cols="12" md="4">
+          <v-label class="mb-1"
+            >ບັນຊີເດບິດ (Dr) <span class="text-error">*</span></v-label
+          >
+          <v-autocomplete
+            density="compact"
+            label="ບັນຊີເດບິດ (Dr)"
+            :items="[]"
+            item-title="asset_name_la"
+            item-value="coa_id"
+            variant="outlined"
+          ></v-autocomplete>
+          <v-label class="mb-1"
+            >ຍອດເງິນ <span class="text-error">*</span></v-label
+          >
+          <v-text-field
+            density="compact"
+            variant="outlined"
+            label="ຍອດເງິນ"
+            placeholder="ຍອດເງິນ"
+          />
+        </v-col>
+        <v-col cols="12" md="4">
+          <v-label class="mb-1">
+            ບັນຊີເຄດິດ (Cr)<span class="text-error">*</span></v-label
+          >
+          <v-autocomplete
+            density="compact"
+            label="ບັນຊີເດບິດ (Dr)"
+            :items="[]"
+            item-title="asset_name_la"
+            item-value="coa_id"
+            variant="outlined"
+          ></v-autocomplete>
+          <v-label class="mb-1"
+            >ລາຍລະອຽດ <span class="text-error">*</span></v-label
+          >
+          <v-textarea
+            density="compact"
+            variant="outlined"
+            label="ລາຍລະອຽດ"
+            placeholder="ລາຍລະອຽດ"
+          />
+        </v-col>
+        <v-col cols="12" class="d-flex flex-wrap justify-center mt-6">
+          <v-btn color="error" variant="outlined" class="mr-2"> ຍົກເລີກ </v-btn>
+
+          <v-btn color="primary" type="submit" prepend-icon="mdi-content-save">
+            ບັນທຶກ
+          </v-btn>
+        </v-col>
+      </v-row></v-form
+    >
+  </div>
+</template>
+
+<!-- <script lang="ts" setup>
 import { CallSwal } from "#build/imports";
 import { useRouter } from "vue-router";
 
@@ -159,7 +282,7 @@ onMounted(async () => {
   loading.value = true;
   try {
 
-    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 500)); 
   } catch (error) {
     console.error("Error loading reference data:", error);
   } finally {
@@ -594,4 +717,4 @@ label {
     margin: 8px 0;
   }
 }
-</style>
+</style> -->
