@@ -414,7 +414,7 @@
 
               
               <v-btn
-                v-if="canDelete && (canAuthorize || item.Maker_Id === currentUser?.user_id)"
+                v-if="canDelete && (canAuthorize || item.Maker_Id === currentUser?.user_id) && item.Auth_Status !== 'A' && item.Auth_Status !== 'R'"
                 icon
                 size="x-small"
                 variant="text"

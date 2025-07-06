@@ -13,7 +13,10 @@
               <v-icon left size="16">mdi-identifier</v-icon>
               {{ referenceNo }}
             </v-chip>
-            <span class="text-caption text-grey">ລາຍລະອຽດການບັນທຶກ</span>
+            <span class="text-caption text-grey">
+              <v-icon color="gray" size="16" class="mr-1">mdi-clock-outline</v-icon>
+              <!-- {{ selectedItem.Maker_DT_Stamp }} -->
+            </span>
           </div>
         </div>
         <div class="header-actions">
@@ -153,27 +156,7 @@
     <div v-else-if="selectedItem" class="main-content">
       <!-- Master Information Card -->
       <v-card class="master-card mb-6" elevation="2">
-        <v-card-title class="master-header">
-          <div class="master-info">
-            <div class="master-title">
-              <v-icon color="white" size="20" class="mr-2">mdi-file-document</v-icon>
-              {{ selectedItem.Reference_No }}
-            </div>
-            <div class="master-meta">
-              <v-icon color="white" size="16" class="mr-1">mdi-clock-outline</v-icon>
-              {{ formatDateTime(selectedItem.Maker_DT_Stamp) }}
-            </div>
-          </div>
-          <v-chip
-            :color="getStatusColor(selectedItem.Auth_Status)"
-            size="default"
-            variant="flat"
-            class="status-chip"
-          >
-            <v-icon left size="18">{{ getStatusIcon(selectedItem.Auth_Status) }}</v-icon>
-            {{ getStatusText(selectedItem.Auth_Status) }}
-          </v-chip>
-        </v-card-title>
+
         
         <v-card-text class="master-content">
           <!-- Main Information Grid -->
@@ -186,19 +169,15 @@
               <div class="info-rows">
                 <div class="info-row">
                   <span class="info-label">ໂມດູນ:</span>
-                  <span class="info-value">{{ getModuleName(selectedItem.module_id) }}</span>
-                </div>
-                <div class="info-row">
-                  <span class="info-label">ວັນທີ:</span>
-                  <span class="info-value">{{ formatDate(selectedItem.Value_date) }}</span>
-                </div>
-                <div class="info-row">
-                  <span class="info-label">ລະຫັດທຸລະກຳ:</span>
-                  <span class="info-value">{{ selectedItem.Txn_code }}</span>
+                  <span class="info-value">{{ getModuleName(selectedItem.module_id) }} - {{ selectedItem.Txn_code }}</span>
                 </div>
                 <div class="info-row">
                   <span class="info-label">ຜູ້ສ້າງ:</span>
                   <span class="info-value">{{ getMakerName() }}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">ເນື້ອໃນ:</span>
+                  <span class="info-value">{{ selectedItem.Addl_text || '-' }}</span>
                 </div>
               </div>
             </div>
@@ -225,17 +204,6 @@
                   <div class="amount-currency">Rate</div>
                 </div>
               </div>
-            </div>
-          </div>
-
-          <!-- Description Section -->
-          <div v-if="selectedItem.Addl_text" class="description-section">
-            <h3 class="section-header">
-              <v-icon color="info" size="18" class="mr-2">mdi-text</v-icon>
-              ເນື້ອໃນ
-            </h3>
-            <div class="description-content">
-              {{ selectedItem.Addl_text }}
             </div>
           </div>
         </v-card-text>
@@ -424,7 +392,7 @@
                           <v-tooltip text="ລຶບຄູ່ບັນທຶກ" location="top">
                             <template #activator="{ props }">
                               <v-btn
-                                v-if="canDelete"
+                                v-if="canDelete && entry.Auth_Status !== 'A' && entry.Auth_Status !== 'R'"
                                 v-bind="props"
                                 icon
                                 size="small"
@@ -846,6 +814,7 @@ const accounts = ref([])
 const loadingAccounts = ref(false)
 
 
+
 const getAuthHeaders = () => ({
   headers: {
     Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -948,6 +917,8 @@ const loadData = async () => {
     }
 
     selectedItem.value = masterData[0]
+
+    console.log('Selected master item:', selectedItem.value)
 
     // Load journal entries
     const entriesResponse = await axios.get('/api/journal-entries/', {
@@ -1845,7 +1816,7 @@ watch(permissions, (newPermissions) => {
 .info-row {
   display: flex;
   align-items: center;
-  padding: 8px 0;
+  padding: 2px 0;
 }
 
 .info-label {
