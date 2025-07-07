@@ -372,7 +372,7 @@
                     </template>
                     <template v-slot:item.actions="{ item }">
                       <div class="d-flex ga-1">
-                        <v-btn
+                        <!-- <v-btn
                           color="success"
                           variant="text"
                           size="small"
@@ -389,7 +389,7 @@
                           @click="rejectJournal(item)"
                           title="ປະຕິເສດ"
                           class="action-button"
-                        ></v-btn>
+                        ></v-btn> -->
                         <v-btn
                           color="info"
                           variant="text"
@@ -729,7 +729,7 @@
                     <template v-slot:item.actions="{ item }">
                       <div class="d-flex ga-1">
                         <v-btn
-                          v-if="item.Record_Status === 'O' && item.Auth_Status === 'A'"
+                          v-if="item.Record_Status === 'C' && item.Auth_Status === 'A'"
                           color="success"
                           variant="text"
                           size="small"
@@ -1161,7 +1161,7 @@ const checkWorkingDay = async () => {
 const fetchPendingJournals = async () => {
   loadingJournals.value = true
   try {
-    const response = await axios.get<PendingJournal[]>('/api/journal-log-master?Auth_Status=U', {
+    const response = await axios.get<PendingJournal[]>('/api/journal-log-master/journal-log-active?Auth_Status=U', {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -1501,7 +1501,7 @@ const getEODStatusText = (status: string): string => {
 const getEODFunctionStatusColor = (status: string): string => {
   switch(status) {
     case 'C':
-      return 'success'
+      return 'error'
     case 'O':
       return 'warning'
     case 'D':
@@ -1514,7 +1514,7 @@ const getEODFunctionStatusColor = (status: string): string => {
 const getEODFunctionStatusIcon = (status: string): string => {
   switch(status) {
     case 'C':
-      return 'mdi-check-circle'
+      return 'mdi-help-circle'
     case 'O':
       return 'mdi-clock-outline'
     case 'D':
@@ -1527,7 +1527,7 @@ const getEODFunctionStatusIcon = (status: string): string => {
 const getEODFunctionStatusText = (status: string): string => {
   switch(status) {
     case 'C':
-      return 'ສຳເລັດ'
+      return 'ປິດ'
     case 'O':
       return 'ເປີດ'
     case 'D':

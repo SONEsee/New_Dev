@@ -287,8 +287,8 @@
                 <thead>
                   <tr>
                     <th class="th-ref">ເລກອ້າງອີງຄູ່</th>
-                    <th class="th-account">ບັນຊີ</th>
                     <th class="th-description">ເນື້ອໃນ</th>
+                    <th class="th-account">ບັນຊີ</th>
                     <th class="th-debit">Debit (FCY)</th>
                     <th class="th-credit">Credit (FCY)</th>
                     <th class="th-status">ສະຖານະ</th>
@@ -308,18 +308,19 @@
                       </v-chip>
                     </td>
                     
-                    <td class="td-account">
-                      <div class="account-info">
-                        <div class="account-code">{{ entry.account_code }}</div>
-                        <div class="account-name">{{ entry.account_name }}</div>
-                      </div>
-                    </td>
+
                     
                     <td class="td-description">
                       <div v-if="entry.Addl_sub_text" class="description-text">
                         {{ entry.Addl_sub_text }}
                       </div>
                       <div v-else class="text-grey text-center">-</div>
+                    </td>
+                                        <td class="td-account">
+                      <div class="account-info">
+                        <div class="account-code">{{ entry.account_code }}</div>
+                        <div class="account-name">{{ entry.account_name }}</div>
+                      </div>
                     </td>
                     
                     <td class="td-debit">
