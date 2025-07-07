@@ -1087,7 +1087,7 @@ const deleteByPairAccount = async (referenceSubNo) => {
     isDeletingPair.value = true
     deletingRefSubNo.value = referenceSubNo
 
-    await axios.delete(`${API_BASE_URL}/api/journal-entries/delete-by-pair-account/`, {
+    await axios.delete(`/api/journal-entries/delete-by-pair-account/`, {
       data: { Reference_sub_No: referenceSubNo },
       ...getAuthHeaders()
     })
@@ -1175,7 +1175,7 @@ const rejectByPairAccount = async (referenceSubNo) => {
     isRejectingPair.value = true
     rejectingRefSubNo.value = referenceSubNo
 
-    await axios.post(`${API_BASE_URL}/api/journal-entries/reject-by-pair-account/`, {
+    await axios.post(`/api/journal-entries/reject-by-pair-account/`, {
       Reference_sub_No: referenceSubNo,
       comments: result.value.trim()
     }, getAuthHeaders())
@@ -1408,7 +1408,7 @@ const fixRejectedEntry = async () => {
 
     console.log('Calling API: POST /api/journal-entries/fix-rejected/')
     console.log('Full request details:', {
-      url: `${API_BASE_URL}/api/journal-entries/fix-rejected/`,
+      url: axios.get(`/api/journal-entries/fix-rejected/`),
       method: 'POST',
       headers: getAuthHeaders().headers,
       data: requestData
@@ -1418,7 +1418,7 @@ const fixRejectedEntry = async () => {
     console.log('JSON serialized data:', JSON.stringify(requestData))
     console.log('JSON parsed back:', JSON.parse(JSON.stringify(requestData)))
 
-    const response = await axios.post(`${API_BASE_URL}/api/journal-entries/fix-rejected/`, requestData, getAuthHeaders())
+    const response = await axios.post(`/api/journal-entries/fix-rejected/`, requestData, getAuthHeaders())
 
     console.log('API Response:', response.data)
 
