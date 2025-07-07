@@ -380,7 +380,7 @@
                                 variant="text"
                                 color="warning"
                                 @click="rejectByPairAccount(entry.Reference_sub_No)"
-                                :disabled="isRejectingPair || entry.Auth_Status === 'R'"
+                                :disabled="isRejectingPair || entry.Auth_Status === 'R' || entry.Auth_Status === 'A'"
                                 :loading="rejectingRefSubNo === entry.Reference_sub_No"
                                 class="action-btn-small"
                               >
