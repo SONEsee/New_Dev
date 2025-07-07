@@ -1,4 +1,7 @@
 <template>
+  <div>
+    test Lorem ipsum, dolor sit amet consectetur adipisicing elit. Voluptates et debitis nulla reiciendis, vel id. Suscipit facere nulla qui unde?
+  </div>
   <div class="pa-6">
     <v-container fluid class="pa-0">
       <!-- Header Card -->
@@ -377,121 +380,6 @@
                   </p>
                   <p v-if="hasPendingJournals" class="text-body-2 text-grey mt-1">
                     ມູນຄ່າລວມ: {{ formatNumber(totalPendingAmount) }} LAK
-                  </p>
-                </div>
-              </v-expand-transition>
-            </v-card-text>
-          </v-card>
-        </v-col>
-
-        <!-- Active Users -->
-        <v-col cols="12">
-          <v-card 
-            elevation="6" 
-            rounded="xl" 
-            class="validation-card"
-            :color="hasOtherActiveUsers ? 'error-lighten-5' : 'success-lighten-5'"
-          >
-            <v-card-title class="pa-6 pb-0">
-              <div class="d-flex align-center justify-space-between w-100">
-                <div class="d-flex align-center">
-                  <v-avatar 
-                    size="56" 
-                    :color="hasOtherActiveUsers ? 'error-lighten-4' : 'success-lighten-4'" 
-                    class="mr-3 section-avatar"
-                  >
-                    <v-icon :color="hasOtherActiveUsers ? 'error-darken-2' : 'success-darken-2'" size="28">
-                      {{ hasOtherActiveUsers ? 'mdi-account-alert' : 'mdi-account-check' }}
-                    </v-icon>
-                  </v-avatar>
-                  <div>
-                    <h2 class="text-h5 font-weight-bold section-title">ຜູ້ໃຊ້ທີ່ເຂົ້າໃຊ້ລະບົບຢູ່</h2>
-                    <p class="text-body-2 text-medium-emphasis">Active Users in System</p>
-                  </div>
-                </div>
-                <div class="d-flex align-center ga-3">
-                  <v-chip 
-                    :color="hasOtherActiveUsers ? 'error' : 'success'" 
-                    variant="flat" 
-                    size="small"
-                    :prepend-icon="hasOtherActiveUsers ? 'mdi-alert' : 'mdi-check'"
-                    class="count-chip"
-                  >
-                    {{ activeUsersCount }} ຄົນ
-                  </v-chip>
-                  <v-btn
-                    v-if="hasOtherActiveUsers"
-                    color="warning"
-                    variant="flat"
-                    size="small"
-                    @click="kickAllUsers"
-                    prepend-icon="mdi-account-remove"
-                    rounded="lg"
-                    class="kick-button"
-                  >
-                    ເຄື່ອນທຸກຄົນອອກ
-                  </v-btn>
-                  <v-btn
-                    :color="showUserDetails ? 'primary' : 'grey'"
-                    :variant="showUserDetails ? 'flat' : 'outlined'"
-                    size="small"
-                    @click="toggleUserDetails"
-                    :prepend-icon="showUserDetails ? 'mdi-eye-off' : 'mdi-eye'"
-                    rounded="lg"
-                    class="toggle-button"
-                  >
-                    {{ showUserDetails ? 'ເຊື່ອງ' : 'ເບິ່ງ' }}
-                  </v-btn>
-                </div>
-              </div>
-            </v-card-title>
-            
-            <v-card-text class="pa-6">
-              <v-expand-transition>
-                <div v-show="showUserDetails">
-                  <v-data-table
-                    :headers="activeUserHeaders"
-                    :items="activeUsers"
-                    class="elevation-2 rounded-lg data-table"
-                    hide-default-footer
-                    no-data-text="ບໍ່ມີຜູ້ໃຊ້ເຂົ້າໃຊ້ລະບົບ"
-                  >
-                    <template v-slot:item.status="{ item }">
-                      <v-chip
-                        :color="item.status === 'online' ? 'success' : 'warning'"
-                        :prepend-icon="item.status === 'online' ? 'mdi-circle' : 'mdi-circle-outline'"
-                        variant="flat"
-                        size="small"
-                        class="status-chip"
-                      >
-                        {{ item.status === 'online' ? 'ອອນລາຍ' : 'ຢຸດຊົ່ວຄາວ' }}
-                      </v-chip>
-                    </template>
-                    <template v-slot:item.actions="{ item }">
-                      <v-btn
-                        v-if="item.user_id !== currentUser"
-                        color="error"
-                        variant="text"
-                        size="small"
-                        icon="mdi-logout"
-                        @click="kickUser(item.user_id)"
-                        title="ເຄື່ອນຜູ້ໃຊ້ອອກ"
-                        class="action-button"
-                      ></v-btn>
-                      <v-chip v-else color="primary" variant="flat" size="small">
-                        ຕົວເອງ
-                      </v-chip>
-                    </template>
-                  </v-data-table>
-                </div>
-              </v-expand-transition>
-              <v-expand-transition>
-                <div v-show="!showUserDetails" class="text-center py-4">
-                  <v-icon :color="hasOtherActiveUsers ? 'error' : 'success'" size="48" class="mb-2">
-                    {{ hasOtherActiveUsers ? 'mdi-account-alert' : 'mdi-account-check' }}
-                  </v-icon>
-                  <p class="text-h6 font-weight-medium">
-                    {{ hasOtherActiveUsers ? `${activeUsersCount} ຄົນກຳລັງໃຊ້ລະບົບ` : 'ບໍ່ມີຜູ້ໃຊ້ອື່ນໃນລະບົບ' }}
                   </p>
                 </div>
               </v-expand-transition>
