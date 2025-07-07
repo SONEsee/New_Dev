@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useRoute, useRouter } from "vue-router";
+
 const route = useRoute();
 const router = useRouter();
 const title = "ຈົດບັນທຶກຮັບຮູ້ຊັບສິນ";
@@ -7,11 +8,6 @@ const id = route.query.asset_list_id as string;
 const assetStore = faAssetStore();
 const masterStore = useMasterStore();
 
-const masterdata = computed(() => {
-  return masterStore.respone_data_master;
-});
-
-const request = assetStore.form_create_realizthe_property;
 const editableValues = ref({
   salvageValue: 0,
   isEditing: false,
@@ -22,10 +18,42 @@ const unitsOfProduction = ref({
   yearlyUsage: [] as number[],
 });
 
+const masterdata = computed(() => {
+  return masterStore.respone_data_master;
+});
+
+const request = assetStore.form_create_realizthe_property;
+
 const response = computed(() => {
   return assetStore.response_fa_asset_detail;
 });
 
+<<<<<<< HEAD
+=======
+const todayDate = computed(() => {
+  return new Date().toISOString().split("T")[0];
+});
+
+const displayStartDate = computed({
+  get: () => {
+    if (request.dpca_start_date) {
+      if (request.dpca_start_date instanceof Date) {
+        return request.dpca_start_date.toISOString().split("T")[0];
+      }
+      return request.dpca_start_date.toString().split("T")[0];
+    }
+
+    return todayDate.value;
+  },
+  set: (value: string) => {
+    request.dpca_start_date = value ? new Date(value) : new Date();
+  },
+});
+
+const isToday = computed(() => {
+  return displayStartDate.value === todayDate.value;
+});
+>>>>>>> b9b79ed044959852a25728a936a4ca5d046f3250
 
 const matchedMasterCode = computed(() => {
   if (
@@ -37,7 +65,10 @@ const matchedMasterCode = computed(() => {
 
   const typeCode = response.value.asset_id_detail.asset_type_detail.type_code;
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> b9b79ed044959852a25728a936a4ca5d046f3250
   const masterObject = Array.isArray(masterdata.value)
     ? masterdata.value.find((item) => item.MasterCodes)
     : masterdata.value;
@@ -46,7 +77,10 @@ const matchedMasterCode = computed(() => {
     return null;
   }
 
+<<<<<<< HEAD
   
+=======
+>>>>>>> b9b79ed044959852a25728a936a4ca5d046f3250
   const matched = masterObject.MasterCodes.find(
     (item) => item.MC_code === typeCode
   );
@@ -54,7 +88,10 @@ const matchedMasterCode = computed(() => {
   return matched;
 });
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> b9b79ed044959852a25728a936a4ca5d046f3250
 const getAccountNumbers = computed(() => {
   if (!matchedMasterCode.value?.MC_detail) {
     return { dr: "", cr: "" };
@@ -72,20 +109,9 @@ const getAccountNumbers = computed(() => {
 const updateAccountNumbers = () => {
   if (matchedMasterCode.value) {
     const accounts = getAccountNumbers.value;
-
     request.acc_no = accounts.cr;
   }
 };
-
-watch(
-  () => response.value?.asset_id_detail?.asset_type_detail?.type_code,
-  (newTypeCode) => {
-    if (newTypeCode) {
-      updateAccountNumbers();
-    }
-  },
-  { immediate: true }
-);
 
 const formatAssetValueRemain = computed({
   get: () => formatNumber(request.asset_value_remain || 0),
@@ -116,7 +142,10 @@ const getDailyValue = () => {
 
   return 0;
 };
+<<<<<<< HEAD
 // sone ປັບປຸງໃໝ່ 
+=======
+>>>>>>> b9b79ed044959852a25728a936a4ca5d046f3250
 const monthlySetupValue = computed(() => {
   if (!response.value) return 0;
 
@@ -137,7 +166,30 @@ const monthlySetupValue = computed(() => {
   const currentYear = currentDate.getFullYear();
   const startDateObj = new Date(startDate);
 
-  if (startDateObj > currentDate) return 0;
+  if (startDateObj > currentDate) {
+    const startMonth = startDateObj.getMonth();
+    const startYear = startDateObj.getFullYear();
+
+    if (startMonth === currentMonth && startYear === currentYear) {
+      const endOfMonth = new Date(startYear, startMonth + 1, 0);
+      let actualEndDate = endOfMonth;
+
+      if (
+        endDate &&
+        endDate.getMonth() === startMonth &&
+        endDate.getFullYear() === startYear
+      ) {
+        actualEndDate = endDate < endOfMonth ? endDate : endOfMonth;
+      }
+
+      const timeDiff = actualEndDate.getTime() - startDateObj.getTime();
+      const daysToCount = Math.max(0, Math.ceil(timeDiff / (1000 * 3600 * 24)));
+
+      return Math.round(dailyDepreciation * daysToCount * 100) / 100;
+    } else {
+      return Math.round(dailyDepreciation * 30 * 100) / 100;
+    }
+  }
 
   if (endDate && endDate < new Date(currentYear, currentMonth, 1)) return 0;
 
@@ -178,22 +230,7 @@ const monthlySetupValue = computed(() => {
 
   return Math.round(dailyDepreciation * daysToCount * 100) / 100;
 });
-const monthlyEndValue = computed(() => {
-  if (!response.value || !depreciationCalculator.value) return 0;
-
-  
-  const monthlyDepreciation = depreciationCalculator.value.monthlyDepreciation || 0;
-
- 
-  const setupValue = monthlySetupValue.value || 0;
-
-  
-  const endValue = monthlyDepreciation - setupValue;
-
- 
-  return Math.max(0, Math.round(endValue * 100) / 100);
-});
-// const monthlyEndValue = computed(() => {
+// const monthlySetupValue = computed(() => {
 //   if (!response.value) return 0;
 
 //   const dailyDepreciation = getDailyValue();
@@ -215,7 +252,7 @@ const monthlyEndValue = computed(() => {
 
 //   if (startDateObj > currentDate) return 0;
 
-//   const endOfMonth = new Date(currentYear, currentMonth + 1, 0);
+//   if (endDate && endDate < new Date(currentYear, currentMonth, 1)) return 0;
 
 //   let daysToCount = 0;
 
@@ -223,6 +260,7 @@ const monthlyEndValue = computed(() => {
 //     startDateObj.getMonth() === currentMonth &&
 //     startDateObj.getFullYear() === currentYear
 //   ) {
+//     const endOfMonth = new Date(currentYear, currentMonth + 1, 0);
 //     let actualEndDate = endOfMonth;
 
 //     if (
@@ -237,14 +275,14 @@ const monthlyEndValue = computed(() => {
 //     daysToCount = Math.max(0, Math.ceil(timeDiff / (1000 * 3600 * 24)));
 //   } else if (startDateObj < new Date(currentYear, currentMonth, 1)) {
 //     const currentMonthStart = new Date(currentYear, currentMonth, 1);
-//     let actualEndDate = endOfMonth;
+//     let actualEndDate = currentDate;
 
 //     if (
 //       endDate &&
 //       endDate.getMonth() === currentMonth &&
 //       endDate.getFullYear() === currentYear
 //     ) {
-//       actualEndDate = endDate < endOfMonth ? endDate : endOfMonth;
+//       actualEndDate = endDate < currentDate ? endDate : currentDate;
 //     }
 
 //     const timeDiff = actualEndDate.getTime() - currentMonthStart.getTime();
@@ -253,6 +291,19 @@ const monthlyEndValue = computed(() => {
 
 //   return Math.round(dailyDepreciation * daysToCount * 100) / 100;
 // });
+
+const monthlyEndValue = computed(() => {
+  if (!response.value || !depreciationCalculator.value) return 0;
+
+  const monthlyDepreciation =
+    depreciationCalculator.value.monthlyDepreciation || 0;
+
+  const setupValue = monthlySetupValue.value || 0;
+
+  const endValue = monthlyDepreciation - setupValue;
+
+  return Math.max(0, Math.round(endValue * 100) / 100);
+});
 
 const getCurrentMonthDays = () => {
   if (!response.value) return 0;
@@ -413,56 +464,6 @@ const calculateMonthsDifference = (
   return yearsDiff * 12 + monthsDiff;
 };
 
-watch(
-  () => assetStore.response_fa_asset_detail,
-  (req) => {
-    if (req) {
-      request.asset_accu_dpca_value = req.asset_accu_dpca_value
-        ? Number(req.asset_accu_dpca_value)
-        : 0;
-      request.acc_no = req.acc_no || "";
-      request.asset_disposal_date = req.asset_disposal_date;
-      request.asset_latest_date_dpca = req.asset_latest_date_dpca;
-      request.asset_value_remain = req.asset_value_remain
-        ? Number(req.asset_value_remain)
-        : 0;
-      request.asset_value_remainBegin = req.asset_value_remainBegin
-        ? Number(req.asset_value_remainBegin)
-        : 0;
-      request.asset_value_remainLast = req.asset_value_remainLast
-        ? Number(req.asset_value_remainLast)
-        : 0;
-
-      request.dpca_start_date = req.dpca_start_date
-        ? new Date(req.dpca_start_date)
-        : req.asset_date
-        ? new Date(req.asset_date)
-        : new Date();
-
-      if (req.asset_useful_life) {
-        const endDate = calculateDepreciationEndDate(
-          request.dpca_start_date,
-          req.asset_useful_life
-        );
-        request.dpca_end_date = endDate ? new Date(endDate) : null;
-      }
-    }
-  }
-);
-
-watch(
-  () => request.dpca_start_date,
-  (newDate) => {
-    if (newDate && response.value?.asset_useful_life) {
-      const endDate = calculateDepreciationEndDate(
-        newDate,
-        response.value.asset_useful_life
-      );
-      request.dpca_end_date = endDate ? new Date(endDate) : null;
-    }
-  }
-);
-
 const validationErrors = computed(() => {
   const errors: any = [];
   if (!response.value) return errors;
@@ -565,6 +566,7 @@ const depreciationCalculator = computed(() => {
   };
 });
 
+
 const depreciationSchedule = computed(() => {
   if (
     !response.value ||
@@ -654,6 +656,7 @@ const depreciationSchedule = computed(() => {
   return schedule;
 });
 
+
 const depreciationSummary = computed(() => {
   if (!depreciationSchedule.value.length) return null;
 
@@ -685,6 +688,7 @@ const depreciationProgress = computed(() => {
   return depreciationCalculator.value.depreciationProgress;
 });
 
+
 const formatNumber = (value: string | number) => {
   if (!value) return "0.00";
   return parseFloat(value.toString()).toLocaleString("en-US", {
@@ -714,7 +718,6 @@ const getDepreciationMethodName = (type: string) => {
   }
 };
 
-// ແກ້ໄຂບັນຫາ nested function
 const getDepreciationMethodDescription = (type: string) => {
   switch (type) {
     case "SL":
@@ -728,26 +731,12 @@ const getDepreciationMethodDescription = (type: string) => {
   }
 };
 
-const saveCalculation = async () => {
-  try {
-    const notification = await CallSwal({
-      icon: "warning",
-      title: "ກຳລັງບັນທຶກ...",
-      text: "ທ່ານຕອ້ງການບັນທືກຂໍ້ມູນນີແທ້ບໍ ?",
-      showCancelButton: true,
-      confirmButtonText: "ຕົກລົງ",
-      cancelButtonText: "ຍົກເລີກ",
-    });
-    if (notification.isConfirmed) {
-      assetStore.Update(id);
-    }
-  } catch (error) {
-    console.error("Error saving calculation:", error);
-  } finally {
-    editableValues.value.isEditing = false;
-    editableValues.value.salvageValue = 0;
-  }
+
+const setToToday = () => {
+  request.dpca_start_date = new Date();
 };
+
+
 
 const formatOnBlur = (event: Event) => {
   const target = event.target as HTMLInputElement;
@@ -756,6 +745,347 @@ const formatOnBlur = (event: Event) => {
   }
 };
 
+const goBack = () => {
+  router.go(-1);
+};
+
+
+watch(
+  () => response.value?.asset_id_detail?.asset_type_detail?.type_code,
+  (newTypeCode) => {
+    if (newTypeCode) {
+      updateAccountNumbers();
+    }
+  },
+  { immediate: true }
+);
+
+const finalMonthlySetupValue = computed(() => {
+  const setupValue = monthlySetupValue.value;
+
+  if (setupValue === 0) {
+    return depreciationCalculator.value?.monthlyDepreciation || 0;
+  }
+
+  return setupValue;
+});
+watch(
+  () => assetStore.response_fa_asset_detail,
+  (req) => {
+    if (req) {
+      request.asset_accu_dpca_value = req.asset_accu_dpca_value
+        ? Number(req.asset_accu_dpca_value)
+        : 0;
+      request.acc_no = req.acc_no || "";
+      request.asset_disposal_date = req.asset_disposal_date;
+      request.asset_latest_date_dpca = req.asset_latest_date_dpca;
+      request.asset_value_remain = req.asset_value_remain
+        ? Number(req.asset_value_remain)
+        : 0;
+      request.asset_value_remainBegin = req.asset_value_remainBegin
+        ? Number(req.asset_value_remainBegin)
+        : 0;
+      request.asset_value_remainLast = req.asset_value_remainLast
+        ? Number(req.asset_value_remainLast)
+        : 0;
+
+      if (!request.dpca_start_date) {
+        request.dpca_start_date = new Date();
+      }
+
+      if (req.asset_useful_life) {
+        const endDate = calculateDepreciationEndDate(
+          request.dpca_start_date,
+          req.asset_useful_life
+        );
+        request.dpca_end_date = endDate ? new Date(endDate) : null;
+      }
+    }
+  }
+);
+const displayMonthlyEndValue = computed(() => {
+  const endValue = monthlyEndValue.value;
+
+  if (endValue === 0) {
+    return depreciationCalculator.value?.monthlyDepreciation || 0;
+  }
+
+  return endValue;
+});
+watch(
+  () => request.dpca_start_date,
+  (newDate) => {
+    if (newDate && response.value?.asset_useful_life) {
+      const endDate = calculateDepreciationEndDate(
+        newDate,
+        response.value.asset_useful_life
+      );
+      request.dpca_end_date = endDate ? new Date(endDate) : null;
+    }
+  }
+);
+
+const generateJournalEntry = () => {
+  if (!response.value) {
+    console.error("ບໍ່ມີຂໍ້ມູນ response");
+    return null;
+  }
+
+
+  const currentDate = new Date();
+  const currentYear = currentDate.getFullYear().toString();
+  const currentMonth = String(currentDate.getMonth() + 1).padStart(2, "0");
+  const periodCode = `${currentYear}${currentMonth}`;
+
+ 
+  const valueDateISO = currentDate.toISOString();
+
+  const mastercodeName = masterdata.value.mastercode_detail?.MC_name_la || "";
+  const assetName =
+    response.value.mastercode_detail?.chart_detail?.asset_name_la ||
+    response.value.asset_id_detail?.asset_name_la ||
+    "";
+  const addlText = `${mastercodeName}-${assetName}`;
+
+  const accountNumbers = getAccountNumbers.value;
+
+  const journalEntry = {
+    Reference_No: response.value.asset_list_id?.toString() || "",
+    Ccy_cd: response.value.asset_currency || "LAK",
+    Txn_code: "UNC",
+    Value_date: valueDateISO,
+    Addl_text: addlText,
+    fin_cycle: currentYear,
+    Period_code: periodCode,
+    module_id: "GL",
+    entries: [
+      {
+        Account_no: accountNumbers.dr || "",
+        Amount: parseFloat(response.value.asset_value || "0"),
+        Dr_cr: "D",
+        Addl_sub_text: response.value.asset_spec || "",
+      },
+      {
+        Account_no: accountNumbers.cr || "",
+        Amount: parseFloat(response.value.asset_value || "0"),
+        Dr_cr: "C",
+        Addl_sub_text: response.value.asset_spec || "",
+      },
+    ],
+  };
+
+  return journalEntry;
+};
+console.log("Journal Entry:", generateJournalEntry());
+
+const generateReferenceNumber = () => {
+  const currentDate = new Date();
+  const year = currentDate.getFullYear().toString().slice(-2);
+  const month = String(currentDate.getMonth() + 1).padStart(2, "0");
+  const day = String(currentDate.getDate()).padStart(2, "0");
+  const sequence = String(Math.floor(Math.random() * 99999) + 1).padStart(
+    5,
+    "0"
+  );
+
+  return `GL-UNC-${year}${month}${day}-${sequence}`;
+};
+
+const generateCompleteJournalEntry = () => {
+  if (!response.value) {
+    console.error("ບໍ່ມີຂໍ້ມູນ response");
+    return null;
+  }
+
+  const currentDate = new Date();
+  const currentYear = currentDate.getFullYear().toString();
+  const currentMonth = String(currentDate.getMonth() + 1).padStart(2, "0");
+  const periodCode = `${currentYear}${currentMonth}`;
+  const valueDateISO = currentDate.toISOString();
+
+  const referenceNo =
+    response.value.asset_list_id?.toString() || generateReferenceNumber();
+
+  const mastercodeName =
+    response.value.mastercode_detail?.MC_name_la ||
+    response.value.asset_id_detail?.asset_type_detail?.type_name_la ||
+    "";
+  const assetName =
+    response.value.mastercode_detail?.chart_detail?.asset_name_la ||
+    response.value.asset_id_detail?.asset_name_la ||
+    response.value.asset_tag ||
+    "";
+  const addlText = `${mastercodeName}-${assetName}`;
+
+  const accountNumbers = getAccountNumbers.value;
+
+  const journalEntry = {
+    Reference_No: referenceNo,
+    Ccy_cd: response.value.asset_currency || "LAK",
+    Txn_code: "UNC",
+    Value_date: valueDateISO,
+    Addl_text: addlText.length > 0 ? addlText : "Asset Recognition Entry",
+    fin_cycle: currentYear,
+    Period_code: periodCode,
+    module_id: "GL",
+    entries: [
+      {
+        Account_no: accountNumbers.dr || "",
+        Amount: parseFloat(response.value.asset_value || "0"),
+        Dr_cr: "D",
+        Addl_sub_text:
+          response.value.asset_spec || response.value.asset_tag || "",
+      },
+      {
+        Account_no: accountNumbers.cr || "",
+        Amount: parseFloat(response.value.asset_value || "0"),
+        Dr_cr: "C",
+        Addl_sub_text:
+          response.value.asset_spec || response.value.asset_tag || "",
+      },
+    ],
+  };
+
+  return journalEntry;
+};
+
+
+const showJournalEntryPreview = () => {
+  const entry = generateCompleteJournalEntry();
+  if (entry) {
+    console.log("📋 Journal Entry Preview:");
+    console.log(JSON.stringify(entry, null, 2));
+    return entry;
+  }
+  return null;
+};
+
+
+const copyJournalEntryToClipboard = async () => {
+  const entry = generateCompleteJournalEntry();
+  if (entry) {
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(entry, null, 2));
+      
+      CallSwal({
+        icon: "success",
+        title: "ສຳເລັດ!",
+        text: "ຄັດລອກຂໍ້ມູນ Journal Entry ໄປ Clipboard ແລ້ວ",
+        timer: 2000,
+      });
+    } catch (error) {
+      console.error("Error copying to clipboard:", error);
+      CallSwal({
+        icon: "error",
+        title: "ຜິດພາດ!",
+        text: "ບໍ່ສາມາດຄັດລອກໄດ້",
+      });
+    }
+  }
+};
+
+
+const journalEntryData = computed(() => {
+  return generateCompleteJournalEntry();
+});
+
+
+const submitJournalEntry = async () => {
+  const entry = generateCompleteJournalEntry();
+  if (!entry) return;
+
+  try {
+    
+    const response = await fetch("journal/process-v2/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(entry),
+    });
+
+    if (response.ok) {
+      CallSwal({
+        icon: "success",
+        title: "ສຳເລັດ!",
+        text: "ສົ່ງຂໍ້ມູນ Journal Entry ສຳເລັດແລ້ວ",
+      });
+    } else {
+      throw new Error("API Error");
+    }
+  } catch (error) {
+    console.error("Error submitting journal entry:", error);
+    CallSwal({
+      icon: "error",
+      title: "ຜິດພາດ!",
+      text: "ບໍ່ສາມາດສົ່ງຂໍ້ມູນໄດ້",
+    });
+  }
+};
+
+const saveCalculation = async () => {
+  try {
+    const notification = await CallSwal({
+      icon: "warning",
+      title: "ກຳລັງບັນທຶກ...",
+      text: "ທ່ານຕ້ອງການບັນທຶກຂໍ້ມູນນີ້ແທ້ບໍ?",
+      showCancelButton: true,
+      confirmButtonText: "ຕົກລົງ",
+      cancelButtonText: "ຍົກເລີກ",
+    });
+    
+    if (notification.isConfirmed) {
+     
+      await assetStore.Update(id);
+      
+     
+      const journalData = generateCompleteJournalEntry();
+      
+      if (journalData) {
+        console.log("📋 Sending Journal Data:", journalData);
+        
+        
+        assetStore.creat_form_jornal = {
+          Reference_No: journalData.Reference_No,
+          Ccy_cd: journalData.Ccy_cd,
+          Txn_code: journalData.Txn_code,
+          Value_date: journalData.Value_date,
+          Addl_text: journalData.Addl_text,
+          fin_cycle: journalData.fin_cycle,
+          Period_code: journalData.Period_code,
+          module_id: journalData.module_id,
+          entries: journalData.entries
+        };
+        
+       
+        await assetStore.CreateJournalto(false);
+        
+        CallSwal({
+          icon: "success",
+          title: "ສຳເລັດ!",
+          text: "ບັນທຶກຂໍ້ມູນແລະສ້າງ Journal Entry ສຳເລັດແລ້ວ",
+          timer: 2000,
+        });
+      } else {
+        CallSwal({
+          icon: "warning",
+          title: "ແຈ້ງເຕືອນ!",
+          text: "ບັນທຶກຂໍ້ມູນສຳເລັດ ແຕ່ບໍ່ສາມາດສ້າງ Journal Entry ໄດ້",
+        });
+      }
+    }
+  } catch (error) {
+    console.error("Error saving calculation:", error);
+    CallSwal({
+      icon: "error",
+      title: "ຜິດພາດ!",
+      text: `ເກີດຂໍ້ຜິດພາດ: ${error.message || error}`,
+    });
+  } finally {
+    editableValues.value.isEditing = false;
+    editableValues.value.salvageValue = 0;
+  }
+};
 onMounted(() => {
   assetStore.GetFaAssetDetail(id);
   masterStore.getDataAsset();
@@ -765,10 +1095,6 @@ onMounted(() => {
     request.dpca_start_date = new Date().toISOString().split('T')[0];
   }
 });
-
-const goBack = () => {
-  router.go(-1);
-};
 </script>
 
 <template>
@@ -1004,20 +1330,39 @@ const goBack = () => {
                           :text="response?.dpca_percentage?.toString() ?? '0'"
                         />
 
-                        <label
-                          >ວັນທີ່ເລີ່ມຄິດລາຄາຫຼູ້ຍຫຽ້ນ
-                          <span class="text-error">*</span></label
-                        >
+                        <label>
+                          ວັນທີ່ເລີ່ມຄິດລາຄາຫຼູ້ຍຫຽ້ນ
+                          <span class="text-error">*</span>
+                          <span class="text-caption text-success ml-2">
+                            ({{
+                              displayStartDate === todayDate
+                                ? "ວັນນີ້"
+                                : "ວັນທີ່ເລືອກ"
+                            }})
+                          </span>
+                        </label>
                         <v-text-field
-                          v-model="request.dpca_start_date"
+                          v-model="displayStartDate"
                           type="date"
                           density="compact"
                           variant="outlined"
                           hide-details="auto"
-                          :placeholder="new Date().toISOString().split('T')[0]"
-                          hint="ຖ້າບໍ່ເລືອກຈະໃຊ້ວັນປະຈຸບັນ"
-                          persistent-hint
-                        />
+                          :placeholder="todayDate"
+                          class="date-field-with-default"
+                        >
+                          <template v-slot:append-inner>
+                            <v-icon
+                              color="success"
+                              size="small"
+                              v-if="displayStartDate === todayDate"
+                            >
+                              mdi-calendar-today
+                            </v-icon>
+                            <v-icon color="primary" size="small" v-else>
+                              mdi-calendar-check
+                            </v-icon>
+                          </template>
+                        </v-text-field>
                       </v-col>
 
                       <v-col cols="12" md="3">
@@ -1071,13 +1416,12 @@ const goBack = () => {
                           <span class="text-error">*</span></label
                         >
                         <v-text-field
-                          :value="formatNumber(monthlySetupValue)"
+                          :value="formatNumber(finalMonthlySetupValue)"
                           variant="outlined"
                           density="compact"
                           readonly
                           :suffix="response?.asset_currency || ''"
                           class="formatted-number-input"
-                          persistent-hint
                         />
 
                         <v-label
@@ -1104,7 +1448,7 @@ const goBack = () => {
                           <span class="text-success">*</span></label
                         >
                         <v-text-field
-                          :value="formatNumber(monthlyEndValue)"
+                          :value="formatNumber(displayMonthlyEndValue)"
                           variant="outlined"
                           density="compact"
                           readonly

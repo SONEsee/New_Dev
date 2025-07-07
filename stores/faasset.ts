@@ -246,7 +246,60 @@ export const faAssetStore = defineStore("faAsset", {
             });
           }
 
-          // ລີເຊັດຟອມ journal
+          
+          this.resetJournalForm();
+          return res.data;
+        }
+      } catch (error: any) {
+        console.error("Error creating journal:", error);
+        CallSwal({
+          title: "ຜິດພາດ",
+          text: error.response?.data?.message || "ມີຂໍ້ຜິດພາດໃນການສ້າງ Journal",
+          icon: "error",
+          showCancelButton: false,
+          confirmButtonText: "ຕົກລົງ",
+        });
+        throw error;
+      } finally {
+        this.isLoading = false;
+      }
+    },
+    async CreateJournalto(showSuccessMessage = false) {
+      this.isLoading = true;
+      try {
+        const formData = {
+          ...this.creat_form_jornal,
+          Value_date: this.creat_form_jornal.Value_date
+            ? new Date(this.creat_form_jornal.Value_date).toISOString()
+            : null,
+          entries: this.creat_form_jornal.entries.map((entry) => ({
+            ...entry,
+            Account: entry.Account || null,
+            Amount: entry.Amount || 0,
+          })),
+        };
+
+        
+
+        const res = await axios.post(`journal/process-v2/`, formData, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+
+        if (res.status === 200 || res.status === 201) {
+          if (showSuccessMessage) {
+            CallSwal({
+              title: "ສຳເລັດ",
+              text: "ສຳເລັດການສ້າງ Journal Entry",
+              icon: "success",
+              showCancelButton: false,
+              showConfirmButton: false,
+            });
+          }
+
+          
           this.resetJournalForm();
           return res.data;
         }
