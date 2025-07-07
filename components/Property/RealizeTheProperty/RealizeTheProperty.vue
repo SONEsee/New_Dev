@@ -407,6 +407,8 @@ const headers = computed(() => {
           "
           >ຢັ້ງຢືນ</v-btn
         >
+        <p v-if="item.asset_status==='AC' && item.Auth_Status!=='A'">ຖືກກົດຮັບຮູ້ແລ້ວ</p>
+        <p v-if=" item.Auth_Status==='U'">ຍັງບໍ່ອານຸມັດຈາກພວມຊື້ພວມກໍ່ສ້າງ</p>
       </template>
     </v-data-table>
   </div>
