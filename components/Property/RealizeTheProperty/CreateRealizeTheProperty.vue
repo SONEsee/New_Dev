@@ -26,7 +26,7 @@ const response = computed(() => {
   return assetStore.response_fa_asset_detail;
 });
 
-// ຟັງຊັນກັ່ນຕອງ masterdata ຕາມ asset_type_detail.type_code
+
 const matchedMasterCode = computed(() => {
   if (
     !response.value?.asset_id_detail?.asset_type_detail?.type_code ||
@@ -37,7 +37,7 @@ const matchedMasterCode = computed(() => {
 
   const typeCode = response.value.asset_id_detail.asset_type_detail.type_code;
 
-  // ຫາ masterdata object ທີ່ມີ MasterCodes (ເພາະ masterdata.value ເປັນ array)
+
   const masterObject = Array.isArray(masterdata.value)
     ? masterdata.value.find((item) => item.MasterCodes)
     : masterdata.value;
@@ -46,7 +46,7 @@ const matchedMasterCode = computed(() => {
     return null;
   }
 
-  // ຫາ MasterCode ທີ່ match ກັບ type_code
+  
   const matched = masterObject.MasterCodes.find(
     (item) => item.MC_code === typeCode
   );
@@ -54,7 +54,7 @@ const matchedMasterCode = computed(() => {
   return matched;
 });
 
-// ຟັງຊັນສຳລັບແຍກເລກບັນຊີ DR ແລະ CR
+
 const getAccountNumbers = computed(() => {
   if (!matchedMasterCode.value?.MC_detail) {
     return { dr: "", cr: "" };
@@ -116,7 +116,7 @@ const getDailyValue = () => {
 
   return 0;
 };
-
+// sone ປັບປຸງໃໝ່ 
 const monthlySetupValue = computed(() => {
   if (!response.value) return 0;
 
@@ -759,6 +759,11 @@ const formatOnBlur = (event: Event) => {
 onMounted(() => {
   assetStore.GetFaAssetDetail(id);
   masterStore.getDataAsset();
+  
+  // ຕັ້ງຄ່າວັນທີ່ເລີ່ມເປັນວັນປະຈຸບັນຖ້າຍັງບໍ່ມີ
+  if (!request.dpca_start_date) {
+    request.dpca_start_date = new Date().toISOString().split('T')[0];
+  }
 });
 
 const goBack = () => {
