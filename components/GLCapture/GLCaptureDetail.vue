@@ -15,7 +15,7 @@
             </v-chip>
             <span class="text-caption text-grey">
               <v-icon color="gray" size="16" class="mr-1">mdi-clock-outline</v-icon>
-              <!-- {{ selectedItem.Maker_DT_Stamp }} -->
+                {{ formatDateTime(selectedItem?.Value_date) }}
             </span>
           </div>
         </div>
@@ -935,7 +935,8 @@ const loadData = async () => {
     if (journalEntries.value.length > 0) {
       console.log('Sample journal entry structure:', journalEntries.value[0])
       console.log('Account_id type:', typeof journalEntries.value[0].Account_id)
-      console.log('Ac_relatives type:', typeof journalEntries.value[0].Ac_relatives)
+      console.log('Ac_relatives type:', typeof journalEntries.value[0].Ac_relatives);
+      
     }
 
     console.log('Detail data loaded:', {

@@ -1357,7 +1357,7 @@ const viewEODFunctionDetails = (eodFunction: EODFunction) => {
 
 const kickUser = async (userId: string): Promise<void> => {
   try {
-    const response = await axios.post(`/api/kick-user/${userId}/`, {}, {
+    const response = await axios.post(`/api/force-logout-test/${userId}/`, {}, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${localStorage.getItem("token")}`,
