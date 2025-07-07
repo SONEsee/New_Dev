@@ -276,6 +276,7 @@ export const faAssetStore = defineStore("faAsset", {
             ...entry,
             Account: entry.Account || null,
             Amount: entry.Amount || 0,
+            Ac_relatives: entry.Ac_relatives || "",
           })),
         };
 

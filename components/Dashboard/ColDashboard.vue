@@ -3,7 +3,7 @@
     <p class="pa-2">ຂໍ້ມູນຫຼັກຊັບ</p>
     <apexchart
     style="font-family:Saysettha OT;"
-      width="100%"
+      width="80%"
       type="pie"
       :options="chartOptions"
       :series="series"

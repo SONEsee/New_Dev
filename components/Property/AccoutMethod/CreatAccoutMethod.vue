@@ -4,11 +4,19 @@ const valid = ref(false);
 const title = "ເພີ່ມຕັ້ງຄ່າບັນທຶກບັນຊີຊັບສົມບັດໃໝ່";
 const assetStores = assetStore();
 const accounStore = accountMethodStore();
+const assetListStore = faAssetStore();
+const masterStore = useMasterStore();
+const assetlist  = computed(()=>{
+  return  assetListStore.response_fa_asset_list;
+})
+const masterdata = computed(()=>{
+  return masterStore.respone_data_master;
+})
 const request = accounStore.form_create_account_method;
 const handleSubmit = async () => {
   const isValid = await form.value.validate();
   if (isValid) {
-    console.log("Form is valid, proceed with submission", request);
+    
   }
 };
 const asset = computed(() => {
@@ -16,12 +24,16 @@ const asset = computed(() => {
 });
 onMounted(() => {
   assetStores.GetAssetList();
+  assetListStore.GetFaAssetList();
+ masterStore.getDataAsset();
 });
 </script>
 <template>
   <div class="pa-2">
     <GlobalTextTitleLine :title="title" />
     <v-form ref="form" @submit.prevent="handleSubmit">
+    <pre> {{ masterdata }}</pre> 
+     <!-- <pre> {{ assetlist }}</pre> -->
       <v-row>
         <v-col cols="12" md="4">
           <v-label class="mb-1"
@@ -39,15 +51,18 @@ onMounted(() => {
           <v-label class="mb-1"
             >ເລກ Reference ID <span class="text-error">*</span></v-label
           >
-          <v-text-field
+          <v-autocomplete
+          :items="assetlist || []"
             v-model="request.ref_id"
             density="compact"
             variant="outlined"
             label="Reference ID"
             placeholder="ລະຫັດອ້າງອີງ"
+            item-title="asset_spec"
+            item-value="asset_list_id"
           />
            <v-label class="mb-1"
-            >ເລກ Reference ID <span class="text-error">*</span></v-label
+            >ມູນຄ່າເລີ່ມຕົ້ນ <span class="text-error">*</span></v-label
           >
           <v-text-field
             v-model="request.ref_id"

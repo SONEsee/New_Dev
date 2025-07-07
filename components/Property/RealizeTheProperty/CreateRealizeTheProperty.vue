@@ -28,8 +28,6 @@ const response = computed(() => {
   return assetStore.response_fa_asset_detail;
 });
 
-<<<<<<< HEAD
-=======
 const todayDate = computed(() => {
   return new Date().toISOString().split("T")[0];
 });
@@ -53,7 +51,6 @@ const displayStartDate = computed({
 const isToday = computed(() => {
   return displayStartDate.value === todayDate.value;
 });
->>>>>>> b9b79ed044959852a25728a936a4ca5d046f3250
 
 const matchedMasterCode = computed(() => {
   if (
@@ -65,10 +62,6 @@ const matchedMasterCode = computed(() => {
 
   const typeCode = response.value.asset_id_detail.asset_type_detail.type_code;
 
-<<<<<<< HEAD
-
-=======
->>>>>>> b9b79ed044959852a25728a936a4ca5d046f3250
   const masterObject = Array.isArray(masterdata.value)
     ? masterdata.value.find((item) => item.MasterCodes)
     : masterdata.value;
@@ -77,10 +70,6 @@ const matchedMasterCode = computed(() => {
     return null;
   }
 
-<<<<<<< HEAD
-  
-=======
->>>>>>> b9b79ed044959852a25728a936a4ca5d046f3250
   const matched = masterObject.MasterCodes.find(
     (item) => item.MC_code === typeCode
   );
@@ -88,10 +77,6 @@ const matchedMasterCode = computed(() => {
   return matched;
 });
 
-<<<<<<< HEAD
-
-=======
->>>>>>> b9b79ed044959852a25728a936a4ca5d046f3250
 const getAccountNumbers = computed(() => {
   if (!matchedMasterCode.value?.MC_detail) {
     return { dr: "", cr: "" };
@@ -142,10 +127,6 @@ const getDailyValue = () => {
 
   return 0;
 };
-<<<<<<< HEAD
-// sone ປັບປຸງໃໝ່ 
-=======
->>>>>>> b9b79ed044959852a25728a936a4ca5d046f3250
 const monthlySetupValue = computed(() => {
   if (!response.value) return 0;
 
@@ -566,7 +547,6 @@ const depreciationCalculator = computed(() => {
   };
 });
 
-
 const depreciationSchedule = computed(() => {
   if (
     !response.value ||
@@ -656,7 +636,6 @@ const depreciationSchedule = computed(() => {
   return schedule;
 });
 
-
 const depreciationSummary = computed(() => {
   if (!depreciationSchedule.value.length) return null;
 
@@ -687,7 +666,6 @@ const depreciationProgress = computed(() => {
   if (!response.value || !depreciationCalculator.value) return 0;
   return depreciationCalculator.value.depreciationProgress;
 });
-
 
 const formatNumber = (value: string | number) => {
   if (!value) return "0.00";
@@ -731,12 +709,9 @@ const getDepreciationMethodDescription = (type: string) => {
   }
 };
 
-
 const setToToday = () => {
   request.dpca_start_date = new Date();
 };
-
-
 
 const formatOnBlur = (event: Event) => {
   const target = event.target as HTMLInputElement;
@@ -748,7 +723,6 @@ const formatOnBlur = (event: Event) => {
 const goBack = () => {
   router.go(-1);
 };
-
 
 watch(
   () => response.value?.asset_id_detail?.asset_type_detail?.type_code,
@@ -831,15 +805,13 @@ const generateJournalEntry = () => {
     return null;
   }
 
-
   const currentDate = new Date();
   const currentYear = currentDate.getFullYear().toString();
   const currentMonth = String(currentDate.getMonth() + 1).padStart(2, "0");
   const periodCode = `${currentYear}${currentMonth}`;
 
- 
   const valueDateISO = currentDate.toISOString();
-
+const referenceNo = generateReferenceNumber();
   const mastercodeName = masterdata.value.mastercode_detail?.MC_name_la || "";
   const assetName =
     response.value.mastercode_detail?.chart_detail?.asset_name_la ||
@@ -850,14 +822,14 @@ const generateJournalEntry = () => {
   const accountNumbers = getAccountNumbers.value;
 
   const journalEntry = {
-    Reference_No: response.value.asset_list_id?.toString() || "",
+    Reference_No: referenceNo,
     Ccy_cd: response.value.asset_currency || "LAK",
-    Txn_code: "UNC",
+    Txn_code: "ARC",
     Value_date: valueDateISO,
     Addl_text: addlText,
     fin_cycle: currentYear,
     Period_code: periodCode,
-    module_id: "GL",
+    module_id: "AS",
     entries: [
       {
         Account_no: accountNumbers.dr || "",
@@ -880,15 +852,15 @@ console.log("Journal Entry:", generateJournalEntry());
 
 const generateReferenceNumber = () => {
   const currentDate = new Date();
-  const year = currentDate.getFullYear().toString().slice(-2);
+  const year = currentDate.getFullYear().toString();
   const month = String(currentDate.getMonth() + 1).padStart(2, "0");
   const day = String(currentDate.getDate()).padStart(2, "0");
-  const sequence = String(Math.floor(Math.random() * 99999) + 1).padStart(
-    5,
-    "0"
-  );
-
-  return `GL-UNC-${year}${month}${day}-${sequence}`;
+  const dateString = `${year}${month}${day}`;
+  
+  
+  const assetListCode = response.value?.asset_list_code || "000";
+  
+  return `AS-ARC-${dateString}-${assetListCode}`;
 };
 
 const generateCompleteJournalEntry = () => {
@@ -903,9 +875,9 @@ const generateCompleteJournalEntry = () => {
   const periodCode = `${currentYear}${currentMonth}`;
   const valueDateISO = currentDate.toISOString();
 
-  const referenceNo =
-    response.value.asset_list_id?.toString() || generateReferenceNumber();
-
+  // const referenceNo =
+  //   response.value.asset_list_id?.toString() || generateReferenceNumber();
+ const referenceNo = generateReferenceNumber();
   const mastercodeName =
     response.value.mastercode_detail?.MC_name_la ||
     response.value.asset_id_detail?.asset_type_detail?.type_name_la ||
@@ -921,13 +893,14 @@ const generateCompleteJournalEntry = () => {
 
   const journalEntry = {
     Reference_No: referenceNo,
+    
     Ccy_cd: response.value.asset_currency || "LAK",
-    Txn_code: "UNC",
+    Txn_code: "ARC",
     Value_date: valueDateISO,
     Addl_text: addlText.length > 0 ? addlText : "Asset Recognition Entry",
     fin_cycle: currentYear,
     Period_code: periodCode,
-    module_id: "GL",
+    module_id: "AS",
     entries: [
       {
         Account_no: accountNumbers.dr || "",
@@ -935,6 +908,7 @@ const generateCompleteJournalEntry = () => {
         Dr_cr: "D",
         Addl_sub_text:
           response.value.asset_spec || response.value.asset_tag || "",
+          Ac_relatives: response.value.asset_list_id || "",
       },
       {
         Account_no: accountNumbers.cr || "",
@@ -942,14 +916,13 @@ const generateCompleteJournalEntry = () => {
         Dr_cr: "C",
         Addl_sub_text:
           response.value.asset_spec || response.value.asset_tag || "",
+          Ac_relatives: response.value.asset_list_id || "",
       },
     ],
   };
 
   return journalEntry;
 };
-
-
 const showJournalEntryPreview = () => {
   const entry = generateCompleteJournalEntry();
   if (entry) {
@@ -960,13 +933,12 @@ const showJournalEntryPreview = () => {
   return null;
 };
 
-
 const copyJournalEntryToClipboard = async () => {
   const entry = generateCompleteJournalEntry();
   if (entry) {
     try {
       await navigator.clipboard.writeText(JSON.stringify(entry, null, 2));
-      
+
       CallSwal({
         icon: "success",
         title: "ສຳເລັດ!",
@@ -984,18 +956,15 @@ const copyJournalEntryToClipboard = async () => {
   }
 };
 
-
 const journalEntryData = computed(() => {
   return generateCompleteJournalEntry();
 });
-
 
 const submitJournalEntry = async () => {
   const entry = generateCompleteJournalEntry();
   if (!entry) return;
 
   try {
-    
     const response = await fetch("journal/process-v2/", {
       method: "POST",
       headers: {
@@ -1033,18 +1002,13 @@ const saveCalculation = async () => {
       confirmButtonText: "ຕົກລົງ",
       cancelButtonText: "ຍົກເລີກ",
     });
-    
+
     if (notification.isConfirmed) {
-     
       await assetStore.Update(id);
-      
-     
+
       const journalData = generateCompleteJournalEntry();
-      
+
       if (journalData) {
-        console.log("📋 Sending Journal Data:", journalData);
-        
-        
         assetStore.creat_form_jornal = {
           Reference_No: journalData.Reference_No,
           Ccy_cd: journalData.Ccy_cd,
@@ -1054,12 +1018,11 @@ const saveCalculation = async () => {
           fin_cycle: journalData.fin_cycle,
           Period_code: journalData.Period_code,
           module_id: journalData.module_id,
-          entries: journalData.entries
+          entries: journalData.entries,
         };
-        
-       
+
         await assetStore.CreateJournalto(false);
-        
+
         CallSwal({
           icon: "success",
           title: "ສຳເລັດ!",
@@ -1089,10 +1052,9 @@ const saveCalculation = async () => {
 onMounted(() => {
   assetStore.GetFaAssetDetail(id);
   masterStore.getDataAsset();
-  
-  // ຕັ້ງຄ່າວັນທີ່ເລີ່ມເປັນວັນປະຈຸບັນຖ້າຍັງບໍ່ມີ
+
   if (!request.dpca_start_date) {
-    request.dpca_start_date = new Date().toISOString().split('T')[0];
+    request.dpca_start_date = new Date().toISOString().split("T")[0];
   }
 });
 </script>

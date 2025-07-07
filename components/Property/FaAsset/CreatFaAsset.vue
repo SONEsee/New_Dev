@@ -188,7 +188,7 @@ const generateReferenceNo = () => {
   const day = now.getDate().toString().padStart(2, "0");
   const month = (now.getMonth() + 1).toString().padStart(2, "0");
   const year = now.getFullYear();
-  const dateString = `${day}${month}${year}`;
+  const dateString = `${year}${month}${day}`;
 
   return `AS-UNC-${dateString}-${assetListCode}`;
 };
@@ -337,7 +337,7 @@ const submitForm = async () => {
             Amount: parseFormattedNumber(formattedAssetValue.value),
             Dr_cr: "D",
             Addl_sub_text: `${faAssetStoreInstance.form_create_fa_asset.asset_spec}`,
-            Ac_relatives: "",
+            Ac_relatives: faAssetStoreInstance.form_create_fa_asset.asset_list_id,
           },
           {
             Account: null,
@@ -345,7 +345,7 @@ const submitForm = async () => {
             Amount: parseFormattedNumber(formattedAssetValue.value),
             Dr_cr: "C",
             Addl_sub_text: `${faAssetStoreInstance.form_create_fa_asset.asset_spec}`,
-            Ac_relatives: "",
+            Ac_relatives: faAssetStoreInstance.form_create_fa_asset.asset_list_id,
           },
         ],
       };
