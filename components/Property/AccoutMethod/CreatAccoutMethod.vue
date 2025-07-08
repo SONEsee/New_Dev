@@ -4,135 +4,253 @@ const valid = ref(false);
 const title = "ເພີ່ມຕັ້ງຄ່າບັນທຶກບັນຊີຊັບສົມບັດໃໝ່";
 const assetStores = assetStore();
 const accounStore = accountMethodStore();
+const masterStettingStore = useMasterStore();
 const assetListStore = faAssetStore();
 const masterStore = useMasterStore();
-const assetlist  = computed(()=>{
-  return  assetListStore.response_fa_asset_list;
-})
-const masterdata = computed(()=>{
+
+const masterdatato = computed(() => {
+  return masterStettingStore.resposne_status_setting;
+});
+
+const assetlist = computed(() => {
+  return assetListStore.response_fa_asset_list;
+});
+
+const masterdata = computed(() => {
   return masterStore.respone_data_master;
-})
+});
+
 const request = accounStore.form_create_account_method;
+
+// ເພີ່ມ reactive variables ສຳລັບບັນຊີເດບິດ ແລະ ເຄດິດ
+const debitAccount = ref("");
+const creditAccount = ref("");
+
+// ຟັງຊັ້ນສຳລັບອັບເດດບັນຊີເດບິດ ແລະ ເຄດິດ
+const updateAccounts = () => {
+  if (request.asset_id && asset.value && masterdatato.value) {
+    const selectedAsset = asset.value.find(
+      (assetItem) => assetItem.coa_id === request.asset_id
+    );
+
+    if (selectedAsset && selectedAsset.asset_type_detail) {
+      const typeCode = selectedAsset.asset_type_detail.type_code;
+
+      const matchedCode = masterdatato.value.MasterCodes?.find(
+        (code) => code.MC_code === typeCode
+      );
+
+      if (matchedCode && matchedCode.MC_detail) {
+        const accounts = matchedCode.MC_detail.split("|");
+        if (accounts.length >= 2) {
+          debitAccount.value = accounts[0];
+          creditAccount.value = accounts[1];
+
+          if (request.ref_id && assetlist.value) {
+            const selectedAssetList = assetlist.value.find(
+              (item) => item.asset_list_id === request.ref_id
+            );
+            
+            if (selectedAssetList) {
+              const assetListCode = selectedAssetList.asset_list_code;
+              
+              // ອັບເດດເລກບັນຊີດ້ວຍ asset_list_code
+              if (assetListCode) {
+                debitAccount.value = accounts[0] + "." + assetListCode;
+                creditAccount.value = accounts[1] + "." + assetListCode;
+              }
+              
+              // ດຶງຄ່າມາໃສ່ຟິວມູນຄ່າ
+              if (selectedAssetList.asset_value_remainBegin !== undefined) {
+                request.amount_start = selectedAssetList.asset_value_remainBegin ;
+              }
+              
+              if (selectedAssetList.asset_value_remainLast !== undefined) {
+                request.amount_end = selectedAssetList.asset_value_remainLast;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+};
+
+// Watch ການປ່ຽນແປງຂອງ asset_id ແລະ ref_id
+watch(
+  () => request.asset_id,
+  () => {
+    updateAccounts();
+  }
+);
+
+watch(
+  () => request.ref_id,
+  () => {
+    updateAccounts();
+  }
+);
+
 const handleSubmit = async () => {
   const isValid = await form.value.validate();
   if (isValid) {
-    
+    console.log("Form submitted:", {
+      ...request,
+      debitAccount: debitAccount.value,
+      creditAccount: creditAccount.value,
+    });
   }
 };
+
 const asset = computed(() => {
   return assetStores.response_asset_list;
 });
+
 onMounted(() => {
   assetStores.GetAssetList();
+  masterStettingStore.getSetting();
   assetListStore.GetFaAssetList();
- masterStore.getDataAsset();
+  masterStore.getDataAsset();
+
+  setTimeout(() => {
+    updateAccounts();
+  }, 1000);
 });
 </script>
+
 <template>
   <div class="pa-2">
     <GlobalTextTitleLine :title="title" />
     <v-form ref="form" @submit.prevent="handleSubmit">
-    <pre> {{ masterdata }}</pre> 
-     <!-- <pre> {{ assetlist }}</pre> -->
+      <!-- <pre>{{ masterdatato }}</pre>  -->
+      <!-- <pre>{{ assetlist }}</pre> -->
       <v-row>
         <v-col cols="12" md="4">
-          <v-label class="mb-1"
-            >ລະຫັດຊັບສົມບັດ <span class="text-error">*</span></v-label
-          >
+          <v-label class="mb-1">
+            ລະຫັດປະເພດຊັບສົມບັດ <span class="text-error">*</span>
+          </v-label>
           <v-autocomplete
             v-model="request.asset_id"
             density="compact"
-            label="ລະຫັດຊັບສົມບັດ"
+            label="ລະຫັດປະເພດຊັບສົມບັດ"
             :items="asset || []"
             item-title="asset_name_la"
             item-value="coa_id"
             variant="outlined"
           ></v-autocomplete>
-          <v-label class="mb-1"
-            >ເລກ Reference ID <span class="text-error">*</span></v-label
-          >
+
+          <v-label class="mb-1">
+            ຊັບສົມບັດ <span class="text-error">*</span>
+          </v-label>
           <v-autocomplete
-          :items="assetlist || []"
+            :items="assetlist || []"
             v-model="request.ref_id"
             density="compact"
             variant="outlined"
-            label="Reference ID"
-            placeholder="ລະຫັດອ້າງອີງ"
+            label="ຊັບສົມບັດ"
+            placeholder="ຊັບສົມບັດ"
             item-title="asset_spec"
             item-value="asset_list_id"
           />
-           <v-label class="mb-1"
-            >ມູນຄ່າເລີ່ມຕົ້ນ <span class="text-error">*</span></v-label
-          >
+
+          <v-label class="mb-1">
+            ມູນຄ່າເລີ່ມຕົ້ນ <span class="text-error">*</span>
+          </v-label>
           <v-text-field
-            v-model="request.ref_id"
+            v-model="request.amount_start"
             density="compact"
             variant="outlined"
             label="ມູນຄ່າຕົ້ນ"
             placeholder="ມູນຄ່າຕົ້ນ"
+            type="number"
           />
-          <!-- 
+          
+          <v-label class="mb-1">
+            ວັນທີເຮັດຖຸລະກຳ <span class="text-error">*</span>
+          </v-label>
           <v-text-field
+            v-model="request.transaction_date"
             density="compact"
             variant="outlined"
-            label="ວັນທີ່ທຸລະກຳ"
-            placeholder="ວັນທີ່ທຸລະກຳ"
+            label="ວັນທີເຮັດຖຸລະກຳ"
+            placeholder="ວັນທີເຮັດຖຸລະກຳ"
             type="date"
-          /> -->
+          />
         </v-col>
+
         <v-col cols="12" md="4">
-          <v-label class="mb-1"
-            >ບັນຊີເດບິດ (Dr) <span class="text-error">*</span></v-label
-          >
-          <v-autocomplete
-            density="compact"
-            label="ບັນຊີເດບິດ (Dr)"
-            :items="[]"
-            item-title="asset_name_la"
-            item-value="coa_id"
-            variant="outlined"
-          ></v-autocomplete>
-          <v-label class="mb-1"
-            >ຍອດເງິນ <span class="text-error">*</span></v-label
-          >
+          <v-label class="mb-1">
+            ບັນຊີເດບິດ (Dr) <span class="text-error">*</span>
+          </v-label>
           <v-text-field
+            v-model="debitAccount"
+            density="compact"
+            variant="outlined"
+            label="ບັນຊີເດບິດ (Dr)"
+            placeholder="ບັນຊີເດບິດ"
+            readonly
+          />
+
+          <v-label class="mb-1">
+            ຍອດເງິນ <span class="text-error">*</span>
+          </v-label>
+          <v-text-field
+            v-model="request.amount"
             density="compact"
             variant="outlined"
             label="ຍອດເງິນ"
             placeholder="ຍອດເງິນ"
+            type="number"
+          />
+          
+          <v-label class="mb-1">
+            ມູນຄ່າທ້າຍ <span class="text-error">*</span>
+          </v-label>
+          <v-text-field
+            v-model="request.amount_end"
+            density="compact"
+            variant="outlined"
+            label="ມູນຄ່າທ້າຍ"
+            placeholder="ມູນຄ່າທ້າຍ"
+            type="number"
           />
         </v-col>
+
         <v-col cols="12" md="4">
           <v-label class="mb-1">
-            ບັນຊີເຄດິດ (Cr)<span class="text-error">*</span></v-label
-          >
-          <v-autocomplete
+            ບັນຊີເຄດິດ (Cr) <span class="text-error">*</span>
+          </v-label>
+          <v-text-field
+            v-model="creditAccount"
             density="compact"
-            label="ບັນຊີເດບິດ (Dr)"
-            :items="[]"
-            item-title="asset_name_la"
-            item-value="coa_id"
             variant="outlined"
-          ></v-autocomplete>
-          <v-label class="mb-1"
-            >ລາຍລະອຽດ <span class="text-error">*</span></v-label
-          >
+            label="ບັນຊີເຄດິດ (Cr)"
+            placeholder="ບັນຊີເຄດິດ"
+            readonly
+          />
+
+          <v-label class="mb-1">
+            ລາຍລະອຽດ <span class="text-error">*</span>
+          </v-label>
           <v-textarea
+            v-model="request.description"
             density="compact"
             variant="outlined"
             label="ລາຍລະອຽດ"
             placeholder="ລາຍລະອຽດ"
           />
         </v-col>
-        <v-col cols="12" class="d-flex flex-wrap justify-center mt-6">
-          <v-btn color="error" variant="outlined" class="mr-2"> ຍົກເລີກ </v-btn>
 
+        <v-col cols="12" class="d-flex flex-wrap justify-center mt-6">
+          <v-btn color="error" variant="outlined" class="mr-2"> 
+            ຍົກເລີກ 
+          </v-btn>
           <v-btn color="primary" type="submit" prepend-icon="mdi-content-save">
             ບັນທຶກ
           </v-btn>
         </v-col>
-      </v-row></v-form
-    >
+      </v-row>
+    </v-form>
   </div>
 </template>
 

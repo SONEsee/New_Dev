@@ -18,19 +18,24 @@ export const accountMethodStore = defineStore("accountMethod", {
         debit_account_id: "",
         credit_account_id: "",
         amount: 0,
+        amount_start: 0,
+        amount_end: 0,
+       
         transaction_date: null as Date | null,
         description: "",
         journal_entry_id: "",
         record_stat: "O" as 'C' | 'O',
       },
       form_update_account_method: {
-        mapping_id: "" as string | number,
-        ref_id: null as number | null,
+       ref_id: null as number | null,
         acc_type: "" as 'ASSET' | 'DEPRECIATION' | 'DISPOSAL' | "",
         asset_id: null as number | null,
         debit_account_id: "",
         credit_account_id: "",
         amount: 0,
+        amount_start: 0,
+        amount_end: 0,
+       
         transaction_date: null as Date | null,
         description: "",
         journal_entry_id: "",
@@ -336,6 +341,9 @@ export const accountMethodStore = defineStore("accountMethod", {
         transaction_date: null,
         description: "",
         journal_entry_id: "",
+        amount_start: 0,
+        amount_end: 0,
+
         record_stat: "O",
       };
     },
@@ -343,13 +351,17 @@ export const accountMethodStore = defineStore("accountMethod", {
     
     resetUpdateForm() {
       this.form_update_account_method = {
-        mapping_id: "",
+       
+
         ref_id: null,
         acc_type: "",
         asset_id: null,
         debit_account_id: "",
         credit_account_id: "",
         amount: 0,
+        amount_start: 0,
+        amount_end: 0,
+
         transaction_date: null,
         description: "",
         journal_entry_id: "",
@@ -404,23 +416,23 @@ export const accountMethodStore = defineStore("accountMethod", {
     },
 
   
-    totalAmountByType: (state) => {
-      if (!state.response_account_method_list) return {};
+    // totalAmountByType: (state) => {
+    //   if (!state.response_account_method_list) return {};
       
-      return state.response_account_method_list.reduce((acc, method) => {
-        if (!acc[method.acc_type]) {
-          acc[method.acc_type] = 0;
-        }
-        acc[method.acc_type] += method.amount;
-        return acc;
-      }, {} as Record<string, number>);
-    },
+    //   return state.response_account_method_list.reduce((acc, method) => {
+    //     if (!acc[method.acc_type]) {
+    //       acc[method.acc_type] = 0;
+    //     }
+    //     acc[method.acc_type] += method.amount;
+    //     return acc;
+    //   }, {} as Record<string, number>);
+    // },
 
  
-    totalAmount: (state) => {
-      if (!state.response_account_method_list) return 0;
-      return state.response_account_method_list.reduce((sum, method) => sum + method.amount, 0);
-    },
+    // totalAmount: (state) => {
+    //   if (!state.response_account_method_list) return 0;
+    //   return state.response_account_method_list.reduce((sum, method) => sum + method.amount, 0);
+    // },
 
   
     assetRelatedMethods: (state) => {

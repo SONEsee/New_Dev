@@ -756,12 +756,16 @@ watch(
       request.asset_value_remain = req.asset_value_remain
         ? Number(req.asset_value_remain)
         : 0;
-      request.asset_value_remainBegin = req.asset_value_remainBegin
-        ? Number(req.asset_value_remainBegin)
-        : 0;
-      request.asset_value_remainLast = req.asset_value_remainLast
-        ? Number(req.asset_value_remainLast)
-        : 0;
+      
+      // ແທນທີ່ຈະເອົາຈາກ req ໃຫ້ໃຊ້ຄ່າທີ່ຄິດໄລ່ໄດ້
+      // request.asset_value_remainBegin = req.asset_value_remainBegin;
+      // request.asset_value_remainLast = req.asset_value_remainLast;
+      
+      // ລໍຖ້າ nextTick ແລ້ວຄ່ອຍອັບເດດ
+      nextTick(() => {
+        request.asset_value_remainBegin = finalMonthlySetupValue.value.toFixed(2);
+        request.asset_value_remainLast = displayMonthlyEndValue.value.toFixed(2);
+      });
 
       if (!request.dpca_start_date) {
         request.dpca_start_date = new Date();
@@ -1005,7 +1009,9 @@ const saveCalculation = async () => {
 
     if (notification.isConfirmed) {
       await assetStore.Update(id);
-
+ 
+  request.asset_value_remainBegin = finalMonthlySetupValue.value.toString();
+      request.asset_value_remainLast = displayMonthlyEndValue.value.toString();
       const journalData = generateCompleteJournalEntry();
 
       if (journalData) {
@@ -1295,7 +1301,9 @@ onMounted(() => {
                         <label>
                           ວັນທີ່ເລີ່ມຄິດລາຄາຫຼູ້ຍຫຽ້ນ
                           <span class="text-error">*</span>
-                          <span class="text-caption text-success ml-2">
+                          <span class="text-caption text-success ml-2"
+                          
+                          >
                             ({{
                               displayStartDate === todayDate
                                 ? "ວັນນີ້"
@@ -1378,6 +1386,7 @@ onMounted(() => {
                           <span class="text-error">*</span></label
                         >
                         <v-text-field
+                          v-model="request.asset_value_remainBegin"
                           :value="formatNumber(finalMonthlySetupValue)"
                           variant="outlined"
                           density="compact"
@@ -1410,6 +1419,7 @@ onMounted(() => {
                           <span class="text-success">*</span></label
                         >
                         <v-text-field
+                          v-model="request.asset_value_remainLast"
                           :value="formatNumber(displayMonthlyEndValue)"
                           variant="outlined"
                           density="compact"
