@@ -267,19 +267,19 @@ const headers = computed(() => [
         },
       ]
     : []),
-  ...(canEdit.value
-    ? [
-        {
-          title: "ແກ້ໄຂ",
-          value: "edit",
-          align: "center",
-          sortable: false,
-          filterable: false,
-          width: "80px",
-          class: "text-center",
-        },
-      ]
-    : []),
+  // ...(canEdit.value
+  //   ? [
+  //       {
+  //         title: "ແກ້ໄຂ",
+  //         value: "edit",
+  //         align: "center",
+  //         sortable: false,
+  //         filterable: false,
+  //         width: "80px",
+  //         class: "text-center",
+  //       },
+  //     ]
+  //   : []),
   ...(canDelete.value
     ? [
         {

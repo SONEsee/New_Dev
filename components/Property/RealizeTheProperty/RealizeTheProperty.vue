@@ -249,6 +249,7 @@ const headers = computed(() => {
     ></v-col>
 
     <v-data-table
+    style="font-size: 80%;"
       :items="filterAssetType || []"
       :headers="headers"
       class="text-no-wrap"
@@ -343,13 +344,13 @@ const headers = computed(() => {
       </template>
       <template v-slot:item.Auth_Status_ARC="{ item }">
         <div v-if="item.Auth_Status_ARC === 'U'">
-          <v-chip color="primary"> ລໍຖ້າການອະນຸມັດ </v-chip>
+          <v-chip color="info"> ລໍຖ້າການອະນຸມັດ </v-chip>
         </div>
         <div v-if="item.Auth_Status_ARC === 'P'">
-          <v-chip color="primary"> ກຳລັງດຳເນີນການ </v-chip>
+          <v-chip color="info"> ກຳລັງດຳເນີນການ </v-chip>
         </div>
         <div v-if="item.Auth_Status_ARC === 'R'">
-          <v-chip color="primary"> ຖືກ Reject </v-chip>
+          <v-chip color="info"> ຖືກ Reject </v-chip>
         </div>
       </template>
       <template v-slot:item.asset_value_remainMonth="{ item }">
@@ -397,7 +398,7 @@ const headers = computed(() => {
       </template>
       <template v-slot:item.action="{ item }">
         <v-btn
-          v-if="item.Auth_Status === 'A'"
+          v-if="item.Auth_Status === 'A' && item.asset_status === 'UC'"
           class=""
           color="primary"
           @click="
@@ -407,8 +408,26 @@ const headers = computed(() => {
           "
           >ຢັ້ງຢືນ</v-btn
         >
+        <v-chip
+          v-if="item.Auth_Status === 'A' && item.asset_status === 'AC'"
+          
+          >
+          <v-icon icon="mdi-check-underline" style="color: darkgreen;"></v-icon>
+          </v-chip
+        >
         <p v-if="item.asset_status==='AC' && item.Auth_Status!=='A'">ຖືກກົດຮັບຮູ້ແລ້ວ</p>
-        <p v-if=" item.Auth_Status==='U'">ຍັງບໍ່ອານຸມັດຈາກພວມຊື້ພວມກໍ່ສ້າງ</p>
+        <v-btn
+          v-if="item.Auth_Status === 'U'"
+          class=""
+          color="primary"
+          @click="
+            goPath(
+              `/property/realizetheproperty/create?asset_list_id=${item.asset_list_id}`
+            )
+          "
+          disabled
+          >ຢັ້ງຢືນ</v-btn
+        >
       </template>
     </v-data-table>
   </div>

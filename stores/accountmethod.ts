@@ -13,7 +13,7 @@ export const accountMethodStore = defineStore("accountMethod", {
       isLoading: false,
       form_create_account_method: {
         ref_id: null as number | null,
-        acc_type: "" as 'ASSET' | 'DEPRECIATION' | 'DISPOSAL' | "",
+        acc_type: "ASSET" as 'ASSET' | 'DEPRECIATION' | 'DISPOSAL' | "",
         asset_id: null as number | null,
         debit_account_id: "",
         credit_account_id: "",
@@ -153,13 +153,23 @@ export const accountMethodStore = defineStore("accountMethod", {
             showConfirmButton: false,
           });
           setTimeout(() => {
-            goPath("/account-methods");
+            goPath("/property/accountmethod/");
           }, 1500);
 
          
           this.resetCreateForm();
         }
-      } catch (error) {
+      } catch (error:any) {
+        if(error.response && error.response.status === 501) {
+          CallSwal({
+            title: "ແຈ້ງເຕືອນ",
+            text: "ເລກບັນຊີນີ້ຖືກໃຊ້ແລ້ວ, ກະລຸນາເລືອກເລກບັນຊີໃໝ່",
+            icon: "warning",
+            showCancelButton: false,
+            confirmButtonText: "ຕົກລົງ",
+          });
+          return;
+        }
         console.error("Error creating account method:", error);
         CallSwal({
           title: "ຜິດພາດ",

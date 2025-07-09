@@ -1232,6 +1232,19 @@ onMounted(() => {
                             )
                           "
                         />
+                        
+                      </v-col>
+                      <v-col cols="12" md="2">
+                            <GlobalCardTitle
+                          :title="'ມູນຄ່າຊາກ'"
+                          :text="
+                            formatCurrency(
+                              response?.asset_salvage_value || '0',
+                              response?.asset_currency || ''
+                            )
+                          "
+                        />
+                        
                       </v-col>
                       <v-col cols="12" md="2">
                         <GlobalCardTitle
@@ -1429,7 +1442,7 @@ onMounted(() => {
                           persistent-hint
                         />
 
-                        <GlobalCardTitle
+                        <!-- <GlobalCardTitle
                           :title="'ມູນຄ່າຊາກ'"
                           :text="
                             formatCurrency(
@@ -1437,7 +1450,7 @@ onMounted(() => {
                               response?.asset_currency || ''
                             )
                           "
-                        />
+                        /> -->
                       </v-col>
                     </v-row>
 
