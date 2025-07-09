@@ -729,7 +729,7 @@
                     <template v-slot:item.actions="{ item }">
                       <div class="d-flex ga-1">
                         <v-btn
-                          v-if="item.Record_Status === 'C' && item.Auth_Status === 'A'"
+                          v-if="item.Record_Status === 'O' && item.Auth_Status === 'A'"
                           color="success"
                           variant="text"
                           size="small"
@@ -1053,7 +1053,7 @@ const pendingIssues = computed(() => {
     issues.push(`ມີຼູ້ໃຊ້ອື່ນທີ່ຍັງເຂົ້າໃຊ້ລະບົບຢູ່ (${otherActiveUsersCount} ຄົນ)`)
   }
   
-  if (eodFunctions.value.some(func => func.Record_Status === 'O')) {
+  if (eodFunctions.value.some(func => func.Record_Status === 'C')) {
     issues.push('ມີຟັງຊັນ EOD ທີ່ຍັງບໍ່ສຳເລັດ')
   }
   return issues
@@ -1068,7 +1068,7 @@ const hasOtherActiveUsers = computed(() => {
 })
 
 const hasIncompleteEODFunctions = computed(() => {
-  return eodFunctions.value.some(func => func.Record_Status === 'O')
+  return eodFunctions.value.some(func => func.Record_Status === 'C')
 })
 
 const pendingJournalsCount = computed(() => {
@@ -1091,11 +1091,11 @@ const otherActiveUsersCount = computed(() => {
 })
 
 const completedEODFunctionsCount = computed(() => {
-  return eodFunctions.value.filter(func => func.Record_Status === 'C').length
+  return eodFunctions.value.filter(func => func.Record_Status === 'O').length
 })
 
 const incompleteEODFunctionsCount = computed(() => {
-  return eodFunctions.value.filter(func => func.Record_Status === 'O').length
+  return eodFunctions.value.filter(func => func.Record_Status === 'C').length
 })
 
 const totalPendingAmount = computed(() => {
@@ -1331,7 +1331,7 @@ const viewJournalDetails = (journal: PendingJournal) => {
 
 const executeEODFunction = async (eodFunction: EODFunction) => {
   try {
-    const response = await axios.post(`/api/eoc-maintain/${eodFunction.eoc_id}/execute/`, {}, {
+    const response = await axios.post(`/api/eoc-maintain/bulk-journal`, {}, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${localStorage.getItem("token")}`,

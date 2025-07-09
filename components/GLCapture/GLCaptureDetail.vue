@@ -438,36 +438,248 @@ const rejectByPairAccount = async (referenceSubNo) => {
     return
   }
 
-  const result = await Swal.fire({
-    icon: 'warning',
-    title: 'ປະຕິເສດບັນທຶກຄູ່',
-    html: `ທ່ານຕ້ອງການປະຕິເສດບັນທຶກຄູ່:<br><strong>${referenceSubNo}</strong><br><br>ການປະຕິເສດນີ້ຈະປະຕິເສດທັງຄູ່ບັນທຶກ (Debit ແລະ Credit)`,
-    input: 'textarea',
-    inputLabel: 'ເຫດຜົນໃນການປະຕິເສດ *',
-    inputPlaceholder: 'ກະລຸນາໃສ່ເຫດຜົນການປະຕິເສດ...',
-    inputAttributes: {
-      'aria-label': 'Rejection reason',
-      'rows': 3,
-      'maxlength': 500
-    },
-    inputValidator: (value) => {
-      if (!value || value.trim().length === 0) {
-        return 'ກະລຸນາໃສ່ເຫດຜົນໃນການປະຕິເສດ'
+const result = await Swal.fire({
+  icon: 'warning',
+  title: 'ປະຕິເສດບັນທຶກຄູ່',
+  html: `
+    <div class="rejection-content">
+      <p class="rejection-subtitle">ທ່ານຕ້ອງການປະຕິເສດບັນທຶກຄູ່:</p>
+      <div class="reference-number">${referenceSubNo}</div>
+      <p class="rejection-warning">ການປະຕິເສດນີ້ຈະປະຕິເສດທັງຄູ່ບັນທຶກ (Debit ແລະ Credit)</p>
+    </div>
+  `,
+  input: 'textarea',
+  inputLabel: 'ເຫດຜົນໃນການປະຕິເສດ *',
+  inputPlaceholder: 'ກະລຸນາໃສ່ເຫດຜົນການປະຕິເສດ...',
+  inputAttributes: {
+    'aria-label': 'Rejection reason',
+    'rows': 3,
+    'maxlength': 250,
+    'class': 'custom-textarea'
+  },
+  inputValidator: (value) => {
+    if (!value || value.trim().length === 0) {
+      return 'ກະລຸນາໃສ່ເຫດຜົນໃນການປະຕິເສດ'
+    }
+    if (value.trim().length < 10) {
+      return 'ເຫດຜົນຕ້ອງມີຢ່າງນ້ອຍ 10 ຕົວອັກສອນ'
+    }
+    if (value.length > 250) {
+      return 'ເຫດຜົນຕ້ອງບໍ່ເກີນ 250 ຕົວອັກສອນ'
+    }
+  },
+  showCancelButton: true,
+  confirmButtonText: '<i class="fas fa-times-circle"></i> ປະຕິເສດ',
+  cancelButtonText: '<i class="fas fa-arrow-left"></i> ຍົກເລີກ',
+  confirmButtonColor: '#ef4444',
+  cancelButtonColor: '#6b7280',
+  buttonsStyling: false,
+  customClass: {
+    popup: 'custom-popup',
+    title: 'custom-title',
+    htmlContainer: 'custom-html',
+    input: 'custom-input',
+    inputLabel: 'custom-input-label',
+    confirmButton: 'custom-confirm-btn',
+    cancelButton: 'custom-cancel-btn',
+    actions: 'custom-actions'
+  },
+  width: '560px',
+  padding: '2rem',
+  background: '#ffffff',
+  backdrop: 'rgba(0, 0, 0, 0.6)',
+  showClass: {
+    popup: 'animate__animated animate__fadeInDown animate__faster'
+  },
+  hideClass: {
+    popup: 'animate__animated animate__fadeOutUp animate__faster'
+  },
+  didOpen: () => {
+    // Add custom styles
+    const style = document.createElement('style');
+    style.textContent = `
+      /* Custom SweetAlert2 Styles */
+      .custom-popup {
+        border-radius: 16px !important;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+        border: 1px solid rgba(229, 231, 235, 0.8) !important;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
       }
-      if (value.trim().length < 1) {
-        return 'ເຫດຜົນຕ້ອງມີຢ່າງນ້ອຍ 10 ຕົວອັກສອນ'
+      
+      .custom-title {
+        font-size: 1.5rem !important;
+        font-weight: 600 !important;
+        color: #1f2937 !important;
+        margin-bottom: 1rem !important;
+        line-height: 1.2 !important;
       }
-      if (value.length > 500) {
-        return 'ເຫດຜົນຕ້ອງບໍ່ເກີນ 500 ຕົວອັກສອນ'
+      
+      .custom-html {
+        margin-bottom: 1rem !important;
       }
-    },
-    showCancelButton: true,
-    confirmButtonText: 'ປະຕິເສດ',
-    cancelButtonText: 'ຍົກເລີກ',
-    confirmButtonColor: '#ff9800',
-    cancelButtonColor: '#9e9e9e',
-    width: '600px'
-  })
+      
+      .rejection-content {
+        text-align: center;
+        line-height: 1.3;
+      }
+      
+      .rejection-subtitle {
+        font-size: 1rem;
+        color: #6b7280;
+        margin-bottom: 0.5rem;
+        font-weight: 400;
+        line-height: 1.3;
+      }
+      
+      .reference-number {
+        display: inline-block;
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        color: #92400e;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin: 0.5rem 0;
+        border: 1px solid #f59e0b;
+        letter-spacing: 0.025em;
+      }
+      
+      .rejection-warning {
+        font-size: 0.875rem;
+        color: #dc2626;
+        margin-top: 0.75rem;
+        background: #fef2f2;
+        padding: 0.5rem;
+        border-radius: 8px;
+        border-left: 4px solid #ef4444;
+        font-weight: 500;
+        line-height: 1.3;
+      }
+      
+      .custom-input-label {
+        font-weight: 600 !important;
+        color: #374151 !important;
+        margin-bottom: 0.5rem !important;
+        font-size: 0.95rem !important;
+      }
+      
+      .custom-input {
+        border: 2px solid #e5e7eb !important;
+        border-radius: 12px !important;
+        padding: 0.875rem !important;
+        font-size: 0.95rem !important;
+        line-height: 1.3 !important;
+        transition: all 0.2s ease !important;
+        font-family: inherit !important;
+        resize: vertical !important;
+        min-height: 80px !important;
+      }
+      
+      .custom-input:focus {
+        border-color: #3b82f6 !important;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+        outline: none !important;
+      }
+      
+      .custom-actions {
+        gap: 0.75rem !important;
+        margin-top: 2rem !important;
+      }
+      
+      .custom-confirm-btn {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 10px !important;
+        padding: 0.75rem 1.5rem !important;
+        font-weight: 600 !important;
+        font-size: 0.95rem !important;
+        transition: all 0.2s ease !important;
+        min-width: 120px !important;
+        box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.3) !important;
+      }
+      
+      .custom-confirm-btn:hover {
+        transform: translateY(-1px) !important;
+        box-shadow: 0 8px 12px -1px rgba(239, 68, 68, 0.4) !important;
+        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
+      }
+      
+      .custom-cancel-btn {
+        background: #f8fafc !important;
+        color: #6b7280 !important;
+        border: 2px solid #e5e7eb !important;
+        border-radius: 10px !important;
+        padding: 0.75rem 1.5rem !important;
+        font-weight: 600 !important;
+        font-size: 0.95rem !important;
+        transition: all 0.2s ease !important;
+        min-width: 120px !important;
+      }
+      
+      .custom-cancel-btn:hover {
+        background: #f1f5f9 !important;
+        border-color: #d1d5db !important;
+        color: #4b5563 !important;
+        transform: translateY(-1px) !important;
+      }
+      
+      /* Warning icon enhancement */
+      .swal2-icon.swal2-warning {
+        border-color: #f59e0b !important;
+        color: #f59e0b !important;
+        background: rgba(245, 158, 11, 0.1) !important;
+      }
+      
+      /* Character counter */
+      .swal2-input:focus + .char-counter {
+        opacity: 1;
+      }
+      
+      /* Validation error styling */
+      .swal2-validation-message {
+        background: #fef2f2 !important;
+        color: #dc2626 !important;
+        border: 1px solid #fecaca !important;
+        border-radius: 8px !important;
+        font-weight: 500 !important;
+      }
+    `;
+    document.head.appendChild(style);
+    
+    // Add character counter
+    const textarea = document.querySelector('.custom-input');
+    if (textarea) {
+      const counter = document.createElement('div');
+      counter.className = 'char-counter';
+      counter.style.cssText = `
+        position: absolute;
+        right: 12px;
+        bottom: 8px;
+        font-size: 0.75rem;
+        color: #9ca3af;
+        font-weight: 500;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+      `;
+      
+      const updateCounter = () => {
+        const current = textarea.value.length;
+        const max = 250;
+        counter.textContent = `${current}/${max}`;
+        counter.style.color = current > max * 0.9 ? '#ef4444' : '#9ca3af';
+      };
+      
+      textarea.parentNode.style.position = 'relative';
+      textarea.parentNode.appendChild(counter);
+      textarea.addEventListener('input', updateCounter);
+      textarea.addEventListener('focus', () => counter.style.opacity = '1');
+      textarea.addEventListener('blur', () => counter.style.opacity = '0');
+      updateCounter();
+    }
+  }
+})
 
   if (!result.isConfirmed) return
 
@@ -1729,26 +1941,9 @@ watch(permissions, (newPermissions) => {
       <v-form ref="editFormRef" class="edit-form">
         <v-row dense>
           <!-- Amount Field -->
-          <v-col cols="12" md="6">
-            <v-text-field
-              v-model="editForm.Fcy_Amount"
-              label="ຈຳນວນເງິນ FCY *"
-              type="number"
-              step="0.01"
-              variant="outlined"
-              density="comfortable"
-              prepend-inner-icon="mdi-currency-usd"
-              :rules="[
-                v => !!v || 'ກະລຸນາໃສ່ຈຳນວນເງິນ',
-                v => v > 0 || 'ຈຳນວນເງິນຕ້ອງມີຄ່າມາກກ່ວາ 0'
-              ]"
-              :suffix="editForm.currency_code"
-              required
-            ></v-text-field>
-          </v-col>
-
+          
           <!-- Exchange Rate Info -->
-          <v-col cols="12" md="6" v-if="editFormCurrency && editForm.currency_code !== 'LAK'">
+          <!-- <v-col cols="12" md="6" v-if="editFormCurrency && editForm.currency_code !== 'LAK'">
             <v-text-field
               :model-value="editFormCurrency.Sale_Rate || '1.000000'"
               label="ອັດຕາແລກປ່ຽນ"
@@ -1760,7 +1955,7 @@ watch(permissions, (newPermissions) => {
               hint="ອັດຕາແລກປ່ຽນປັດຈຸບັນ"
               persistent-hint
             ></v-text-field>
-          </v-col>
+          </v-col> -->
 
           <!-- Debit Account Selection -->
           <v-col cols="12" md="6">
@@ -1855,6 +2050,43 @@ watch(permissions, (newPermissions) => {
               </div>
             </v-alert>
           </v-col>
+          <!-- FCY INfo -->
+          <v-col cols="12" md="6">
+            <v-text-field
+              v-model="editForm.Fcy_Amount"
+              label="ຈຳນວນເງິນ FCY *"
+              type="number"
+              step="0.01"
+              variant="outlined"
+              density="comfortable"
+              prepend-inner-icon="mdi-currency-usd"
+              :rules="[
+                v => !!v || 'ກະລຸນາໃສ່ຈຳນວນເງິນ',
+                v => v > 0 || 'ຈຳນວນເງິນຕ້ອງມີຄ່າມາກກ່ວາ 0'
+              ]"
+              :suffix="editForm.currency_code"
+              required
+            ></v-text-field>
+          </v-col>
+          <!-- LCY Info -->
+                     <v-col cols="12" md="6">
+            <v-text-field
+              v-model="editForm.Lcy_Amount"
+              disabled="disabled"
+              label="ຈຳນວນເງິນ LCY *"
+              type="number"
+              step="0.01"
+              variant="outlined"
+              density="comfortable"
+              prepend-inner-icon="mdi-currency-usd"
+              :rules="[
+                v => !!v || 'ກະລຸນາໃສ່ຈຳນວນເງິນ',
+                v => v > 0 || 'ຈຳນວນເງິນຕ້ອງມີຄ່າມາກກ່ວາ 0'
+              ]"
+              :suffix="editForm.currency_code"
+              required
+            ></v-text-field>
+          </v-col>
           
           <!-- Main Text -->
           <v-col cols="12" md="6">
@@ -1905,7 +2137,7 @@ watch(permissions, (newPermissions) => {
           </v-col>
 
           <!-- Built Account Numbers Preview -->
-          <v-col cols="12" v-if="selectedDebitAccount && selectedCreditAccount && editFormCurrency">
+          <!-- <v-col cols="12" v-if="selectedDebitAccount && selectedCreditAccount && editFormCurrency">
             <v-alert type="success" variant="tonal" density="compact">
               <template #prepend>
                 <v-icon size="16">mdi-check-circle</v-icon>
@@ -1919,7 +2151,7 @@ watch(permissions, (newPermissions) => {
                 </span>
               </div>
             </v-alert>
-          </v-col>
+          </v-col> -->
         </v-row>
       </v-form>
     </v-card-text>
