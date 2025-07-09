@@ -1,3 +1,1083 @@
+<script setup>
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import axios from '@/helpers/axios'
+import Swal from 'sweetalert2'
+import { useRolePermissions } from '@/composables/useRolePermissions'
+
+// Router and route
+const route = useRoute()
+const router = useRouter()
+
+// Role Permissions
+const {
+  initializeRole,
+  canView,
+  canEdit,
+  canDelete,
+  canAuthorize,
+  canAdd,
+  hasPermission,
+  permissions
+} = useRolePermissions()
+
+// State
+const loading = ref(false)
+const error = ref(null)
+const selectedItem = ref(null)
+const journalEntries = ref([])
+const modules = ref([])
+const currencies = ref([]) // Added missing currencies ref
+const isDeletingPair = ref(false)
+const deletingRefSubNo = ref(null)
+const isRejectingPair = ref(false)
+const rejectingRefSubNo = ref(null)
+const isEditingPair = ref(false)
+const editingRefSubNo = ref(null)
+const editDialog = ref(false)
+
+// Updated editForm reactive object definition
+const editForm = ref({
+  Reference_sub_No: '',
+  Fcy_Amount: 0,
+  Addl_text: '',
+  Addl_sub_text: '',
+  comments: '',
+  glsub_id: null,
+  relative_glsub_id: null,
+  // New fields for display and tracking
+  debit_account_code: '',
+  credit_account_code: '',
+  currency_code: ''
+})
+
+const editFormRef = ref(null)
+const accounts = ref([])
+const loadingAccounts = ref(false)
+const selectedDebitAccount = ref(null)
+const selectedCreditAccount = ref(null)
+const editFormCurrency = ref(null)
+
+// Helper functions - moved to proper scope
+const getAuthHeaders = () => ({
+  headers: {
+    Authorization: `Bearer ${localStorage.getItem("token")}`,
+  }
+})
+
+// Add this helper function to get account code from various sources
+const getAccountCode = (accountId) => {
+  if (!accountId) return ''
+  
+  // Try to find in accounts list
+  let account = accounts.value.find(a => a.glsub_id === accountId)
+  
+  if (account) {
+    return account.glsub_code || account.account_code || ''
+  }
+  
+  return ''
+}
+
+// Add this helper function to get currency info
+const getCurrencyInfo = (ccyCode) => {
+  if (!ccyCode) return null
+  return currencies.value.find(c => c.ccy_code === ccyCode)
+}
+
+// Add this helper function to build account number like in GLCaptureCreate
+const buildAccountNo = (accountId, currencyCode = null) => {
+  let code = getAccountCode(accountId)
+  if (!code) return ''
+  
+  // Get currency info to check for ALT_Ccy_Code
+  const currency = getCurrencyInfo(currencyCode || selectedItem.value?.Ccy_cd)
+  const altCcyCode = currency?.ALT_Ccy_Code || ''
+  
+  if (altCcyCode && altCcyCode.trim() !== '') {
+    code = `${altCcyCode}.${code}`
+  }
+  
+  return code
+}
+
+// Computed
+const canApprove = computed(() => {
+  // Check both user permissions and authorization capability
+  return canAuthorize.value && hasPermission('Auth_Detail')
+})
+
+const totalFcyDebit = computed(() => {
+  return journalEntries.value.reduce((sum, entry) => {
+    return sum + parseFloat(entry.fcy_dr || 0)
+  }, 0)
+})
+
+const totalFcyCredit = computed(() => {
+  return journalEntries.value.reduce((sum, entry) => {
+    return sum + parseFloat(entry.fcy_cr || 0)
+  }, 0)
+})
+
+const isBalanced = computed(() => {
+  const fcyBalance = Math.abs(totalFcyDebit.value - totalFcyCredit.value) < 0.01
+  return fcyBalance
+})
+
+// Updated form validation computed to include new validations
+const isEditFormValid = computed(() => {
+  const hasAmount = editForm.value.Fcy_Amount && editForm.value.Fcy_Amount > 0
+  const hasComments = editForm.value.comments && editForm.value.comments.trim().length >= 1
+  const accountsValid = (!editForm.value.glsub_id && !editForm.value.relative_glsub_id) || 
+                       (editForm.value.glsub_id && editForm.value.relative_glsub_id)
+  
+  console.log('Form validation:', {
+    hasAmount,
+    hasComments, 
+    accountsValid,
+    glsub_id: editForm.value.glsub_id,
+    relative_glsub_id: editForm.value.relative_glsub_id,
+    currency_code: editForm.value.currency_code,
+    debit_account_code: editForm.value.debit_account_code,
+    credit_account_code: editForm.value.credit_account_code
+  })
+  
+  return hasAmount && hasComments && accountsValid
+})
+
+// Helper function to get selected account codes for debugging
+const getSelectedAccountCodes = () => {
+  return {
+    debitCode: selectedDebitAccount.value?.glsub_code || editForm.value.debit_account_code || null,
+    creditCode: selectedCreditAccount.value?.glsub_code || editForm.value.credit_account_code || null,
+    debitId: editForm.value.glsub_id,
+    creditId: editForm.value.relative_glsub_id,
+    currencyCode: editForm.value.currency_code,
+    builtDebitAccountNo: editForm.value.glsub_id ? buildAccountNo(editForm.value.glsub_id, editForm.value.currency_code) : null,
+    builtCreditAccountNo: editForm.value.relative_glsub_id ? buildAccountNo(editForm.value.relative_glsub_id, editForm.value.currency_code) : null
+  }
+}
+
+// Check if master entry can be approved
+const canApproveMaster = computed(() => {
+  if (!selectedItem.value || !canAuthorize.value) return false
+  
+  // Can only approve if master status is 'U' (pending approval)
+  const isMasterPending = selectedItem.value.Auth_Status === 'U'
+  
+  // Cannot approve if any journal entries need correction (Auth_Status = 'P')
+  const hasCorrectionsNeeded = journalEntries.value.some(entry => entry.Auth_Status === 'P')
+  
+  console.log('Approve validation:', {
+    isMasterPending,
+    hasCorrectionsNeeded,
+    masterStatus: selectedItem.value.Auth_Status,
+    entriesWithP: journalEntries.value.filter(entry => entry.Auth_Status === 'P').length,
+    canAuthorize: canAuthorize.value,
+    permissions: permissions.value
+  })
+  
+  return isMasterPending && !hasCorrectionsNeeded
+})
+
+// Get Reference_No from route query parameters
+const referenceNo = computed(() => route.query.Reference_No)
+
+// Load data functions
+const loadData = async () => {
+  try {
+    loading.value = true
+    error.value = null
+
+    // Check if Reference_No is provided
+    if (!referenceNo.value) {
+      throw new Error('ບໍ່ພົບເລກອ້າງອີງ Reference_No')
+    }
+
+    // Load master data
+    const masterResponse = await axios.get('/api/journal-log-master/journal-log-active/', {
+      params: { 
+        Reference_No: referenceNo.value,
+      },
+      ...getAuthHeaders()
+    })
+
+    console.log('Master data response:', masterResponse);
+    
+    const masterData = masterResponse.data.results || masterResponse.data || []
+    if (masterData.length === 0) {
+      throw new Error('ບໍ່ພົບຂໍ້ມູນລາຍການນີ້')
+    }
+
+    selectedItem.value = masterData[0]
+
+    console.log('Selected master item:', selectedItem.value)
+
+    // Load journal entries
+    const entriesResponse = await axios.get('/api/journal-entries/', {
+      params: { 
+        Reference_No: referenceNo.value,
+        ordering: 'Dr_cr'
+      },
+      ...getAuthHeaders()
+    })
+
+    journalEntries.value = entriesResponse.data.results || entriesResponse.data || []
+
+    // Debug journal entries structure
+    if (journalEntries.value.length > 0) {
+      console.log('Sample journal entry structure:', journalEntries.value[0])
+      console.log('Account_id type:', typeof journalEntries.value[0].Account_id)
+      console.log('Ac_relatives type:', typeof journalEntries.value[0].Ac_relatives);
+    }
+
+    console.log('Detail data loaded:', {
+      master: selectedItem.value,
+      entries: journalEntries.value,
+      totals: {
+        debit: totalFcyDebit.value,
+        credit: totalFcyCredit.value,
+        balanced: isBalanced.value
+      }
+    })
+
+  } catch (err) {
+    console.error('Error loading detail data:', err)
+    error.value = err.response?.data?.detail || err.message || 'ບໍ່ສາມາດໂຫຼດຂໍ້ມູນໄດ້'
+  } finally {
+    loading.value = false
+  }
+}
+
+const loadAccounts = async () => {
+  try {
+    loadingAccounts.value = true
+    const response = await axios.get('/api/gl-sub/', getAuthHeaders())
+    const accountData = response.data.results || response.data || []
+    
+    // Format accounts for display in select using correct field names
+    accounts.value = accountData.map(account => ({
+      ...account,
+      account_display: `${account.glsub_code} - ${account.glsub_Desc_la || account.glsub_Desc_en || ''}`
+    }))
+    
+    console.log('Accounts loaded:', accounts.value.length)
+    
+  } catch (error) {
+    console.error('Error loading accounts:', error)
+    Swal.fire({
+      icon: 'warning',
+      title: 'ແຈ້ງເຕືອນ',
+      text: 'ບໍ່ສາມາດໂຫຼດລາຍການບັນຊີໄດ້',
+      confirmButtonText: 'ຕົກລົງ'
+    })
+  } finally {
+    loadingAccounts.value = false
+  }
+}
+
+const loadModules = async () => {
+  try {
+    const response = await axios.get('/api/modules/', getAuthHeaders())
+    modules.value = response.data.results || response.data || []
+  } catch (error) {
+    console.error('Error loading modules:', error)
+  }
+}
+
+const loadCurrencies = async () => {
+  try {
+    const response = await axios.get('/api/currencies/', getAuthHeaders())
+    currencies.value = response.data.results || response.data || []
+  } catch (error) {
+    console.error('Error loading currencies:', error)
+  }
+}
+
+// Helper functions
+const formatNumber = (num, decimals = 2) => {
+  if (!num) return '0.00'
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals
+  }).format(num)
+}
+
+const formatDate = (date) => {
+  if (!date) return '-'
+  return new Date(date).toLocaleDateString('lo-LA')
+}
+
+const formatDateTime = (date) => {
+  if (!date) return '-'
+  return new Date(date).toLocaleString('lo-LA')
+}
+
+const getStatusColor = (status) => {
+  switch(status) {
+    case 'A': return 'success'
+    case 'R': return 'error'
+    case 'U': return 'warning'
+    case 'P': return 'info'
+    default: return 'grey'
+  }
+}
+
+const getStatusIcon = (status) => {
+  switch(status) {
+    case 'A': return 'mdi-check-circle'
+    case 'R': return 'mdi-close-circle'
+    case 'U': return 'mdi-clock-outline'
+    case 'P': return 'mdi-pencil-circle'
+    default: return 'mdi-help-circle'
+  }
+}
+
+const getStatusText = (status) => {
+  switch(status) {
+    case 'A': return 'ອະນຸມັດແລ້ວ'
+    case 'R': return 'ປະຕິເສດ'
+    case 'U': return 'ລໍຖ້າອະນຸມັດ'
+    case 'P': return 'ຖ້າເແກ້ໄຂ'
+    default: return 'ບໍ່ຮູ້'
+  }
+}
+
+const getModuleName = (moduleId) => {
+  if (!moduleId) return '-'
+  const module = modules.value.find(m => m.module_Id === moduleId)
+  return module ? module.module_name_la : moduleId
+}
+
+const getMakerName = () => {
+  if (!selectedItem.value || !journalEntries.value.length) {
+    return selectedItem.value?.Maker_Id || '-'
+  }
+  
+  const firstEntry = journalEntries.value[0]
+  return firstEntry?.maker_name || selectedItem.value?.Maker_Id || '-'
+}
+
+// Delete by pair account function
+const deleteByPairAccount = async (referenceSubNo) => {
+  if (!referenceSubNo) {
+    Swal.fire({
+      icon: 'error',
+      title: 'ຂໍ້ຜິດພາດ',
+      text: 'ບໍ່ພົບເລກອ້າງອີງຄູ່',
+      confirmButtonText: 'ຕົກລົງ'
+    })
+    return
+  }
+
+  const result = await Swal.fire({
+    icon: 'warning',
+    title: 'ຢືນຢັນການລຶບ',
+    html: `ທ່ານຕ້ອງການລຶບບັນທຶກຄູ່:<br><strong>${referenceSubNo}</strong><br><br>ການລຶບນີ້ຈະລຶບທັງຄູ່ບັນທຶກ (Debit ແລະ Credit)`,
+    showCancelButton: true,
+    confirmButtonText: 'ລຶບ',
+    cancelButtonText: 'ຍົກເລີກ',
+    confirmButtonColor: '#f44336',
+    cancelButtonColor: '#9e9e9e'
+  })
+
+  if (!result.isConfirmed) return
+
+  try {
+    isDeletingPair.value = true
+    deletingRefSubNo.value = referenceSubNo
+
+    await axios.delete(`/api/journal-entries/delete-by-pair-account/`, {
+      data: { Reference_sub_No: referenceSubNo },
+      ...getAuthHeaders()
+    })
+
+    Swal.fire({
+      icon: 'success',
+      title: 'ສຳເລັດ',
+      text: 'ລຶບບັນທຶກຄູ່ສຳເລັດແລ້ວ',
+      timer: 2000,
+      showConfirmButton: false
+    })
+
+    // Reload data
+    await loadData()
+
+  } catch (error) {
+    console.error('Error deleting journal entry pair:', error)
+    
+    let errorMessage = 'ບໍ່ສາມາດລຶບບັນທຶກຄູ່ໄດ້'
+    if (error.response?.status === 404) {
+      errorMessage = 'ບໍ່ພົບບັນທຶກທີ່ຕ້ອງການລຶບ'
+    } else if (error.response?.status === 400) {
+      errorMessage = error.response.data?.detail || 'ຂໍ້ມູນບໍ່ຖືກຕ້ອງ'
+    }
+    
+    Swal.fire({
+      icon: 'error',
+      title: 'ຂໍ້ຜິດພາດ',
+      text: errorMessage,
+      confirmButtonText: 'ຕົກລົງ'
+    })
+    
+  } finally {
+    isDeletingPair.value = false
+    deletingRefSubNo.value = null
+  }
+}
+
+// Reject by pair account function
+const rejectByPairAccount = async (referenceSubNo) => {
+  if (!referenceSubNo) {
+    Swal.fire({
+      icon: 'error',
+      title: 'ຂໍ້ຜິດພາດ',
+      text: 'ບໍ່ພົບເລກອ້າງອີງຄູ່',
+      confirmButtonText: 'ຕົກລົງ'
+    })
+    return
+  }
+
+  const result = await Swal.fire({
+    icon: 'warning',
+    title: 'ປະຕິເສດບັນທຶກຄູ່',
+    html: `ທ່ານຕ້ອງການປະຕິເສດບັນທຶກຄູ່:<br><strong>${referenceSubNo}</strong><br><br>ການປະຕິເສດນີ້ຈະປະຕິເສດທັງຄູ່ບັນທຶກ (Debit ແລະ Credit)`,
+    input: 'textarea',
+    inputLabel: 'ເຫດຜົນໃນການປະຕິເສດ *',
+    inputPlaceholder: 'ກະລຸນາໃສ່ເຫດຜົນການປະຕິເສດ...',
+    inputAttributes: {
+      'aria-label': 'Rejection reason',
+      'rows': 3,
+      'maxlength': 500
+    },
+    inputValidator: (value) => {
+      if (!value || value.trim().length === 0) {
+        return 'ກະລຸນາໃສ່ເຫດຜົນໃນການປະຕິເສດ'
+      }
+      if (value.trim().length < 1) {
+        return 'ເຫດຜົນຕ້ອງມີຢ່າງນ້ອຍ 10 ຕົວອັກສອນ'
+      }
+      if (value.length > 500) {
+        return 'ເຫດຜົນຕ້ອງບໍ່ເກີນ 500 ຕົວອັກສອນ'
+      }
+    },
+    showCancelButton: true,
+    confirmButtonText: 'ປະຕິເສດ',
+    cancelButtonText: 'ຍົກເລີກ',
+    confirmButtonColor: '#ff9800',
+    cancelButtonColor: '#9e9e9e',
+    width: '600px'
+  })
+
+  if (!result.isConfirmed) return
+
+  try {
+    isRejectingPair.value = true
+    rejectingRefSubNo.value = referenceSubNo
+
+    await axios.post(`/api/journal-entries/reject-by-pair-account/`, {
+      Reference_sub_No: referenceSubNo,
+      comments: result.value.trim()
+    }, getAuthHeaders())
+
+    Swal.fire({
+      icon: 'success',
+      title: 'ສຳເລັດ',
+      text: 'ປະຕິເສດບັນທຶກຄູ່ສຳເລັດແລ້ວ',
+      timer: 2000,
+      showConfirmButton: false
+    })
+
+    // Reload data
+    await loadData()
+
+  } catch (error) {
+    console.error('Error rejecting journal entry pair:', error)
+    
+    let errorMessage = 'ບໍ່ສາມາດປະຕິເສດບັນທຶກຄູ່ໄດ້'
+    if (error.response?.status === 404) {
+      errorMessage = 'ບໍ່ພົບບັນທຶກທີ່ຕ້ອງການປະຕິເສດ'
+    } else if (error.response?.status === 400) {
+      errorMessage = error.response.data?.detail || 'ຂໍ້ມູນບໍ່ຖືກຕ້ອງ'
+    }
+    
+    Swal.fire({
+      icon: 'error',
+      title: 'ຂໍ້ຜິດພາດ',
+      text: errorMessage,
+      confirmButtonText: 'ຕົກລົງ'
+    })
+    
+  } finally {
+    isRejectingPair.value = false
+    rejectingRefSubNo.value = null
+  }
+}
+
+// Updated editByPairAccount function - CORRECTED VERSION
+const editByPairAccount = (entry) => {
+  console.log('=== EDIT FORM DEBUG ===')
+  console.log('Editing entry:', entry)
+  console.log('Entry account_code:', entry.account_code)
+  console.log('Entry Account:', entry.Account, 'Type:', typeof entry.Account)
+  console.log('Entry Ac_relatives:', entry.Ac_relatives)
+  console.log('Entry Ccy_cd:', entry.Ccy_cd)
+  
+  // Find the related entry (debit/credit pair)
+  const relatedEntry = journalEntries.value.find(e => 
+    e.Reference_sub_No === entry.Reference_sub_No && e.JRNLLog_id !== entry.JRNLLog_id
+  )
+  
+  console.log('Related entry:', relatedEntry)
+  if (relatedEntry) {
+    console.log('Related account_code:', relatedEntry.account_code)
+    console.log('Related Account:', relatedEntry.Account)
+    console.log('Related Ac_relatives:', relatedEntry.Ac_relatives)
+  }
+  
+  // Function to safely extract glsub_id from various account formats
+  const getAccountId = (account) => {
+    if (!account) return null
+    if (typeof account === 'number') return account
+    if (typeof account === 'object' && account.glsub_id !== undefined) {
+      return parseInt(account.glsub_id)
+    }
+    if (typeof account === 'string') {
+      const num = parseInt(account)
+      if (!isNaN(num)) return num
+    }
+    return null
+  }
+  
+  // Get account IDs from the entries
+  const currentAccountId = getAccountId(entry.Account)
+  const relatedAccountId = relatedEntry ? getAccountId(relatedEntry.Account) : null
+  
+  console.log('Account IDs extracted:')
+  console.log('- currentAccountId:', currentAccountId)
+  console.log('- relatedAccountId:', relatedAccountId)
+  
+  // Determine debit and credit accounts based on Dr_cr flag
+  let debitAccountId, creditAccountId, debitAccountCode, creditAccountCode
+  
+  if (entry.Dr_cr === 'D') {
+    // Current entry is debit
+    debitAccountId = currentAccountId
+    creditAccountId = relatedAccountId
+    debitAccountCode = entry.account_code
+    creditAccountCode = relatedEntry?.account_code
+  } else {
+    // Current entry is credit, so related is debit
+    debitAccountId = relatedAccountId  
+    creditAccountId = currentAccountId
+    debitAccountCode = relatedEntry?.account_code
+    creditAccountCode = entry.account_code
+  }
+  
+  console.log('Final account assignment:')
+  console.log('- debitAccountId (glsub_id):', debitAccountId)
+  console.log('- creditAccountId (relative_glsub_id):', creditAccountId)
+  console.log('- debitAccountCode:', debitAccountCode)
+  console.log('- creditAccountCode:', creditAccountCode)
+  
+  // Set currency info
+  editFormCurrency.value = getCurrencyInfo(entry.Ccy_cd)
+  console.log('Currency info:', editFormCurrency.value)
+  
+  // Populate edit form with current entry data
+  editForm.value = {
+    Reference_sub_No: entry.Reference_sub_No,
+    Fcy_Amount: parseFloat(entry.fcy_dr || entry.fcy_cr || 0),
+    Addl_text: entry.Addl_text || '',
+    Addl_sub_text: entry.Addl_sub_text || '',
+    comments: '',
+    glsub_id: debitAccountId,
+    relative_glsub_id: creditAccountId,
+    // Add these for display purposes
+    debit_account_code: debitAccountCode,
+    credit_account_code: creditAccountCode,
+    currency_code: entry.Ccy_cd
+  }
+  
+  // Set selected account objects for display
+  if (debitAccountId) {
+    selectedDebitAccount.value = accounts.value.find(acc => acc.glsub_id === debitAccountId)
+    if (!selectedDebitAccount.value) {
+      // Create a temporary object if not found in accounts list
+      selectedDebitAccount.value = {
+        glsub_id: debitAccountId,
+        glsub_code: debitAccountCode,
+        account_display: `${debitAccountCode} - Debit Account`
+      }
+    }
+  }
+  
+  if (creditAccountId) {
+    selectedCreditAccount.value = accounts.value.find(acc => acc.glsub_id === creditAccountId)
+    if (!selectedCreditAccount.value) {
+      // Create a temporary object if not found in accounts list
+      selectedCreditAccount.value = {
+        glsub_id: creditAccountId,
+        glsub_code: creditAccountCode,
+        account_display: `${creditAccountCode} - Credit Account`
+      }
+    }
+  }
+  
+  console.log('Edit form populated:', editForm.value)
+  console.log('Selected accounts:', {
+    debit: selectedDebitAccount.value,
+    credit: selectedCreditAccount.value,
+    currency: editFormCurrency.value
+  })
+  console.log('=== END EDIT FORM DEBUG ===')
+  
+  editDialog.value = true
+}
+
+// Updated account change handlers
+const onDebitAccountChange = (glsubId) => {
+  if (glsubId) {
+    selectedDebitAccount.value = accounts.value.find(acc => acc.glsub_id === glsubId)
+    // Update the account code in form for display
+    if (selectedDebitAccount.value) {
+      editForm.value.debit_account_code = selectedDebitAccount.value.glsub_code
+    }
+    console.log('Selected debit account:', selectedDebitAccount.value)
+  } else {
+    selectedDebitAccount.value = null
+    editForm.value.debit_account_code = ''
+  }
+}
+
+const onCreditAccountChange = (glsubId) => {
+  if (glsubId) {
+    selectedCreditAccount.value = accounts.value.find(acc => acc.glsub_id === glsubId)
+    // Update the account code in form for display
+    if (selectedCreditAccount.value) {
+      editForm.value.credit_account_code = selectedCreditAccount.value.glsub_code
+    }
+    console.log('Selected credit account:', selectedCreditAccount.value)
+  } else {
+    selectedCreditAccount.value = null
+    editForm.value.credit_account_code = ''
+  }
+}
+
+// Updated closeEditDialog function
+const closeEditDialog = () => {
+  editDialog.value = false
+  editForm.value = {
+    Reference_sub_No: '',
+    Fcy_Amount: 0,
+    Addl_text: '',
+    Addl_sub_text: '',
+    comments: '',
+    glsub_id: null,
+    relative_glsub_id: null,
+    debit_account_code: '',
+    credit_account_code: '',
+    currency_code: ''
+  }
+  // Clear selected accounts and currency
+  selectedDebitAccount.value = null
+  selectedCreditAccount.value = null
+  editFormCurrency.value = null
+}
+
+// Updated fixRejectedEntry function with buildAccountNo logic
+const fixRejectedEntry = async () => {
+  try {
+    isEditingPair.value = true
+    editingRefSubNo.value = editForm.value.Reference_sub_No
+
+    console.log('=== FIX REJECTED DEBUG ===')
+    console.log('Form data before validation:', editForm.value)
+
+    // Validate form data
+    if (!editForm.value.Fcy_Amount || editForm.value.Fcy_Amount <= 0) {
+      throw new Error('ກະລຸນາໃສ່ຈຳນວນເງິນທີ່ຖືກຕ້ອງ')
+    }
+
+    if (!editForm.value.comments || editForm.value.comments.trim().length < 1) {
+      throw new Error('ກະລຸນາໃສ່ເຫດຜົນການແກ້ໄຂທີ່ມີຄວາມຍາວຢ່າງນ້ອຍ 1 ຕົວອັກສອນ')
+    }
+
+    if (editForm.value.comments.length > 1000) {
+      throw new Error('ເຫດຜົນການແກ້ໄຂຕ້ອງບໍ່ເກີນ 1000 ຕົວອັກສອນ')
+    }
+
+    // Validate account fields - both must be provided together or not at all
+    const hasDebitAccount = editForm.value.glsub_id !== null && editForm.value.glsub_id !== undefined && editForm.value.glsub_id !== ''
+    const hasCreditAccount = editForm.value.relative_glsub_id !== null && editForm.value.relative_glsub_id !== undefined && editForm.value.relative_glsub_id !== ''
+    
+    console.log('Account validation:')
+    console.log('- glsub_id:', editForm.value.glsub_id, 'Type:', typeof editForm.value.glsub_id, 'Has:', hasDebitAccount)
+    console.log('- relative_glsub_id:', editForm.value.relative_glsub_id, 'Type:', typeof editForm.value.relative_glsub_id, 'Has:', hasCreditAccount)
+    
+    if (hasDebitAccount !== hasCreditAccount) {
+      throw new Error('ກະລຸນາເລືອກທັງບັນຊີ Debit ແລະ Credit ພ້ອມກັນ ຫຼື ບໍ່ເລືອກເລີຍ')
+    }
+
+    // Prepare request data according to backend function
+    const requestData = {
+      Reference_sub_No: editForm.value.Reference_sub_No,
+      comments: editForm.value.comments.trim(),
+      Fcy_Amount: parseFloat(editForm.value.Fcy_Amount)
+    }
+
+    // Add optional fields only if they have values
+    if (editForm.value.Addl_text && editForm.value.Addl_text.trim()) {
+      requestData.Addl_text = editForm.value.Addl_text.trim()
+    }
+
+    if (editForm.value.Addl_sub_text && editForm.value.Addl_sub_text.trim()) {
+      requestData.Addl_sub_text = editForm.value.Addl_sub_text.trim()
+    }
+
+    // Add account fields if both are selected - with buildAccountNo logic
+    if (hasDebitAccount && hasCreditAccount) {
+      // Convert to numbers and validate they are actually numbers
+      const debitId = Number(editForm.value.glsub_id)
+      const creditId = Number(editForm.value.relative_glsub_id)
+      
+      console.log('Converting account IDs:')
+      console.log('- Original glsub_id:', editForm.value.glsub_id, '→ Number:', debitId, 'IsNaN:', isNaN(debitId))
+      console.log('- Original relative_glsub_id:', editForm.value.relative_glsub_id, '→ Number:', creditId, 'IsNaN:', isNaN(creditId))
+      
+      if (isNaN(debitId) || isNaN(creditId) || debitId <= 0 || creditId <= 0) {
+        throw new Error('ລະບຸບັນຊີບໍ່ຖືກຕ້ອງ - ກະລຸນາເລືອກບັນຊີໃໝ່')
+      }
+      
+      // Use buildAccountNo logic to create Account_no fields
+      const debitAccountNo = buildAccountNo(debitId, editForm.value.currency_code)
+      const creditAccountNo = buildAccountNo(creditId, editForm.value.currency_code)
+      
+      console.log('Built account numbers:')
+      console.log('- Debit Account_no:', debitAccountNo)
+      console.log('- Credit Account_no:', creditAccountNo)
+      
+      // Make sure we're sending integers, not floats
+      requestData.glsub_id = Math.floor(debitId)
+      requestData.relative_glsub_id = Math.floor(creditId)
+      
+      // Add the built account numbers
+      requestData.debit_account_no = debitAccountNo
+      requestData.credit_account_no = creditAccountNo
+      
+      // Double-check the final values
+      console.log('Final account data being sent:')
+      console.log('- glsub_id:', requestData.glsub_id, 'Type:', typeof requestData.glsub_id, 'Is Integer:', Number.isInteger(requestData.glsub_id))
+      console.log('- relative_glsub_id:', requestData.relative_glsub_id, 'Type:', typeof requestData.relative_glsub_id, 'Is Integer:', Number.isInteger(requestData.relative_glsub_id))
+      console.log('- debit_account_no:', requestData.debit_account_no)
+      console.log('- credit_account_no:', requestData.credit_account_no)
+    }
+
+    console.log('Final request data:', requestData)
+
+    const response = await axios.post(`/api/journal-entries/fix-rejected/`, requestData, getAuthHeaders())
+
+    console.log('API Response:', response.data)
+
+    // Success notification
+    let successDetails = [
+      '• ອັດເດດສະຖານະຈາກ \'P\' ເປັນ \'U\'',
+      '• ບັນທຶກເຫດຜົນການແກ້ໄຂແລ້ວ'
+    ]
+    
+    if (requestData.glsub_id) {
+      successDetails.push('• ອັດເດດບັນຊີແລ້ວ')
+      successDetails.push(`• ບັນຊີ Debit: ${requestData.debit_account_no}`)
+      successDetails.push(`• ບັນຊີ Credit: ${requestData.credit_account_no}`)
+    }
+
+    Swal.fire({
+      icon: 'success',
+      title: 'ສຳເລັດ',
+      html: `
+        <div class="text-left">
+          <p><strong>ແກ້ໄຂບັນທຶກຄູ່ສຳເລັດແລ້ວ!</strong></p>
+          <hr class="my-2">
+          ${successDetails.map(detail => `<p><small>${detail}</small></p>`).join('')}
+        </div>
+      `,
+      timer: 4000,
+      showConfirmButton: false
+    })
+
+    // Close dialog and reload data
+    closeEditDialog()
+    await loadData()
+
+    console.log('=== END FIX REJECTED DEBUG ===')
+
+  } catch (error) {
+    console.error('=== ERROR FIXING REJECTED ENTRY ===')
+    console.error('Error object:', error)
+    console.error('Error response:', error.response)
+    
+    let errorMessage = 'ບໍ່ສາມາດແກ້ໄຂບັນທຶກຄູ່ໄດ້'
+    
+    if (error.response) {
+      const status = error.response.status
+      const errorData = error.response.data
+      
+      console.error('Response status:', status)
+      console.error('Response data:', errorData)
+      
+      if (status === 404) {
+        errorMessage = 'ບໍ່ພົບບັນທຶກທີ່ຕ້ອງການແກ້ໄຂ ຫຼື ສະຖານະບໍ່ແມ່ນ P'
+      } else if (status === 400) {
+        if (errorData?.detail?.includes('glsub_id')) {
+          errorMessage = `ບັນຊີທີ່ເລືອກບໍ່ຖືກຕ້ອງ: ${errorData.detail}`
+        } else if (errorData?.detail?.includes('Comments')) {
+          errorMessage = 'ເຫດຜົນການແກ້ໄຂບໍ່ຖືກຕ້ອງ'
+        } else if (errorData?.detail?.includes('Fcy_Amount')) {
+          errorMessage = 'ຈຳນວນເງິນບໍ່ຖືກຕ້ອງ'
+        } else {
+          errorMessage = errorData?.detail || 'ຂໍ້ມູນບໍ່ຖືກຕ້ອງ'
+        }
+      } else if (errorData?.detail) {
+        errorMessage = errorData.detail
+      }
+    } else if (error.message) {
+      errorMessage = error.message
+    }
+    
+    console.error('Final error message:', errorMessage)
+    
+    Swal.fire({
+      icon: 'error',
+      title: 'ຂໍ້ຜິດພາດ',
+      text: errorMessage,
+      confirmButtonText: 'ຕົກລົງ'
+    })
+    
+  } finally {
+    isEditingPair.value = false
+    editingRefSubNo.value = null
+  }
+}
+
+// Approve function
+const approveItem = async (item) => {
+  const result = await Swal.fire({
+    icon: 'question',
+    title: 'ຢືນຢັນການອະນຸມັດ',
+    text: `ທ່ານຕ້ອງການອະນຸມັດລາຍການ ${item.Reference_No} ແທ້ບໍ?`,
+    showCancelButton: true,
+    confirmButtonText: 'ອະນຸມັດ',
+    cancelButtonText: 'ຍົກເລີກ',
+    confirmButtonColor: '#4caf50',
+    cancelButtonColor: '#9e9e9e'
+  })
+
+  if (result.isConfirmed) {
+    try {
+      // Array to store promises for parallel execution
+      const approvalPromises = []
+
+      // 1. Always call approve-all endpoint (updates MASTER, LOG, and HIST tables)
+      console.log('Calling approve-all for:', item.Reference_No)
+      approvalPromises.push(
+        axios.post('/api/journal-entries/approve-all/', {
+          Reference_No: item.Reference_No
+        }, getAuthHeaders())
+      )
+
+      // 2. Call approve-asset endpoint if Ac_relatives exists and is not empty
+      if (item.Ac_relatives && item.Ac_relatives.trim() !== '') {
+        console.log('Calling approve-asset for:', item.Ac_relatives)
+        approvalPromises.push(
+          axios.post('/api/journal-entries/approve-asset/', { 
+            Ac_relatives: item.Ac_relatives,
+            module_id: "AS"
+          }, getAuthHeaders())
+        )
+      } else {
+        console.log('No Ac_relatives found or empty, skipping asset approval')
+      }
+
+      // Execute all API calls in parallel
+      const responses = await Promise.all(approvalPromises)
+      
+      // Log responses
+      console.log('Approve-all response:', responses[0].data)
+      if (responses[1]) {
+        console.log('Approve-asset response:', responses[1].data)
+      }
+
+      // Show success message
+      let successMessage = responses[0].data.message || 'ອະນຸມັດລາຍການສຳເລັດແລ້ວ'
+      
+      // If asset was also approved, add to success message
+      if (responses[1] && responses[1].data.success) {
+        successMessage += '\nອະນຸມັດຊັບສິນສຳເລັດ'
+      }
+
+      Swal.fire({
+        icon: 'success',
+        title: 'ສຳເລັດ',
+        text: successMessage,
+        timer: 2000,
+        showConfirmButton: false
+      })
+      
+      // Reload data to show updated status
+      await loadData()
+      
+    } catch (error) {
+      console.error('Error approving item:', error)
+      
+      let errorMessage = 'ບໍ່ສາມາດອະນຸມັດລາຍການໄດ້'
+      
+      // Handle errors from either endpoint
+      if (error.response?.data?.error) {
+        const backendError = error.response.data.error
+        if (backendError.includes('already approved')) {
+          errorMessage = 'ລາຍການນີ້ໄດ້ຮັບການອະນຸມັດແລ້ວ'
+        } else if (backendError.includes('problematic entries')) {
+          errorMessage = 'ມີລາຍການທີ່ມີບັນຫາ (P ຫຼື R) ບໍ່ສາມາດອະນຸມັດໄດ້'
+        } else if (backendError.includes('Invalid module_id')) {
+          errorMessage = 'ປະເພດໂມດູນບໍ່ຖືກຕ້ອງ'
+        } else if (backendError.includes('No asset found')) {
+          errorMessage = 'ບໍ່ພົບຊັບສິນທີ່ຕ້ອງການອະນຸມັດ'
+        } else if (backendError.includes('Ac_relatives is required')) {
+          errorMessage = 'ຂາດຂໍ້ມູນ Ac_relatives'
+        } else {
+          errorMessage = backendError
+        }
+      } else if (error.response?.status === 404) {
+        errorMessage = 'ບໍ່ພົບລາຍການທີ່ຕ້ອງການອະນຸມັດ'
+      } else if (error.response?.status === 400) {
+        errorMessage = error.response.data?.detail || 'ຂໍ້ມູນບໍ່ຖືກຕ້ອງ'
+      }
+      
+      Swal.fire({
+        icon: 'error',
+        title: 'ຂໍ້ຜິດພາດ',
+        text: errorMessage,
+        confirmButtonText: 'ຕົກລົງ'
+      })
+    }
+  }
+}
+
+// Reject function
+const rejectItem = async (item) => {
+  const result = await Swal.fire({
+    icon: 'warning',
+    title: 'ຢືນຢັນການປະຕິເສດ',
+    text: `ທ່ານຕ້ອງການປະຕິເສດລາຍການ ${item.Reference_No} ແທ້ບໍ?`,
+    input: 'textarea',
+    inputLabel: 'ເຫດຜົນໃນການປະຕິເສດ *',
+    inputPlaceholder: 'ກະລຸນາໃສ່ເຫດຜົນ...',
+    inputAttributes: {
+      'aria-label': 'Rejection reason',
+      'rows': 3,
+      'maxlength': 500
+    },
+    inputValidator: (value) => {
+      if (!value || value.trim().length === 0) {
+        return 'ກະລຸນາໃສ່ເຫດຜົນໃນການປະຕິເສດ'
+      }
+      if (value.trim().length < 1) {
+        return 'ເຫດຜົນຕ້ອງມີຢ່າງນ້ອຍ 10 ຕົວອັກສອນ'
+      }
+    },
+    showCancelButton: true,
+    confirmButtonText: 'ປະຕິເສດ',
+    cancelButtonText: 'ຍົກເລີກ',
+    confirmButtonColor: '#f44336',
+    cancelButtonColor: '#9e9e9e'
+  })
+  
+  if (result.isConfirmed) {
+    try {
+      // Call endpoint that updates MASTER, LOG, and HIST tables
+      const response = await axios.post('/api/journal-entries/reject-all/', {
+        Reference_No: item.Reference_No,
+        rejection_reason: result.value.trim()
+      }, getAuthHeaders())
+      
+      Swal.fire({
+        icon: 'success',
+        title: 'ສຳເລັດ',
+        text: response.data.message || 'ປະຕິເສດລາຍການສຳເລັດແລ້ວ',
+        timer: 2000,
+        showConfirmButton: false
+      })
+      
+      // Reload data to show updated status
+      await loadData()
+      
+    } catch (error) {
+      console.error('Error rejecting item:', error)
+      
+      let errorMessage = 'ບໍ່ສາມາດປະຕິເສດລາຍການໄດ້'
+      
+      if (error.response?.data?.error) {
+        errorMessage = error.response.data.error
+      } else if (error.response?.status === 404) {
+        errorMessage = 'ບໍ່ພົບລາຍການທີ່ຕ້ອງການປະຕິເສດ'
+      } else if (error.response?.status === 400) {
+        errorMessage = error.response.data?.detail || 'ຂໍ້ມູນບໍ່ຖືກຕ້ອງ'
+      }
+      
+      Swal.fire({
+        icon: 'error',
+        title: 'ຂໍ້ຜິດພາດ',
+        text: errorMessage,
+        confirmButtonText: 'ຕົກລົງ'
+      })
+    }
+  }
+}
+
+// Lifecycle
+onMounted(async () => {
+  console.log('Detail page mounted with query:', route.query)
+  console.log('Reference_No:', referenceNo.value)
+  
+  // Initialize role permissions first
+  await initializeRole()
+  
+  // Load all required data
+  await Promise.all([
+    loadModules(),
+    loadAccounts(),
+    loadCurrencies()
+  ])
+  
+  if (referenceNo.value) {
+    loadData()
+  } else {
+    error.value = 'ບໍ່ພົບພາລາມິເຕີ Reference_No ໃນ URL - ກະລຸນາກວດສອບ URL'
+  }
+})
+
+// Watch for changes in Reference_No query parameter
+watch(() => route.query.Reference_No, (newVal, oldVal) => {
+  if (newVal && newVal !== oldVal) {
+    loadData()
+  }
+}, { immediate: false })
+
+// Watch for permission changes (for debugging)
+watch(permissions, (newPermissions) => {
+  if (newPermissions) {
+    console.log('Permissions loaded:', {
+      canView: canView.value,
+      canEdit: canEdit.value,
+      canDelete: canDelete.value,
+      canAuthorize: canAuthorize.value,
+      canAdd: canAdd.value,
+      rawPermissions: newPermissions
+    })
+  }
+}, { immediate: true, deep: true })
+</script>
+
 <template>
   <div class="gl-detail-page">
     <!-- Page Header -->
@@ -571,1101 +1651,459 @@
       </v-card>
     </div>
 
-    <!-- Edit Pair Dialog -->
-    <v-dialog v-model="editDialog" max-width="900px" persistent>
-      <v-card class="edit-dialog-card">
-        <v-card-title class="edit-dialog-header">
-          <div class="d-flex align-center">
-            <v-icon color="white" size="22" class="mr-3">mdi-pencil</v-icon>
-            <div>
-              <div class="dialog-title">ແກ້ໄຂບັນທຶກຄູ່</div>
-              <div class="dialog-subtitle">ປັບປຸງຂໍ້ມູນລາຍການບັນທຶກ</div>
-            </div>
-          </div>
-          <v-btn 
-            icon="mdi-close" 
-            variant="text" 
-            size="default"
-            color="white"
-            @click="closeEditDialog"
-            class="close-btn"
-          ></v-btn>
-        </v-card-title>
+ <v-dialog v-model="editDialog" max-width="1000px" persistent>
+  <v-card class="edit-dialog-card">
+    <v-card-title class="edit-dialog-header">
+      <div class="d-flex align-center">
+        <v-icon color="white" size="22" class="mr-3">mdi-pencil</v-icon>
+        <div>
+          <div class="dialog-title">ແກ້ໄຂບັນທຶກຄູ່</div>
+          <div class="dialog-subtitle">ປັບປຸງຂໍ້ມູນລາຍການບັນທຶກ</div>
+        </div>
+      </div>
+      <v-btn 
+        icon="mdi-close" 
+        variant="text" 
+        size="default"
+        color="white"
+        @click="closeEditDialog"
+        class="close-btn"
+      ></v-btn>
+    </v-card-title>
 
-        <v-card-text class="edit-dialog-content">
-          <div class="reference-info mb-6">
-            <h3 class="text-subtitle-1 mb-3">ຂໍ້ມູນອ້າງອີງ:</h3>
-            <v-chip color="primary" variant="outlined" size="default" class="mb-3">
-              <v-icon left size="16">mdi-identifier</v-icon>
-              {{ editForm.Reference_sub_No }}
+    <v-card-text class="edit-dialog-content">
+      <!-- Reference and Currency Info -->
+      <div class="reference-info mb-6">
+        <h3 class="text-subtitle-1 mb-3">ຂໍ້ມູນອ້າງອີງ:</h3>
+        <div class="d-flex flex-wrap gap-3 mb-3">
+          <v-chip color="primary" variant="outlined" size="default">
+            <v-icon left size="16">mdi-identifier</v-icon>
+            {{ editForm.Reference_sub_No }}
+          </v-chip>
+          
+          <!-- Currency Display -->
+          <v-chip 
+            v-if="editFormCurrency" 
+            color="success" 
+            variant="outlined" 
+            size="default"
+          >
+            <v-icon left size="16">mdi-currency-usd</v-icon>
+            {{ editForm.currency_code }} - {{ editFormCurrency.Ccy_Name_la || editFormCurrency.Ccy_Name_en }}
+          </v-chip>
+        </div>
+        
+        <!-- Current Account Codes Display -->
+        <div v-if="editForm.debit_account_code || editForm.credit_account_code" class="current-accounts mb-3">
+          <h4 class="text-subtitle-2 mb-2">ບັນຊີປັດຈຸບັນ:</h4>
+          <div class="d-flex flex-wrap gap-2">
+            <v-chip 
+              v-if="editForm.debit_account_code" 
+              color="info" 
+              variant="flat" 
+              size="small"
+            >
+              <v-icon left size="14">mdi-plus</v-icon>
+              Debit: {{ editForm.debit_account_code }}
             </v-chip>
-            
+            <v-chip 
+              v-if="editForm.credit_account_code" 
+              color="warning" 
+              variant="flat" 
+              size="small"
+            >
+              <v-icon left size="14">mdi-minus</v-icon>
+              Credit: {{ editForm.credit_account_code }}
+            </v-chip>
+          </div>
+        </div>
+        
+        <v-alert type="info" variant="tonal" density="compact">
+          <template #prepend>
+            <v-icon>mdi-information</v-icon>
+          </template>
+          ສະຖານະຈະປ່ຽນຈາກ 'P' (ຕ້ອງແກ້ໄຂ) ເປັນ 'U' (ລໍຖ້າອະນຸມັດ)
+        </v-alert>
+      </div>
+
+      <v-form ref="editFormRef" class="edit-form">
+        <v-row dense>
+          <!-- Amount Field -->
+          <v-col cols="12" md="6">
+            <v-text-field
+              v-model="editForm.Fcy_Amount"
+              label="ຈຳນວນເງິນ FCY *"
+              type="number"
+              step="0.01"
+              variant="outlined"
+              density="comfortable"
+              prepend-inner-icon="mdi-currency-usd"
+              :rules="[
+                v => !!v || 'ກະລຸນາໃສ່ຈຳນວນເງິນ',
+                v => v > 0 || 'ຈຳນວນເງິນຕ້ອງມີຄ່າມາກກ່ວາ 0'
+              ]"
+              :suffix="editForm.currency_code"
+              required
+            ></v-text-field>
+          </v-col>
+
+          <!-- Exchange Rate Info -->
+          <v-col cols="12" md="6" v-if="editFormCurrency && editForm.currency_code !== 'LAK'">
+            <v-text-field
+              :model-value="editFormCurrency.Sale_Rate || '1.000000'"
+              label="ອັດຕາແລກປ່ຽນ"
+              variant="outlined"
+              density="comfortable"
+              prepend-inner-icon="mdi-calculator"
+              readonly
+              suffix="LAK"
+              hint="ອັດຕາແລກປ່ຽນປັດຈຸບັນ"
+              persistent-hint
+            ></v-text-field>
+          </v-col>
+
+          <!-- Debit Account Selection -->
+          <v-col cols="12" md="6">
+            <v-autocomplete
+              v-model="editForm.glsub_id"
+              :items="accounts"
+              item-title="account_display"
+              item-value="glsub_id"
+              label="ບັນຊີ Debit"
+              variant="outlined"
+              density="comfortable"
+              prepend-inner-icon="mdi-plus"
+              clearable
+              :loading="loadingAccounts"
+              :rules="[
+                v => !editForm.relative_glsub_id || !!v || 'ກະລຸນາເລືອກບັນຊີ Debit ເມື່ອເລືອກບັນຊີ Credit',
+              ]"
+              :hint="`ມີ ${accounts.length} ບັນຊີໃຫ້ເລືອກ`"
+              persistent-hint
+              :menu-props="{ maxHeight: 300 }"
+              :no-data-text="loadingAccounts ? 'ກຳລັງໂຫຼດ...' : 'ບໍ່ພົບຂໍ້ມູນ'"
+              @update:model-value="onDebitAccountChange"
+            ></v-autocomplete>
+          </v-col>
+
+          <!-- Credit Account Selection -->
+          <v-col cols="12" md="6">
+            <v-autocomplete
+              v-model="editForm.relative_glsub_id"
+              :items="accounts"
+              item-title="account_display"
+              item-value="glsub_id"
+              label="ບັນຊີ Credit"
+              variant="outlined"
+              density="comfortable"
+              prepend-inner-icon="mdi-minus"
+              clearable
+              :loading="loadingAccounts"
+              :rules="[
+                v => !editForm.glsub_id || !!v || 'ກະລຸນາເລືອກບັນຊີ Credit ເມື່ອເລືອກບັນຊີ Debit',
+              ]"
+              :hint="`ມີ ${accounts.length} ບັນຊີໃຫ້ເລືອກ`"
+              persistent-hint
+              :menu-props="{ maxHeight: 300 }"
+              :no-data-text="loadingAccounts ? 'ກຳລັງໂຫຼດ...' : 'ບໍ່ພົບຂໍ້ມູນ'"
+              @update:model-value="onCreditAccountChange"
+            ></v-autocomplete>
+          </v-col>
+
+          <!-- Display Selected Account Codes -->
+          <v-col cols="12" md="6" v-if="selectedDebitAccount">
+            <v-text-field
+              :model-value="selectedDebitAccount.glsub_code"
+              label="ລະຫັດບັນຊີ Debit"
+              variant="outlined"
+              density="comfortable"
+              readonly
+              prepend-inner-icon="mdi-identifier"
+              :suffix="editFormCurrency?.ALT_Ccy_Code ? `→ ${editFormCurrency.ALT_Ccy_Code}.${selectedDebitAccount.glsub_code}` : ''"
+              hint="ລະຫັດບັນຊີທີ່ເລືອກສຳລັບ Debit"
+              persistent-hint
+              color="success"
+            ></v-text-field>
+          </v-col>
+
+          <v-col cols="12" md="6" v-if="selectedCreditAccount">
+            <v-text-field
+              :model-value="selectedCreditAccount.glsub_code"
+              label="ລະຫັດບັນຊີ Credit"
+              variant="outlined"
+              density="comfortable"
+              readonly
+              prepend-inner-icon="mdi-identifier"
+              :suffix="editFormCurrency?.ALT_Ccy_Code ? `→ ${editFormCurrency.ALT_Ccy_Code}.${selectedCreditAccount.glsub_code}` : ''"
+              hint="ລະຫັດບັນຊີທີ່ເລືອກສຳລັບ Credit"
+              persistent-hint
+              color="warning"
+            ></v-text-field>
+          </v-col>
+
+          <!-- Account Selection Info -->
+          <v-col cols="12" v-if="!selectedDebitAccount && !selectedCreditAccount">
             <v-alert type="info" variant="tonal" density="compact">
               <template #prepend>
-                <v-icon>mdi-information</v-icon>
+                <v-icon size="16">mdi-information</v-icon>
               </template>
-              ສະຖານະຈະປ່ຽນຈາກ 'P' (ຕ້ອງແກ້ໄຂ) ເປັນ 'U' (ລໍຖ້າອະນຸມັດ)
+              <div class="text-caption">
+                ຖ້າຕ້ອງການປ່ຽນບັນຊີ, ກະລຸນາເລືອກທັງບັນຊີ Debit ແລະ Credit ພ້ອມກັນ
+                <span v-if="accounts.length === 0" class="text-warning ml-2">
+                  (ຍັງບໍ່ມີບັນຊີໃຫ້ເລືອກ)
+                </span>
+              </div>
             </v-alert>
-          </div>
+          </v-col>
+          
+          <!-- Main Text -->
+          <v-col cols="12" md="6">
+            <v-textarea
+              v-model="editForm.Addl_text"
+              label="ເນື້ອໃນຫຼັກ"
+              variant="outlined"
+              density="comfortable"
+              prepend-inner-icon="mdi-text"
+              rows="2"
+              counter="255"
+              :rules="[v => !v || v.length <= 255 || 'ເນື້ອໃນຕ້ອງບໍ່ເກີນ 255 ຕົວອັກສອນ']"
+            ></v-textarea>
+          </v-col>
 
-          <v-form ref="editFormRef" class="edit-form">
-            <v-row dense>
-              <v-col cols="12" md="6">
-                <v-text-field
-                  v-model="editForm.Fcy_Amount"
-                  label="ຈຳນວນເງິນ FCY *"
-                  type="number"
-                  step="0.01"
-                  variant="outlined"
-                  density="comfortable"
-                  prepend-inner-icon="mdi-currency-usd"
-                  :rules="[
-                    v => !!v || 'ກະລຸນາໃສ່ຈຳນວນເງິນ',
-                    v => v > 0 || 'ຈຳນວນເງິນຕ້ອງມີຄ່າມາກກ່ວາ 0'
-                  ]"
-                  required
-                ></v-text-field>
-              </v-col>
+          <!-- Sub Text -->
+          <v-col cols="12" md="6">
+            <v-textarea
+              v-model="editForm.Addl_sub_text"
+              label="ເນື້ອໃນຍ່ອຍ"
+              variant="outlined"
+              density="comfortable"
+              prepend-inner-icon="mdi-text-box"
+              rows="2"
+              counter="255"
+              :rules="[v => !v || v.length <= 255 || 'ເນື້ອໃນຕ້ອງບໍ່ເກີນ 255 ຕົວອັກສອນ']"
+            ></v-textarea>
+          </v-col>
 
-              <v-col cols="12" md="6">
-                <v-autocomplete
-                  v-model="editForm.glsub_id"
-                  :items="accounts"
-                  item-title="account_display"
-                  item-value="glsub_id"
-                  label="ບັນຊີ Debit"
-                  variant="outlined"
-                  density="comfortable"
-                  prepend-inner-icon="mdi-plus"
-                  clearable
-                  :loading="loadingAccounts"
-                  :rules="[
-                    v => !editForm.relative_glsub_id || !!v || 'ກະລຸນາເລືອກບັນຊີ Debit ເມື່ອເລືອກບັນຊີ Credit',
-                  ]"
-                  :hint="`ມີ ${accounts.length} ບັນຊີໃຫ້ເລືອກ`"
-                  persistent-hint
-                  :menu-props="{ maxHeight: 300 }"
-                  :no-data-text="loadingAccounts ? 'ກຳລັງໂຫຼດ...' : 'ບໍ່ພົບຂໍ້ມູນ'"
-                ></v-autocomplete>
-              </v-col>
+          <!-- Comments -->
+          <v-col cols="12">
+            <v-textarea
+              v-model="editForm.comments"
+              label="ເຫດຜົນການແກ້ໄຂ *"
+              variant="outlined"
+              density="comfortable"
+              prepend-inner-icon="mdi-comment-edit"
+              rows="3"
+              counter="1000"
+              placeholder="ກະລຸນາອະທິບາຍເຫດຜົນການແກ້ໄຂ..."
+              :rules="[
+                v => !!v || 'ກະລຸນາໃສ່ເຫດຜົນການແກ້ໄຂ',
+                v => v && v.length >= 1 || 'ເຫດຜົນຕ້ອງມີຢ່າງນ້ອຍ 1 ຕົວອັກສອນ',
+                v => !v || v.length <= 1000 || 'ເຫດຜົນຕ້ອງບໍ່ເກີນ 1000 ຕົວອັກສອນ'
+              ]"
+              required
+            ></v-textarea>
+          </v-col>
 
-              <v-col cols="12" md="6">
-                <v-autocomplete
-                  v-model="editForm.relative_glsub_id"
-                  :items="accounts"
-                  item-title="account_display"
-                  item-value="glsub_id"
-                  label="ບັນຊີ Credit"
-                  variant="outlined"
-                  density="comfortable"
-                  prepend-inner-icon="mdi-minus"
-                  clearable
-                  :loading="loadingAccounts"
-                  :rules="[
-                    v => !editForm.glsub_id || !!v || 'ກະລຸນາເລືອກບັນຊີ Credit ເມື່ອເລືອກບັນຊີ Debit',
-                  ]"
-                  :hint="`ມີ ${accounts.length} ບັນຊີໃຫ້ເລືອກ`"
-                  persistent-hint
-                  :menu-props="{ maxHeight: 300 }"
-                  :no-data-text="loadingAccounts ? 'ກຳລັງໂຫຼດ...' : 'ບໍ່ພົບຂໍ້ມູນ'"
-                ></v-autocomplete>
-              </v-col>
+          <!-- Built Account Numbers Preview -->
+          <v-col cols="12" v-if="selectedDebitAccount && selectedCreditAccount && editFormCurrency">
+            <v-alert type="success" variant="tonal" density="compact">
+              <template #prepend>
+                <v-icon size="16">mdi-check-circle</v-icon>
+              </template>
+              <div class="text-caption">
+                <strong>Account Numbers ທີ່ຈະຖືກສ້າງ:</strong><br>
+                • Debit: {{ buildAccountNo(editForm.glsub_id, editForm.currency_code) }}<br>
+                • Credit: {{ buildAccountNo(editForm.relative_glsub_id, editForm.currency_code) }}
+                <span v-if="editFormCurrency.ALT_Ccy_Code" class="text-info ml-2">
+                  (ມີ ALT Currency Code: {{ editFormCurrency.ALT_Ccy_Code }})
+                </span>
+              </div>
+            </v-alert>
+          </v-col>
+        </v-row>
+      </v-form>
+    </v-card-text>
 
-              <v-col cols="12" md="6">
-                <v-alert type="info" variant="tonal" density="compact">
-                  <template #prepend>
-                    <v-icon size="16">mdi-information</v-icon>
-                  </template>
-                  <div class="text-caption">
-                    ຖ້າຕ້ອງການປ່ຽນບັນຊີ, ກະລຸນາເລືອກທັງບັນຊີ Debit ແລະ Credit ພ້ອມກັນ
-                    <span v-if="accounts.length === 0" class="text-warning ml-2">
-                      (ຍັງບໍ່ມີບັນຊີໃຫ້ເລືອກ)
-                    </span>
-                  </div>
-                </v-alert>
-              </v-col>
-              
-              <v-col cols="12">
-                <v-textarea
-                  v-model="editForm.Addl_text"
-                  label="ເນື້ອໃນຫຼັກ"
-                  variant="outlined"
-                  density="comfortable"
-                  prepend-inner-icon="mdi-text"
-                  rows="2"
-                  counter="255"
-                  :rules="[v => !v || v.length <= 255 || 'ເນື້ອໃນຕ້ອງບໍ່ເກີນ 255 ຕົວອັກສອນ']"
-                ></v-textarea>
-              </v-col>
+    <v-divider></v-divider>
 
-              <v-col cols="12">
-                <v-textarea
-                  v-model="editForm.Addl_sub_text"
-                  label="ເນື້ອໃນຍ່ອຍ"
-                  variant="outlined"
-                  density="comfortable"
-                  prepend-inner-icon="mdi-text-box"
-                  rows="2"
-                  counter="255"
-                  :rules="[v => !v || v.length <= 255 || 'ເນື້ອໃນຕ້ອງບໍ່ເກີນ 255 ຕົວອັກສອນ']"
-                ></v-textarea>
-              </v-col>
-
-              <v-col cols="12">
-                <v-textarea
-                  v-model="editForm.comments"
-                  label="ເຫດຜົນການແກ້ໄຂ *"
-                  variant="outlined"
-                  density="comfortable"
-                  prepend-inner-icon="mdi-comment-edit"
-                  rows="3"
-                  counter="1000"
-                  placeholder="ກະລຸນາອະທິບາຍເຫດຜົນການແກ້ໄຂ..."
-                  :rules="[
-                    v => !!v || 'ກະລຸນາໃສ່ເຫດຜົນການແກ້ໄຂ',
-                    v => v && v.length >= 1 || 'ເຫດຜົນຕ້ອງມີຢ່າງນ້ອຍ 1 ຕົວອັກສອນ',
-                    v => !v || v.length <= 1000 || 'ເຫດຜົນຕ້ອງບໍ່ເກີນ 1000 ຕົວອັກສອນ'
-                  ]"
-                  required
-                ></v-textarea>
-              </v-col>
-            </v-row>
-          </v-form>
-        </v-card-text>
-
-        <v-divider></v-divider>
-
-        <v-card-actions class="edit-dialog-actions">
-          <v-spacer></v-spacer>
-          <v-btn
-            variant="outlined"
-            @click="closeEditDialog"
-            :disabled="isEditingPair"
-            size="large"
-            class="action-btn-dialog"
-          >
-            <v-icon left size="16">mdi-close</v-icon>
-            ຍົກເລີກ
-          </v-btn>
-          <v-btn
-            color="info"
-            variant="flat"
-            @click="fixRejectedEntry"
-            :loading="isEditingPair"
-            :disabled="!isEditFormValid"
-            size="large"
-            class="action-btn-dialog"
-          >
-            <v-icon left size="16">mdi-content-save</v-icon>
-            ບັນທຶກການແກ້ໄຂ
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <v-card-actions class="edit-dialog-actions">
+      <v-spacer></v-spacer>
+      <v-btn
+        variant="outlined"
+        @click="closeEditDialog"
+        :disabled="isEditingPair"
+        size="large"
+        class="action-btn-dialog"
+      >
+        <v-icon left size="16">mdi-close</v-icon>
+        ຍົກເລີກ
+      </v-btn>
+      <v-btn
+        color="info"
+        variant="flat"
+        @click="fixRejectedEntry"
+        :loading="isEditingPair"
+        :disabled="!isEditFormValid"
+        size="large"
+        class="action-btn-dialog"
+      >
+        <v-icon left size="16">mdi-content-save</v-icon>
+        ບັນທຶກການແກ້ໄຂ
+      </v-btn>
+    </v-card-actions>
+  </v-card>
+</v-dialog>
   </div>
 </template>
 
-<script setup>
-import { ref, computed, onMounted, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import axios from '@/helpers/axios'
-import Swal from 'sweetalert2'
-import { useRolePermissions } from '@/composables/useRolePermissions'
-
-// Router and route
-const route = useRoute()
-const router = useRouter()
-
-// Role Permissions
-const {
-  initializeRole,
-  canView,
-  canEdit,
-  canDelete,
-  canAuthorize,
-  canAdd,
-  hasPermission,
-  permissions
-} = useRolePermissions()
-
-// State
-const loading = ref(false)
-const error = ref(null)
-const selectedItem = ref(null)
-const journalEntries = ref([])
-const modules = ref([])
-const isDeletingPair = ref(false)
-const deletingRefSubNo = ref(null)
-const isRejectingPair = ref(false)
-const rejectingRefSubNo = ref(null)
-const isEditingPair = ref(false)
-const editingRefSubNo = ref(null)
-const editDialog = ref(false)
-const editForm = ref({
-  Reference_sub_No: '',
-  Fcy_Amount: 0,
-  Addl_text: '',
-  Addl_sub_text: '',
-  comments: '',
-  glsub_id: null,
-  relative_glsub_id: null
-})
-const editFormRef = ref(null)
-const accounts = ref([])
-const loadingAccounts = ref(false)
-
-
-
-const getAuthHeaders = () => ({
-  headers: {
-    Authorization: `Bearer ${localStorage.getItem("token")}`,
-  }
-})
-
-// Approve item)
-
-// Computed
-const canApprove = computed(() => {
-  // Check both user permissions and authorization capability
-  return canAuthorize.value && hasPermission('Auth_Detail')
-})
-
-const totalFcyDebit = computed(() => {
-  return journalEntries.value.reduce((sum, entry) => {
-    return sum + parseFloat(entry.fcy_dr || 0)
-  }, 0)
-})
-
-const totalFcyCredit = computed(() => {
-  return journalEntries.value.reduce((sum, entry) => {
-    return sum + parseFloat(entry.fcy_cr || 0)
-  }, 0)
-})
-
-const isBalanced = computed(() => {
-  const fcyBalance = Math.abs(totalFcyDebit.value - totalFcyCredit.value) < 0.01
-  return fcyBalance
-})
-
-// Form validation computed
-const isEditFormValid = computed(() => {
-  const hasAmount = editForm.value.Fcy_Amount && editForm.value.Fcy_Amount > 0
-  const hasComments = editForm.value.comments && editForm.value.comments.trim().length >= 1
-  const accountsValid = (!editForm.value.glsub_id && !editForm.value.relative_glsub_id) || 
-                       (editForm.value.glsub_id && editForm.value.relative_glsub_id)
-  
-  console.log('Form validation:', {
-    hasAmount,
-    hasComments, 
-    accountsValid,
-    glsub_id: editForm.value.glsub_id,
-    relative_glsub_id: editForm.value.relative_glsub_id
-  })
-  
-  return hasAmount && hasComments && accountsValid
-})
-
-// Check if master entry can be approved
-const canApproveMaster = computed(() => {
-  if (!selectedItem.value || !canAuthorize.value) return false
-  
-  // Can only approve if master status is 'U' (pending approval)
-  const isMasterPending = selectedItem.value.Auth_Status === 'U'
-  
-  // Cannot approve if any journal entries need correction (Auth_Status = 'P')
-  const hasCorrectionsNeeded = journalEntries.value.some(entry => entry.Auth_Status === 'P')
-  
-  console.log('Approve validation:', {
-    isMasterPending,
-    hasCorrectionsNeeded,
-    masterStatus: selectedItem.value.Auth_Status,
-    entriesWithP: journalEntries.value.filter(entry => entry.Auth_Status === 'P').length,
-    canAuthorize: canAuthorize.value,
-    permissions: permissions.value
-  })
-  
-  return isMasterPending && !hasCorrectionsNeeded
-})
-
-// Get Reference_No from route query parameters
-// URL format: /glcapture/detail?Reference_No=GL-ADE-20250629-00001
-const referenceNo = computed(() => route.query.Reference_No)
-
-// Load data
-const loadData = async () => {
-  try {
-    loading.value = true
-    error.value = null
-
-    // Check if Reference_No is provided
-    if (!referenceNo.value) {
-      throw new Error('ບໍ່ພົບເລກອ້າງອີງ Reference_No')
-    }
-
-    // Load master data
-    const masterResponse = await axios.get('/api/journal-log-master/journal-log-active/', {
-      params: { 
-        Reference_No: referenceNo.value,
-      },
-      ...getAuthHeaders()
-    })
-
-    console.log('Master data response:', masterResponse);
-    
-    const masterData = masterResponse.data.results || masterResponse.data || []
-    if (masterData.length === 0) {
-      throw new Error('ບໍ່ພົບຂໍ້ມູນລາຍການນີ້')
-    }
-
-    selectedItem.value = masterData[0]
-
-    console.log('Selected master item:', selectedItem.value)
-
-    // Load journal entries
-    const entriesResponse = await axios.get('/api/journal-entries/', {
-      params: { 
-        Reference_No: referenceNo.value,
-        ordering: 'Dr_cr'
-      },
-      ...getAuthHeaders()
-    })
-
-    journalEntries.value = entriesResponse.data.results || entriesResponse.data || []
-
-    // Debug journal entries structure
-    if (journalEntries.value.length > 0) {
-      console.log('Sample journal entry structure:', journalEntries.value[0])
-      console.log('Account_id type:', typeof journalEntries.value[0].Account_id)
-      console.log('Ac_relatives type:', typeof journalEntries.value[0].Ac_relatives);
-      
-    }
-
-    console.log('Detail data loaded:', {
-      master: selectedItem.value,
-      entries: journalEntries.value,
-      totals: {
-        debit: totalFcyDebit.value,
-        credit: totalFcyCredit.value,
-        balanced: isBalanced.value
-      }
-    })
-
-  } catch (err) {
-    console.error('Error loading detail data:', err)
-    error.value = err.response?.data?.detail || err.message || 'ບໍ່ສາມາດໂຫຼດຂໍ້ມູນໄດ້'
-  } finally {
-    loading.value = false
-  }
-}
-
-// Load accounts
-const loadAccounts = async () => {
-  try {
-    loadingAccounts.value = true
-    const response = await axios.get('/api/gl-sub/', getAuthHeaders())
-    const accountData = response.data.results || response.data || []
-    
-    // Format accounts for display in select using correct field names
-    accounts.value = accountData.map(account => ({
-      ...account,
-      account_display: `${account.glsub_code} - ${account.glsub_Desc_la || account.glsub_Desc_en || ''}`
-    }))
-    
-    console.log('Accounts loaded:', accounts.value.length)
-    
-  } catch (error) {
-    console.error('Error loading accounts:', error)
-    Swal.fire({
-      icon: 'warning',
-      title: 'ແຈ້ງເຕືອນ',
-      text: 'ບໍ່ສາມາດໂຫຼດລາຍການບັນຊີໄດ້',
-      confirmButtonText: 'ຕົກລົງ'
-    })
-  } finally {
-    loadingAccounts.value = false
-  }
-}
-const loadModules = async () => {
-  try {
-    const response = await axios.get('/api/modules/', getAuthHeaders())
-    modules.value = response.data.results || response.data || []
-  } catch (error) {
-    console.error('Error loading modules:', error)
-  }
-}
-
-// Helper functions
-const formatNumber = (num, decimals = 2) => {
-  if (!num) return '0.00'
-  return new Intl.NumberFormat('en-US', {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals
-  }).format(num)
-}
-
-const formatDate = (date) => {
-  if (!date) return '-'
-  return new Date(date).toLocaleDateString('lo-LA')
-}
-
-const formatDateTime = (date) => {
-  if (!date) return '-'
-  return new Date(date).toLocaleString('lo-LA')
-}
-
-const getStatusColor = (status) => {
-  switch(status) {
-    case 'A': return 'success'
-    case 'R': return 'error'
-    case 'U': return 'warning'
-    case 'P': return 'info'
-    default: return 'grey'
-  }
-}
-
-const getStatusIcon = (status) => {
-  switch(status) {
-    case 'A': return 'mdi-check-circle'
-    case 'R': return 'mdi-close-circle'
-    case 'U': return 'mdi-clock-outline'
-    case 'P': return 'mdi-pencil-circle'
-    default: return 'mdi-help-circle'
-  }
-}
-
-const getStatusText = (status) => {
-  switch(status) {
-    case 'A': return 'ອະນຸມັດແລ້ວ'
-    case 'R': return 'ປະຕິເສດ'
-    case 'U': return 'ລໍຖ້າອະນຸມັດ'
-    case 'P': return 'ຖ້າເແກ້ໄຂ'
-    default: return 'ບໍ່ຮູ້'
-  }
-}
-
-const getModuleName = (moduleId) => {
-  if (!moduleId) return '-'
-  const module = modules.value.find(m => m.module_Id === moduleId)
-  return module ? module.module_name_la : moduleId
-}
-
-const getMakerName = () => {
-  if (!selectedItem.value || !journalEntries.value.length) {
-    return selectedItem.value?.Maker_Id || '-'
-  }
-  
-  const firstEntry = journalEntries.value[0]
-  return firstEntry?.maker_name || selectedItem.value?.Maker_Id || '-'
-}
-
-// Delete by pair account function
-const deleteByPairAccount = async (referenceSubNo) => {
-  if (!referenceSubNo) {
-    Swal.fire({
-      icon: 'error',
-      title: 'ຂໍ້ຜິດພາດ',
-      text: 'ບໍ່ພົບເລກອ້າງອີງຄູ່',
-      confirmButtonText: 'ຕົກລົງ'
-    })
-    return
-  }
-
-  const result = await Swal.fire({
-    icon: 'warning',
-    title: 'ຢືນຢັນການລຶບ',
-    html: `ທ່ານຕ້ອງການລຶບບັນທຶກຄູ່:<br><strong>${referenceSubNo}</strong><br><br>ການລຶບນີ້ຈະລຶບທັງຄູ່ບັນທຶກ (Debit ແລະ Credit)`,
-    showCancelButton: true,
-    confirmButtonText: 'ລຶບ',
-    cancelButtonText: 'ຍົກເລີກ',
-    confirmButtonColor: '#f44336',
-    cancelButtonColor: '#9e9e9e'
-  })
-
-  if (!result.isConfirmed) return
-
-  try {
-    isDeletingPair.value = true
-    deletingRefSubNo.value = referenceSubNo
-
-    await axios.delete(`/api/journal-entries/delete-by-pair-account/`, {
-      data: { Reference_sub_No: referenceSubNo },
-      ...getAuthHeaders()
-    })
-
-    Swal.fire({
-      icon: 'success',
-      title: 'ສຳເລັດ',
-      text: 'ລຶບບັນທຶກຄູ່ສຳເລັດແລ້ວ',
-      timer: 2000,
-      showConfirmButton: false
-    })
-
-    // Reload data
-    await loadData()
-
-  } catch (error) {
-    console.error('Error deleting journal entry pair:', error)
-    
-    let errorMessage = 'ບໍ່ສາມາດລຶບບັນທຶກຄູ່ໄດ້'
-    if (error.response?.status === 404) {
-      errorMessage = 'ບໍ່ພົບບັນທຶກທີ່ຕ້ອງການລຶບ'
-    } else if (error.response?.status === 400) {
-      errorMessage = error.response.data?.detail || 'ຂໍ້ມູນບໍ່ຖືກຕ້ອງ'
-    }
-    
-    Swal.fire({
-      icon: 'error',
-      title: 'ຂໍ້ຜິດພາດ',
-      text: errorMessage,
-      confirmButtonText: 'ຕົກລົງ'
-    })
-    
-  } finally {
-    isDeletingPair.value = false
-    deletingRefSubNo.value = null
-  }
-}
-
-// Reject by pair account function
-const rejectByPairAccount = async (referenceSubNo) => {
-  if (!referenceSubNo) {
-    Swal.fire({
-      icon: 'error',
-      title: 'ຂໍ້ຜິດພາດ',
-      text: 'ບໍ່ພົບເລກອ້າງອີງຄູ່',
-      confirmButtonText: 'ຕົກລົງ'
-    })
-    return
-  }
-
-  const result = await Swal.fire({
-    icon: 'warning',
-    title: 'ປະຕິເສດບັນທຶກຄູ່',
-    html: `ທ່ານຕ້ອງການປະຕິເສດບັນທຶກຄູ່:<br><strong>${referenceSubNo}</strong><br><br>ການປະຕິເສດນີ້ຈະປະຕິເສດທັງຄູ່ບັນທຶກ (Debit ແລະ Credit)`,
-    input: 'textarea',
-    inputLabel: 'ເຫດຜົນໃນການປະຕິເສດ *',
-    inputPlaceholder: 'ກະລຸນາໃສ່ເຫດຜົນການປະຕິເສດ...',
-    inputAttributes: {
-      'aria-label': 'Rejection reason',
-      'rows': 3,
-      'maxlength': 500
-    },
-    inputValidator: (value) => {
-      if (!value || value.trim().length === 0) {
-        return 'ກະລຸນາໃສ່ເຫດຜົນໃນການປະຕິເສດ'
-      }
-      if (value.trim().length < 1) {
-        return 'ເຫດຜົນຕ້ອງມີຢ່າງນ້ອຍ 10 ຕົວອັກສອນ'
-      }
-      if (value.length > 500) {
-        return 'ເຫດຜົນຕ້ອງບໍ່ເກີນ 500 ຕົວອັກສອນ'
-      }
-    },
-    showCancelButton: true,
-    confirmButtonText: 'ປະຕິເສດ',
-    cancelButtonText: 'ຍົກເລີກ',
-    confirmButtonColor: '#ff9800',
-    cancelButtonColor: '#9e9e9e',
-    width: '600px'
-  })
-
-  if (!result.isConfirmed) return
-
-  try {
-    isRejectingPair.value = true
-    rejectingRefSubNo.value = referenceSubNo
-
-    await axios.post(`/api/journal-entries/reject-by-pair-account/`, {
-      Reference_sub_No: referenceSubNo,
-      comments: result.value.trim()
-    }, getAuthHeaders())
-
-    Swal.fire({
-      icon: 'success',
-      title: 'ສຳເລັດ',
-      text: 'ປະຕິເສດບັນທຶກຄູ່ສຳເລັດແລ້ວ',
-      timer: 2000,
-      showConfirmButton: false
-    })
-
-    // Reload data
-    await loadData()
-
-  } catch (error) {
-    console.error('Error rejecting journal entry pair:', error)
-    
-    let errorMessage = 'ບໍ່ສາມາດປະຕິເສດບັນທຶກຄູ່ໄດ້'
-    if (error.response?.status === 404) {
-      errorMessage = 'ບໍ່ພົບບັນທຶກທີ່ຕ້ອງການປະຕິເສດ'
-    } else if (error.response?.status === 400) {
-      errorMessage = error.response.data?.detail || 'ຂໍ້ມູນບໍ່ຖືກຕ້ອງ'
-    }
-    
-    Swal.fire({
-      icon: 'error',
-      title: 'ຂໍ້ຜິດພາດ',
-      text: errorMessage,
-      confirmButtonText: 'ຕົກລົງ'
-    })
-    
-  } finally {
-    isRejectingPair.value = false
-    rejectingRefSubNo.value = null
-  }
-}
-
-// Edit by pair account function
-const editByPairAccount = (entry) => {
-  console.log('=== EDIT FORM DEBUG ===')
-  console.log('Editing entry:', entry)
-  console.log('Entry Account_id:', entry.Account_id, 'Type:', typeof entry.Account_id)
-  console.log('Entry Ac_relatives:', entry.Ac_relatives, 'Type:', typeof entry.Ac_relatives)
-  
-  // Find the related entry (debit/credit pair) to get the relative account
-  const relatedEntry = journalEntries.value.find(e => 
-    e.Reference_sub_No === entry.Reference_sub_No && e.JRNLLog_id !== entry.JRNLLog_id
-  )
-  
-  console.log('Related entry:', relatedEntry)
-  if (relatedEntry) {
-    console.log('Related Account_id:', relatedEntry.Account_id, 'Type:', typeof relatedEntry.Account_id)
-    console.log('Related Ac_relatives:', relatedEntry.Ac_relatives, 'Type:', typeof relatedEntry.Ac_relatives)
-  }
-  
-  // Extract numeric IDs properly - handle all possible formats
-  const getAccountId = (account) => {
-    console.log('Processing account:', account, 'Type:', typeof account)
-    
-    if (!account) return null
-    
-    // If it's already a number
-    if (typeof account === 'number') {
-      console.log('Account is number:', account)
-      return account
-    }
-    
-    // If it's an object with glsub_id property
-    if (typeof account === 'object' && account !== null) {
-      if (account.glsub_id !== undefined) {
-        console.log('Account object has glsub_id:', account.glsub_id)
-        return parseInt(account.glsub_id)
-      }
-      // Handle case where the object might have other ID properties
-      if (account.id !== undefined) {
-        console.log('Account object has id:', account.id)
-        return parseInt(account.id)
-      }
-    }
-    
-    // If it's a string that can be converted to number
-    if (typeof account === 'string') {
-      const num = parseInt(account)
-      if (!isNaN(num)) {
-        console.log('Account string converted to number:', num)
-        return num
-      }
-    }
-    
-    console.log('Could not extract account ID from:', account)
-    return null
-  }
-  
-  const currentAccountId = getAccountId(entry.Account_id)
-  const relatedAccountId = relatedEntry ? getAccountId(relatedEntry.Account_id) : null
-  const currentRelatives = getAccountId(entry.Ac_relatives)
-  const relatedRelatives = relatedEntry ? getAccountId(relatedEntry.Ac_relatives) : null
-  
-  console.log('Extracted IDs:')
-  console.log('- currentAccountId:', currentAccountId)
-  console.log('- relatedAccountId:', relatedAccountId)
-  console.log('- currentRelatives:', currentRelatives) 
-  console.log('- relatedRelatives:', relatedRelatives)
-  
-  // For debit entry, use current account as debit, related as credit
-  // For credit entry, use related as debit, current as credit
-  let debitAccountId, creditAccountId
-  
-  if (entry.Dr_cr === 'D') {
-    debitAccountId = currentAccountId
-    creditAccountId = relatedAccountId || currentRelatives
-  } else {
-    debitAccountId = relatedAccountId || currentRelatives  
-    creditAccountId = currentAccountId
-  }
-  
-  console.log('Final account assignment:')
-  console.log('- debitAccountId (glsub_id):', debitAccountId)
-  console.log('- creditAccountId (relative_glsub_id):', creditAccountId)
-  
-  // Populate edit form with current entry data
-  editForm.value = {
-    Reference_sub_No: entry.Reference_sub_No,
-    Fcy_Amount: parseFloat(entry.fcy_dr || entry.fcy_cr || 0),
-    Addl_text: entry.Addl_text || '',
-    Addl_sub_text: entry.Addl_sub_text || '',
-    comments: '',
-    glsub_id: debitAccountId,
-    relative_glsub_id: creditAccountId
-  }
-  
-  console.log('Edit form populated:', editForm.value)
-  console.log('=== END EDIT FORM DEBUG ===')
-  
-  editDialog.value = true
-}
-
-const closeEditDialog = () => {
-  editDialog.value = false
-  editForm.value = {
-    Reference_sub_No: '',
-    Fcy_Amount: 0,
-    Addl_text: '',
-    Addl_sub_text: '',
-    comments: '',
-    glsub_id: null,
-    relative_glsub_id: null
-  }
-}
-
-const fixRejectedEntry = async () => {
-  try {
-    isEditingPair.value = true
-    editingRefSubNo.value = editForm.value.Reference_sub_No
-
-    console.log('=== FIX REJECTED DEBUG ===')
-    console.log('Form data before validation:', editForm.value)
-
-    // Validate form data
-    if (!editForm.value.Fcy_Amount || editForm.value.Fcy_Amount <= 0) {
-      throw new Error('ກະລຸນາໃສ່ຈຳນວນເງິນທີ່ຖືກຕ້ອງ')
-    }
-
-    if (!editForm.value.comments || editForm.value.comments.trim().length < 1) {
-      throw new Error('ກະລຸນາໃສ່ເຫດຜົນການແກ້ໄຂທີ່ມີຄວາມຍາວຢ່າງນ້ອຍ 10 ຕົວອັກສອນ')
-    }
-
-    if (editForm.value.comments.length > 1000) {
-      throw new Error('ເຫດຜົນການແກ້ໄຂຕ້ອງບໍ່ເກີນ 1000 ຕົວອັກສອນ')
-    }
-
-    // Validate account fields - both must be provided together or not at all
-    const hasDebitAccount = editForm.value.glsub_id !== null && editForm.value.glsub_id !== undefined && editForm.value.glsub_id !== ''
-    const hasCreditAccount = editForm.value.relative_glsub_id !== null && editForm.value.relative_glsub_id !== undefined && editForm.value.relative_glsub_id !== ''
-    
-    console.log('Account validation:')
-    console.log('- glsub_id:', editForm.value.glsub_id, 'Type:', typeof editForm.value.glsub_id, 'Has:', hasDebitAccount)
-    console.log('- relative_glsub_id:', editForm.value.relative_glsub_id, 'Type:', typeof editForm.value.relative_glsub_id, 'Has:', hasCreditAccount)
-    
-    if (hasDebitAccount !== hasCreditAccount) {
-      throw new Error('ກະລຸນາເລືອກທັງບັນຊີ Debit ແລະ Credit ພ້ອມກັນ ຫຼື ບໍ່ເລືອກເລີຍ')
-    }
-
-    // Prepare request data according to backend function
-    const requestData = {
-      Reference_sub_No: editForm.value.Reference_sub_No,
-      comments: editForm.value.comments.trim(),
-      Fcy_Amount: parseFloat(editForm.value.Fcy_Amount)
-    }
-
-    // Add optional fields only if they have values
-    if (editForm.value.Addl_text && editForm.value.Addl_text.trim()) {
-      requestData.Addl_text = editForm.value.Addl_text.trim()
-    }
-
-    if (editForm.value.Addl_sub_text && editForm.value.Addl_sub_text.trim()) {
-      requestData.Addl_sub_text = editForm.value.Addl_sub_text.trim()
-    }
-
-    // Add account fields if both are selected - with STRICT validation
-    if (hasDebitAccount && hasCreditAccount) {
-      // Convert to numbers and validate they are actually numbers
-      const debitId = Number(editForm.value.glsub_id)
-      const creditId = Number(editForm.value.relative_glsub_id)
-      
-      console.log('Converting account IDs:')
-      console.log('- Original glsub_id:', editForm.value.glsub_id, '→ Number:', debitId, 'IsNaN:', isNaN(debitId))
-      console.log('- Original relative_glsub_id:', editForm.value.relative_glsub_id, '→ Number:', creditId, 'IsNaN:', isNaN(creditId))
-      
-      if (isNaN(debitId) || isNaN(creditId) || debitId <= 0 || creditId <= 0) {
-        throw new Error('ລະບຸບັນຊີບໍ່ຖືກຕ້ອງ - ກະລຸນາເລືອກບັນຊີໃໝ່')
-      }
-      
-      // Make sure we're sending integers, not floats
-      requestData.glsub_id = Math.floor(debitId)
-      requestData.relative_glsub_id = Math.floor(creditId)
-      
-      // Double-check the final values
-      console.log('Final account IDs being sent:')
-      console.log('- glsub_id:', requestData.glsub_id, 'Type:', typeof requestData.glsub_id, 'Is Integer:', Number.isInteger(requestData.glsub_id))
-      console.log('- relative_glsub_id:', requestData.relative_glsub_id, 'Type:', typeof requestData.relative_glsub_id, 'Is Integer:', Number.isInteger(requestData.relative_glsub_id))
-    }
-
-    console.log('Final request data:', requestData)
-    console.log('Request data types:')
-    Object.entries(requestData).forEach(([key, value]) => {
-      console.log(`- ${key}:`, value, 'Type:', typeof value)
-    })
-
-    console.log('Calling API: POST /api/journal-entries/fix-rejected/')
-    console.log('Full request details:', {
-      url: axios.get(`/api/journal-entries/fix-rejected/`),
-      method: 'POST',
-      headers: getAuthHeaders().headers,
-      data: requestData
-    })
-    
-    // Also check JSON serialization
-    console.log('JSON serialized data:', JSON.stringify(requestData))
-    console.log('JSON parsed back:', JSON.parse(JSON.stringify(requestData)))
-
-    const response = await axios.post(`/api/journal-entries/fix-rejected/`, requestData, getAuthHeaders())
-
-    console.log('API Response:', response.data)
-
-    // Success notification
-    Swal.fire({
-      icon: 'success',
-      title: 'ສຳເລັດ',
-      html: `
-        <div class="text-left">
-          <p><strong>ແກ້ໄຂບັນທຶກຄູ່ສຳເລັດແລ້ວ!</strong></p>
-          <hr class="my-2">
-          <p><small>• ອັດເດດສະຖານະຈາກ 'P' ເປັນ 'U'</small></p>
-          <p><small>• ບັນທຶກເຫດຜົນການແກ້ໄຂແລ້ວ</small></p>
-          ${requestData.glsub_id ? '<p><small>• ອັດເດດບັນຊີແລ້ວ</small></p>' : ''}
-        </div>
-      `,
-      timer: 3000,
-      showConfirmButton: false
-    })
-
-    // Close dialog and reload data
-    closeEditDialog()
-    await loadData()
-
-    console.log('=== END FIX REJECTED DEBUG ===')
-
-  } catch (error) {
-    console.error('=== ERROR FIXING REJECTED ENTRY ===')
-    console.error('Error object:', error)
-    console.error('Error response:', error.response)
-    
-    let errorMessage = 'ບໍ່ສາມາດແກ້ໄຂບັນທຶກຄູ່ໄດ້'
-    
-    if (error.response) {
-      const status = error.response.status
-      const errorData = error.response.data
-      
-      console.error('Response status:', status)
-      console.error('Response headers:', error.response.headers)
-      console.error('Response data:', errorData)
-      console.error('Full response:', error.response)
-      
-      if (status === 404) {
-        errorMessage = 'ບໍ່ພົບບັນທຶກທີ່ຕ້ອງການແກ້ໄຂ ຫຼື ສະຖານະບໍ່ແມ່ນ P'
-      } else if (status === 400) {
-        if (errorData?.detail?.includes('glsub_id')) {
-          errorMessage = `ບັນຊີທີ່ເລືອກບໍ່ຖືກຕ້ອງ: ${errorData.detail}`
-        } else if (errorData?.detail?.includes('Comments')) {
-          errorMessage = 'ເຫດຜົນການແກ້ໄຂບໍ່ຖືກຕ້ອງ'
-        } else if (errorData?.detail?.includes('Fcy_Amount')) {
-          errorMessage = 'ຈຳນວນເງິນບໍ່ຖືກຕ້ອງ'
-        } else {
-          errorMessage = errorData?.detail || 'ຂໍ້ມູນບໍ່ຖືກຕ້ອງ'
-        }
-      } else if (errorData?.detail) {
-        errorMessage = errorData.detail
-      }
-    } else if (error.message) {
-      errorMessage = error.message
-    }
-    
-    console.error('Final error message:', errorMessage)
-    
-    Swal.fire({
-      icon: 'error',
-      title: 'ຂໍ້ຜິດພາດ',
-      text: errorMessage,
-      confirmButtonText: 'ຕົກລົງ'
-    })
-    
-  } finally {
-    isEditingPair.value = false
-    editingRefSubNo.value = null
-  }
-}
-// Corrected approve function - using master table endpoint and ID
-// Simplified approve function - updates MASTER, LOG, and HIST tables
-const approveItem = async (item) => {
-  const result = await Swal.fire({
-    icon: 'question',
-    title: 'ຢືນຢັນການອະນຸມັດ',
-    text: `ທ່ານຕ້ອງການອະນຸມັດລາຍການ ${item.Reference_No} ແທ້ບໍ?`,
-    showCancelButton: true,
-    confirmButtonText: 'ອະນຸມັດ',
-    cancelButtonText: 'ຍົກເລີກ',
-    confirmButtonColor: '#4caf50',
-    cancelButtonColor: '#9e9e9e'
-  })
-  
-  if (result.isConfirmed) {
-    try {
-      // Call endpoint that updates MASTER, LOG, and HIST tables
-      const response = await axios.post('/api/journal-entries/approve-all/', {
-        Reference_No: item.Reference_No
-      }, getAuthHeaders())
-      
-      Swal.fire({
-        icon: 'success',
-        title: 'ສຳເລັດ',
-        text: response.data.message || 'ອະນຸມັດລາຍການສຳເລັດແລ້ວ',
-        timer: 2000,
-        showConfirmButton: false
-      })
-      
-      // Reload data to show updated status
-      await loadData()
-      
-    } catch (error) {
-      console.error('Error approving item:', error)
-      
-      let errorMessage = 'ບໍ່ສາມາດອະນຸມັດລາຍການໄດ້'
-      
-      if (error.response?.data?.error) {
-        const backendError = error.response.data.error
-        if (backendError.includes('already approved')) {
-          errorMessage = 'ລາຍການນີ້ໄດ້ຮັບການອະນຸມັດແລ້ວ'
-        } else if (backendError.includes('problematic entries')) {
-          errorMessage = 'ມີລາຍການທີ່ມີບັນຫາ (P ຫຼື R) ບໍ່ສາມາດອະນຸມັດໄດ້'
-        } else {
-          errorMessage = backendError
-        }
-      } else if (error.response?.status === 404) {
-        errorMessage = 'ບໍ່ພົບລາຍການທີ່ຕ້ອງການອະນຸມັດ'
-      } else if (error.response?.status === 400) {
-        errorMessage = error.response.data?.detail || 'ຂໍ້ມູນບໍ່ຖືກຕ້ອງ'
-      }
-      
-      Swal.fire({
-        icon: 'error',
-        title: 'ຂໍ້ຜິດພາດ',
-        text: errorMessage,
-        confirmButtonText: 'ຕົກລົງ'
-      })
-    }
-  }
-}
-
-// Simplified reject function - updates MASTER, LOG, and HIST tables  
-const rejectItem = async (item) => {
-  const result = await Swal.fire({
-    icon: 'warning',
-    title: 'ຢືນຢັນການປະຕິເສດ',
-    text: `ທ່ານຕ້ອງການປະຕິເສດລາຍການ ${item.Reference_No} ແທ້ບໍ?`,
-    input: 'textarea',
-    inputLabel: 'ເຫດຜົນໃນການປະຕິເສດ *',
-    inputPlaceholder: 'ກະລຸນາໃສ່ເຫດຜົນ...',
-    inputAttributes: {
-      'aria-label': 'Rejection reason',
-      'rows': 3,
-      'maxlength': 500
-    },
-    inputValidator: (value) => {
-      if (!value || value.trim().length === 0) {
-        return 'ກະລຸນາໃສ່ເຫດຜົນໃນການປະຕິເສດ'
-      }
-      if (value.trim().length < 1) {
-        return 'ເຫດຜົນຕ້ອງມີຢ່າງນ້ອຍ 10 ຕົວອັກສອນ'
-      }
-    },
-    showCancelButton: true,
-    confirmButtonText: 'ປະຕິເສດ',
-    cancelButtonText: 'ຍົກເລີກ',
-    confirmButtonColor: '#f44336',
-    cancelButtonColor: '#9e9e9e'
-  })
-  
-  if (result.isConfirmed) {
-    try {
-      // Call endpoint that updates MASTER, LOG, and HIST tables
-      const response = await axios.post('/api/journal-entries/reject-all/', {
-        Reference_No: item.Reference_No,
-        rejection_reason: result.value.trim()
-      }, getAuthHeaders())
-      
-      Swal.fire({
-        icon: 'success',
-        title: 'ສຳເລັດ',
-        text: response.data.message || 'ປະຕິເສດລາຍການສຳເລັດແລ້ວ',
-        timer: 2000,
-        showConfirmButton: false
-      })
-      
-      // Reload data to show updated status
-      await loadData()
-      
-    } catch (error) {
-      console.error('Error rejecting item:', error)
-      
-      let errorMessage = 'ບໍ່ສາມາດປະຕິເສດລາຍການໄດ້'
-      
-      if (error.response?.data?.error) {
-        errorMessage = error.response.data.error
-      } else if (error.response?.status === 404) {
-        errorMessage = 'ບໍ່ພົບລາຍການທີ່ຕ້ອງການປະຕິເສດ'
-      } else if (error.response?.status === 400) {
-        errorMessage = error.response.data?.detail || 'ຂໍ້ມູນບໍ່ຖືກຕ້ອງ'
-      }
-      
-      Swal.fire({
-        icon: 'error',
-        title: 'ຂໍ້ຜິດພາດ',
-        text: errorMessage,
-        confirmButtonText: 'ຕົກລົງ'
-      })
-    }
-  }
-}
-// Lifecycle
-onMounted(async () => {
-  console.log('Detail page mounted with query:', route.query)
-  console.log('Reference_No:', referenceNo.value)
-  
-  // Initialize role permissions first
-  await initializeRole()
-  
-  loadModules()
-  loadAccounts()
-  if (referenceNo.value) {
-    loadData()
-  } else {
-    error.value = 'ບໍ່ພົບພາລາມິເຕີ Reference_No ໃນ URL - ກະລຸນາກວດສອບ URL'
-  }
-})
-
-// Watch for changes in Reference_No query parameter
-watch(() => route.query.Reference_No, (newVal, oldVal) => {
-  if (newVal && newVal !== oldVal) {
-    loadData()
-  }
-}, { immediate: false })
-
-// Watch for permission changes (for debugging)
-watch(permissions, (newPermissions) => {
-  if (newPermissions) {
-    console.log('Permissions loaded:', {
-      canView: canView.value,
-      canEdit: canEdit.value,
-      canDelete: canDelete.value,
-      canAuthorize: canAuthorize.value,
-      canAdd: canAdd.value,
-      rawPermissions: newPermissions
-    })
-  }
-}, { immediate: true, deep: true })
-</script>
 
 <style scoped>
+/* Additional styles for enhanced edit dialog - add to your existing styles */
+
+.current-accounts {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.current-accounts h4 {
+  color: #374151;
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+}
+
+.reference-info {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+}
+
+/* Enhanced chip styling for account codes */
+.v-chip.account-code-chip {
+  font-family: 'JetBrains Mono', 'Consolas', monospace;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* Success and warning colors for account fields */
+.v-field--success {
+  border-color: #10b981 !important;
+}
+
+.v-field--success .v-field__outline {
+  border-color: #10b981 !important;
+}
+
+.v-field--warning {
+  border-color: #f59e0b !important;
+}
+
+.v-field--warning .v-field__outline {
+  border-color: #f59e0b !important;
+}
+
+/* Enhanced readonly field styling */
+.v-field--readonly {
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+}
+
+.v-field--readonly .v-field__input {
+  font-family: 'JetBrains Mono', 'Consolas', monospace;
+  font-weight: 600;
+  color: #374151;
+}
+
+/* Enhanced dialog content */
+.edit-dialog-content {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+/* Improved spacing for form elements */
+.edit-form .v-col {
+  padding: 8px;
+}
+
+.edit-form .v-text-field,
+.edit-form .v-textarea,
+.edit-form .v-autocomplete {
+  margin-bottom: 4px;
+}
+
+/* Alert styling improvements */
+.v-alert--variant-tonal .v-alert__content {
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+/* Currency display enhancement */
+.currency-display {
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  border: 1px solid #10b981;
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: #065f46;
+}
+
+/* Account number preview styling */
+.account-preview {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 1px solid #3b82f6;
+  border-radius: 8px;
+  padding: 12px;
+  font-family: 'JetBrains Mono', 'Consolas', monospace;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1e40af;
+}
+
+/* Enhanced button styling */
+.action-btn-dialog {
+  min-width: 140px;
+  height: 44px;
+  border-radius: 8px;
+  font-weight: 600;
+  text-transform: none;
+  transition: all 0.2s ease;
+}
+
+.action-btn-dialog:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 768px) {
+  .edit-dialog-content {
+    max-height: 60vh;
+    padding: 16px !important;
+  }
+  
+  .reference-info {
+    padding: 16px;
+  }
+  
+  .current-accounts {
+    padding: 10px;
+  }
+  
+  .action-btn-dialog {
+    width: 100%;
+    min-width: auto;
+  }
+  
+  .edit-dialog-actions {
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px 20px !important;
+  }
+}
 .gl-detail-page {
   padding: 20px;
   max-width: 1800px; /* Extended from 1400px to 1800px */
