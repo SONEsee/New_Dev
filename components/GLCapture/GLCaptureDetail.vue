@@ -2006,7 +2006,7 @@ watch(permissions, (newPermissions) => {
           </v-col>
 
           <!-- Display Selected Account Codes -->
-          <v-col cols="12" md="6" v-if="selectedDebitAccount">
+          <!-- <v-col cols="12" md="6" v-if="selectedDebitAccount">
             <v-text-field
               :model-value="selectedDebitAccount.glsub_code"
               label="ລະຫັດບັນຊີ Debit"
@@ -2034,7 +2034,7 @@ watch(permissions, (newPermissions) => {
               persistent-hint
               color="warning"
             ></v-text-field>
-          </v-col>
+          </v-col> -->
 
           <!-- Account Selection Info -->
           <v-col cols="12" v-if="!selectedDebitAccount && !selectedCreditAccount">
@@ -2068,28 +2068,10 @@ watch(permissions, (newPermissions) => {
               required
             ></v-text-field>
           </v-col>
-          <!-- LCY Info -->
-                     <v-col cols="12" md="6">
-            <v-text-field
-              v-model="editForm.Lcy_Amount"
-              disabled="disabled"
-              label="ຈຳນວນເງິນ LCY *"
-              type="number"
-              step="0.01"
-              variant="outlined"
-              density="comfortable"
-              prepend-inner-icon="mdi-currency-usd"
-              :rules="[
-                v => !!v || 'ກະລຸນາໃສ່ຈຳນວນເງິນ',
-                v => v > 0 || 'ຈຳນວນເງິນຕ້ອງມີຄ່າມາກກ່ວາ 0'
-              ]"
-              :suffix="editForm.currency_code"
-              required
-            ></v-text-field>
-          </v-col>
+        
           
           <!-- Main Text -->
-          <v-col cols="12" md="6">
+          <!-- <v-col cols="12" md="6">
             <v-textarea
               v-model="editForm.Addl_text"
               label="ເນື້ອໃນຫຼັກ"
@@ -2100,7 +2082,7 @@ watch(permissions, (newPermissions) => {
               counter="255"
               :rules="[v => !v || v.length <= 255 || 'ເນື້ອໃນຕ້ອງບໍ່ເກີນ 255 ຕົວອັກສອນ']"
             ></v-textarea>
-          </v-col>
+          </v-col> -->
 
           <!-- Sub Text -->
           <v-col cols="12" md="6">
