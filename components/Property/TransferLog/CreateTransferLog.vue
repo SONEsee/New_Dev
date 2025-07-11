@@ -6,7 +6,20 @@ const form = ref();
 const faasetStore = faAssetStore();
 const transaction = useTransactionLogStore();
 const location = locationStore();
+const employee = useEmployeeStore();
+const employees = computed(() => {
+  const data = employee.respose_data_employee;
 
+  if (Array.isArray(data)) {
+    return data;
+  }
+
+  if (data && typeof data === "object") {
+    return [data];
+  }
+
+  return [];
+});
 const valid = ref(false);
 watch(
   () => faasetStore.response_fa_asset_detail,
@@ -29,18 +42,14 @@ const res = computed(() => {
 const submitForm = async () => {
   const isValid = await form.value.validate();
   if (isValid) {
-    CallSwal({
-      title: "ກຳລັງບັນທຶກ...",
-      icon: "info",
-      showConfirmButton: false,
-      timer: 2000,
-    });
+   await transaction.CreatTransactionLog()
     console.log("request", request.value);
   }
 };
 onMounted(() => {
   faasetStore.GetFaAssetDetail(id);
   location.GetLocationList();
+  employee.GetEmployee();
 });
 const title = "ບັນທຶກການໂອນຍ້າຍຊັບສົມບັດ";
 </script>
@@ -52,7 +61,7 @@ const title = "ບັນທຶກການໂອນຍ້າຍຊັບສົ�
         <v-col cols="12">
           <GlobalTextTitleLine :title="title" />
         </v-col>
-        <!-- <pre>{{ res }}</pre> -->
+        <!-- <pre>{{ employees }}</pre> -->
         <v-col cols="12" class="">
           <v-row>
             <v-col cols="12">
@@ -132,8 +141,47 @@ const title = "ບັນທຶກການໂອນຍ້າຍຊັບສົ�
                         class="formatted-number-input"
                       />
                       <label>ຜູ້ຂໍໂອນຍ້າຍ:</label>
-                      <v-text-field
+                      <v-autocomplete
                         v-model="request.requested_by"
+                        variant="outlined"
+                        density="compact"
+                        :items="employees"
+                        item-title="employee_name_la"
+                        item-value="employee_id"
+                        class="formatted-number-input"
+                        label="ເລືອກພະນັກງານ"
+                        :loading="!employee.respose_data_employee"
+                      >
+                        <template v-slot:selection="{ item }">
+                          {{ item.raw.employee_name_la }}({{
+                            item.raw.division_name_la
+                          }})
+                        </template>
+
+                        <template v-slot:item="{ props, item }">
+                          <v-list-item
+                            v-bind="props"
+                            :title="`${item.raw.employee_name_la}(${item.raw.division_name_la})`"
+                          />
+                        </template>
+                      </v-autocomplete>
+
+                      <label>ມີປະກັນໄພລະຫວ່າງການຂົນສົ່ງ:</label>
+                      <v-autocomplete
+                        :items="[
+                          { title: 'ມີ', value: 'Y' },
+                          { title: 'ບໍ່ມີ', value: 'N' },
+                        ]"
+                        v-model="request.insurance_coverage"
+                        variant="outlined"
+                        density="compact"
+                        item-title="title"
+                        item-value="value"
+                        class="formatted-number-input"
+                      />
+                      <label>ວັນທີ່ຄາດວ່າຈະມາເຖິງ:</label>
+                      <v-text-field
+                        v-model="request.estimated_arrival"
                         variant="outlined"
                         density="compact"
                         class="formatted-number-input"
@@ -155,8 +203,42 @@ const title = "ບັນທຶກການໂອນຍ້າຍຊັບສົ�
                         class="formatted-number-input"
                       />
                       <label>ຜູ້ອະນຸຍາດການໂອນຍ້າຍ:</label>
-                      <v-text-field
+                      <v-autocomplete
                         v-model="request.approved_by"
+                        variant="outlined"
+                        density="compact"
+                        :items="employees"
+                        item-title="employee_name_la"
+                        item-value="employee_id"
+                        class="formatted-number-input"
+                        label="ເລືອກພະນັກງານ"
+                        :loading="!employee.respose_data_employee"
+                      >
+                        <template v-slot:selection="{ item }">
+                          {{ item.raw.employee_name_la }}({{
+                            item.raw.division_name_la
+                          }})
+                        </template>
+
+                        <template v-slot:item="{ props, item }">
+                          <v-list-item
+                            v-bind="props"
+                            :title="`${item.raw.employee_name_la}(${item.raw.division_name_la})`"
+                          />
+                        </template>
+                      </v-autocomplete>
+                      <label>ວັນທີ່ມອບຫມາຍ:</label>
+                      <v-text-field
+                        type="date"
+                        v-model="request.handover_date"
+                        variant="outlined"
+                        density="compact"
+                        class="formatted-number-input"
+                      />
+                      <label>ວັນທີ່ມາເຖິງຈິງ:</label>
+                      <v-text-field
+                        type="date"
+                        v-model="request.actual_arrival"
                         variant="outlined"
                         density="compact"
                         class="formatted-number-input"
@@ -178,8 +260,33 @@ const title = "ບັນທຶກການໂອນຍ້າຍຊັບສົ�
                         class="formatted-number-input"
                       />
                       <label>ຜູ້ຮັບໂອນ:</label>
-                      <v-text-field
+                     <v-autocomplete
                         v-model="request.received_by"
+                        variant="outlined"
+                        density="compact"
+                        :items="employees"
+                        item-title="employee_name_la"
+                        item-value="employee_id"
+                        class="formatted-number-input"
+                        label="ເລືອກພະນັກງານ"
+                        :loading="!employee.respose_data_employee"
+                      >
+                        <template v-slot:selection="{ item }">
+                          {{ item.raw.employee_name_la }}({{
+                            item.raw.division_name_la
+                          }})
+                        </template>
+
+                        <template v-slot:item="{ props, item }">
+                          <v-list-item
+                            v-bind="props"
+                            :title="`${item.raw.employee_name_la}(${item.raw.division_name_la})`"
+                          />
+                        </template>
+                      </v-autocomplete>
+                      <label>ລາຍລະອຽດ:</label>
+                      <v-textarea
+                        v-model="request.notes"
                         variant="outlined"
                         density="compact"
                         class="formatted-number-input"
