@@ -18,7 +18,7 @@
                 <v-icon size="36" color="white">mdi-clipboard-check</v-icon>
               </v-avatar>
               <div>
-                <h1 class="text-h3 font-weight-bold mb-1 header-title">ກວດສອບກ່ອນປິດບັນຊີ</h1>
+                <h1 class="text-h3 font-weight-bold mb-1 header-title">ການກວດສອບກ່ອນປິດບັນຊີ</h1>
                 <p class="text-h6 opacity-90">Pre-EOD Validation Check</p>
               </div>
             </div>
@@ -46,7 +46,7 @@
                 rounded="xl"
                 elevation="6"
               >
-                {{ isProcessing ? 'ກຳລັງປະມວນຜົນ...' : (canStartEOD ? 'ສາມາດປິດບັນຊີໄດ້' : 'ບໍ່ສາມາດປິດບັນຊີໄດ້') }}
+                {{ getEODButtonText() }}
               </v-btn>
             </div>
           </v-col>
@@ -118,11 +118,11 @@
               <template v-slot:title>
                 <div class="d-flex align-center">
                   <v-icon class="mr-2">mdi-calendar-remove</v-icon>
-                  <strong>ວັນນີ້ບໍ່ແມ່ນວັນເຮັດການ</strong>
+                  <strong>ບໍ່ສາມາດປິດບັນຊີໄດ້</strong>
                 </div>
               </template>
               <div class="mt-2">
-                <p>{{ workingDayError }}</p>
+                <p>{{ workingDayError || 'ວັນນີ້ບໍ່ແມ່ນວັນເຮັດການ' }}</p>
                 <v-btn
                   color="primary"
                   variant="outlined"
@@ -140,134 +140,46 @@
         </v-row>
       </v-expand-transition>
 
-      <!-- EOD Status History -->
-      <v-row class="mb-6">
-        <v-col cols="12">
-          <v-card elevation="8" rounded="xl" class="status-card">
-            <v-card-title class="pa-6 pb-0">
-              <div class="d-flex align-center justify-space-between w-100">
+      <!-- Working Day Success Status -->
+      <v-expand-transition>
+        <v-row v-if="isWorkingDay" class="mb-4">
+          <v-col cols="12">
+            <v-alert
+              type="success"
+              variant="tonal"
+              rounded="lg"
+              prominent
+              border="start"
+              class="working-day-success-alert"
+            >
+              <template v-slot:title>
                 <div class="d-flex align-center">
-                  <v-avatar size="56" color="primary-lighten-4" class="mr-3 section-avatar">
-                    <v-icon color="primary-darken-2" size="28">mdi-history</v-icon>
-                  </v-avatar>
-                  <div>
-                    <h2 class="text-h5 font-weight-bold section-title">ສະຖານະການປິດບັນຊີປະຈຳວັນ</h2>
-                    <p class="text-body-2 text-medium-emphasis">End of Day Processing Status</p>
-                  </div>
+                  <v-icon class="mr-2">mdi-calendar-check</v-icon>
+                  <strong>ວັນນີ້ສາມາດປິດບັນຊີໄດ້</strong>
                 </div>
-                <div class="d-flex align-center ga-3">
-                  <v-chip color="primary-lighten-4" variant="flat" size="small" class="record-chip">
-                    {{ eodStatusHistory.length }} ບັນທຶກ
+              </template>
+              <div class="mt-2">
+                <p>{{ workingDayMessage || 'ວັນນີ້ແມ່ນວັນເຮັດການ ສາມາດປະມວນຜົນປິດບັນຊີໄດ້' }}</p>
+                <div class="d-flex align-center ga-2 mt-2">
+                  <v-chip color="success" variant="flat" size="small" prepend-icon="mdi-check-circle">
+                    ວັນເຮັດການ
                   </v-chip>
                   <v-btn
-                    :color="showEodDetails ? 'primary' : 'grey'"
-                    :variant="showEodDetails ? 'flat' : 'outlined'"
+                    color="primary"
+                    variant="text"
                     size="small"
-                    @click="toggleEodDetails"
-                    :prepend-icon="showEodDetails ? 'mdi-eye-off' : 'mdi-eye'"
-                    rounded="lg"
-                    class="toggle-button"
+                    @click="checkWorkingDay"
+                    prepend-icon="mdi-refresh"
+                    :loading="loadingWorkingDay"
                   >
-                    {{ showEodDetails ? 'ເຊື່ອງລາຍລະອຽດ' : 'ເບິ່ງລາຍລະອຽດ' }}
+                    ກວດສອບອີກຄັ້ງ
                   </v-btn>
                 </div>
               </div>
-            </v-card-title>
-            
-            <v-card-text class="pa-6">
-              <v-expand-transition>
-                <div v-show="showEodDetails">
-                  <v-data-table
-                    :headers="eodStatusHeaders"
-                    :items="eodStatusHistory"
-                    class="elevation-2 rounded-lg data-table"
-                    hide-default-footer
-                    no-data-text="ບໍ່ມີປະຫວັດການປິດບັນຊີ"
-                    item-value="id"
-                  >
-                    <template v-slot:item.status="{ item }">
-                      <v-chip
-                        :color="getEODStatusColor(item.status)"
-                        :prepend-icon="getEODStatusIcon(item.status)"
-                        variant="flat"
-                        size="small"
-                        class="status-chip"
-                      >
-                        {{ getEODStatusText(item.status) }}
-                      </v-chip>
-                    </template>
-                    <template v-slot:item.start_time="{ item }">
-                      <span v-if="item.start_time" class="time-text">{{ item.start_time }}</span>
-                      <span v-else class="text-medium-emphasis">-</span>
-                    </template>
-                    <template v-slot:item.end_time="{ item }">
-                      <span v-if="item.end_time" class="time-text">{{ item.end_time }}</span>
-                      <span v-else class="text-medium-emphasis">-</span>
-                    </template>
-                    <template v-slot:item.duration="{ item }">
-                      <span v-if="item.duration" class="duration-text">{{ item.duration }}</span>
-                      <span v-else class="text-medium-emphasis">-</span>
-                    </template>
-                    <template v-slot:item.total_transactions="{ item }">
-                      <span v-if="item.total_transactions" class="number-text">{{ formatNumber(item.total_transactions) }}</span>
-                      <span v-else class="text-medium-emphasis">-</span>
-                    </template>
-                    <template v-slot:item.actions="{ item }">
-                      <v-btn
-                        v-if="item.error_message"
-                        color="error"
-                        variant="text"
-                        size="small"
-                        icon="mdi-alert-circle-outline"
-                        @click="showErrorDialog(item)"
-                        title="ເບິ່ງຂໍ້ຜິດພາດ"
-                        class="action-button"
-                      ></v-btn>
-                      <v-btn
-                        v-else-if="item.status === 'completed'"
-                        color="primary"
-                        variant="text"
-                        size="small"
-                        icon="mdi-information-outline"
-                        @click="showDetailDialog(item)"
-                        title="ເບິ່ງລາຍລະອຽດ"
-                        class="action-button"
-                      ></v-btn>
-                      <span v-else class="text-medium-emphasis">-</span>
-                    </template>
-                  </v-data-table>
-                </div>
-              </v-expand-transition>
-              
-              <!-- Summary when collapsed -->
-              <v-expand-transition>
-                <div v-show="!showEodDetails" class="text-center py-6">
-                  <div class="d-flex justify-center align-center ga-12">
-                    <div class="text-center summary-item">
-                      <v-chip color="success" variant="flat" size="x-large" class="mb-3 summary-chip">
-                        {{ completedCount }}
-                      </v-chip>
-                      <p class="text-body-1 font-weight-medium">ສຳເລັດ</p>
-                    </div>
-                    <div class="text-center summary-item">
-                      <v-chip color="error" variant="flat" size="x-large" class="mb-3 summary-chip">
-                        {{ failedCount }}
-                      </v-chip>
-                      <p class="text-body-1 font-weight-medium">ລົ້ມເຫລວ</p>
-                    </div>
-                    <div class="text-center summary-item">
-                      <v-chip color="warning" variant="flat" size="x-large" class="mb-3 summary-chip">
-                        {{ pendingCount }}
-                      </v-chip>
-                      <p class="text-body-1 font-weight-medium">ລໍຖ້າ</p>
-                    </div>
-                  </div>
-                </div>
-              </v-expand-transition>
-            </v-card-text>
-          </v-card>
-        </v-col>
-      </v-row>
+            </v-alert>
+          </v-col>
+        </v-row>
+      </v-expand-transition>
 
       <!-- Validation Tables -->
       <v-row>
@@ -372,24 +284,6 @@
                     </template>
                     <template v-slot:item.actions="{ item }">
                       <div class="d-flex ga-1">
-                        <!-- <v-btn
-                          color="success"
-                          variant="text"
-                          size="small"
-                          icon="mdi-check"
-                          @click="approveJournal(item)"
-                          title="ອະນຸມັດ"
-                          class="action-button"
-                        ></v-btn>
-                        <v-btn
-                          color="error"
-                          variant="text"
-                          size="small"
-                          icon="mdi-close"
-                          @click="rejectJournal(item)"
-                          title="ປະຕິເສດ"
-                          class="action-button"
-                        ></v-btn> -->
                         <v-btn
                           color="info"
                           variant="text"
@@ -826,18 +720,6 @@ const router = useRouter()
 import axios from '@/helpers/axios'
 
 // Types
-interface EODStatus {
-  id: number
-  process_date: string
-  status: 'completed' | 'in_progress' | 'failed' | 'pending'
-  start_time?: string
-  end_time?: string
-  user: string
-  duration?: string
-  total_transactions?: number
-  error_message?: string
-}
-
 interface PendingJournal {
   JRNLLog_id: number
   Reference_No: string
@@ -887,9 +769,8 @@ interface EODFunction {
 }
 
 interface WorkingDayResponse {
-  status: 'success' | 'error'
-  message: string
-  eod_id?: number
+  available: boolean
+  reason: string
 }
 
 interface ActiveSessionsResponse {
@@ -916,7 +797,6 @@ const lastUpdate = ref(new Date().toLocaleString('lo-LA'))
 const currentUser = ref<string>('')
 const currentUserName = ref<string>('')
 const currentUserRole = ref<string>('')
-const showEodDetails = ref(false)
 const showJournalDetails = ref(false)
 const showUserDetails = ref(false)
 const showEODFunctionDetails = ref(false)
@@ -937,60 +817,7 @@ const pendingJournals = ref<PendingJournal[]>([])
 const eodFunctions = ref<EODFunction[]>([])
 const activeUsers = ref<ActiveUserSession[]>([])
 
-// Sample data for EOD Status History
-const eodStatusHistory = ref<EODStatus[]>([
-  { 
-    id: 1, 
-    process_date: '26/04/2022', 
-    status: 'completed', 
-    start_time: '18:00', 
-    end_time: '18:45', 
-    user: 'ADMIN',
-    duration: '45 ນາທີ',
-    total_transactions: 1250
-  },
-  { 
-    id: 2, 
-    process_date: '25/04/2022', 
-    status: 'completed', 
-    start_time: '18:15', 
-    end_time: '19:02', 
-    user: 'ADMIN',
-    duration: '47 ນາທີ',
-    total_transactions: 1180
-  },
-  { 
-    id: 3, 
-    process_date: '24/04/2022', 
-    status: 'failed', 
-    start_time: '18:00', 
-    end_time: '18:30', 
-    user: 'USER01',
-    duration: '30 ນາທີ',
-    total_transactions: 0,
-    error_message: 'ມີຼູ້ໃຊ້ຍັງເຂົ້າໃຊ້ລະບົບຢູ່'
-  },
-  { 
-    id: 4, 
-    process_date: '27/04/2022', 
-    status: 'pending', 
-    user: 'ADMIN'
-  }
-])
-
 // Table headers
-const eodStatusHeaders = [
-  { title: 'ລຳດັບ', key: 'id', width: '80px' },
-  { title: 'ວັນທີປະມວນຜົນ', key: 'process_date', width: '120px' },
-  { title: 'ສະຖານະ', key: 'status', width: '120px' },
-  { title: 'ເວລາເລີ່ມ', key: 'start_time', width: '100px' },
-  { title: 'ເວລາສິ້ນສຸດ', key: 'end_time', width: '100px' },
-  { title: 'ໄລຍະເວລາ', key: 'duration', width: '100px' },
-  { title: 'ຼູ້ປະມວນຜົນ', key: 'user', width: '120px' },
-  { title: 'ຈຳນວນລາຍການ', key: 'total_transactions', width: '120px' },
-  { title: 'ລາຍລະອຽດ', key: 'actions', width: '100px', sortable: false }
-]
-
 const pendingJournalHeaders = [
   { title: 'ລຳດັບ', key: 'JRNLLog_id', width: '80px' },
   { title: 'ເລກທີອ້າງອີງ', key: 'Reference_No', width: '180px' },
@@ -1004,7 +831,7 @@ const pendingJournalHeaders = [
 
 const activeUserHeaders = [
   { title: 'ລຳດັບ', key: 'log_id', width: '80px' },
-  { title: 'ລະຫັດຼູ້ໃຊ້', key: 'user_id', width: '120px' },
+  { title: 'ລະຫັດຜູ້ໃຊ້', key: 'user_id', width: '120px' },
   { title: 'ຊື່ຜູ້ໃຊ້', key: 'user_name' },
   { title: 'ເວລາເຂົ້າ', key: 'login_datetime', width: '150px' },
   { title: 'ໄລຍະເວລາ', key: 'session_duration', width: '120px' },
@@ -1030,9 +857,9 @@ const canStartEOD = computed((): boolean => {
     session.user_id !== currentUser.value
   )
   
-  const hasIncompleteEODFunctions = eodFunctions.value.some(func => func.Record_Status === 'O')
+  const hasIncompleteEODFunctions = eodFunctions.value.some(func => func.Record_Status === 'C')
   
-  return !hasPendingJournals && !hasOtherActiveUsers && !hasIncompleteEODFunctions && isWorkingDay.value
+  return isWorkingDay.value && !hasPendingJournals && !hasOtherActiveUsers && !hasIncompleteEODFunctions
 })
 
 const pendingIssues = computed(() => {
@@ -1050,7 +877,7 @@ const pendingIssues = computed(() => {
   ).length
   
   if (otherActiveUsersCount > 0) {
-    issues.push(`ມີຼູ້ໃຊ້ອື່ນທີ່ຍັງເຂົ້າໃຊ້ລະບົບຢູ່ (${otherActiveUsersCount} ຄົນ)`)
+    issues.push(`ມີຜູ້ໃຊ້ອື່ນທີ່ຍັງເຂົ້າໃຊ້ລະບົບຢູ່ (${otherActiveUsersCount} ຄົນ)`)
   }
   
   if (eodFunctions.value.some(func => func.Record_Status === 'C')) {
@@ -1060,7 +887,7 @@ const pendingIssues = computed(() => {
 })
 
 const hasPendingJournals = computed(() => {
-  return pendingJournals.value.some(item => item.Auth_Status === 'U')
+  return pendingJournals.value.some(item => item.Auth_Status === 'U' || item.Auth_Status === 'P')
 })
 
 const hasOtherActiveUsers = computed(() => {
@@ -1072,7 +899,7 @@ const hasIncompleteEODFunctions = computed(() => {
 })
 
 const pendingJournalsCount = computed(() => {
-  return pendingJournals.value.filter(item => item.Auth_Status === 'U').length
+  return pendingJournals.value.filter(item => item.Auth_Status === 'U' || item.Auth_Status === 'P').length
 })
 
 const activeUsersCount = computed(() => {
@@ -1104,64 +931,90 @@ const totalPendingAmount = computed(() => {
     .reduce((sum, item) => sum + parseFloat(item.Fcy_Amount), 0)
 })
 
-const completedCount = computed(() => {
-  return eodStatusHistory.value.filter(item => item.status === 'completed').length
-})
-
-const failedCount = computed(() => {
-  return eodStatusHistory.value.filter(item => item.status === 'failed').length
-})
-
-const pendingCount = computed(() => {
-  return eodStatusHistory.value.filter(item => item.status === 'pending').length
-})
-
 // API Methods
 const checkWorkingDay = async () => {
   loadingWorkingDay.value = true
   try {
-    const response = await axios.get<WorkingDayResponse>('/api/eod-journal/', {
+    const response = await axios.get<WorkingDayResponse>('/api/end-of-day-journal/check/', {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
     })
 
-    if (response.status === 200 || response.status === 201) {
-      isWorkingDay.value = true
-      workingDayMessage.value = response.data.message
-      workingDayError.value = ''
-      console.log('Working day check passed:', response.data.message)
+    if (response.status === 200) {
+      const data = response.data
+      isWorkingDay.value = data.available
+      workingDayMessage.value = data.reason
+      
+      if (data.available) {
+        workingDayError.value = ''
+        console.log('Working day check passed:', data.reason)
+      } else {
+        workingDayError.value = data.reason
+        console.log('Working day check failed:', data.reason)
+      }
     }
   } catch (error: any) {
     console.error("Working day check failed:", error)
     isWorkingDay.value = false
     
     if (error.response?.status === 400) {
-      workingDayError.value = error.response.data.message || 'ວັນນີ້ບໍ່ແມ່ນວັນເຮັດການ'
-      if (error.response.data.message.includes('not a working day')) {
-        workingDayError.value = 'ວັນນີ້ບໍ່ແມ່ນວັນເຮັດການ'
-      } else if (error.response.data.message.includes('already submitted')) {
-        workingDayError.value = 'ມີການປິດບັນຊີສຳລັບວັນນີ້ແລ້ວ'
-      } else if (error.response.data.message.includes('Holiday list does not include today')) {
-        workingDayError.value = 'ບໍ່ພົບຂໍ້ມູນວັນເຮັດການສຳລັບວັນນີ້'
-      }
-    } else if (error.response?.status === 404) {
-      workingDayError.value = 'ບໍ່ພົບຂໍ້ມູນວັນພັກສຳລັບເດືອນນີ້'
-      isWorkingDay.value = false
+      workingDayError.value = error.response.data.reason || 'ວັນນີ້ບໍ່ແມ່ນວັນເຮັດການ'
+    } else if (error.response?.status === 500) {
+      workingDayError.value = 'ເກີດຂໍ້ຜິດພາດໃນລະບົບ'
     } else {
-      workingDayError.value = error.response?.data?.message || 'ເກີດຂໍ້ຜິດພາດໃນການກວດສອບວັນເຮັດການ'
-      isWorkingDay.value = false
+      workingDayError.value = error.response?.data?.reason || 'ເກີດຂໍ້ຜິດພາດໃນການກວດສອບວັນເຮັດການ'
     }
   } finally {
     loadingWorkingDay.value = false
   }
 }
 
+// Submit end-of-day journal
+const submitEndOfDayJournal = async () => {
+  try {
+    const response = await axios.post('/api/end-of-day-journal/', {}, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    })
+
+    if (response.status === 201) {
+      showSuccess.value = true
+      successMessage.value = response.data.message || 'ປິດບັນຊີປະຈຳວັນສຳເລັດແລ້ວ'
+      
+      // Refresh data after successful submission
+      await Promise.all([
+        checkWorkingDay(),
+        fetchPendingJournals(),
+        fetchEODFunctions(),
+        fetchActiveUsers()
+      ])
+      
+      return true
+    }
+  } catch (error: any) {
+    console.error("End-of-day journal submission failed:", error)
+    showError.value = true
+    
+    if (error.response?.status === 400) {
+      errorMessage.value = error.response.data.error || 'ບໍ່ສາມາດປິດບັນຊີໄດ້'
+    } else if (error.response?.status === 500) {
+      errorMessage.value = 'ເກີດຂໍ້ຜິດພາດໃນລະບົບ'
+    } else {
+      errorMessage.value = error.response?.data?.error || 'ເກີດຂໍ້ຜິດພາດໃນການປິດບັນຊີ'
+    }
+    
+    return false
+  }
+}
+
 const fetchPendingJournals = async () => {
   loadingJournals.value = true
   try {
-    const response = await axios.get<PendingJournal[]>('/api/journal-log-master/journal-log-active?Auth_Status=U', {
+    const response = await axios.get<PendingJournal[]>('/api/journal-log-master/journal-log-active', {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -1261,64 +1114,6 @@ const refreshEODFunctions = async () => {
   successMessage.value = 'ອັບເດດຂໍ້ມູນຟັງຊັນ EOD ສຳເລັດແລ້ວ'
 }
 
-const approveJournal = async (journal: PendingJournal) => {
-  try {
-    const response = await axios.patch(`/api/journal-log-master/${journal.JRNLLog_id}/approve/`, {}, {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    })
-
-    if (response.status === 200) {
-      const index = pendingJournals.value.findIndex(j => j.JRNLLog_id === journal.JRNLLog_id)
-      if (index !== -1) {
-        pendingJournals.value[index].Auth_Status = 'A'
-        pendingJournals.value[index].Checker_Id = currentUser.value
-        pendingJournals.value[index].Checker_DT_Stamp = new Date().toISOString()
-      }
-      
-      showSuccess.value = true
-      successMessage.value = `ອະນຸມັດລາຍການ ${journal.Reference_No} ສຳເລັດແລ້ວ`
-      
-      await fetchPendingJournals()
-    }
-  } catch (error: any) {
-    console.error('Error approving journal:', error)
-    showError.value = true
-    errorMessage.value = error.response?.data?.detail || 'ເກີດຂໍ້ຜິດພາດໃນການອະນຸມັດ'
-  }
-}
-
-const rejectJournal = async (journal: PendingJournal) => {
-  try {
-    const response = await axios.patch(`/api/journal-log-master/${journal.JRNLLog_id}/reject/`, {}, {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    })
-
-    if (response.status === 200) {
-      const index = pendingJournals.value.findIndex(j => j.JRNLLog_id === journal.JRNLLog_id)
-      if (index !== -1) {
-        pendingJournals.value[index].Auth_Status = 'R'
-        pendingJournals.value[index].Checker_Id = currentUser.value
-        pendingJournals.value[index].Checker_DT_Stamp = new Date().toISOString()
-      }
-      
-      showSuccess.value = true
-      successMessage.value = `ປະຕິເສດລາຍການ ${journal.Reference_No} ສຳເລັດແລ້ວ`
-      
-      await fetchPendingJournals()
-    }
-  } catch (error: any) {
-    console.error('Error rejecting journal:', error)
-    showError.value = true
-    errorMessage.value = error.response?.data?.detail || 'ເກີດຂໍ້ຜິດພາດໃນການປະຕິເສດ'
-  }
-}
-
 const viewJournalDetails = (journal: PendingJournal) => {
   router.push({
     path: '/glcapture/detail',
@@ -1389,7 +1184,7 @@ const kickAllUsers = async (): Promise<void> => {
 
     if (otherUserIds.length === 0) {
       showError.value = true
-      errorMessage.value = 'ບໍ່ມີຼູ້ໃຊ້ອື່ນໃນລະບົບ'
+      errorMessage.value = 'ບໍ່ມີຜູ້ໃຊ້ອື່ນໃນລະບົບ'
       return
     }
 
@@ -1422,6 +1217,8 @@ const getJournalStatusColor = (status: string): string => {
       return 'warning'
     case 'R':
       return 'error'
+    case 'P':
+      return 'warning'
     default:
       return 'grey'
   }
@@ -1435,6 +1232,8 @@ const getJournalStatusIcon = (status: string): string => {
       return 'mdi-clock-outline'
     case 'R':
       return 'mdi-close-circle'
+    case 'P':
+      return 'mdi-clock-outline'
     default:
       return 'mdi-help-circle'
   }
@@ -1448,51 +1247,8 @@ const getJournalStatusText = (status: string): string => {
       return 'ລໍຖ້າອະນຸມັດ'
     case 'R':
       return 'ປະຕິເສດ'
-    default:
-      return 'ບໍ່ຮູ້ສະຖານະ'
-  }
-}
-
-const getEODStatusColor = (status: string): string => {
-  switch(status) {
-    case 'completed':
-      return 'success'
-    case 'in_progress':
-      return 'info'
-    case 'failed':
-      return 'error'
-    case 'pending':
-      return 'warning'
-    default:
-      return 'grey'
-  }
-}
-
-const getEODStatusIcon = (status: string): string => {
-  switch(status) {
-    case 'completed':
-      return 'mdi-check-circle'
-    case 'in_progress':
-      return 'mdi-loading'
-    case 'failed':
-      return 'mdi-alert-circle'
-    case 'pending':
-      return 'mdi-clock-outline'
-    default:
-      return 'mdi-help-circle'
-  }
-}
-
-const getEODStatusText = (status: string): string => {
-  switch(status) {
-    case 'completed':
-      return 'ສຳເລັດ'
-    case 'in_progress':
-      return 'ກຳລັງປະມວນຜົນ'
-    case 'failed':
-      return 'ລົ້ມເຫລວ'
-    case 'pending':
-      return 'ລໍຖ້າປະມວນຜົນ'
+    case 'P':
+      return 'ລໍຖ້າແກ້ໄຂ'
     default:
       return 'ບໍ່ຮູ້ສະຖານະ'
   }
@@ -1537,6 +1293,23 @@ const getEODFunctionStatusText = (status: string): string => {
   }
 }
 
+// Helper function for EOD button text
+const getEODButtonText = (): string => {
+  if (isProcessing.value) {
+    return 'ກຳລັງປະມວນຜົນ...'
+  }
+  
+  if (!isWorkingDay.value) {
+    return 'ບໍ່ແມ່ນວັນເຮັດການ'
+  }
+  
+  if (canStartEOD.value) {
+    return 'ສາມາດປິດບັນຊີໄດ້'
+  }
+  
+  return 'ບໍ່ສາມາດປິດບັນຊີໄດ້'
+}
+
 // Utility Methods
 const formatNumber = (num: number): string => {
   return new Intl.NumberFormat('lo-LA').format(num)
@@ -1579,10 +1352,6 @@ const formatLoginTime = (dateString: string): string => {
 }
 
 // Toggle Methods
-const toggleEodDetails = (): void => {
-  showEodDetails.value = !showEodDetails.value
-}
-
 const toggleJournalDetails = (): void => {
   showJournalDetails.value = !showJournalDetails.value
 }
@@ -1605,15 +1374,25 @@ const startEODProcess = async (): Promise<void> => {
   
   isProcessing.value = true
   try {
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    // First, do a final check
+    await checkWorkingDay()
     
-    lastUpdate.value = new Date().toLocaleString('lo-LA')
-    showSuccess.value = true
-    successMessage.value = 'ການກວດສອບກ່ອນປິດບັນຊີສຳເລັດແລ້ວ'
+    if (!isWorkingDay.value) {
+      showError.value = true
+      errorMessage.value = workingDayError.value || 'ວັນນີ້ບໍ່ສາມາດປິດບັນຊີໄດ້'
+      return
+    }
+    
+    // Submit the end-of-day journal
+    const success = await submitEndOfDayJournal()
+    
+    if (success) {
+      lastUpdate.value = new Date().toLocaleString('lo-LA')
+    }
   } catch (error) {
-    console.error('Validation failed:', error)
+    console.error('EOD process failed:', error)
     showError.value = true
-    errorMessage.value = 'ການກວດສອບລົ້ມເຫລວ'
+    errorMessage.value = 'ການປິດບັນຊີລົ້ມເຫລວ'
   } finally {
     isProcessing.value = false
   }
@@ -1643,14 +1422,6 @@ const refreshData = async (): Promise<void> => {
 
 const proceedToEOD = (): void => {
   console.log('Proceeding to EOD process')
-}
-
-const showErrorDialog = (item: EODStatus): void => {
-  console.log('Show error dialog for:', item)
-}
-
-const showDetailDialog = (item: EODStatus): void => {
-  console.log('Show detail dialog for:', item)
 }
 
 // Lifecycle
@@ -1711,22 +1482,28 @@ onMounted(async () => {
 }
 
 /* Alert styling */
-.warning-alert, .success-alert, .working-day-alert {
+.warning-alert, .success-alert, .working-day-alert, .working-day-success-alert {
   border-left: 6px solid;
   backdrop-filter: blur(5px);
 }
 
 .working-day-alert {
   background: linear-gradient(135deg, rgba(244, 67, 54, 0.1) 0%, rgba(244, 67, 54, 0.05) 100%);
+  border-left: 6px solid #F44336 !important;
+}
+
+.working-day-success-alert {
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(76, 175, 80, 0.05) 100%);
+  border-left: 6px solid #4CAF50 !important;
 }
 
 /* Card styling */
-.status-card, .validation-card, .footer-card {
+.validation-card, .footer-card {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-.status-card:hover, .validation-card:hover, .footer-card:hover {
+.validation-card:hover, .footer-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15) !important;
 }
@@ -1761,29 +1538,15 @@ onMounted(async () => {
 }
 
 /* Chip styling */
-.status-chip, .count-chip, .record-chip, .summary-chip, .sequence-chip {
+.status-chip, .count-chip, .sequence-chip {
   font-weight: 600;
   border-radius: 12px;
   transition: all 0.2s ease;
 }
 
-.summary-chip {
-  font-size: 1.1rem !important;
-  height: 40px !important;
-  min-width: 60px !important;
-}
-
 .sequence-chip {
   font-weight: bold;
   min-width: 40px;
-}
-
-.summary-item {
-  transition: all 0.2s ease;
-}
-
-.summary-item:hover {
-  transform: translateY(-2px);
 }
 
 /* Data table styling */
@@ -1873,10 +1636,6 @@ onMounted(async () => {
   
   .section-avatar {
     margin-right: 12px !important;
-  }
-  
-  .summary-item {
-    margin-bottom: 16px;
   }
 }
 
