@@ -108,11 +108,11 @@ export const accountMethodStore = defineStore("accountMethod", {
     },
 
  
-    async GetAccountMethodDetail(id: string) {
+    async GetAccountMethodDetail(id: number) {
       this.isLoading = true;
       try {
         const res = await axios.get<AccountsModel.AccoutMethodRespons>(
-          `account-methods/${id}`,
+          `/api/asset_account/${id}`,
           {
             headers: {
               "Content-Type": "application/json",
@@ -301,43 +301,43 @@ export const accountMethodStore = defineStore("accountMethod", {
     },
 
    
-    async GenerateJournalEntry(id: string) {
-      this.isLoading = true;
-      try {
-        const res = await axios.post(
-          `account-methods/${id}/generate-journal`,
-          {},
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          }
-        );
-        if (res.status === 200) {
-          CallSwal({
-            title: "ສຳເລັດ",
-            text: "ສຳເລັດການສ້າງ Journal Entry",
-            icon: "success",
-            showCancelButton: false,
-            showConfirmButton: false,
-          });
+    // async GenerateJournalEntry(id: string) {
+    //   this.isLoading = true;
+    //   try {
+    //     const res = await axios.post(
+    //       `account-methods/${id}/generate-journal`,
+    //       {},
+    //       {
+    //         headers: {
+    //           "Content-Type": "application/json",
+    //           Authorization: `Bearer ${localStorage.getItem("token")}`,
+    //         },
+    //       }
+    //     );
+    //     if (res.status === 200) {
+    //       CallSwal({
+    //         title: "ສຳເລັດ",
+    //         text: "ສຳເລັດການສ້າງ Journal Entry",
+    //         icon: "success",
+    //         showCancelButton: false,
+    //         showConfirmButton: false,
+    //       });
          
-          await this.GetAccountMethodDetail(id);
-        }
-      } catch (error) {
-        console.error("Error generating journal entry:", error);
-        CallSwal({
-          title: "ຜິດພາດ",
-          text: "ມີຂໍ້ຜິດພາດໃນການສ້າງ Journal Entry",
-          icon: "error",
-          showCancelButton: false,
-          confirmButtonText: "ຕົກລົງ",
-        });
-      } finally {
-        this.isLoading = false;
-      }
-    },
+         
+    //     }
+    //   } catch (error) {
+    //     console.error("Error generating journal entry:", error);
+    //     CallSwal({
+    //       title: "ຜິດພາດ",
+    //       text: "ມີຂໍ້ຜິດພາດໃນການສ້າງ Journal Entry",
+    //       icon: "error",
+    //       showCancelButton: false,
+    //       confirmButtonText: "ຕົກລົງ",
+    //     });
+    //   } finally {
+    //     this.isLoading = false;
+    //   }
+    // },
 
    
     resetCreateForm() {
