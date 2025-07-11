@@ -282,7 +282,7 @@ const submitHoliday = async () => {
       const record = {
         lcl_holiday_id: generateHolidayId(selectedYear.value, i + 1),
         HYear: selectedYear.value.toString(),
-        HMonth: (i + 1).toString(),
+        HMonth: String(i + 1).padStart(2, '0'), // <-- always 2 digits
         HDate: `${selectedYear.value}-${String(i + 1).padStart(2, '0')}-01T00:00:00Z`,
         Holiday_List: monthData.value[i].slice(0, days).join(''),
         Record_Status: 'C',

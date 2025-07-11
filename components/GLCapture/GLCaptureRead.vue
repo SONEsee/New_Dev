@@ -508,8 +508,9 @@ const headers = [
   { title: 'ໂມດູນ', key: 'module_id', sortable: true },
   { title: 'ລະຫັດ', key: 'Txn_code', sortable: true },
   { title: 'ເລກອ້າງອີງ', key: 'Reference_No', sortable: true },
+    { title: 'ເນື້ອໃນ', key: 'Addl_text', sortable: true },
   { title: 'ຈຳນວນເງິນ', key: 'Fcy_Amount', align: 'end', sortable: true },
-  { title: 'ເນື້ອໃນ', key: 'Addl_text', sortable: true },
+
   { title: 'ຜູ້ສ້າງ', key: 'maker_name', sortable: true },
   { title: 'ວັນທີ', key: 'Value_date', sortable: true },
   { title: 'ສະຖານະ', key: 'Auth_Status', sortable: true },
