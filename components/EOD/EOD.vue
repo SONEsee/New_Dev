@@ -97,6 +97,9 @@
               </template>
               <div class="mt-2">
                 <p>ທຸກສິ່ງທຸກຢ່າງພ້ອມແລ້ວ ສາມາດເລີ່ມການປິດບັນຊີໄດ້</p>
+                <p class="text-body-2 mt-1">
+                  ຈະປະມວນຜົນ {{ readyEODFunctionsCount }} ຟັງຊັນ EOD
+                </p>
               </div>
             </v-alert>
           </v-col>
@@ -514,18 +517,18 @@
             elevation="6" 
             rounded="xl" 
             class="validation-card"
-            :color="hasIncompleteEODFunctions ? 'error-lighten-5' : 'success-lighten-5'"
+            :color="!allEODFunctionsReady ? 'warning-lighten-5' : 'success-lighten-5'"
           >
             <v-card-title class="pa-6 pb-0">
               <div class="d-flex align-center justify-space-between w-100">
                 <div class="d-flex align-center">
                   <v-avatar 
                     size="56" 
-                    :color="hasIncompleteEODFunctions ? 'error-lighten-4' : 'success-lighten-4'" 
+                    :color="!allEODFunctionsReady ? 'warning-lighten-4' : 'success-lighten-4'" 
                     class="mr-3 section-avatar"
                   >
-                    <v-icon :color="hasIncompleteEODFunctions ? 'error-darken-2' : 'success-darken-2'" size="28">
-                      {{ hasIncompleteEODFunctions ? 'mdi-function-variant' : 'mdi-check-circle' }}
+                    <v-icon :color="!allEODFunctionsReady ? 'warning-darken-2' : 'success-darken-2'" size="28">
+                      {{ !allEODFunctionsReady ? 'mdi-function-variant' : 'mdi-check-circle' }}
                     </v-icon>
                   </v-avatar>
                   <div>
@@ -535,13 +538,13 @@
                 </div>
                 <div class="d-flex align-center ga-3">
                   <v-chip 
-                    :color="hasIncompleteEODFunctions ? 'error' : 'success'" 
+                    :color="allEODFunctionsReady ? 'success' : 'warning'" 
                     variant="flat" 
                     size="small"
-                    :prepend-icon="hasIncompleteEODFunctions ? 'mdi-alert' : 'mdi-check'"
+                    :prepend-icon="allEODFunctionsReady ? 'mdi-check' : 'mdi-cog'"
                     class="count-chip"
                   >
-                    {{ completedEODFunctionsCount }}/{{ eodFunctions.length }} ສຳເລັດ
+                    {{ readyEODFunctionsCount }}/{{ eodFunctionsCount }} ພ້ອມ
                   </v-chip>
                   <v-btn
                     color="primary"
@@ -575,7 +578,7 @@
                 <div v-show="showEODFunctionDetails">
                   <v-data-table
                     :headers="eodFunctionHeaders"
-                    :items="eodFunctions"
+                    :items="eodFunctionsFiltered"
                     class="elevation-2 rounded-lg data-table"
                     hide-default-footer
                     :loading="loadingEODFunctions"
@@ -617,19 +620,41 @@
                         {{ getJournalStatusText(item.Auth_Status) }}
                       </v-chip>
                     </template>
+                    <template v-slot:item.execution_status="{ item }">
+                      <v-chip
+                        :color="getExecutionStatusColor(item)"
+                        :prepend-icon="getExecutionStatusIcon(item)"
+                        variant="flat"
+                        size="small"
+                        class="status-chip"
+                      >
+                        {{ getExecutionStatusText(item) }}
+                      </v-chip>
+                    </template>
                     <template v-slot:item.Maker_DT_Stamp="{ item }">
                       <span class="time-text">{{ formatDateTime(item.Maker_DT_Stamp) }}</span>
                     </template>
                     <template v-slot:item.actions="{ item }">
                       <div class="d-flex ga-1">
                         <v-btn
-                          v-if="item.Record_Status === 'O' && item.Auth_Status === 'A'"
+                          v-if="canExecuteFunction(item)"
                           color="success"
                           variant="text"
                           size="small"
                           icon="mdi-play"
                           @click="executeEODFunction(item)"
                           title="ດຳເນີນການ"
+                          class="action-button"
+                          :loading="item.executing"
+                        ></v-btn>
+                        <v-btn
+                          v-if="canToggleFunction(item)"
+                          :color="item.Record_Status === 'O' ? 'warning' : 'success'"
+                          variant="text"
+                          size="small"
+                          :icon="item.Record_Status === 'O' ? 'mdi-pause' : 'mdi-play-circle'"
+                          @click="toggleEODFunction(item)"
+                          :title="item.Record_Status === 'O' ? 'ປິດຟັງຊັນ' : 'ເປີດຟັງຊັນ'"
                           class="action-button"
                         ></v-btn>
                         <v-btn
@@ -648,15 +673,17 @@
               </v-expand-transition>
               <v-expand-transition>
                 <div v-show="!showEODFunctionDetails" class="text-center py-4">
-                  <v-icon :color="hasIncompleteEODFunctions ? 'error' : 'success'" size="48" class="mb-2">
-                    {{ hasIncompleteEODFunctions ? 'mdi-function-variant' : 'mdi-check-circle' }}
+                  <v-icon :color="allEODFunctionsReady ? 'success' : 'warning'" size="48" class="mb-2">
+                    {{ allEODFunctionsReady ? 'mdi-check-circle' : 'mdi-cog' }}
                   </v-icon>
                   <p class="text-h6 font-weight-medium">
-                    {{ hasIncompleteEODFunctions ? `${completedEODFunctionsCount}/${eodFunctions.length} ຟັງຊັນສຳເລັດ` : 'ຟັງຊັນທັງໝົດສຳເລັດແລ້ວ' }}
+                    {{ readyEODFunctionsCount }}/{{ eodFunctionsCount }} ຟັງຊັນພ້ອມປະມວນຜົນ
                   </p>
-                  <p v-if="hasIncompleteEODFunctions" class="text-body-2 text-grey mt-1">
-                    ຍັງເຫຼືອ {{ incompleteEODFunctionsCount }} ຟັງຊັນທີ່ບໍ່ສຳເລັດ
-                  </p>
+                  <div v-if="!allEODFunctionsReady" class="text-body-2 text-grey mt-1">
+                    <p>ພ້ອມປະມວນຜົນ: {{ readyEODFunctionsCount }}</p>
+                    <p>ປິດ: {{ closedEODFunctionsCount }}</p>
+                    <p>ຍັງບໍ່ອະນຸມັດ: {{ unauthorizedEODFunctionsCount }}</p>
+                  </div>
                 </div>
               </v-expand-transition>
             </v-card-text>
@@ -766,6 +793,7 @@ interface EODFunction {
   function_id: string
   Maker_Id: string
   Checker_Id: string
+  executing?: boolean
 }
 
 interface WorkingDayResponse {
@@ -844,11 +872,40 @@ const eodFunctionHeaders = [
   { title: 'ຊື່ຟັງຊັນ', key: 'function_name' },
   { title: 'ສະຖານະບັນທຶກ', key: 'Record_Status', width: '120px' },
   { title: 'ສະຖານະອະນຸມັດ', key: 'Auth_Status', width: '120px' },
+  { title: 'ສະຖານະປະມວນຜົນ', key: 'execution_status', width: '140px' },
   { title: 'ວັນທີບັນທຶກ', key: 'Maker_DT_Stamp', width: '150px' },
-  { title: 'ການດຳເນີນການ', key: 'actions', width: '120px', sortable: false }
+  { title: 'ການດຳເນີນການ', key: 'actions', width: '150px', sortable: false }
 ]
 
-// Computed properties
+// Computed properties for EOD Functions
+const eodFunctionsFiltered = computed(() => {
+  return eodFunctions.value.filter(func => func.eoc_type === 'EOD')
+})
+
+const eodFunctionsCount = computed(() => {
+  return eodFunctionsFiltered.value.length
+})
+
+const readyEODFunctionsCount = computed(() => {
+  return eodFunctionsFiltered.value.filter(func => 
+    func.Record_Status === 'O' && func.Auth_Status === 'A'
+  ).length
+})
+
+const closedEODFunctionsCount = computed(() => {
+  return eodFunctionsFiltered.value.filter(func => func.Record_Status === 'C').length
+})
+
+const unauthorizedEODFunctionsCount = computed(() => {
+  return eodFunctionsFiltered.value.filter(func => func.Auth_Status === 'U').length
+})
+
+const allEODFunctionsReady = computed(() => {
+  if (eodFunctionsCount.value === 0) return true
+  return readyEODFunctionsCount.value === eodFunctionsCount.value
+})
+
+// Main computed properties
 const canStartEOD = computed((): boolean => {
   const hasPendingJournals = pendingJournals.value.some(item => item.Auth_Status === 'U')
   
@@ -857,9 +914,10 @@ const canStartEOD = computed((): boolean => {
     session.user_id !== currentUser.value
   )
   
-  const hasIncompleteEODFunctions = eodFunctions.value.some(func => func.Record_Status === 'C')
+  // EOD can start even if not all functions are ready - we'll execute only the ready ones
+  const hasReadyEODFunctions = readyEODFunctionsCount.value > 0
   
-  return isWorkingDay.value && !hasPendingJournals && !hasOtherActiveUsers && !hasIncompleteEODFunctions
+  return isWorkingDay.value && !hasPendingJournals && !hasOtherActiveUsers && hasReadyEODFunctions
 })
 
 const pendingIssues = computed(() => {
@@ -880,8 +938,8 @@ const pendingIssues = computed(() => {
     issues.push(`ມີຜູ້ໃຊ້ອື່ນທີ່ຍັງເຂົ້າໃຊ້ລະບົບຢູ່ (${otherActiveUsersCount} ຄົນ)`)
   }
   
-  if (eodFunctions.value.some(func => func.Record_Status === 'C')) {
-    issues.push('ມີຟັງຊັນ EOD ທີ່ຍັງບໍ່ສຳເລັດ')
+  if (readyEODFunctionsCount.value === 0) {
+    issues.push('ບໍ່ມີຟັງຊັນ EOD ທີ່ພ້ອມປະມວນຜົນ')
   }
   return issues
 })
@@ -892,10 +950,6 @@ const hasPendingJournals = computed(() => {
 
 const hasOtherActiveUsers = computed(() => {
   return activeUsers.value.some(session => session.user_id !== currentUser.value)
-})
-
-const hasIncompleteEODFunctions = computed(() => {
-  return eodFunctions.value.some(func => func.Record_Status === 'C')
 })
 
 const pendingJournalsCount = computed(() => {
@@ -917,19 +971,20 @@ const otherActiveUsersCount = computed(() => {
   return uniqueOtherUsers.size
 })
 
-const completedEODFunctionsCount = computed(() => {
-  return eodFunctions.value.filter(func => func.Record_Status === 'O').length
-})
-
-const incompleteEODFunctionsCount = computed(() => {
-  return eodFunctions.value.filter(func => func.Record_Status === 'C').length
-})
-
 const totalPendingAmount = computed(() => {
   return pendingJournals.value
     .filter(item => item.Auth_Status === 'U')
     .reduce((sum, item) => sum + parseFloat(item.Fcy_Amount), 0)
 })
+
+// Function execution helpers
+const canExecuteFunction = (func: EODFunction): boolean => {
+  return func.Record_Status === 'O' && func.Auth_Status === 'A' && func.eoc_type === 'EOD'
+}
+
+const canToggleFunction = (func: EODFunction): boolean => {
+  return func.Auth_Status === 'A' && func.eoc_type === 'EOD'
+}
 
 // API Methods
 const checkWorkingDay = async () => {
@@ -1073,7 +1128,7 @@ const fetchActiveUsers = async () => {
 const fetchEODFunctions = async () => {
   loadingEODFunctions.value = true
   try {
-    const response = await axios.get<EODFunction[]>('/api/eoc-maintain/?eoc_type=EOD', {
+    const response = await axios.get<EODFunction[]>('/api/eoc-maintain/', {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -1081,7 +1136,10 @@ const fetchEODFunctions = async () => {
     })
 
     if (response.status === 200) {
-      eodFunctions.value = response.data.sort((a, b) => a.eoc_seq_no - b.eoc_seq_no)
+      // Filter and sort EOD functions
+      eodFunctions.value = response.data
+        .map(func => ({ ...func, executing: false })) // Add executing state
+        .sort((a, b) => a.eoc_seq_no - b.eoc_seq_no)
       console.log('EOD functions loaded:', response.data.length)
     }
   } catch (error: any) {
@@ -1124,9 +1182,23 @@ const viewJournalDetails = (journal: PendingJournal) => {
   })
 }
 
+// Execute individual EOD function
 const executeEODFunction = async (eodFunction: EODFunction) => {
+  if (!canExecuteFunction(eodFunction)) {
+    showError.value = true
+    errorMessage.value = 'ຟັງຊັນນີ້ບໍ່ສາມາດປະມວນຜົນໄດ້'
+    return
+  }
+
+  // Set executing state
+  const functionIndex = eodFunctions.value.findIndex(f => f.eoc_id === eodFunction.eoc_id)
+  if (functionIndex !== -1) {
+    eodFunctions.value[functionIndex].executing = true
+  }
+
   try {
-    const response = await axios.post(`/api/eoc-maintain/bulk-journal`, {}, {
+    // Call the specific function endpoint based on function_id
+    const response = await axios.post(`/api/eoc-maintain/${eodFunction.eoc_id}/execute/`, {}, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -1142,7 +1214,42 @@ const executeEODFunction = async (eodFunction: EODFunction) => {
   } catch (error: any) {
     console.error('Error executing EOD function:', error)
     showError.value = true
-    errorMessage.value = error.response?.data?.detail || 'ເກີດຂໍ້ຜິດພາດໃນການດຳເນີນການຟັງຊັນ'
+    errorMessage.value = error.response?.data?.error || `ເກີດຂໍ້ຜິດພາດໃນການດຳເນີນການຟັງຊັນ ${eodFunction.function_name}`
+  } finally {
+    // Clear executing state
+    if (functionIndex !== -1) {
+      eodFunctions.value[functionIndex].executing = false
+    }
+  }
+}
+
+// Toggle EOD function open/close
+const toggleEODFunction = async (eodFunction: EODFunction) => {
+  if (!canToggleFunction(eodFunction)) {
+    showError.value = true
+    errorMessage.value = 'ບໍ່ສາມາດປ່ຽນສະຖານະຟັງຊັນນີ້ໄດ້'
+    return
+  }
+
+  try {
+    const action = eodFunction.Record_Status === 'O' ? 'set_close' : 'set_open'
+    const response = await axios.post(`/api/eoc-maintain/${eodFunction.eoc_id}/${action}/`, {}, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    })
+
+    if (response.status === 200) {
+      showSuccess.value = true
+      successMessage.value = response.data.message || `ປ່ຽນສະຖານະຟັງຊັນ ${eodFunction.function_name} ສຳເລັດແລ້ວ`
+      
+      await fetchEODFunctions()
+    }
+  } catch (error: any) {
+    console.error('Error toggling EOD function:', error)
+    showError.value = true
+    errorMessage.value = error.response?.data?.error || `ເກີດຂໍ້ຜິດພາດໃນການປ່ຽນສະຖານະຟັງຊັນ ${eodFunction.function_name}`
   }
 }
 
@@ -1259,7 +1366,7 @@ const getEODFunctionStatusColor = (status: string): string => {
     case 'C':
       return 'error'
     case 'O':
-      return 'warning'
+      return 'success'
     case 'D':
       return 'error'
     default:
@@ -1270,9 +1377,9 @@ const getEODFunctionStatusColor = (status: string): string => {
 const getEODFunctionStatusIcon = (status: string): string => {
   switch(status) {
     case 'C':
-      return 'mdi-help-circle'
+      return 'mdi-pause-circle'
     case 'O':
-      return 'mdi-clock-outline'
+      return 'mdi-play-circle'
     case 'D':
       return 'mdi-delete'
     default:
@@ -1291,6 +1398,31 @@ const getEODFunctionStatusText = (status: string): string => {
     default:
       return 'ບໍ່ຮູ້ສະຖານະ'
   }
+}
+
+// Execution status helpers
+const getExecutionStatusColor = (func: EODFunction): string => {
+  if (func.executing) return 'info'
+  if (canExecuteFunction(func)) return 'success'
+  if (func.Record_Status === 'C') return 'error'
+  if (func.Auth_Status === 'U') return 'warning'
+  return 'grey'
+}
+
+const getExecutionStatusIcon = (func: EODFunction): string => {
+  if (func.executing) return 'mdi-loading'
+  if (canExecuteFunction(func)) return 'mdi-check-circle'
+  if (func.Record_Status === 'C') return 'mdi-pause-circle'
+  if (func.Auth_Status === 'U') return 'mdi-clock-outline'
+  return 'mdi-help-circle'
+}
+
+const getExecutionStatusText = (func: EODFunction): string => {
+  if (func.executing) return 'ກຳລັງປະມວນຜົນ'
+  if (canExecuteFunction(func)) return 'ພ້ອມປະມວນຜົນ'
+  if (func.Record_Status === 'C') return 'ປິດ'
+  if (func.Auth_Status === 'U') return 'ຍັງບໍ່ອະນຸມັດ'
+  return 'ບໍ່ສາມາດປະມວນຜົນໄດ້'
 }
 
 // Helper function for EOD button text
