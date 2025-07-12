@@ -1,9 +1,17 @@
 import axios from "@/helpers/axios";
-
+import { TansectionTypeModel } from "~/models";
 export const useTransactionLogStore = defineStore("transactionLog", {
   state() {
     return {
+
       isLodaing: false,
+      responst_transaction_log: null as TansectionTypeModel.TansectionTypeModel | null,
+      filter_asset_list:{
+        query:{
+          asset_list_id:"",
+        },
+        isLodaing_filter: false,
+      },
       creat_form_transaction_log: {
         asset_list_id: "",
         transfer_date: "",
@@ -51,6 +59,27 @@ export const useTransactionLogStore = defineStore("transactionLog", {
     };
   },
   actions: {
+    async getDatadetail(){
+      this.isLodaing = true;
+      try {
+        const res = await axios.get<TansectionTypeModel.TansectionTypeModel>(`/api/asset_transfer/`,{
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          params:{
+            asset_list_id: this.filter_asset_list.query.asset_list_id,
+          }
+       
+        } );if(res.status ===200){
+          this.responst_transaction_log = res.data;
+          
+        }
+      } catch (error) {
+        console.error("Error fetching transaction log details:", error);
+        
+      }
+    },
     async CreatTransactionLog() {
       this.isLodaing = true;
       

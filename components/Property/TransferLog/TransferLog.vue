@@ -150,7 +150,8 @@ const transferAsset = (item: any) => {
 };
 
 const viewHistory = (item: any) => {
-  console.log("View history:", item);
+  goPath(`/property/transfer_log/detail/?asset_list_id=${item.asset_list_id}`
+  )
 };
 
 onMounted(() => {

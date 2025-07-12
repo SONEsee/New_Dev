@@ -835,7 +835,20 @@ const rules = {
     return pattern.test(value) || "ໃຊ້ໄດ້ແຕ່ຕົວອັກສອນພິມໃຫຍ່, ຕົວເລກ, - ແລະ _";
   },
 };
+const selectedSubglItem = computed(() => {
+  const selectedAccNo = faAssetStoreInstance.form_create_fa_asset.acc_no;
+  if (!selectedAccNo || !subgl.value || !Array.isArray(subgl.value)) {
+    return null;
+  }
+  
+  return subgl.value.find(item => item.glsub_code === selectedAccNo);
+});
 
+
+const selectedSubglDesc = computed(() => {
+  const selected = selectedSubglItem.value;
+  return selected ? selected.glsub_Desc_la : 'ເລືອກບັນຊີ';
+});
 onMounted(async () => {
   try {
     loading.value = true;
@@ -1476,13 +1489,16 @@ onMounted(async () => {
                       ></v-text-field>
                     </v-col>
                     <v-col cols="12" md="3">
-                      <label
-                        >ເລກບັນຊີ/CR<span
-                          class="text-error"
-                          v-for="item in subgl"
-                          >*({{ item.glsub_Desc_la }})</span
-                        ></label
-                      >
+                      <label>
+    ເລກບັນຊີ/CR
+    <span class="text-error">*</span>
+    <span v-if="selectedSubglItem" class="text-primary">
+      ({{ selectedSubglItem.glsub_Desc_la }})
+    </span>
+    <span v-else class="text-grey">
+      (ເລືອກບັນຊີ)
+    </span>
+  </label>
                       <v-autocomplete
                         v-model="
                           faAssetStoreInstance.form_create_fa_asset.acc_no
