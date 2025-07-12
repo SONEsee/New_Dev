@@ -230,13 +230,13 @@ export const accountMethodStore = defineStore("accountMethod", {
     async DeleteAccountMethod(id: string) {
       this.isLoading = true;
       try {
-        const res = await axios.delete(`account-methods/${id}`, {
+        const res = await axios.delete(`/api/asset_account/${id}`, {
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         });
-        if (res.status === 200) {
+        if (res.status === 204) {
           CallSwal({
             title: "ສຳເລັດ",
             text: "ສຳເລັດການລຶບວິທີການບັນຊີ",
@@ -244,8 +244,12 @@ export const accountMethodStore = defineStore("accountMethod", {
             showCancelButton: false,
             showConfirmButton: false,
           });
+          setTimeout(() => {
+            this.GetAccountMethodList();
+            goPath("/property/accountmethod/");
+          }, 1500);
           
-          await this.GetAccountMethodList();
+          
         }
       } catch (error) {
         console.error("Error deleting account method:", error);
