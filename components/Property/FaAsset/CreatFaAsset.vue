@@ -67,7 +67,6 @@ const title = ref("ເພີ່ມຊັບສົມບັດຄົງທີ່�
 const loading = ref(false);
 const form = ref();
 
-
 const urlAssetCode = computed(() => {
   const param = route.query.asset_type_id as string;
   return param ? parseInt(param) : null;
@@ -337,7 +336,8 @@ const submitForm = async () => {
             Amount: parseFormattedNumber(formattedAssetValue.value),
             Dr_cr: "D",
             Addl_sub_text: `${faAssetStoreInstance.form_create_fa_asset.asset_spec}`,
-            Ac_relatives: faAssetStoreInstance.form_create_fa_asset.asset_list_id,
+            Ac_relatives:
+              faAssetStoreInstance.form_create_fa_asset.asset_list_id,
           },
           {
             Account: null,
@@ -345,7 +345,8 @@ const submitForm = async () => {
             Amount: parseFormattedNumber(formattedAssetValue.value),
             Dr_cr: "C",
             Addl_sub_text: `${faAssetStoreInstance.form_create_fa_asset.asset_spec}`,
-            Ac_relatives: faAssetStoreInstance.form_create_fa_asset.asset_list_id,
+            Ac_relatives:
+              faAssetStoreInstance.form_create_fa_asset.asset_list_id,
           },
         ],
       };
@@ -840,14 +841,13 @@ const selectedSubglItem = computed(() => {
   if (!selectedAccNo || !subgl.value || !Array.isArray(subgl.value)) {
     return null;
   }
-  
-  return subgl.value.find(item => item.glsub_code === selectedAccNo);
-});
 
+  return subgl.value.find((item) => item.glsub_code === selectedAccNo);
+});
 
 const selectedSubglDesc = computed(() => {
   const selected = selectedSubglItem.value;
-  return selected ? selected.glsub_Desc_la : 'ເລືອກບັນຊີ';
+  return selected ? selected.glsub_Desc_la : "ເລືອກບັນຊີ";
 });
 onMounted(async () => {
   try {
@@ -1087,7 +1087,7 @@ onMounted(async () => {
                       <label
                         >ສະຖານທີ່ຕັ້ງ<span class="text-error">*</span></label
                       >
-                      <v-select
+                      <v-autocomplete
                         v-model="
                           faAssetStoreInstance.form_create_fa_asset
                             .asset_location_id
@@ -1115,7 +1115,7 @@ onMounted(async () => {
                             :title="`${item.raw.location_name_la} (${item.raw.location_code})`"
                           />
                         </template>
-                      </v-select>
+                      </v-autocomplete>
                     </v-col>
                     <v-col cols="12" md="4">
                       <label
@@ -1490,15 +1490,13 @@ onMounted(async () => {
                     </v-col>
                     <v-col cols="12" md="3">
                       <label>
-    ເລກບັນຊີ/CR
-    <span class="text-error">*</span>
-    <span v-if="selectedSubglItem" class="text-primary">
-      ({{ selectedSubglItem.glsub_Desc_la }})
-    </span>
-    <span v-else class="text-grey">
-      (ເລືອກບັນຊີ)
-    </span>
-  </label>
+                        ເລກບັນຊີ/CR
+                        <span class="text-error">*</span>
+                        <span v-if="selectedSubglItem" class="text-primary">
+                          ({{ selectedSubglItem.glsub_Desc_la }})
+                        </span>
+                        <span v-else class="text-grey"> (ເລືອກບັນຊີ) </span>
+                      </label>
                       <v-autocomplete
                         v-model="
                           faAssetStoreInstance.form_create_fa_asset.acc_no
@@ -1515,7 +1513,6 @@ onMounted(async () => {
                       </v-autocomplete>
                       <label>ມູນຄ່າຊາກ</label>
                       <v-text-field
-                        
                         v-model="formattedSalvageValue"
                         :rules="[rules.positiveNumber]"
                         placeholder="0"
