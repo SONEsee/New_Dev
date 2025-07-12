@@ -14,8 +14,8 @@ export const faAssetStore = defineStore("faAsset", {
       isLoading: false,
 
       form_create_realizthe_property: {
-        asset_value_remainBegin: 0,
-        asset_value_remainLast: 0,
+        asset_value_remainBegin: "",
+        asset_value_remainLast: "",
         asset_value_remain: 0,
         asset_accu_dpca_value: 0 as number | null,
         dpca_start_date: null as Date | null,
@@ -167,9 +167,9 @@ export const faAssetStore = defineStore("faAsset", {
 
           acc_no: this.form_create_realizthe_property.acc_no || "", 
           asset_value_remainLast:
-            this.form_create_realizthe_property.asset_value_remainLast || 0, 
+            this.form_create_realizthe_property.asset_value_remainLast || "", 
           asset_value_remainBegin:
-            this.form_create_realizthe_property.asset_value_remainBegin || 0, 
+            this.form_create_realizthe_property.asset_value_remainBegin || "", 
 
           asset_value_remain:
             this.form_create_realizthe_property.asset_value_remain || 0, 
@@ -276,6 +276,7 @@ export const faAssetStore = defineStore("faAsset", {
             ...entry,
             Account: entry.Account || null,
             Amount: entry.Amount || 0,
+            Ac_relatives: entry.Ac_relatives || "",
           })),
         };
 

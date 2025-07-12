@@ -427,7 +427,6 @@ const deleteDialog = ref(false)
 const detailsDialog = ref(false)
 const deleteItem = ref<any>(null)
 const selectedItem = ref<any>(null)
-const baseUrl = ref('http://127.0.0.1:8000') // Adjust to your backend URL
 
 const headers = [
   { title: 'ລະຫັດພະນັກງານ', key: 'employee_id', align: 'start' as const, width: '180px' },

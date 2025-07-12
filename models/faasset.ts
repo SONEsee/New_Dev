@@ -43,6 +43,7 @@ export interface FaAsset{
     supplier_id:             number;
     asset_ac_by:             string;
     Maker_Id:                string;
+    Auth_Status_ARC:         string;
     Checker_Id:              null;
 }
 export interface FaAssetList {

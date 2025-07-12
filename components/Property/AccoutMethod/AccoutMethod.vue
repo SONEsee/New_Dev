@@ -2,14 +2,21 @@
 import { ref, onMounted, computed } from "vue";
 import { CallSwal } from "#build/imports";
 import { useRoute } from "vue-router";
+import dayjs from "#build/dayjs.imports.mjs";
 const route = useRoute();
 const sub_menu_id = route.query.sub_menu_id as string;
 console.log("sub_menu_id:", sub_menu_id);
-
+const assetListStore = faAssetStore();
+const assetlist = computed(() => {
+  const data = assetListStore.response_fa_asset_list || [];
+  return data.filter((item: any) => {
+    return item.Auth_Status === "A" && item.Auth_Status_ARC === "A";
+  });
+});
 const accountMethodStoreInstance = accountMethodStore();
-const mockData = computed(()=>{
+const mockData = computed(() => {
   return accountMethodStoreInstance.response_account_method_list || [];
-})
+});
 const handleSubmit = async (item: any) => {
   try {
     const newStatus = item.record_stat === "O" ? "C" : "O";
@@ -95,15 +102,15 @@ const headers = computed(() => [
     width: "140px",
     class: "text-center",
   },
-  {
-    title: "Asset ID",
-    value: "asset_id",
-    align: "center",
-    sortable: true,
-    filterable: true,
-    width: "100px",
-    class: "text-center",
-  },
+  // {
+  //   title: "Asset ID",
+  //   value: "asset_id",
+  //   align: "center",
+  //   sortable: true,
+  //   filterable: true,
+  //   width: "100px",
+  //   class: "text-center",
+  // },
   {
     title: "ບັນຊີເດບິດ",
     value: "debit_account_id",
@@ -140,28 +147,28 @@ const headers = computed(() => [
     width: "150px",
     class: "text-center",
   },
-  {
-    title: "Journal Entry",
-    value: "journal_entry_id",
-    align: "center",
-    sortable: false,
-    filterable: true,
-    width: "140px",
-    class: "text-center",
-  },
-  ...(canRecordStatus.value
-    ? [
-        {
-          title: "ສະຖານະ",
-          value: "record_stat",
-          align: "center",
-          sortable: true,
-          filterable: true,
-          width: "120px",
-          class: "text-center",
-        },
-      ]
-    : []),
+  // {
+  //   title: "Journal Entry",
+  //   value: "journal_entry_id",
+  //   align: "center",
+  //   sortable: false,
+  //   filterable: true,
+  //   width: "140px",
+  //   class: "text-center",
+  // },
+  // ...(canRecordStatus.value
+  //   ? [
+  //       {
+  //         title: "ສະຖານະ",
+  //         value: "Record_Status",
+  //         align: "center",
+  //         sortable: true,
+  //         filterable: true,
+  //         width: "120px",
+  //         class: "text-center",
+  //       },
+  //     ]
+  //   : []),
   ...(canView.value
     ? [
         {
@@ -175,19 +182,19 @@ const headers = computed(() => [
         },
       ]
     : []),
-  ...(canEdit.value
-    ? [
-        {
-          title: "ແກ້ໄຂ",
-          value: "edit",
-          align: "center",
-          sortable: false,
-          filterable: false,
-          width: "80px",
-          class: "text-center",
-        },
-      ]
-    : []),
+  // ...(canEdit.value
+  //   ? [
+  //       {
+  //         title: "ແກ້ໄຂ",
+  //         value: "edit",
+  //         align: "center",
+  //         sortable: false,
+  //         filterable: false,
+  //         width: "80px",
+  //         class: "text-center",
+  //       },
+  //     ]
+  //   : []),
   ...(canDelete.value
     ? [
         {
@@ -275,9 +282,7 @@ const filteredData = computed(() => {
   let data = mockData.value;
 
   if (selectedAccType.value !== "all") {
-    data = data.filter(
-      (item) => item.acc_type === selectedAccType.value
-    );
+    data = data.filter((item) => item.ref_id === selectedAccType.value);
   }
 
   if (search.value) {
@@ -285,8 +290,12 @@ const filteredData = computed(() => {
       (item) =>
         item.mapping_id.toString().includes(search.value) ||
         item.ref_id.toString().includes(search.value) ||
-        item.debit_account_id.toLowerCase().includes(search.value.toLowerCase()) ||
-        item.credit_account_id.toLowerCase().includes(search.value.toLowerCase()) ||
+        item.debit_account_id
+          .toLowerCase()
+          .includes(search.value.toLowerCase()) ||
+        item.credit_account_id
+          .toLowerCase()
+          .includes(search.value.toLowerCase()) ||
         item.description?.toLowerCase().includes(search.value.toLowerCase())
     );
   }
@@ -338,11 +347,11 @@ const getAccTypeIcon = (type: string) => {
 
 const getAccountName = (accountId: string) => {
   const accounts = {
-    '1441001': 'ຊັບສົມບັດຄົງທີ່ - ເຄື່ອງຈັກ',
-    '1442001': 'ຄ່າເສື່ອມລາຄາສະສົມ - ເຄື່ອງຈັກ',
-    '5551001': 'ຄ່າເສື່ອມລາຄາ - ເຄື່ອງຈັກ',
-    '1101100': 'ເງິນສົດໃນມື',
-    '2100000': 'ໜີ້ສິນຫມູນວຽນ',
+    "1441001": "ຊັບສົມບັດຄົງທີ່ - ເຄື່ອງຈັກ",
+    "1442001": "ຄ່າເສື່ອມລາຄາສະສົມ - ເຄື່ອງຈັກ",
+    "5551001": "ຄ່າເສື່ອມລາຄາ - ເຄື່ອງຈັກ",
+    "1101100": "ເງິນສົດໃນມື",
+    "2100000": "ໜີ້ສິນຫມູນວຽນ",
   };
   return accounts[accountId as keyof typeof accounts] || accountId;
 };
@@ -367,44 +376,43 @@ const confirmDelete = async (item: any) => {
   }
 };
 
-const generateJournal = async (item: any) => {
-  try {
-    const notification = await CallSwal({
-      title: "ຢືນຢັນການສ້າງ Journal Entry",
-      text: `ທ່ານຕ້ອງການສ້າງ Journal Entry ສຳລັບ Mapping ID "${item.mapping_id}" ໃຊ່ບໍ່?`,
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonText: "ສ້າງ",
-      cancelButtonText: "ຍົກເລີກ",
-      confirmButtonColor: "#28a745",
-    });
+// const generateJournal = async (item: any) => {
+//   try {
+//     const notification = await CallSwal({
+//       title: "ຢືນຢັນການສ້າງ Journal Entry",
+//       text: `ທ່ານຕ້ອງການສ້າງ Journal Entry ສຳລັບ Mapping ID "${item.mapping_id}" ໃຊ່ບໍ່?`,
+//       icon: "question",
+//       showCancelButton: true,
+//       confirmButtonText: "ສ້າງ",
+//       cancelButtonText: "ຍົກເລີກ",
+//       confirmButtonColor: "#28a745",
+//     });
 
-    if (notification.isConfirmed) {
-      await accountMethodStoreInstance.GenerateJournalEntry(item.mapping_id);
-    }
-  } catch (error) {
-    console.error("Error generating journal:", error);
-  }
-};
+//     if (notification.isConfirmed) {
+//       await accountMethodStoreInstance.GenerateJournalEntry(item.mapping_id);
+//     }
+//   } catch (error) {
+//     console.error("Error generating journal:", error);
+//   }
+// };
 
 const clearFilters = async () => {
   selectedAccType.value = "all";
   search.value = "";
 };
 
-
 const statistics = computed(() => {
   const data = filteredData.value;
   return {
     total: data.length,
-    asset: data.filter(item => item.acc_type === 'ASSET').length,
-    depreciation: data.filter(item => item.acc_type === 'DEPRECIATION').length,
-    disposal: data.filter(item => item.acc_type === 'DISPOSAL').length,
-    withJournal: data.filter(item => item.journal_entry_id).length,
-    withoutJournal: data.filter(item => !item.journal_entry_id).length,
-    totalAmount: data.reduce((sum, item) => sum + item.amount, 0),
-    active: data.filter(item => item.record_stat === 'O').length,
-    inactive: data.filter(item => item.record_stat === 'C').length,
+    // asset: data.filter(item => item.acc_type === 'ASSET').length,
+    // depreciation: data.filter(item => item.acc_type === 'DEPRECIATION').length,
+    // disposal: data.filter(item => item.acc_type === 'DISPOSAL').length,
+    // withJournal: data.filter(item => item.journal_entry_id).length,
+    // withoutJournal: data.filter(item => !item.journal_entry_id).length,
+    // totalAmount: data.reduce((sum, item) => sum + item.amount, 0),
+    // active: data.filter(item => item.record_stat === 'O').length,
+    // inactive: data.filter(item => item.record_stat === 'C').length,
   };
 });
 
@@ -414,7 +422,7 @@ onMounted(async () => {
   try {
     initializeRole();
     roleStore.GetRoleDetail();
-
+    assetListStore.GetFaAssetList();
     await new Promise((resolve) => setTimeout(resolve, 500));
   } catch (error) {
     errorMessage.value = "ເກີດຂໍ້ຜິດພາດໃນການໂຫຼດຂໍ້ມູນ";
@@ -426,12 +434,12 @@ onMounted(async () => {
 </script>
 
 <template>
-    <div class="pa-2">
-  <GlobalTextTitleLine :title="title" />
+  <div class="pa-2">
+    <GlobalTextTitleLine :title="title" />
 
-  <v-col cols="12">
-   
-    <v-row class="mb-4">
+    <v-col cols="12">
+      <!-- <pre>{{ assetlist }}</pre>  -->
+      <!-- <v-row class="mb-4">
       <v-col cols="12" md="3">
         <v-card variant="outlined">
           <v-card-text class="text-center">
@@ -468,65 +476,67 @@ onMounted(async () => {
           </v-card-text>
         </v-card>
       </v-col>
-    </v-row>
+    </v-row> -->
 
+      <v-row>
+        <v-col cols="12" md="3">
+          <div class="d-flex">
+            <v-btn
+              color="primary"
+              @click="
+                goPath(
+                  `/property/accountmethod/create?sub_menu_id=${sub_menu_id}`
+                )
+              "
+              v-if="canAdd"
+            >
+              <v-icon icon="mdi-plus"></v-icon> ເພີ່ມວິທີການບັນຊີໃໝ່
+            </v-btn>
+          </div>
+        </v-col>
 
-    <v-row>
-      <v-col cols="12" md="3">
-        <div class="d-flex">
+        <v-col cols="12" md="3" class="text-no-wrap">
+          <v-select
+            v-model="selectedAccType"
+            :items="assetlist"
+            item-title="asset_spec"
+            item-value="asset_list_id"
+            label="ປະເພດທຸລະກຳ"
+            variant="outlined"
+            density="compact"
+            clearable
+            placeholder="ເລືອກປະເພດທຸລະກຳ"
+            :loading="loading"
+          ></v-select>
+        </v-col>
+
+        <v-col cols="12" md="4">
+          <v-text-field
+            v-model="search"
+            label="ຄົ້ນຫາ"
+            prepend-inner-icon="mdi-magnify"
+            variant="outlined"
+            density="compact"
+            clearable
+            placeholder="ຄົ້ນຫາຕາມ ID, ບັນຊີ, ຄຳອະທິບາຍ..."
+          />
+        </v-col>
+
+        <v-col cols="12" md="2">
           <v-btn
-            color="primary"
-            @click="goPath(`/property/accountmethod/create?sub_menu_id=${sub_menu_id}`)"
-            v-if="canAdd"
+            color="secondary"
+            variant="outlined"
+            @click="clearFilters"
+            :loading="loading"
+            block
           >
-            <v-icon icon="mdi-plus"></v-icon> ເພີ່ມວິທີການບັນຊີໃໝ່
+            <v-icon class="mr-2">mdi-filter-remove</v-icon>
+            ເຄລຍການກັ່ນຕອງ
           </v-btn>
-        </div>
-      </v-col>
+        </v-col>
+      </v-row>
 
-      <v-col cols="12" md="3" class="text-no-wrap">
-        <v-select
-          v-model="selectedAccType"
-          :items="accTypes"
-          item-title="title"
-          item-value="value"
-          label="ປະເພດທຸລະກຳ"
-          variant="outlined"
-          density="compact"
-          clearable
-          placeholder="ເລືອກປະເພດທຸລະກຳ"
-          :loading="loading"
-        ></v-select>
-      </v-col>
-
-      <v-col cols="12" md="4">
-        <v-text-field
-          v-model="search"
-          label="ຄົ້ນຫາ"
-          prepend-inner-icon="mdi-magnify"
-          variant="outlined"
-          density="compact"
-          clearable
-          placeholder="ຄົ້ນຫາຕາມ ID, ບັນຊີ, ຄຳອະທິບາຍ..."
-        />
-      </v-col>
-
-      <v-col cols="12" md="2">
-        <v-btn
-          color="secondary"
-          variant="outlined"
-          @click="clearFilters"
-          :loading="loading"
-          block
-        >
-          <v-icon class="mr-2">mdi-filter-remove</v-icon>
-          ເຄລຍການກັ່ນຕອງ
-        </v-btn>
-      </v-col>
-    </v-row>
-
-  
-    <v-row class="mb-4">
+      <!-- <v-row class="mb-4">
       <v-col cols="12">
         <v-card variant="outlined" color="info">
           <v-card-text>
@@ -553,136 +563,147 @@ onMounted(async () => {
           </v-card-text>
         </v-card>
       </v-col>
-    </v-row>
+    </v-row> -->
 
-  
-    <v-data-table
-      :headers="headers"
-      :items="filteredData || []"
-      class="text-no-wrap"
-      :loading="loading"
-    >
-      <template v-slot:header.mapping_id="{ column }">
-        <v-icon start>mdi-identifier</v-icon>
-        <b style="color: blue">{{ column.title }}</b>
-      </template>
+      <v-data-table
+        :headers="headers"
+        :items="filteredData || []"
+        class="text-no-wrap"
+        :loading="loading"
+      >
+        <template v-slot:header.mapping_id="{ column }">
+          <v-icon start>mdi-identifier</v-icon>
+          <b style="color: blue">{{ column.title }}</b>
+        </template>
 
-      <template v-slot:header.ref_id="{ column }">
-        <b style="color: blue">{{ column.title }}</b>
-      </template>
+        <template v-slot:header.ref_id="{ column }">
+          <b style="color: blue">{{ column.title }}</b>
+        </template>
 
-      <template v-slot:header.acc_type="{ column }">
-        <b style="color: blue">{{ column.title }}</b>
-      </template>
+        <template v-slot:header.acc_type="{ column }">
+          <b style="color: blue">{{ column.title }}</b>
+        </template>
 
-      <template v-slot:header.asset_id="{ column }">
-        <b style="color: blue">{{ column.title }}</b>
-      </template>
+        <template v-slot:header.asset_id="{ column }">
+          <b style="color: blue">{{ column.title }}</b>
+        </template>
 
-      <template v-slot:header.debit_account_id="{ column }">
-        <b style="color: blue">{{ column.title }}</b>
-      </template>
+        <template v-slot:header.debit_account_id="{ column }">
+          <b style="color: blue">{{ column.title }}</b>
+        </template>
 
-      <template v-slot:header.credit_account_id="{ column }">
-        <b style="color: blue">{{ column.title }}</b>
-      </template>
+        <template v-slot:header.credit_account_id="{ column }">
+          <b style="color: blue">{{ column.title }}</b>
+        </template>
 
-      <template v-slot:header.amount="{ column }">
-        <b style="color: blue">{{ column.title }}</b>
-      </template>
+        <template v-slot:header.amount="{ column }">
+          <b style="color: blue">{{ column.title }}</b>
+        </template>
 
-      <template v-slot:header.transaction_date="{ column }">
-        <b style="color: blue">{{ column.title }}</b>
-      </template>
+        <template v-slot:header.transaction_date="{ column }">
+          <b style="color: blue">{{ column.title }}</b>
+        </template>
 
-      <template v-slot:header.journal_entry_id="{ column }">
-        <b style="color: blue">{{ column.title }}</b>
-      </template>
+        <template v-slot:header.journal_entry_id="{ column }">
+          <b style="color: blue">{{ column.title }}</b>
+        </template>
 
-      <template v-slot:header.record_stat="{ column }">
-        <b style="color: blue">{{ column.title }}</b>
-      </template>
+        <template v-slot:header.record_stat="{ column }">
+          <b style="color: blue">{{ column.title }}</b>
+        </template>
 
-      <template v-slot:header.view="{ column }">
-        <b style="color: blue">{{ column.title }}</b>
-      </template>
+        <template v-slot:header.view="{ column }">
+          <b style="color: blue">{{ column.title }}</b>
+        </template>
 
-      <template v-slot:header.edit="{ column }">
-        <b style="color: blue">{{ column.title }}</b>
-      </template>
+        <template v-slot:header.edit="{ column }">
+          <b style="color: blue">{{ column.title }}</b>
+        </template>
 
-      <template v-slot:header.delete="{ column }">
-        <b style="color: blue">{{ column.title }}</b>
-      </template>
+        <template v-slot:header.delete="{ column }">
+          <b style="color: blue">{{ column.title }}</b>
+        </template>
 
-      <template v-slot:item.mapping_id="{ item }">
-        <v-chip color="primary" variant="outlined" size="small">
-          {{ item.mapping_id }}
-        </v-chip>
-      </template>
-
-      <template v-slot:item.ref_id="{ item }">
-        <v-chip color="secondary" variant="outlined" size="small">
-          {{ item.ref_id }}
-        </v-chip>
-      </template>
-
-      <template v-slot:item.acc_type="{ item }">
-        <div class="text-center">
-          <v-chip
-            :color="getAccTypeColor(item.acc_type)"
-            variant="flat"
-            size="small"
-          >
-            <v-icon start size="small">{{ getAccTypeIcon(item.acc_type) }}</v-icon>
-            {{ getAccTypeText(item.acc_type) }}
+        <template v-slot:item.mapping_id="{ item }">
+          <v-chip color="primary" variant="outlined" size="small">
+            {{ item.mapping_id }}
           </v-chip>
-        </div>
-      </template>
+        </template>
 
-      <template v-slot:item.asset_id="{ item }">
-        <div class="text-center">
-          <v-chip v-if="item.asset_id" color="info" variant="outlined" size="small">
-            {{ item.asset_id }}
+        <template v-slot:item.ref_id="{ item }">
+          <v-chip color="secondary" variant="outlined" size="small">
+            {{ item.ref_id }}
           </v-chip>
-          <span v-else class="text-grey">-</span>
-        </div>
-      </template>
+        </template>
 
-      <template v-slot:item.debit_account_id="{ item }">
-        <div class="text-center">
-          <v-chip color="error" variant="outlined" size="small" class="mb-1">
-            {{ item.debit_account_id }}
-          </v-chip>
-          <div class="text-caption text-grey">
-            {{ getAccountName(item.debit_account_id) }}
+        <template v-slot:item.acc_type="{ item }">
+          <div class="text-center">
+            <v-chip
+              :color="getAccTypeColor(item.acc_type)"
+              variant="flat"
+              size="small"
+            >
+              <v-icon start size="small">{{
+                getAccTypeIcon(item.acc_type)
+              }}</v-icon>
+              {{ getAccTypeText(item.acc_type) }}
+            </v-chip>
           </div>
-        </div>
-      </template>
+        </template>
 
-      <template v-slot:item.credit_account_id="{ item }">
-        <div class="text-center">
-          <v-chip color="success" variant="outlined" size="small" class="mb-1">
-            {{ item.credit_account_id }}
-          </v-chip>
-          <div class="text-caption text-grey">
-            {{ getAccountName(item.credit_account_id) }}
+        <template v-slot:item.asset_id="{ item }">
+          <div class="text-center">
+            <v-chip
+              v-if="item.asset_id"
+              color="info"
+              variant="outlined"
+              size="small"
+            >
+              {{ item.asset_id }}
+            </v-chip>
+            <span v-else class="text-grey">-</span>
           </div>
-        </div>
-      </template>
+        </template>
 
-      <template v-slot:item.amount="{ item }">
-        <div class="text-end">
-          <div class="text-h6 text-primary">{{ formatCurrency(item.amount) }}</div>
-          <div class="text-caption text-grey">LAK</div>
-        </div>
-      </template>
+        <template v-slot:item.debit_account_id="{ item }">
+          <div class="text-center">
+            <v-chip color="error" variant="outlined" size="small" class="mb-1">
+              {{ item.debit_account_id }}
+            </v-chip>
+            <div class="text-caption text-grey">
+              {{ getAccountName(item.debit_account_id) }}
+            </div>
+          </div>
+        </template>
 
-      <template v-slot:item.transaction_date="{ item }">
-        {{ formatDate(item.transaction_date) }}
-      </template>
+        <template v-slot:item.credit_account_id="{ item }">
+          <div class="text-center">
+            <v-chip
+              color="success"
+              variant="outlined"
+              size="small"
+              class="mb-1"
+            >
+              {{ item.credit_account_id }}
+            </v-chip>
+            <div class="text-caption text-grey">
+              {{ getAccountName(item.credit_account_id) }}
+            </div>
+          </div>
+        </template>
 
-      <template v-slot:item.journal_entry_id="{ item }">
+        <template v-slot:item.amount="{ item }">
+          <div class="text-end">
+            <div class="text-primary">{{ formatCurrency(item.amount) }}</div>
+            <div class="text-caption text-grey">LAK</div>
+          </div>
+        </template>
+
+        <template v-slot:item.transaction_date="{ item }">
+          {{ dayjs(item.transaction_date).format("DD/MM/YYYY ") }}
+        </template>
+
+        <!-- <template v-slot:item.journal_entry_id="{ item }">
         <div class="text-center">
           <div v-if="item.journal_entry_id">
             <v-chip color="success" variant="flat" size="small" class="mb-1">
@@ -702,82 +723,95 @@ onMounted(async () => {
             </v-btn>
           </div>
         </div>
-      </template>
+      </template> -->
 
-      <template v-slot:item.record_stat="{ item }">
-        <div>
+        <template v-slot:item.record_stat="{ item }">
+          <div>
+            <v-btn
+              v-if="item.Record_Status === 'O'"
+              flat
+              @click="handleSubmit(item)"
+            >
+              <v-icon color="success">mdi-toggle-switch</v-icon>
+            </v-btn>
+            <v-btn
+              v-if="item.Record_Status === 'C'"
+              flat
+              @click="handleSubmit(item)"
+            >
+              <v-icon color="error">mdi-toggle-switch-off-outline</v-icon>
+            </v-btn>
+          </div>
+        </template>
+
+        <template v-slot:item.view="{ item }">
           <v-btn
-            v-if="item.record_stat === 'O'"
+            small
             flat
-            @click="handleSubmit(item)"
-          >
-            <v-icon color="success">mdi-toggle-switch</v-icon>
-          </v-btn>
+            class="text-primary"
+            icon="mdi-eye-outline"
+            @click="
+              goPath(
+                `/property/accountmethod/detail?mapping_id=${item.mapping_id}`
+              )
+            "
+          />
+        </template>
+
+        <template v-slot:item.edit="{ item }">
           <v-btn
-            v-if="item.record_stat === 'C'"
+            small
             flat
-            @click="handleSubmit(item)"
-          >
-            <v-icon color="error">mdi-toggle-switch-off-outline</v-icon>
-          </v-btn>
-        </div>
-      </template>
+            class="text-info"
+            icon="mdi-pen"
+            @click="
+              goPath(
+                `/property/accountmethod/edit?mapping_id=${item.mapping_id}`
+              )
+            "
+          />
+        </template>
 
-      <template v-slot:item.view="{ item }">
-        <v-btn
-          small
-          flat
-          class="text-primary"
-          icon="mdi-eye-outline"
-          @click="goPath(`/property/accountmethod/detail?mapping_id=${item.mapping_id}`)"
-        />
-      </template>
+        <template v-slot:item.delete="{ item }">
+          <v-btn
+            small
+            flat
+            class="text-error"
+            icon="mdi-delete-outline"
+            @click="confirmDelete(item)"
+          />
+        </template>
 
-      <template v-slot:item.edit="{ item }">
-        <v-btn
-          small
-          flat
-          class="text-info"
-          icon="mdi-pen"
-          @click="goPath(`/property/accountmethod/edit?mapping_id=${item.mapping_id}`)"
-        />
-      </template>
+        <template v-slot:item.description="{ item }">
+          <div class="text-truncate" style="max-width: 200px">
+            {{ item.description || "-" }}
+            <v-tooltip
+              activator="parent"
+              location="top"
+              v-if="item.description"
+            >
+              {{ item.description }}
+            </v-tooltip>
+          </div>
+        </template>
+      </v-data-table>
+    </v-col>
 
-      <template v-slot:item.delete="{ item }">
-        <v-btn
-          small
-          flat
-          class="text-error"
-          icon="mdi-delete-outline"
-          @click="confirmDelete(item)"
-        />
-      </template>
+    <v-snackbar
+      v-model="showSuccess"
+      color="success"
+      timeout="3000"
+      location="top"
+    >
+      <v-icon class="mr-2">mdi-check-circle</v-icon>
+      {{ successMessage }}
+    </v-snackbar>
 
-      <template v-slot:item.description="{ item }">
-        <div class="text-truncate" style="max-width: 200px">
-          {{ item.description || "-" }}
-          <v-tooltip activator="parent" location="top" v-if="item.description">
-            {{ item.description }}
-          </v-tooltip>
-        </div>
-      </template>
-    </v-data-table>
-  </v-col>
-
-  <v-snackbar
-    v-model="showSuccess"
-    color="success"
-    timeout="3000"
-    location="top"
-  >
-    <v-icon class="mr-2">mdi-check-circle</v-icon>
-    {{ successMessage }}
-  </v-snackbar>
-
-  <v-snackbar v-model="showError" color="error" timeout="5000" location="top">
-    <v-icon class="mr-2">mdi-alert-circle</v-icon>
-    {{ errorMessage }}
-  </v-snackbar></div>
+    <v-snackbar v-model="showError" color="error" timeout="5000" location="top">
+      <v-icon class="mr-2">mdi-alert-circle</v-icon>
+      {{ errorMessage }}
+    </v-snackbar>
+  </div>
 </template>
 
 <style scoped>
@@ -800,7 +834,7 @@ onMounted(async () => {
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .d-flex.flex-wrap.gap-4 > div {
     margin-right: 0;
     margin-bottom: 8px;

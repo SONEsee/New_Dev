@@ -1,32 +1,46 @@
 <script setup lang="ts">
-// ແກ້ໄຂການ import ໃຫ້ຄົບຖ້ວນ
 import { ref, onMounted, computed, watch } from "vue";
 import { CallSwal } from "#build/imports";
-
+const masterStore = useMasterStore();
 const assetStores = assetStore();
 const faAssetStoreInstance = faAssetStore();
-const typeAssetStore = propertyStore()
-const response = computed(()=>{
-  return assetStores.response_asset_list || [];
-})
-const mockData = computed(() => {
-  return faAssetStoreInstance.response_fa_asset_list || [];
+const typeAssetStore = propertyStore();
+const masterdata = computed(() => {
+  const response = masterStore.resposne_status_puamsuepuamkrsang;
+  return response?.MasterCodes ?? [];
 });
-
-// ເພີ່ມ localStorage constants ແລະ functions
-const STORAGE_KEY = 'asset_filters';
+const response = computed(() => {
+  return assetStores.response_asset_list || [];
+});
+// const mockData = computed(() => {
+//   return faAssetStoreInstance.response_fa_asset_list || [];
+// });
+// const mockData = computed(() => {
+//   const data = faAssetStoreInstance.response_fa_asset_list || [];
+//   return data.filter(item => 
+//     item.asset_status === "AC" && 
+//     item.Auth_Status_ARC === "A"
+//   );
+// });
+const mockData = computed(() => {
+  const data = faAssetStoreInstance.response_fa_asset_list || [];
+  return data.filter(item => 
+    !(item.asset_status === "AC" && item.Auth_Status_ARC !== "A")
+  );
+});
+const STORAGE_KEY = "asset_filters";
 
 const loadFiltersFromStorage = () => {
   try {
     const savedFilters = localStorage.getItem(STORAGE_KEY);
     if (savedFilters) {
       const filters = JSON.parse(savedFilters);
-      selectedStatus.value = filters.selectedStatus || 'all';
-      selectedassetCode.value = filters.selectedassetCode || 'all';
-      search.value = filters.search || '';
+      selectedStatus.value = filters.selectedStatus || "all";
+      selectedassetCode.value = filters.selectedassetCode || "all";
+      search.value = filters.search || "";
     }
   } catch (error) {
-    console.error('Error loading filters from localStorage:', error);
+    console.error("Error loading filters from localStorage:", error);
   }
 };
 
@@ -35,15 +49,14 @@ const saveFiltersToStorage = () => {
     const filters = {
       selectedStatus: selectedStatus.value,
       selectedassetCode: selectedassetCode.value,
-      search: search.value
+      search: search.value,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(filters));
   } catch (error) {
-    console.error('Error saving filters to localStorage:', error);
+    console.error("Error saving filters to localStorage:", error);
   }
 };
 
-// ປ່ຽນລຳດັບໃຫ້ເປັນ: ປະກາດ ref ກ່ອນ, ຈຶ່ງໃຊ້ໃນ watch
 const search = ref("");
 const loading = ref(false);
 const showSuccess = ref(false);
@@ -53,10 +66,13 @@ const errorMessage = ref("");
 const selectedStatus = ref("all");
 const selectedassetCode = ref("all");
 
-
-watch([selectedStatus, selectedassetCode, search], () => {
-  saveFiltersToStorage();
-}, { deep: true });
+watch(
+  [selectedStatus, selectedassetCode, search],
+  () => {
+    saveFiltersToStorage();
+  },
+  { deep: true }
+);
 
 onMounted(() => {
   assetStores.GetAssetList();
@@ -127,15 +143,7 @@ const role1 = computed(() => {
 
 const title = "ຈັດການຊັບສົມບັດພວມຊື້ພວມກໍ່ສ້າງ";
 
-const assetStatuses = [
-  { title: "ທັງໝົດ", value: "all" },
-  { title: "ເປີດໃຊ້ງານ", value: "AC" },
-  { title: "ປິດໃຊ້ງານ", value: "IA" },
-  { title: "ບຳລຸງຮັກສາ", value: "MT" },
-  { title: "ຖອນຈຳໜ່າຍ", value: "DS" },
-  { title: "ເສຍຫາຍ", value: "DM" },
-  { title: "ພວມຊື້ພວມກໍ່ສ້າງ", value: "UC" }, 
-];
+
 
 const currencies = [
   { title: "ກີບ (LAK)", value: "LAK" },
@@ -153,15 +161,15 @@ const headers = computed(() => [
     width: "80px",
     class: "text-primary font-weight-bold",
   },
-   {
+  {
     title: "ປະເພດຊັບສົມບັດ",
     value: "asset_type_id",
     align: "start",
     sortable: true,
     filterable: true,
     width: "120px",
-  }, 
-  
+  },
+
   {
     title: "ລາຍລະອຽດສົມບັດ",
     value: "asset_spec",
@@ -171,10 +179,8 @@ const headers = computed(() => [
     width: "120px",
     class: "text-h6",
   },
- 
-  
-  
-   {
+
+  {
     title: "ມູນຄ່າເລີ່ມຕົ້ນ",
     value: "asset_value",
     align: "end",
@@ -182,7 +188,8 @@ const headers = computed(() => [
     filterable: false,
     width: "120px",
     class: "text-end",
-  },{
+  },
+  {
     title: "ມູນຄ່າຍັງເຫຼືອ",
     value: "asset_value_remain",
     align: "end",
@@ -208,7 +215,8 @@ const headers = computed(() => [
     filterable: true,
     width: "120px",
     class: "text-center",
-  },{
+  },
+  {
     title: "ປະເພດການຈ່າຍ",
     value: "type_of_pay",
     align: "center",
@@ -216,7 +224,7 @@ const headers = computed(() => [
     filterable: true,
     width: "150px",
     class: "text-center",
-  }, 
+  },
   {
     title: "ວັນທີ່ໄດ້ຮັບ",
     value: "asset_date",
@@ -227,9 +235,8 @@ const headers = computed(() => [
     class: "text-center",
   },
 
-  
   {
-    title: "ສະຖານະ",
+    title: "ຂັ້ນຕອນດຳເນີນການ",
     value: "asset_status",
     align: "center",
     sortable: true,
@@ -237,7 +244,16 @@ const headers = computed(() => [
     width: "120px",
     class: "text-center",
   },
- 
+  {
+    title: "ສະຖານະ",
+    value: "Auth_Status",
+    align: "center",
+    sortable: true,
+    filterable: true,
+    width: "120px",
+    class: "text-center",
+  },
+
   ...(canView.value
     ? [
         {
@@ -251,19 +267,19 @@ const headers = computed(() => [
         },
       ]
     : []),
-  ...(canEdit.value
-    ? [
-        {
-          title: "ແກ້ໄຂ",
-          value: "edit",
-          align: "center",
-          sortable: false,
-          filterable: false,
-          width: "80px",
-          class: "text-center",
-        },
-      ]
-    : []),
+  // ...(canEdit.value
+  //   ? [
+  //       {
+  //         title: "ແກ້ໄຂ",
+  //         value: "edit",
+  //         align: "center",
+  //         sortable: false,
+  //         filterable: false,
+  //         width: "80px",
+  //         class: "text-center",
+  //       },
+  //     ]
+  //   : []),
   ...(canDelete.value
     ? [
         {
@@ -291,7 +307,6 @@ const headers = computed(() => [
 const filteredData = computed(() => {
   let data = mockData.value;
 
-
   if (!Array.isArray(data)) {
     return [];
   }
@@ -314,8 +329,10 @@ const filteredData = computed(() => {
     );
   }
 
-  if(selectedassetCode.value !== "all") {
-    data = data.filter((item) => item.asset_id_detail?.coa_id === selectedassetCode.value);
+  if (selectedassetCode.value !== "all") {
+    data = data.filter(
+      (item) => item.asset_id_detail?.coa_id === selectedassetCode.value
+    );
   }
 
   return data;
@@ -389,45 +406,43 @@ const clearFilters = async () => {
   selectedStatus.value = "all";
   selectedassetCode.value = "all";
   search.value = "";
-  
-  // ລຶບຂໍ້ມູນຈາກ localStorage
+
+ 
   try {
     localStorage.removeItem(STORAGE_KEY);
   } catch (error) {
-    console.error('Error clearing filters from localStorage:', error);
+    console.error("Error clearing filters from localStorage:", error);
   }
 };
 
 const formatNumber = (value) => {
-  if (!value && value !== 0) return '0';
+  if (!value && value !== 0) return "0";
   const num = parseFloat(value);
-  if (isNaN(num)) return '0';
-  
+  if (isNaN(num)) return "0";
+
   if (num % 1 === 0) {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat("en-US", {
       minimumFractionDigits: 0,
-      maximumFractionDigits: 0
+      maximumFractionDigits: 0,
     }).format(num);
   } else {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat("en-US", {
       minimumFractionDigits: 2,
-      maximumFractionDigits: 2
+      maximumFractionDigits: 2,
     }).format(num);
   }
 };
 
-
 onMounted(async () => {
   loading.value = true;
   try {
-   
     loadFiltersFromStorage();
-    
-   
+
     assetStores.GetAssetList();
     typeAssetStore.GetPropertyCategoryById();
     faAssetStoreInstance.GetFaAssetList();
-    
+    masterStore.getPuamsue();
+
     initializeRole();
     roleStore.GetRoleDetail();
 
@@ -443,306 +458,327 @@ onMounted(async () => {
 
 <template>
   <div class="pa-2">
-  <GlobalTextTitleLine :title="title" />
-<pre>
+    <GlobalTextTitleLine :title="title" />
+    <pre>
+  <!-- {{ masterdata }} -->
 <!-- {{ response }} -->
 </pre>
-  <v-col cols="12">
-   
-    <v-row>
-      <v-col cols="12" md="2">
-        <div class="d-flex">
-         <v-btn
-  color="primary"
-  @click="goPath(`/property/faasset/create${selectedassetCode !== 'all' ? '?asset_type_id=' + selectedassetCode : ''}`)"
-  v-if="canAdd"
->
-  <v-icon icon="mdi-plus"></v-icon> ເພີ່ມຊັບສົມບັດ
-</v-btn>
-        </div>
-      </v-col>
- <v-col cols="12" md="3" class="text-no-wrap">
-        <v-autocomplete
-          v-model="selectedassetCode"
-          :items="response || []"
-          item-title="asset_name_la"
-          item-value="coa_id"
-          label="ເລືອກຕາມປະເພດຊັບສົມບັດຍອ່ຍ"
-          variant="outlined"
-          density="compact"
-          clearable
-          placeholder="ເລືອກສະຖານະ"
-          :loading="loading"
-        ></v-autocomplete>
-      </v-col>
+    <v-col cols="12">
+      <v-row>
+        <v-col cols="12" md="2">
+          <div class="d-flex">
+            <v-btn
+              color="primary"
+              @click="
+                goPath(
+                  `/property/faasset/create${
+                    selectedassetCode !== 'all'
+                      ? '?asset_type_id=' + selectedassetCode
+                      : ''
+                  }`
+                )
+              "
+              v-if="canAdd"
+            >
+              <v-icon icon="mdi-plus"></v-icon> ເພີ່ມຊັບສົມບັດ
+            </v-btn>
+          </div>
+        </v-col>
+        <v-col cols="12" md="3" class="text-no-wrap">
+          <v-autocomplete
+            v-model="selectedassetCode"
+            :items="response || []"
+            item-title="asset_name_la"
+            item-value="coa_id"
+            label="ເລືອກຕາມປະເພດຊັບສົມບັດຍອ່ຍ"
+            variant="outlined"
+            density="compact"
+            clearable
+            placeholder="ເລືອກສະຖານະ"
+            :loading="loading"
+          ></v-autocomplete>
+        </v-col>
 
-      <v-col cols="12" md="3" class="text-no-wrap">
-        <v-select
-          v-model="selectedStatus"
-          :items="assetStatuses"
-          item-title="title"
-          item-value="value"
-          label="ສະຖານະຊັບສົມບັດ"
-          variant="outlined"
-          density="compact"
-          clearable
-          placeholder="ເລືອກສະຖານະ"
-          :loading="loading"
-        ></v-select>
-      </v-col>
-     
-      <v-col cols="12" md="2">
-        <v-text-field
-          v-model="search"
-          label="ຄົ້ນຫາ"
-          prepend-inner-icon="mdi-magnify"
-          variant="outlined"
-          density="compact"
-          clearable
-          placeholder="ຄົ້ນຫາຕາມປ້າຍ, Serial, ຊື່ຊັບສົມບັດ..."
-        />
-      </v-col>
+        <v-col cols="12" md="3" class="text-no-wrap">
+          <v-autocomplete
+            v-model="selectedStatus"
+            :items="masterdata"
+            item-title="MC_name_la"
+            item-value="MC_code"
+            label="ສະຖານະຊັບສົມບັດ"
+            variant="outlined"
+            density="compact"
+            clearable
+            placeholder="ເລືອກສະຖານະ"
+            :loading="loading"
+          ></v-autocomplete>
+        </v-col>
 
-      <v-col cols="12" md="2">
-        <v-btn
-          color="secondary"
-          variant="outlined"
-          @click="clearFilters"
-          :loading="loading"
-          block
-        >
-          <v-icon class="mr-2">mdi-filter-remove</v-icon>
-          ເຄລຍການກັ່ນຕອງ
-        </v-btn>
-      </v-col>
-    </v-row>
+        <v-col cols="12" md="2">
+          <v-text-field
+            v-model="search"
+            label="ຄົ້ນຫາ"
+            prepend-inner-icon="mdi-magnify"
+            variant="outlined"
+            density="compact"
+            clearable
+            placeholder="ຄົ້ນຫາຕາມປ້າຍ, Serial, ຊື່ຊັບສົມບັດ..."
+          />
+        </v-col>
 
-    <v-data-table
-      :headers="headers"
-      :items="filteredData || []"
-      class="text-no-wrap"
-    >
-      <template v-slot:header.asset_list_id="{ column }">
-        <v-icon start>mdi-identifier</v-icon>
-        <b style="color: blue">{{ column.title }}</b>
-      </template>
-
-      <template v-slot:header.asset_spec="{ column }">
-        <b style="color: blue">{{ column.title }}</b>
-      </template>
-      <template v-slot:header.asset_type_id="{ column }">
-        <b style="color: blue">{{ column.title }}</b>
-      </template>
-
-      <template v-slot:header.asset_serial_no="{ column }">
-        <b style="color: blue">{{ column.title }}</b>
-      </template>
-
-      <template v-slot:header.type_of_pay="{ column }">
-        <b style="color: blue">{{ column.title }}</b>
-      </template>
-
-      <template v-slot:header.asset_value_remainMonth="{ column }">
-        <b style="color: blue">{{ column.title }}</b>
-      </template>
-
-      <template v-slot:header.asset_date="{ column }">
-        <b style="color: blue">{{ column.title }}</b>
-      </template>
-
-      <template v-slot:header.asset_value="{ column }">
-        <b style="color: blue">{{ column.title }}</b>
-      </template>
-
-      <template v-slot:header.asset_value_remain="{ column }">
-        <b style="color: blue">{{ column.title }}</b>
-      </template>
-
-      <template v-slot:header.asset_status="{ column }">
-        <b style="color: blue">{{ column.title }}</b>
-      </template>
-
-      <template v-slot:header.has_depreciation="{ column }">
-        <b style="color: blue">{{ column.title }}</b>
-      </template>
-
-      <template v-slot:header.view="{ column }">
-        <b style="color: blue">{{ column.title }}</b>
-      </template>
-
-      <template v-slot:header.edit="{ column }">
-        <b style="color: blue">{{ column.title }}</b>
-      </template>
-
-      <template v-slot:header.delete="{ column }">
-        <b style="color: blue">{{ column.title }}</b>
-      </template>
-
-      <template v-slot:header.depreciation="{ column }">
-        <b style="color: blue">{{ column.title }}</b>
-      </template>
-      <template v-slot:header.asset_accu_dpca_value="{ column }">
-        <b style="color: blue">{{ column.title }}</b>
-      </template>
-
-      <template v-slot:item.asset_list_id="{ item }">
-        <v-chip color="primary" variant="outlined" size="small">
-          {{ item.asset_list_id }}
-        </v-chip>
-      </template>
-
-      <template v-slot:item.asset_spec="{ item }">
-        <span class="font-weight-bold">{{ item.asset_spec }}</span>
-      </template>
-
-      <template v-slot:item.asset_serial_no="{ item }">
-        <span>{{ item.asset_serial_no || "-" }}</span>
-      </template>
-      <template v-slot:item.asset_accu_dpca_value="{ item }">
-        <v-chip color="primary">{{ item.asset_accu_dpca_value || "-" }}</v-chip>
-      </template>
-      <template v-slot:item.asset_type_id="{ item }">
-        <v-chip color="primary">{{ item.asset_id_detail.asset_name_la || "-" }}</v-chip>
-      </template>
-
-      <template v-slot:item.type_of_pay="{ item }">
-        <v-chip color="primary" v-if="item.type_of_pay === '1101100'"
-          >ເງິນສົດ
-          <p></p
-        ></v-chip>
-        <v-chip color="info" v-if="item.type_of_pay === '1101200'"
-          >ເງິນສົດຄັງຍ່ອຍ
-          <p></p
-        ></v-chip>
-        <v-chip color="success" v-if="item.type_of_pay === '1121130'"
-          >ບັນຊີຝາກປະຢັດ
-          <p></p
-        ></v-chip>
-        <v-chip color="warning" v-if="item.type_of_pay === '1121110'"
-          >ບັນຊີເງິນຝາກກະແສລາຍວັນ
-          <p></p
-        ></v-chip>
-       
-      </template>
-
-     <template v-slot:item.asset_value_remainMonth="{ item }">
-    <div class="text-center">
-      <v-chip 
-        :color="item.asset_value_remainMonth > 1000000 ? 'success' : 'primary'"
-        variant="flat"
-      >
-        {{ 
-          new Intl.NumberFormat('en-US', {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 2
-          }).format(item.asset_value_remainMonth || 0) 
-        }} ₭
-      </v-chip>
-    </div>
-  </template>
-      <template v-slot:item.asset_date="{ item }">
-        {{ formatDate(item.asset_date) }}
-      </template>
-
-      <template v-slot:item.asset_value="{ item }">
-        <div class="text-end">
-          <span class="font-weight-bold">{{
-            formatCurrency(item.asset_value, item.asset_currency)
-          }}</span>
-        </div>
-      </template>
-
-      <template v-slot:item.asset_value_remain="{ item }">
-        <div class="text-end">
-          <span class="font-weight-bold text-success">{{
-            formatCurrency(item.asset_value_remain, item.asset_currency)
-          }}</span>
-        </div>
-      </template>
-
-      <template v-slot:item.asset_status="{ item }">
-        <div class="text-center">
-          <v-menu>
-            <template v-slot:activator="{ props }">
-              
-              <v-chip
-                :color="getStatusColor(item.asset_status)"
-                variant="flat"
-                size="small"
-                v-bind="props"
-                class="cursor-pointer"
-              >
-                {{ getStatusText(item.asset_status) }}
-              </v-chip>
-            </template>
-            
-          </v-menu>
-        </div>
-      </template>
-
-      <template v-slot:item.has_depreciation="{ item }">
-        <div class="text-center">
-          <v-chip
-            :color="item.has_depreciation === 'Y' ? 'success' : 'error'"
-            variant="flat"
-            size="small"
+        <v-col cols="12" md="2">
+          <v-btn
+            color="secondary"
+            variant="outlined"
+            @click="clearFilters"
+            :loading="loading"
+            block
           >
-            {{ item.has_depreciation === "Y" ? "ມີ" : "ບໍ່ມີ" }}
+            <v-icon class="mr-2">mdi-filter-remove</v-icon>
+            ເຄລຍການກັ່ນຕອງ
+          </v-btn>
+        </v-col>
+      </v-row>
+
+      <v-data-table
+        :headers="headers"
+        :items="filteredData || []"
+        class="text-no-wrap"
+      >
+        <template v-slot:header.asset_list_id="{ column }">
+          <v-icon start>mdi-identifier</v-icon>
+          <b style="color: blue">{{ column.title }}</b>
+        </template>
+
+        <template v-slot:header.asset_spec="{ column }">
+          <b style="color: blue">{{ column.title }}</b>
+        </template>
+        <template v-slot:header.asset_type_id="{ column }">
+          <b style="color: blue">{{ column.title }}</b>
+        </template>
+
+        <template v-slot:header.asset_serial_no="{ column }">
+          <b style="color: blue">{{ column.title }}</b>
+        </template>
+
+        <template v-slot:header.type_of_pay="{ column }">
+          <b style="color: blue">{{ column.title }}</b>
+        </template>
+
+        <template v-slot:header.asset_value_remainMonth="{ column }">
+          <b style="color: blue">{{ column.title }}</b>
+        </template>
+
+        <template v-slot:header.asset_date="{ column }">
+          <b style="color: blue">{{ column.title }}</b>
+        </template>
+
+        <template v-slot:header.asset_value="{ column }">
+          <b style="color: blue">{{ column.title }}</b>
+        </template>
+
+        <template v-slot:header.asset_value_remain="{ column }">
+          <b style="color: blue">{{ column.title }}</b>
+        </template>
+
+        <template v-slot:header.asset_status="{ column }">
+          <b style="color: blue">{{ column.title }}</b>
+        </template>
+
+        <template v-slot:header.has_depreciation="{ column }">
+          <b style="color: blue">{{ column.title }}</b>
+        </template>
+
+        <template v-slot:header.view="{ column }">
+          <b style="color: blue">{{ column.title }}</b>
+        </template>
+
+        <template v-slot:header.edit="{ column }">
+          <b style="color: blue">{{ column.title }}</b>
+        </template>
+
+        <template v-slot:header.delete="{ column }">
+          <b style="color: blue">{{ column.title }}</b>
+        </template>
+
+        <template v-slot:header.depreciation="{ column }">
+          <b style="color: blue">{{ column.title }}</b>
+        </template>
+        <template v-slot:header.Auth_Status="{ column }">
+          <b style="color: blue">{{ column.title }}</b>
+        </template>
+        <template v-slot:header.asset_accu_dpca_value="{ column }">
+          <b style="color: blue">{{ column.title }}</b>
+        </template>
+
+        <template v-slot:item.asset_list_id="{ item }">
+          <v-chip color="primary" variant="outlined" size="small">
+            {{ item.asset_list_id }}
           </v-chip>
-        </div>
-      </template>
+        </template>
 
-      <template v-slot:item.view="{ item }">
-        <v-btn
-          small
-          flat
-          class="text-primary"
-          icon="mdi-eye-outline"
-          @click="
-            goPath(`/property/faasset/detail?id_faasset=${item.asset_list_id}`)
-          "
-        />
-      </template>
+        <template v-slot:item.asset_spec="{ item }">
+          <span class="font-weight-bold">{{ item.asset_spec }}</span>
+        </template>
 
-      <template v-slot:item.edit="{ item }">
-        <v-btn
-          small
-          flat
-          class="text-info"
-          icon="mdi-pen"
-          @click="
-            goPath(`/property/faasset/edit?id_faasset=${item.asset_list_id}`)
-          "
-        />
-      </template>
+        <template v-slot:item.asset_serial_no="{ item }">
+          <span>{{ item.asset_serial_no || "-" }}</span>
+        </template>
+        <template v-slot:item.asset_accu_dpca_value="{ item }">
+          <v-chip color="primary">{{
+            item.asset_accu_dpca_value || "-"
+          }}</v-chip>
+        </template>
+        <template v-slot:item.asset_type_id="{ item }">
+          <v-chip color="primary">{{
+            item.asset_id_detail.asset_name_la || "-"
+          }}</v-chip>
+        </template>
+        <template v-slot:item.Auth_Status="{ item }">
+          <v-chip color="">
+            <div v-if="item.Auth_Status==='U'">
+            <p class="text-primary">ລໍຖ້າອະນຸມັດ</p>  
+            </div>
+            <div v-if="item.Auth_Status==='A'">
+            <p class="text-info">ອະນຸມັດແລ້ວ</p>  
+            </div>
+            <div v-if="item.Auth_Status==='R'">
+            <p class="text-error">ຖືກ Reject</p>  
+            </div>
+            <div v-if="item.Auth_Status==='P'">
+            <p class="text-warning">ກຳລັງດຳເນີນການ</p>  
+            </div>
+          </v-chip>
+        </template>
 
-      <template v-slot:item.delete="{ item }">
-        <v-btn
-          small
-          flat
-          class="text-error"
-          icon="mdi-delete-outline"
-          @click="confirmDelete(item)"
-        />
-      </template>
+        <template v-slot:item.type_of_pay="{ item }">
+          <v-chip color="primary" v-if="item.type_of_pay === '1101100'"
+            >
+            {{ item.type_of_pay_detail.MC_name_la || "-" }}
+          </v-chip>
+        </template>
 
-      
-    </v-data-table>
-  </v-col>
+        <template v-slot:item.asset_value_remainMonth="{ item }">
+          <div class="text-center">
+            <v-chip
+              :color="
+                item.asset_value_remainMonth > 1000000 ? 'success' : 'primary'
+              "
+              variant="flat"
+            >
+              {{
+                new Intl.NumberFormat("en-US", {
+                  minimumFractionDigits: 0,
+                  maximumFractionDigits: 2,
+                }).format(item.asset_value_remainMonth || 0)
+              }}
+              ₭
+            </v-chip>
+          </div>
+        </template>
+        <template v-slot:item.asset_date="{ item }">
+          {{ formatDate(item.asset_date) }}
+        </template>
 
-  <v-snackbar
-    v-model="showSuccess"
-    color="success"
-    timeout="3000"
-    location="top"
-  >
-    <v-icon class="mr-2">mdi-check-circle</v-icon>
-    {{ successMessage }}
-  </v-snackbar>
+        <template v-slot:item.asset_value="{ item }">
+          <div class="text-end">
+            <span class="font-weight-bold">{{
+              formatCurrency(item.asset_value, item.asset_currency)
+            }}</span>
+          </div>
+        </template>
 
- 
-  <v-snackbar v-model="showError" color="error" timeout="5000" location="top">
-    <v-icon class="mr-2">mdi-alert-circle</v-icon>
-    {{ errorMessage }}
-  </v-snackbar></div>
+        <template v-slot:item.asset_value_remain="{ item }">
+          <div class="text-end">
+            <span class="font-weight-bold text-success">{{
+              formatCurrency(item.asset_value_remain, item.asset_currency)
+            }}</span>
+          </div>
+        </template>
+
+        <template v-slot:item.asset_status="{ item }">
+          <div class="text-center">
+            <v-menu>
+              <template v-slot:activator="{ props }">
+                <v-chip
+                  :color="getStatusColor(item.asset_status)"
+                  variant="flat"
+                  size="small"
+                  v-bind="props"
+                  class="cursor-pointer"
+                >
+                  {{ getStatusText(item.asset_status) }}
+                </v-chip>
+              </template>
+            </v-menu>
+          </div>
+        </template>
+
+        <template v-slot:item.has_depreciation="{ item }">
+          <div class="text-center">
+            <v-chip
+              :color="item.has_depreciation === 'Y' ? 'success' : 'error'"
+              variant="flat"
+              size="small"
+            >
+              {{ item.has_depreciation === "Y" ? "ມີ" : "ບໍ່ມີ" }}
+            </v-chip>
+          </div>
+        </template>
+
+        <template v-slot:item.view="{ item }">
+          <v-btn
+            small
+            flat
+            class="text-primary"
+            icon="mdi-eye-outline"
+            @click="
+              goPath(
+                `/property/faasset/detail?id_faasset=${item.asset_list_id}`
+              )
+            "
+          />
+        </template>
+
+        <template v-slot:item.edit="{ item }" >
+          <v-btn
+         v-if="item.Auth_Status !== 'A'"
+            small
+            flat
+            class="text-info"
+            icon="mdi-pen"
+            @click="
+              goPath(`/property/faasset/edit?id_faasset=${item.asset_list_id}`)
+            "
+          />
+        </template>
+
+        <template v-slot:item.delete="{ item }">
+          <v-btn
+           v-if="item.Auth_Status !== 'A'"
+            small
+            flat
+            class="text-error"
+            icon="mdi-delete-outline"
+            @click="confirmDelete(item)"
+          />
+        </template>
+      </v-data-table>
+    </v-col>
+
+    <v-snackbar
+      v-model="showSuccess"
+      color="success"
+      timeout="3000"
+      location="top"
+    >
+      <v-icon class="mr-2">mdi-check-circle</v-icon>
+      {{ successMessage }}
+    </v-snackbar>
+
+    <v-snackbar v-model="showError" color="error" timeout="5000" location="top">
+      <v-icon class="mr-2">mdi-alert-circle</v-icon>
+      {{ errorMessage }}
+    </v-snackbar>
+  </div>
 </template>

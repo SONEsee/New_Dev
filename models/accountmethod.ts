@@ -1,6 +1,8 @@
 export interface AccoutMethodRespons {
     mapping_id:        number;
-    ref_id:            number;
+    ref_id:            string;
+    amount_end:        string;
+    amount_start:      string;
     acc_type:          string;
     debit_account_id:  string;
     credit_account_id: string;

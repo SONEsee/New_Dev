@@ -18,13 +18,19 @@ const {
 //   return faassetStore.response_fa_asset_list;
 // });
 const assetStores = assetStore();
-const response = computed(()=>{
+const response = computed(() => {
   return assetStores.response_asset_list || [];
-})
-const respons = computed(() => {
-  const data = faassetStore.response_fa_asset_list;
-  return data ? data.filter((item) => item.asset_status === "UC") : [];
 });
+const respons = computed(() => {
+  const data = faassetStore.response_fa_asset_list || [];
+  return data.filter(
+    (item) => !(item.asset_status === "AC" && item.Auth_Status_ARC === "A")
+  );
+});
+// const respons = computed(() => {
+//   const data = faassetStore.response_fa_asset_list;
+//   return data ? data.filter((item) => item.asset_status === "UC") : [];
+// });
 const roleStore = RoleStore();
 const role1 = computed(() => {
   return roleStore.responst_data_detail;
@@ -41,7 +47,7 @@ const filterAssetType = computed(() => {
   return data;
 });
 onMounted(() => {
-    assetStores.GetAssetList();
+  assetStores.GetAssetList();
   faassetStore.GetFaAssetList();
   initializeRole();
   roleStore.GetRoleDetail();
@@ -140,9 +146,19 @@ const headers = computed(() => {
     },
 
     {
-      title: "ສະຖານະ",
+      title: "ຂັ້ນຕອນດຳເນີນການ",
       value: "asset_status",
       key: "asset_status",
+      align: "center",
+      sortable: true,
+      filterable: true,
+      width: "120px",
+      class: "text-center",
+    },
+    {
+      title: "ສະຖານະ",
+      value: "Auth_Status_ARC",
+      key: "Auth_Status_ARC",
       align: "center",
       sortable: true,
       filterable: true,
@@ -213,26 +229,27 @@ const headers = computed(() => {
     // },
   ] as any;
 });
-
 </script>
 <template>
   <div class="pa-4">
     <!-- <pre> {{ respons }}</pre> -->
     <GlobalTextTitleLine :title="title" />
-    <v-col cols="12" md="3"><v-autocomplete
-          v-model="selectAssetType"
-          :items="response || []"
-          item-title="asset_name_la"
-          item-value="coa_id"
-          label="ເລືອກຕາມປະເພດຊັບສົມບັດຍອ່ຍ"
-          variant="outlined"
-          density="compact"
-          clearable
-          placeholder="ເລືອກສະຖານະ"
-          
-        ></v-autocomplete></v-col>
-    
+    <v-col cols="12" md="3"
+      ><v-autocomplete
+        v-model="selectAssetType"
+        :items="response || []"
+        item-title="asset_name_la"
+        item-value="coa_id"
+        label="ເລືອກຕາມປະເພດຊັບສົມບັດຍອ່ຍ"
+        variant="outlined"
+        density="compact"
+        clearable
+        placeholder="ເລືອກສະຖານະ"
+      ></v-autocomplete
+    ></v-col>
+
     <v-data-table
+    style="font-size: 80%;"
       :items="filterAssetType || []"
       :headers="headers"
       class="text-no-wrap"
@@ -325,6 +342,17 @@ const headers = computed(() => {
           {{ item.asset_currency }}
         </v-chip>
       </template>
+      <template v-slot:item.Auth_Status_ARC="{ item }">
+        <div v-if="item.Auth_Status_ARC === 'U'">
+          <v-chip color="info"> ລໍຖ້າການອະນຸມັດ </v-chip>
+        </div>
+        <div v-if="item.Auth_Status_ARC === 'P'">
+          <v-chip color="info"> ກຳລັງດຳເນີນການ </v-chip>
+        </div>
+        <div v-if="item.Auth_Status_ARC === 'R'">
+          <v-chip color="info"> ຖືກ Reject </v-chip>
+        </div>
+      </template>
       <template v-slot:item.asset_value_remainMonth="{ item }">
         <v-chip style="border: 1px solid" color="primary">
           {{ Number(item.asset_value_remainMonth).toLocaleString("en-US") }}
@@ -332,9 +360,36 @@ const headers = computed(() => {
         </v-chip>
       </template>
       <template v-slot:item.asset_status="{ item }">
-        <v-chip style="border: 1px solid" color="primary">
-          {{ item.asset_status_detail.MC_name_la }}
-        </v-chip>
+        <div v-if="item.asset_status === 'UC'">
+          <v-chip style="border: 1px solid" color="info">
+            {{ item.asset_status_detail.MC_name_la }}
+          </v-chip>
+        </div>
+        <div v-if="item.asset_status === 'AC'">
+          <v-chip style="border: 1px solid" color="success">
+            {{ item.asset_status_detail.MC_name_la }}
+          </v-chip>
+        </div>
+        <div v-if="item.asset_status === 'AI'">
+          <v-chip style="border: 1px solid" color="error">
+            {{ item.asset_status_detail.MC_name_la }}
+          </v-chip>
+        </div>
+        <div v-if="item.asset_status === 'MT'">
+          <v-chip style="border: 1px solid" color="warning">
+            {{ item.asset_status_detail.MC_name_la }}
+          </v-chip>
+        </div>
+        <div v-if="item.asset_status === 'DS'">
+          <v-chip style="border: 1px solid" color="deep-purple">
+            {{ item.asset_status_detail.MC_name_la }}
+          </v-chip>
+        </div>
+        <div v-if="item.asset_status === 'DM'">
+          <v-chip style="border: 1px solid" color="deep-orange">
+            {{ item.asset_status_detail.MC_name_la }}
+          </v-chip>
+        </div>
       </template>
       <template v-slot:item.type_of_pay="{ item }">
         <v-chip style="border: 1px solid" color="primary">
@@ -342,7 +397,37 @@ const headers = computed(() => {
         </v-chip>
       </template>
       <template v-slot:item.action="{ item }">
-       <v-btn class="" color="primary" @click="goPath(`/property/realizetheproperty/create?asset_list_id=${item.asset_list_id}`)">ຢັ້ງຢືນ</v-btn>
+        <v-btn
+          v-if="item.Auth_Status === 'A' && item.asset_status === 'UC'"
+          class=""
+          color="primary"
+          @click="
+            goPath(
+              `/property/realizetheproperty/create?asset_list_id=${item.asset_list_id}`
+            )
+          "
+          >ຢັ້ງຢືນ</v-btn
+        >
+        <v-chip
+          v-if="item.Auth_Status === 'A' && item.asset_status === 'AC'"
+          
+          >
+          <v-icon icon="mdi-check-underline" style="color: darkgreen;"></v-icon>
+          </v-chip
+        >
+        <p v-if="item.asset_status==='AC' && item.Auth_Status!=='A'">ຖືກກົດຮັບຮູ້ແລ້ວ</p>
+        <v-btn
+          v-if="item.Auth_Status === 'U'"
+          class=""
+          color="primary"
+          @click="
+            goPath(
+              `/property/realizetheproperty/create?asset_list_id=${item.asset_list_id}`
+            )
+          "
+          disabled
+          >ຢັ້ງຢືນ</v-btn
+        >
       </template>
     </v-data-table>
   </div>

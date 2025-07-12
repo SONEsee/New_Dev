@@ -414,7 +414,7 @@
 
               
               <v-btn
-                v-if="canDelete && (canAuthorize || item.Maker_Id === currentUser?.user_id)"
+                v-if="canDelete && (canAuthorize || item.Maker_Id === currentUser?.user_id) && item.Auth_Status !== 'A' && item.Auth_Status !== 'R'"
                 icon
                 size="x-small"
                 variant="text"
@@ -508,8 +508,9 @@ const headers = [
   { title: 'ໂມດູນ', key: 'module_id', sortable: true },
   { title: 'ລະຫັດ', key: 'Txn_code', sortable: true },
   { title: 'ເລກອ້າງອີງ', key: 'Reference_No', sortable: true },
+    { title: 'ເນື້ອໃນ', key: 'Addl_text', sortable: true },
   { title: 'ຈຳນວນເງິນ', key: 'Fcy_Amount', align: 'end', sortable: true },
-  { title: 'ເນື້ອໃນ', key: 'Addl_text', sortable: true },
+
   { title: 'ຜູ້ສ້າງ', key: 'maker_name', sortable: true },
   { title: 'ວັນທີ', key: 'Value_date', sortable: true },
   { title: 'ສະຖານະ', key: 'Auth_Status', sortable: true },
