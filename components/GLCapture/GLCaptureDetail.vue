@@ -440,12 +440,12 @@ const rejectByPairAccount = async (referenceSubNo) => {
 
 const result = await Swal.fire({
   icon: 'warning',
-  title: 'ປະຕິເສດບັນທຶກຄູ່',
+  title: 'ດັດເເກ້ຄູ່ບັນຊີ',
   html: `
     <div class="rejection-content">
       <p class="rejection-subtitle">ທ່ານຕ້ອງການປະຕິເສດບັນທຶກຄູ່:</p>
       <div class="reference-number">${referenceSubNo}</div>
-      <p class="rejection-warning">ການປະຕິເສດນີ້ຈະປະຕິເສດທັງຄູ່ບັນທຶກ (Debit ແລະ Credit)</p>
+      <p class="rejection-warning text-styles">ການປະຕິເສດນີ້ຈະປະຕິເສດທັງຄູ່ບັນທຶກ (Debit ແລະ Credit)</p>
     </div>
   `,
   input: 'textarea',
@@ -469,7 +469,7 @@ const result = await Swal.fire({
     }
   },
   showCancelButton: true,
-  confirmButtonText: '<i class="fas fa-times-circle"></i> ປະຕິເສດ',
+  confirmButtonText: '<i class="fas fa-times-circle"></i> ຢັ້ງຢືນ',
   cancelButtonText: '<i class="fas fa-arrow-left"></i> ຍົກເລີກ',
   confirmButtonColor: '#ef4444',
   cancelButtonColor: '#6b7280',
@@ -507,6 +507,7 @@ const result = await Swal.fire({
       }
       
       .custom-title {
+        font-family: Noto Sans Lao, sans-serif !important;
         font-size: 1.5rem !important;
         font-weight: 600 !important;
         color: #1f2937 !important;
@@ -519,11 +520,13 @@ const result = await Swal.fire({
       }
       
       .rejection-content {
+       font-family: Noto Sans Lao, sans-serif !important;
         text-align: center;
         line-height: 1.3;
       }
       
       .rejection-subtitle {
+       font-family: Noto Sans Lao, sans-serif !important;
         font-size: 1rem;
         color: #6b7280;
         margin-bottom: 0.5rem;
@@ -532,6 +535,7 @@ const result = await Swal.fire({
       }
       
       .reference-number {
+       font-family: Noto Sans Lao, sans-serif !important;
         display: inline-block;
         background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
         color: #92400e;
@@ -557,6 +561,7 @@ const result = await Swal.fire({
       }
       
       .custom-input-label {
+       font-family: Noto Sans Lao, sans-serif !important;
         font-weight: 600 !important;
         color: #374151 !important;
         margin-bottom: 0.5rem !important;
@@ -564,13 +569,13 @@ const result = await Swal.fire({
       }
       
       .custom-input {
+       font-family: Noto Sans Lao, sans-serif !important;
         border: 2px solid #e5e7eb !important;
         border-radius: 12px !important;
         padding: 0.875rem !important;
         font-size: 0.95rem !important;
         line-height: 1.3 !important;
         transition: all 0.2s ease !important;
-        font-family: inherit !important;
         resize: vertical !important;
         min-height: 80px !important;
       }
@@ -587,6 +592,7 @@ const result = await Swal.fire({
       }
       
       .custom-confirm-btn {
+       font-family: Noto Sans Lao, sans-serif !important;
         background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
         color: white !important;
         border: none !important;
@@ -606,6 +612,7 @@ const result = await Swal.fire({
       }
       
       .custom-cancel-btn {
+       font-family: Noto Sans Lao, sans-serif !important;
         background: #f8fafc !important;
         color: #6b7280 !important;
         border: 2px solid #e5e7eb !important;
