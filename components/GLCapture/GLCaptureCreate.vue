@@ -1419,7 +1419,7 @@ const loadPeriodCodes = async () => {
     const data = response.data.results || response.data || []
     periodCodes.value = data.map(period => ({
       ...period,
-      period_display: `${period.period_code} - ${period.period_Desc || period.period_code}`,
+      period_display: `${period.period_code}`,
     }))
 
     const currentPeriod = periodCodes.value.find(period => 
