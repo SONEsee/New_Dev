@@ -1406,7 +1406,6 @@ const loadFinCycles = async () => {
     loading.finCycles = false
   }
 }
-
 const loadPeriodCodes = async () => {
   if (!journalData.fin_cycle) {
     periodCodes.value = []
@@ -1417,9 +1416,11 @@ const loadPeriodCodes = async () => {
     loading.periodCodes = true
     const response = await axios.get(`/api/percodes/?fin_cycle=${journalData.fin_cycle}`, getAuthHeaders())
     const data = response.data.results || response.data || []
+    
+    // Format the period_display to show YYYY-MM instead of YYYYMM
     periodCodes.value = data.map(period => ({
       ...period,
-      period_display: `${period.period_code}`,
+      period_display: formatPeriodDisplay(period.period_code),
     }))
 
     const currentPeriod = periodCodes.value.find(period => 
@@ -1445,6 +1446,18 @@ const loadPeriodCodes = async () => {
     loading.periodCodes = false
   }
 }
+
+// Helper function to format period code for display
+const formatPeriodDisplay = (periodCode) => {
+  if (!periodCode || periodCode.length !== 6) {
+    return periodCode // Return as-is if invalid format
+  }
+  
+  const year = periodCode.substring(0, 4)
+  const month = periodCode.substring(4, 6)
+  return `${year}-${month}`
+}
+
 
 const refreshAutoSelection = async () => {
   try {
