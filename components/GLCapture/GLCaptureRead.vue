@@ -476,14 +476,16 @@ const currentUser = computed(() => {
   }
 })
 
+const today = new Date().toISOString().slice(0, 10) // 'YYYY-MM-DD'
+
 // Filters
 const filters = reactive({
   search: '',
   module_id: null,
   Ccy_cd: null,
   Auth_Status: null,
-  dateFrom: null,
-  dateTo: null
+  dateFrom: today,
+  dateTo: today
 })
 
 // Summary
@@ -585,6 +587,8 @@ const getStatusText = (status) => {
     default: return 'ບໍ່ຮູ້'
   }
 }
+
+
 
 const getModuleName = (moduleId) => {
   if (!moduleId) return '-'

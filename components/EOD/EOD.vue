@@ -868,11 +868,11 @@ const activeUserHeaders = [
 ]
 
 const eodFunctionHeaders = [
-  { title: 'ລຳດັບ', key: 'eoc_seq_no', width: '80px' },
-  { title: 'ຊື່ຟັງຊັນ', key: 'function_name' },
+  { title: 'ລຳດັບ', key: 'eoc_seq_no', width: '40px' },
+  { title: 'ຊື່ຟັງຊັນ', key: 'function_name', width:'120px' },
   { title: 'ສະຖານະບັນທຶກ', key: 'Record_Status', width: '120px' },
   { title: 'ສະຖານະອະນຸມັດ', key: 'Auth_Status', width: '120px' },
-  { title: 'ສະຖານະປະມວນຜົນ', key: 'execution_status', width: '140px' },
+  // { title: 'ສະຖານະປະມວນຜົນ', key: 'execution_status', width: '140px' },
   { title: 'ວັນທີບັນທຶກ', key: 'Maker_DT_Stamp', width: '150px' },
   { title: 'ການດຳເນີນການ', key: 'actions', width: '150px', sortable: false }
 ]
@@ -907,7 +907,7 @@ const allEODFunctionsReady = computed(() => {
 
 // Main computed properties
 const canStartEOD = computed((): boolean => {
-  const hasPendingJournals = pendingJournals.value.some(item => item.Auth_Status === 'U')
+  const hasPendingJournals = pendingJournals.value.some(item => item.Auth_Status === 'U' || item.Auth_Status === 'R' || item.Auth_Status === 'P'    )
   
   // Check if there are other users (excluding current user) with active sessions
   const hasOtherActiveUsers = activeUsers.value.some(session => 

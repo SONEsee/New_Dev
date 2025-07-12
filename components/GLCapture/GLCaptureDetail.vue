@@ -461,8 +461,8 @@ const result = await Swal.fire({
     if (!value || value.trim().length === 0) {
       return 'ກະລຸນາໃສ່ເຫດຜົນໃນການປະຕິເສດ'
     }
-    if (value.trim().length < 10) {
-      return 'ເຫດຜົນຕ້ອງມີຢ່າງນ້ອຍ 10 ຕົວອັກສອນ'
+    if (value.trim().length < 1) {
+      return 'ເຫດຜົນຕ້ອງມີຢ່າງນ້ອຍ 1 ຕົວອັກສອນ'
     }
     if (value.length > 250) {
       return 'ເຫດຜົນຕ້ອງບໍ່ເກີນ 250 ຕົວອັກສອນ'
