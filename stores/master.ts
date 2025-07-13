@@ -4,6 +4,7 @@ export const useMasterStore = defineStore("master", {
   state() {
     return {
       respone_data_master: null as MasterModel.MasterRespons[] | null,
+      respone_data_cat: null as MasterModel.MasterRespons[] | null,
       respone_data_sub:null as MasterModel.Datum | null,
       resposne_status_puamsuepuamkrsang:null as MasterModel.MasterCode | null,
       resposne_status_setting:null as MasterModel.MasterCode | null,
@@ -32,6 +33,34 @@ export const useMasterStore = defineStore("master", {
         );
         if (res.status === 200) {
           this.respone_data_master = res.data;
+          console.log("Master data fetched successfully:", this.respone_data_master);
+          this.isloading = false;
+        }
+      } catch (error) {
+        CallSwal({
+          title: "Error",
+          text: "ການດຶງຂໍ້ມູນຜິດພາດ.",
+          icon: "error",
+        });
+        this.error = "Failed to fetch master data";
+        console.error(error);
+      }
+    },
+    async getCAT() {
+      this.isloading = true;
+      this.error = null;
+      try {
+        const res = await axios.get<MasterModel.MasterRespons[]>(
+          `/api/master-types/tree/CAT/`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+            },
+          }
+        );
+        if (res.status === 200) {
+          this.respone_data_cat = res.data;
           console.log("Master data fetched successfully:", this.respone_data_master);
           this.isloading = false;
         }

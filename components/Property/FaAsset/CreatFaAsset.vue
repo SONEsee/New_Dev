@@ -662,7 +662,42 @@ watch(
     }
   }
 );
+const getCurrentDate = () => {
+  return new Date();
+};
 
+const getCurrentDateString = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = (today.getMonth() + 1).toString().padStart(2, "0");
+  const day = today.getDate().toString().padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+// Computed property ສຳລັບການສະແດງວັນທີໃນຟອມ
+const formattedAssetAcDatetime = computed({
+  get: () => {
+    const date = faAssetStoreInstance.form_create_fa_asset.asset_ac_datetime;
+    if (!date) return "";
+
+    if (date instanceof Date) {
+      const year = date.getFullYear();
+      const month = (date.getMonth() + 1).toString().padStart(2, "0");
+      const day = date.getDate().toString().padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+    return date;
+  },
+  set: (value: string) => {
+    if (value) {
+      faAssetStoreInstance.form_create_fa_asset.asset_ac_datetime = new Date(
+        value
+      );
+    } else {
+      faAssetStoreInstance.form_create_fa_asset.asset_ac_datetime = null;
+    }
+  },
+});
 watch(
   () => faAssetStoreInstance.form_create_fa_asset.dpca_percentage,
   (newPercentage) => {
@@ -852,6 +887,10 @@ const selectedSubglDesc = computed(() => {
 onMounted(async () => {
   try {
     loading.value = true;
+    if (!faAssetStoreInstance.form_create_fa_asset.asset_ac_datetime) {
+      faAssetStoreInstance.form_create_fa_asset.asset_ac_datetime =
+        getCurrentDate();
+    }
 
     currencyStore.getDataCerrency();
     await Promise.all([
@@ -1357,16 +1396,22 @@ onMounted(async () => {
                         hide-details="auto"
                         :disabled="true"
                       ></v-text-field>
-                      <label>ວັນທີລົງບັນຊີ</label>
+                      <label
+                        >ວັນທີລົງບັນຊີ
+                        <span class="text-success">*</span></label
+                      >
                       <v-text-field
-                        v-model="
-                          faAssetStoreInstance.form_create_fa_asset
-                            .asset_ac_datetime
-                        "
+                        v-model="formattedAssetAcDatetime"
                         type="date"
                         density="compact"
                         variant="outlined"
                         hide-details="auto"
+                        readonly
+                        hidden
+                        disabled
+                        prepend-inner-icon="mdi-calendar-today"
+                        hint="ວັນທີປະຈຸບັນ (ຕັ້ງອັດຕະໂນມັດ)"
+                        class="auto-date-field"
                       ></v-text-field>
                     </v-col>
                     <v-col cols="12" md="3">
