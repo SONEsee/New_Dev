@@ -938,7 +938,7 @@ onMounted(async () => {
         <v-col cols="12">
           <GlobalTextTitleLine :title="title" />
         </v-col>
-        <!-- <pre>{{ currency }}</pre>     -->
+        <!-- <pre>{{ currency }}</pre> -->
         <v-col cols="12" class="">
           <v-row>
             <v-col cols="12">
@@ -1356,6 +1356,17 @@ onMounted(async () => {
                         variant="outlined"
                         hide-details="auto"
                         :disabled="true"
+                      ></v-text-field>
+                      <label>ວັນທີລົງບັນຊີ</label>
+                      <v-text-field
+                        v-model="
+                          faAssetStoreInstance.form_create_fa_asset
+                            .asset_ac_datetime
+                        "
+                        type="date"
+                        density="compact"
+                        variant="outlined"
+                        hide-details="auto"
                       ></v-text-field>
                     </v-col>
                     <v-col cols="12" md="3">
