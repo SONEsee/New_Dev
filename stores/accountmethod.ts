@@ -16,7 +16,8 @@ export const accountMethodStore = defineStore("accountMethod", {
       response_assets: null as any[] | null,
       isLoading: false,
       form_create_account_method: {
-        ref_id: null as number | null,
+        mapping_id: null as number | null,
+        ref_id: "" as string | null,
         acc_type: "ASSET" as "ASSET" | "DEPRECIATION" | "DISPOSAL" | "",
         asset_id: null as number | null,
         debit_account_id: "",
@@ -31,7 +32,18 @@ export const accountMethodStore = defineStore("accountMethod", {
         record_stat: "O" as "C" | "O",
       },
       form_update_account_method: {
+        mapping_id: null as number | null,
+        ref_id: "" as string | null,
+        acc_type: "ASSET" as "ASSET" | "DEPRECIATION" | "DISPOSAL" | "",
+        asset_id: null as number | null,
+
+        amount: "",
+        amount_start: "",
+        amount_end: "",
+
+        transaction_date: null as Date | string | null,
         description: "",
+        journal_entry_id: "",
       },
     };
   },
@@ -323,7 +335,8 @@ export const accountMethodStore = defineStore("accountMethod", {
 
     resetCreateForm() {
       this.form_create_account_method = {
-        ref_id: null,
+        mapping_id: null,
+        ref_id: "",
         acc_type: "",
         asset_id: null,
         debit_account_id: "",
@@ -341,9 +354,17 @@ export const accountMethodStore = defineStore("accountMethod", {
 
     resetUpdateForm() {
       this.form_update_account_method = {
-        
+        mapping_id: null,
         description: "",
-        
+        ref_id: null,
+        acc_type: "",
+        asset_id: null,
+
+        amount: "",
+        transaction_date: null,
+        journal_entry_id: "",
+        amount_start: "",
+        amount_end: "",
       };
     },
   },
