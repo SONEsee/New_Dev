@@ -13,8 +13,7 @@ const accountMethodStoreInstance = accountMethodStore();
 const assetListStore = faAssetStore();
 
 const totaldata = computed(() => {
-  // return assetListStore.response_fa_asset_list || [];
-   const data = assetListStore.response_fa_asset_list;
+  const data = assetListStore.response_fa_asset_list;
   if (!data || !Array.isArray(data)) return [];
 
   return data.filter(
@@ -30,6 +29,41 @@ const request = accountMethodStoreInstance.form_update_account_method;
 
 const detail = computed(() => {
   return accountMethodStoreInstance.response_account_method_detail;
+});
+
+const extractLastNumber = (assetListId: string): string => {
+  if (!assetListId) return "0000000";
+
+  const parts = assetListId.split("-");
+  const lastPart = parts[parts.length - 1];
+
+  return lastPart || "0000000";
+};
+
+const creditAccountNumber = computed(() => {
+  if (!dataupdate.value?.asset_list_id && detail.value?.credit_account_id) {
+    return detail.value.credit_account_id;
+  }
+
+  if (dataupdate.value?.asset_list_id) {
+    const lastNumber = extractLastNumber(dataupdate.value.asset_list_id);
+    return `4601110.${lastNumber}`;
+  }
+
+  return "4601110.0000000";
+});
+
+const debitAccountNumber = computed(() => {
+  if (!dataupdate.value?.asset_list_id && detail.value?.debit_account_id) {
+    return detail.value.debit_account_id;
+  }
+
+  if (dataupdate.value?.asset_list_id) {
+    const lastNumber = extractLastNumber(dataupdate.value.asset_list_id);
+    return `1481181.${lastNumber}`;
+  }
+
+  return "1481181.0000000";
 });
 
 watch(selectedAssetId, async (newAssetId: any) => {
@@ -59,13 +93,14 @@ watch(
 
       request.ref_id = assetData?.asset_list_id || req.ref_id;
       request.amount = assetData?.asset_value || req.amount;
-      request.amount_start = assetData?.asset_value_remainBegin || req.amount_start;
+      request.amount_start =
+        assetData?.asset_value_remainBegin || req.amount_start;
       request.amount_end = assetData?.asset_value_remainLast || req.amount_end;
-      request.transaction_date = assetData?.Maker_DT_Stamp 
-  ? dayjs(assetData.Maker_DT_Stamp).format("YYYY-MM-DD")
-  : "";
-        
-       
+      request.debit_account_id = debitAccountNumber.value;
+      request.credit_account_id = creditAccountNumber.value;
+      request.transaction_date = assetData?.Maker_DT_Stamp
+        ? dayjs(assetData.Maker_DT_Stamp).format("YYYY-MM-DD")
+        : "";
     }
   },
   { immediate: true }
@@ -132,9 +167,9 @@ const title = "ລາຍລະອຽດການຕັ້ງຄ່າທືກ�
 <template>
   <div class="pa-4">
     <GlobalTextTitleLine :title="title" />
-    <pre> {{ dataupdate }}</pre>
+    <!-- <pre> {{ dataupdate }}</pre> -->
     <v-card class="mb-4" variant="outlined">
-      <v-card-title class="text-h6 pb-2 bg-info">
+      <v-card-title class="text-h6 pb-2 bg-primary">
         <v-icon class="mr-2">mdi-format-list-bulleted</v-icon>
         ເລືອກຊັບສົມບັດ
       </v-card-title>
@@ -212,7 +247,7 @@ const title = "ລາຍລະອຽດການຕັ້ງຄ່າທືກ�
               <v-col cols="12" md="3">
                 <v-label class="mb-1">ເລກບັນຊີ DR</v-label>
                 <v-text-field
-                  :model-value="detail?.debit_account_id"
+                  :model-value="debitAccountNumber"
                   variant="outlined"
                   density="compact"
                   readonly
@@ -221,7 +256,9 @@ const title = "ລາຍລະອຽດການຕັ້ງຄ່າທືກ�
                 <v-label class="mb-1">ມູນຄ່າທັງໝົດ</v-label>
                 <v-text-field
                   :model-value="
-                    formatnumber(dataupdate?.asset_value || detail?.amount  ).toString()
+                    formatnumber(
+                      dataupdate?.asset_value || detail?.amount
+                    ).toString()
                   "
                   :v-model="request.amount"
                   variant="outlined"
@@ -234,7 +271,7 @@ const title = "ລາຍລະອຽດການຕັ້ງຄ່າທືກ�
               <v-col cols="12" md="3">
                 <v-label class="mb-1">ເລກບັນຊີ CR</v-label>
                 <v-text-field
-                  :model-value="detail?.credit_account_id"
+                  :model-value="creditAccountNumber"
                   variant="outlined"
                   density="compact"
                   readonly
@@ -244,7 +281,8 @@ const title = "ລາຍລະອຽດການຕັ້ງຄ່າທືກ�
                 <v-text-field
                   :model-value="
                     formatnumber(
-                      dataupdate?.asset_value_remainMonth ?? 0
+                      dataupdate?.asset_value_remainBegin ||
+                        detail?.amount_start
                     ).toString()
                   "
                   :v-model="request.amount_start"
@@ -271,7 +309,7 @@ const title = "ລາຍລະອຽດການຕັ້ງຄ່າທືກ�
                 <v-text-field
                   :model-value="
                     formatnumber(
-                      dataupdate?.asset_value_remainLast ?? 0
+                      dataupdate?.asset_value_remainLast || detail?.amount_end
                     ).toString()
                   "
                   :v-model="request.amount_end"

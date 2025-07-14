@@ -36,7 +36,8 @@ export const accountMethodStore = defineStore("accountMethod", {
         ref_id: "" as string | null,
         acc_type: "ASSET" as "ASSET" | "DEPRECIATION" | "DISPOSAL" | "",
         asset_id: null as number | null,
-
+        debit_account_id: "",
+        credit_account_id: "",
         amount: "",
         amount_start: "",
         amount_end: "",
@@ -258,11 +259,11 @@ export const accountMethodStore = defineStore("accountMethod", {
       }
     },
 
-    async UpdateAccountMethodStatus(id: string, status: "C" | "O") {
+    async UpdateAccountMethodStatus(id: number) {
       this.isLoading = true;
       try {
-        const res = await axios.patch(
-          `account-methods/${id}/status`,
+        const res = await axios.post(
+          `/api/asset_account/${id}/set_open/`,
           { record_stat: status },
           {
             headers: {
@@ -278,8 +279,46 @@ export const accountMethodStore = defineStore("accountMethod", {
             icon: "success",
             showCancelButton: false,
             showConfirmButton: false,
+            timer: 1000,
           });
           // Refresh list
+          await this.GetAccountMethodList();
+        }
+      } catch (error) {
+        console.error("Error updating account method status:", error);
+        CallSwal({
+          title: "ຜິດພາດ",
+          text: "ມີຂໍ້ຜິດພາດໃນການອັບເດດສະຖານະ",
+          icon: "error",
+          showCancelButton: false,
+          confirmButtonText: "ຕົກລົງ",
+        });
+      } finally {
+        this.isLoading = false;
+      }
+    },
+    async UpdateAccountMethodStatusof(id: number) {
+      this.isLoading = true;
+      try {
+        const res = await axios.post(
+          `/api/asset_account/${id}/set_close/`,
+          { record_stat: status },
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+        if (res.status === 200) {
+          CallSwal({
+            title: "ສຳເລັດ",
+            text: "ສຳເລັດການອັບເດດສະຖານະ",
+            icon: "success",
+            showCancelButton: false,
+            showConfirmButton: false,
+            timer: 1000,
+          });
           await this.GetAccountMethodList();
         }
       } catch (error) {
@@ -359,6 +398,8 @@ export const accountMethodStore = defineStore("accountMethod", {
         ref_id: null,
         acc_type: "",
         asset_id: null,
+        debit_account_id: "",
+        credit_account_id: "",
 
         amount: "",
         transaction_date: null,

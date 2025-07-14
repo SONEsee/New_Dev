@@ -371,7 +371,7 @@ onMounted(() => {
   padding: 12px 16px;
 }
 
-/* Responsive */
+
 @media (max-width: 768px) {
   .timeline-container {
     max-height: 300px;
@@ -408,7 +408,7 @@ onMounted(() => {
   }
 }
 
-/* Scrollbar Styling */
+
 .timeline-container::-webkit-scrollbar {
   width: 4px;
 }
