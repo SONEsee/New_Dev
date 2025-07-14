@@ -5,46 +5,37 @@ import { CallSwal, goPath } from "#build/imports";
 export const accountMethodStore = defineStore("accountMethod", {
   state() {
     return {
-      response_account_method_data: null as AccountsModel.AccoutMethodRespons | null,
-      response_account_method_list: null as AccountsModel.AccoutMethodRespons[] | null,
-      response_account_method_detail: null as AccountsModel.AccoutMethodRespons | null,
+      response_account_method_data:
+        null as AccountsModel.AccoutMethodRespons | null,
+      response_account_method_list: null as
+        | AccountsModel.AccoutMethodRespons[]
+        | null,
+      response_account_method_detail:
+        null as AccountsModel.AccoutMethodRespons | null,
       response_accounts: null as any[] | null,
       response_assets: null as any[] | null,
       isLoading: false,
       form_create_account_method: {
         ref_id: null as number | null,
-        acc_type: "ASSET" as 'ASSET' | 'DEPRECIATION' | 'DISPOSAL' | "",
+        acc_type: "ASSET" as "ASSET" | "DEPRECIATION" | "DISPOSAL" | "",
         asset_id: null as number | null,
         debit_account_id: "",
         credit_account_id: "",
         amount: 0,
         amount_start: 0,
         amount_end: 0,
-       
+
         transaction_date: null as Date | null,
         description: "",
         journal_entry_id: "",
-        record_stat: "O" as 'C' | 'O',
+        record_stat: "O" as "C" | "O",
       },
       form_update_account_method: {
-       ref_id: null as number | null,
-        acc_type: "" as 'ASSET' | 'DEPRECIATION' | 'DISPOSAL' | "",
-        asset_id: null as number | null,
-        debit_account_id: "",
-        credit_account_id: "",
-        amount: 0,
-        amount_start: 0,
-        amount_end: 0,
-       
-        transaction_date: null as Date | null,
         description: "",
-        journal_entry_id: "",
-        record_stat: "O" as 'C' | 'O',
       },
     };
   },
   actions: {
-    
     async GetAccountMethodList() {
       this.isLoading = true;
       try {
@@ -67,7 +58,6 @@ export const accountMethodStore = defineStore("accountMethod", {
       }
     },
 
-    
     async GetAccounts() {
       this.isLoading = true;
       try {
@@ -87,7 +77,6 @@ export const accountMethodStore = defineStore("accountMethod", {
       }
     },
 
-    
     async GetAssets() {
       this.isLoading = true;
       try {
@@ -107,7 +96,6 @@ export const accountMethodStore = defineStore("accountMethod", {
       }
     },
 
- 
     async GetAccountMethodDetail(id: number) {
       this.isLoading = true;
       try {
@@ -130,7 +118,6 @@ export const accountMethodStore = defineStore("accountMethod", {
       }
     },
 
-   
     async CreateAccountMethod() {
       this.isLoading = true;
       try {
@@ -156,11 +143,10 @@ export const accountMethodStore = defineStore("accountMethod", {
             goPath("/property/accountmethod/");
           }, 1500);
 
-         
           this.resetCreateForm();
         }
-      } catch (error:any) {
-        if(error.response && error.response.status === 501) {
+      } catch (error: any) {
+        if (error.response && error.response.status === 501) {
           CallSwal({
             title: "ແຈ້ງເຕືອນ",
             text: "ເລກບັນຊີນີ້ຖືກໃຊ້ແລ້ວ, ກະລຸນາເລືອກເລກບັນຊີໃໝ່",
@@ -183,12 +169,11 @@ export const accountMethodStore = defineStore("accountMethod", {
       }
     },
 
-    
-    async UpdateAccountMethod(id: string) {
+    async UpdateAccountMethod(id: number) {
       this.isLoading = true;
       try {
-        const res = await axios.put<AccountsModel.AccoutMethodRespons>(
-          `account-methods/${id}`,
+        const res = await axios.patch<AccountsModel.AccoutMethodRespons>(
+          `/api/asset_account/${id}/`,
           this.form_update_account_method,
           {
             headers: {
@@ -206,10 +191,9 @@ export const accountMethodStore = defineStore("accountMethod", {
             showConfirmButton: false,
           });
           setTimeout(() => {
-            goPath("/account-methods");
+            goPath("/property/accountmethod/");
           }, 1500);
 
-         
           this.resetUpdateForm();
         }
       } catch (error) {
@@ -226,17 +210,16 @@ export const accountMethodStore = defineStore("accountMethod", {
       }
     },
 
-   
     async DeleteAccountMethod(id: string) {
       this.isLoading = true;
       try {
-        const res = await axios.delete(`account-methods/${id}`, {
+        const res = await axios.delete(`/api/asset_account/${id}`, {
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         });
-        if (res.status === 200) {
+        if (res.status === 204) {
           CallSwal({
             title: "ສຳເລັດ",
             text: "ສຳເລັດການລຶບວິທີການບັນຊີ",
@@ -244,8 +227,10 @@ export const accountMethodStore = defineStore("accountMethod", {
             showCancelButton: false,
             showConfirmButton: false,
           });
-          
-          await this.GetAccountMethodList();
+          setTimeout(() => {
+            this.GetAccountMethodList();
+            goPath("/property/accountmethod/");
+          }, 1500);
         }
       } catch (error) {
         console.error("Error deleting account method:", error);
@@ -261,8 +246,7 @@ export const accountMethodStore = defineStore("accountMethod", {
       }
     },
 
-
-    async UpdateAccountMethodStatus(id: string, status: 'C' | 'O') {
+    async UpdateAccountMethodStatus(id: string, status: "C" | "O") {
       this.isLoading = true;
       try {
         const res = await axios.patch(
@@ -300,7 +284,6 @@ export const accountMethodStore = defineStore("accountMethod", {
       }
     },
 
-   
     // async GenerateJournalEntry(id: string) {
     //   this.isLoading = true;
     //   try {
@@ -322,8 +305,7 @@ export const accountMethodStore = defineStore("accountMethod", {
     //         showCancelButton: false,
     //         showConfirmButton: false,
     //       });
-         
-         
+
     //     }
     //   } catch (error) {
     //     console.error("Error generating journal entry:", error);
@@ -339,7 +321,6 @@ export const accountMethodStore = defineStore("accountMethod", {
     //   }
     // },
 
-   
     resetCreateForm() {
       this.form_create_account_method = {
         ref_id: null,
@@ -358,33 +339,19 @@ export const accountMethodStore = defineStore("accountMethod", {
       };
     },
 
-    
     resetUpdateForm() {
       this.form_update_account_method = {
-       
-
-        ref_id: null,
-        acc_type: "",
-        asset_id: null,
-        debit_account_id: "",
-        credit_account_id: "",
-        amount: 0,
-        amount_start: 0,
-        amount_end: 0,
-
-        transaction_date: null,
+        
         description: "",
-        journal_entry_id: "",
-        record_stat: "O",
+        
       };
     },
   },
 
   getters: {
-   
     accountMethodsByType: (state) => {
       if (!state.response_account_method_list) return {};
-      
+
       return state.response_account_method_list.reduce((acc, method) => {
         if (!acc[method.acc_type]) {
           acc[method.acc_type] = [];
@@ -394,10 +361,9 @@ export const accountMethodStore = defineStore("accountMethod", {
       }, {} as Record<string, AccountsModel.AccoutMethodRespons[]>);
     },
 
-   
     accountMethodsByStatus: (state) => {
       if (!state.response_account_method_list) return {};
-      
+
       return state.response_account_method_list.reduce((acc, method) => {
         if (!acc[method.Record_Status]) {
           acc[method.Record_Status] = [];
@@ -407,28 +373,30 @@ export const accountMethodStore = defineStore("accountMethod", {
       }, {} as Record<string, AccountsModel.AccoutMethodRespons[]>);
     },
 
-  
     activeAccountMethods: (state) => {
       if (!state.response_account_method_list) return [];
-      return state.response_account_method_list.filter(method => method.Record_Status === 'O');
+      return state.response_account_method_list.filter(
+        (method) => method.Record_Status === "O"
+      );
     },
 
-   
     accountMethodsWithJournal: (state) => {
       if (!state.response_account_method_list) return [];
-      return state.response_account_method_list.filter(method => method.journal_entry_id);
+      return state.response_account_method_list.filter(
+        (method) => method.journal_entry_id
+      );
     },
-
 
     accountMethodsWithoutJournal: (state) => {
       if (!state.response_account_method_list) return [];
-      return state.response_account_method_list.filter(method => !method.journal_entry_id);
+      return state.response_account_method_list.filter(
+        (method) => !method.journal_entry_id
+      );
     },
 
-  
     // totalAmountByType: (state) => {
     //   if (!state.response_account_method_list) return {};
-      
+
     //   return state.response_account_method_list.reduce((acc, method) => {
     //     if (!acc[method.acc_type]) {
     //       acc[method.acc_type] = 0;
@@ -438,16 +406,16 @@ export const accountMethodStore = defineStore("accountMethod", {
     //   }, {} as Record<string, number>);
     // },
 
- 
     // totalAmount: (state) => {
     //   if (!state.response_account_method_list) return 0;
     //   return state.response_account_method_list.reduce((sum, method) => sum + method.amount, 0);
     // },
 
-  
     assetRelatedMethods: (state) => {
       if (!state.response_account_method_list) return [];
-      return state.response_account_method_list.filter(method => method.asset_id);
+      return state.response_account_method_list.filter(
+        (method) => method.asset_id
+      );
     },
   },
 });

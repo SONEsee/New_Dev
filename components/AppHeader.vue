@@ -72,9 +72,9 @@
     permanent
     :rail="rail"
     order="1"
-    :style="{ background: '#616161', borderColor: '#c58c20' }"
+    :style="{ background: '#FAFAFA', borderColor: '#c58c20' }"
   >
-    <v-list nav density="comfortable" style="color: #c58c20; padding: 0">
+    <v-list nav density="comfortable" style="color: black; padding: 0">
       <template v-if="isLoading">
         <v-list-subheader
           style="color: #cfd8dc; padding-left: 0px"
@@ -144,7 +144,7 @@
             >
               <v-list-group
                 :value="mainMenu.menu_id"
-                style="background-color: #616161"
+                style="background-color: #FAFAFA"
               >
                 <template v-slot:activator="{ props }">
                   <v-list-item
@@ -172,7 +172,8 @@
                     :active="route.path === cleanUrl(subMenu.sub_menu_urls)"
                     variant="plain"
                     color="accent"
-                    style="margin-bottom: 2px; background-color: #cfd8dc"
+                      style="margin-bottom: 10px; background-color: #FAFAFA; font-weight: 700 !important; font-family: inherit;"
+
                     class="sub-menu-item"
                   />
                 </template>
@@ -186,7 +187,7 @@
                 :to="mainMenu.menu_url ? cleanUrl(mainMenu.menu_url) : '#'"
                 variant="tonal"
                 color="#c58c20"
-                style="margin-bottom: 2px"
+                style="margin-bottom: 2px ;font-weight: bold;"
                 class="px-0"
               ></v-list-item>
             </template>
@@ -413,10 +414,13 @@ const clearLocalStorage = () => {
   flex: auto;
   border-color: #c58c20 !important;
   background-color: rgba(197, 140, 32, 0.1) !important;
+  font-weight: bold;
 }
 .v-list-item {
   color: #c58c20 !important;
   flex: auto;
+  font-weight: 700 !important;
+  
 }
 .v-icon {
   color: #c58c20;
@@ -456,7 +460,7 @@ const clearLocalStorage = () => {
 }
 
 .v-list-group__items .v-list-item {
-  border-left: 2px solid rgba(197, 140, 32, 0.3);
+  border-left: 2px solid rgba(239, 237, 234, 0.3);
   margin-left: 0px !important;
   padding-left: 8px !important;
 }
@@ -469,24 +473,62 @@ const clearLocalStorage = () => {
 .v-list-item {
   padding-left: 0 !important;
   padding-right: 0 !important;
+  font-weight: 700 !important;
 }
 
 .v-list-item__prepend {
   margin-inline-start: 0 !important;
+  font-weight: 700 !important;
 }
 
 .v-list-item__content {
   margin-left: 0 !important;
+  font-weight: 700 !important;
 }
 
+/* ເພີ່ມ CSS ນີ້ໃນສ່ວນທ້າຍຂອງ <style> */
+
+/* ເຮັດໃຫ້ submenu ເປັນໂຕເຂັ້ມ */
 .sub-menu-item {
   border-left: 2px solid rgba(41, 34, 24, 0.425) !important;
   margin-left: 0px !important;
   padding-left: 8px !important;
+  font-weight: 700 !important; /* ໃຊ້ 700 ແທນ bold ເພື່ອຄວາມແນ່ນອນ */
+}
+
+.sub-menu-item .v-list-item__content {
+  font-weight: 700 !important;
+}
+
+.sub-menu-item .v-list-item-title {
+  font-weight: 700 !important;
 }
 
 .sub-menu-item.v-list-item--active {
   border-left-color: #f2f7f8 !important;
   background-color: rgba(250, 248, 244, 0.596) !important;
+  font-weight: 700 !important;
 }
+
+.sub-menu-item.v-list-item--active .v-list-item__content {
+  font-weight: 700 !important;
+}
+
+.sub-menu-item.v-list-item--active .v-list-item-title {
+  font-weight: 700 !important;
+}
+
+/* ເພື່ອຮັບປະກັນວ່າ submenu ທຸກສະພາບເປັນໂຕເຂັ້ມ */
+.v-list-group__items .v-list-item {
+  font-weight: 700 !important;
+}
+
+.v-list-group__items .v-list-item .v-list-item__content {
+  font-weight: 700 !important;
+}
+
+.v-list-group__items .v-list-item .v-list-item-title {
+  font-weight: 700 !important;
+}
+
 </style>

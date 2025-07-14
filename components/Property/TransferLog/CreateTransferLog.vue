@@ -172,7 +172,7 @@ const title = "ບັນທຶກການໂອນຍ້າຍຊັບສົ�
                           { title: 'ມີ', value: 'Y' },
                           { title: 'ບໍ່ມີ', value: 'N' },
                         ]"
-                        v-model="request.insurance_coverage"
+                        v-model="request.insurance_covered"
                         variant="outlined"
                         density="compact"
                         item-title="title"
@@ -181,7 +181,16 @@ const title = "ບັນທຶກການໂອນຍ້າຍຊັບສົ�
                       />
                       <label>ວັນທີ່ຄາດວ່າຈະມາເຖິງ:</label>
                       <v-text-field
+                      type="date"
                         v-model="request.estimated_arrival"
+                        variant="outlined"
+                        density="compact"
+                        class="formatted-number-input"
+                      />
+                      <label>ວັນທີ່ໂອນຍ້າຍ:</label>
+                      <v-text-field
+                      type="date"
+                        v-model="request.transfer_date"
                         variant="outlined"
                         density="compact"
                         class="formatted-number-input"

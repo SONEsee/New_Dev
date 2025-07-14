@@ -30,6 +30,7 @@ import * as FaAssetModel from "./faasset";
 import * as AccountsModel from "./accountmethod";
 import * as LocationModel from "./locations";
 import * as AssetModels from "./asset";
+import * as TransactionLogModel from "./transactionlog";
 // import *as GlModel from './gl';
 
 // import * as RoleMasterModel from "./rolemaster";
@@ -77,5 +78,6 @@ export {
   AssetModels,
   MasterModel,
   EmployeeModel,
+  TransactionLogModel,
   // RoleMasterModel
 };

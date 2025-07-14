@@ -67,7 +67,6 @@ const title = ref("ເພີ່ມຊັບສົມບັດຄົງທີ່�
 const loading = ref(false);
 const form = ref();
 
-
 const urlAssetCode = computed(() => {
   const param = route.query.asset_type_id as string;
   return param ? parseInt(param) : null;
@@ -337,7 +336,8 @@ const submitForm = async () => {
             Amount: parseFormattedNumber(formattedAssetValue.value),
             Dr_cr: "D",
             Addl_sub_text: `${faAssetStoreInstance.form_create_fa_asset.asset_spec}`,
-            Ac_relatives: faAssetStoreInstance.form_create_fa_asset.asset_list_id,
+            Ac_relatives:
+              faAssetStoreInstance.form_create_fa_asset.asset_list_id,
           },
           {
             Account: null,
@@ -345,7 +345,8 @@ const submitForm = async () => {
             Amount: parseFormattedNumber(formattedAssetValue.value),
             Dr_cr: "C",
             Addl_sub_text: `${faAssetStoreInstance.form_create_fa_asset.asset_spec}`,
-            Ac_relatives: faAssetStoreInstance.form_create_fa_asset.asset_list_id,
+            Ac_relatives:
+              faAssetStoreInstance.form_create_fa_asset.asset_list_id,
           },
         ],
       };
@@ -661,7 +662,42 @@ watch(
     }
   }
 );
+const getCurrentDate = () => {
+  return new Date();
+};
 
+const getCurrentDateString = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = (today.getMonth() + 1).toString().padStart(2, "0");
+  const day = today.getDate().toString().padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+// Computed property ສຳລັບການສະແດງວັນທີໃນຟອມ
+const formattedAssetAcDatetime = computed({
+  get: () => {
+    const date = faAssetStoreInstance.form_create_fa_asset.asset_ac_datetime;
+    if (!date) return "";
+
+    if (date instanceof Date) {
+      const year = date.getFullYear();
+      const month = (date.getMonth() + 1).toString().padStart(2, "0");
+      const day = date.getDate().toString().padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+    return date;
+  },
+  set: (value: string) => {
+    if (value) {
+      faAssetStoreInstance.form_create_fa_asset.asset_ac_datetime = new Date(
+        value
+      );
+    } else {
+      faAssetStoreInstance.form_create_fa_asset.asset_ac_datetime = null;
+    }
+  },
+});
 watch(
   () => faAssetStoreInstance.form_create_fa_asset.dpca_percentage,
   (newPercentage) => {
@@ -835,10 +871,26 @@ const rules = {
     return pattern.test(value) || "ໃຊ້ໄດ້ແຕ່ຕົວອັກສອນພິມໃຫຍ່, ຕົວເລກ, - ແລະ _";
   },
 };
+const selectedSubglItem = computed(() => {
+  const selectedAccNo = faAssetStoreInstance.form_create_fa_asset.acc_no;
+  if (!selectedAccNo || !subgl.value || !Array.isArray(subgl.value)) {
+    return null;
+  }
 
+  return subgl.value.find((item) => item.glsub_code === selectedAccNo);
+});
+
+const selectedSubglDesc = computed(() => {
+  const selected = selectedSubglItem.value;
+  return selected ? selected.glsub_Desc_la : "ເລືອກບັນຊີ";
+});
 onMounted(async () => {
   try {
     loading.value = true;
+    if (!faAssetStoreInstance.form_create_fa_asset.asset_ac_datetime) {
+      faAssetStoreInstance.form_create_fa_asset.asset_ac_datetime =
+        getCurrentDate();
+    }
 
     currencyStore.getDataCerrency();
     await Promise.all([
@@ -925,7 +977,7 @@ onMounted(async () => {
         <v-col cols="12">
           <GlobalTextTitleLine :title="title" />
         </v-col>
-        <!-- <pre>{{ currency }}</pre>     -->
+        <!-- <pre>{{ currency }}</pre> -->
         <v-col cols="12" class="">
           <v-row>
             <v-col cols="12">
@@ -1074,7 +1126,7 @@ onMounted(async () => {
                       <label
                         >ສະຖານທີ່ຕັ້ງ<span class="text-error">*</span></label
                       >
-                      <v-select
+                      <v-autocomplete
                         v-model="
                           faAssetStoreInstance.form_create_fa_asset
                             .asset_location_id
@@ -1102,7 +1154,7 @@ onMounted(async () => {
                             :title="`${item.raw.location_name_la} (${item.raw.location_code})`"
                           />
                         </template>
-                      </v-select>
+                      </v-autocomplete>
                     </v-col>
                     <v-col cols="12" md="4">
                       <label
@@ -1344,6 +1396,23 @@ onMounted(async () => {
                         hide-details="auto"
                         :disabled="true"
                       ></v-text-field>
+                      <label
+                        >ວັນທີລົງບັນຊີ
+                        <span class="text-success">*</span></label
+                      >
+                      <v-text-field
+                        v-model="formattedAssetAcDatetime"
+                        type="date"
+                        density="compact"
+                        variant="outlined"
+                        hide-details="auto"
+                        readonly
+                        hidden
+                        disabled
+                        prepend-inner-icon="mdi-calendar-today"
+                        hint="ວັນທີປະຈຸບັນ (ຕັ້ງອັດຕະໂນມັດ)"
+                        class="auto-date-field"
+                      ></v-text-field>
                     </v-col>
                     <v-col cols="12" md="3">
                       <label
@@ -1476,13 +1545,14 @@ onMounted(async () => {
                       ></v-text-field>
                     </v-col>
                     <v-col cols="12" md="3">
-                      <label
-                        >ເລກບັນຊີ/CR<span
-                          class="text-error"
-                          v-for="item in subgl"
-                          >*({{ item.glsub_Desc_la }})</span
-                        ></label
-                      >
+                      <label>
+                        ເລກບັນຊີ/CR
+                        <span class="text-error">*</span>
+                        <span v-if="selectedSubglItem" class="text-primary">
+                          ({{ selectedSubglItem.glsub_Desc_la }})
+                        </span>
+                        <span v-else class="text-grey"> (ເລືອກບັນຊີ) </span>
+                      </label>
                       <v-autocomplete
                         v-model="
                           faAssetStoreInstance.form_create_fa_asset.acc_no
@@ -1499,7 +1569,6 @@ onMounted(async () => {
                       </v-autocomplete>
                       <label>ມູນຄ່າຊາກ</label>
                       <v-text-field
-                        
                         v-model="formattedSalvageValue"
                         :rules="[rules.positiveNumber]"
                         placeholder="0"
