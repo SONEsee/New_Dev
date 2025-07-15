@@ -1227,6 +1227,19 @@ onMounted(async () => {
                       ></v-text-field
                     ></v-col>
                     <v-col cols="12" md="3">
+                      <label>ມູນຄ່າຊາກ <span class="text-error">*</span></label>
+                      <v-text-field
+                        v-model="formattedSalvageValue"
+                        :rules="[rules.required]"
+                        placeholder="0"
+                        density="compact"
+                        variant="outlined"
+                        hide-details="auto"
+                        prefix="₭"
+                        class="formatted-number-input"
+                      ></v-text-field>
+                    </v-col>
+                    <v-col cols="12" md="2">
                       <label>ສະກຸນເງິນ<span class="text-error">*</span></label>
                       <v-autocomplete
                         v-model="
@@ -1255,7 +1268,7 @@ onMounted(async () => {
                         </template>
                       </v-autocomplete>
                     </v-col>
-                    <v-col cols="12" md="3">
+                    <v-col cols="12" md="2">
                       <label
                         >ມືຊື້ຊັບສົມບັດ <span class="text-error">*</span></label
                       >
@@ -1270,7 +1283,7 @@ onMounted(async () => {
                         hide-details="auto"
                       ></v-text-field>
                     </v-col>
-                    <v-col cols="12" md="3">
+                    <v-col cols="12" md="2">
                       <label
                         >ຜູ້ສະໜອງ/ຜູ້ຂາຍ<span class="text-error">*</span></label
                       >
@@ -1567,17 +1580,7 @@ onMounted(async () => {
                         :disabled="!subgl || !subgl.length"
                       >
                       </v-autocomplete>
-                      <label>ມູນຄ່າຊາກ</label>
-                      <v-text-field
-                        v-model="formattedSalvageValue"
-                        :rules="[rules.positiveNumber]"
-                        placeholder="0"
-                        density="compact"
-                        variant="outlined"
-                        hide-details="auto"
-                        prefix="₭"
-                        class="formatted-number-input"
-                      ></v-text-field>
+
                       <label>ມູນຄ່າທ້າຍ</label>
                       <v-text-field
                         :disabled="true"

@@ -39,7 +39,8 @@ import * as RoleMasterModel from "./rolemaster";
 import * as GlModel from "./gl";
 import * as SupplierModel from "./suppliers";
 import * as MasterModel from "./master";
-import* as EmployeeModel from "./employee";
+import * as EmployeeModel from "./employee";
+import * as AssetListDrisTionModel from "./faassetlistdiscription";
 export {
   UserModel,
   UsermeModel,
@@ -79,5 +80,6 @@ export {
   MasterModel,
   EmployeeModel,
   TransactionLogModel,
+  AssetListDrisTionModel,
   // RoleMasterModel
 };
