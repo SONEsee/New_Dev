@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRoute } from "vue-router";
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 
 const route = useRoute();
 const id = route.query.asset_list_id as string;
@@ -10,8 +10,8 @@ const loading = ref(false);
 
 const header = [
   { title: "ລະຫັດ", value: "transfer_id" },
-  { title: "ສະຖານທີ່ຕົ້ນທາງ", value: "from_location_id" },
-  { title: "ສະຖານທີ່ປາຍທາງ", value: "to_location_id" },
+  { title: "ສະຖານທີ່ຕົ້ນທາງ", value: "from_location_detail.location_name_la" },
+  { title: "ສະຖານທີ່ປາຍທາງ", value: "to_location_detail.location_name_la" },
   { title: "ເຫດຜົນໃນການໂອນຍ້າຍ", value: "transfer_reason" },
   { title: "ສະພາບກ່ອນໂອນຍ້າຍ", value: "condition_before" },
   { title: "ສະພາບຫຼັງໂອນຍ້າຍ", value: "condition_after" },
@@ -22,11 +22,30 @@ const header = [
 const items = computed(() => {
   const data = transactionLog.responst_transaction_log;
   
-  if (Array.isArray(data)) {
-    return data.sort((a, b) => new Date(a.transfer_date).getTime() - new Date(b.transfer_date).getTime());
+ 
+  if (loading.value) {
+    return [];
   }
   
-  if (data && typeof data === "object") {
+  if (Array.isArray(data)) {
+    return data
+      .filter(item => {
+        
+        return item && 
+               item.from_location_detail && 
+               item.to_location_detail &&
+               item.from_location_detail.location_name_la &&
+               item.to_location_detail.location_name_la;
+      })
+      .sort((a, b) => new Date(a.transfer_date).getTime() - new Date(b.transfer_date).getTime());
+  }
+  
+  if (data  && 
+      typeof data === "object" && 
+      data.from_location_detail && 
+      data.to_location_detail &&
+      data.from_location_detail.location_name_la &&
+      data.to_location_detail.location_name_la) {
     return [data];
   }
   
@@ -43,23 +62,48 @@ const timelineData = computed(() => {
   }));
 });
 
-// ສ້າງຂໍ້ມູນສຳລັບ Path visualization
+// ສ້າງຂໍ້ມູນສຳລັບ Path visualization - ແກ້ໄຂຄັ້ງສຸດທ້າຍ
 const pathData = computed(() => {
-  const locations = new Set();
-  const connections = [];
+  const locations = new Set<string>();
+  const connections: any[] = [];
   
-  items.value.forEach(item => {
-    locations.add(item.from_location_id);
-    locations.add(item.to_location_id);
-    connections.push({
-      from: item.from_location_id,
-      to: item.to_location_id,
-      transfer_date: item.transfer_date,
-      transfer_id: item.transfer_id,
-      transfer_reason: item.transfer_reason,
-      isCompleted: !!item.actual_arrival
+  // ກວດສອບວ່າມີຂໍ້ມູນແລະບໍ່ໃຊ່ loading
+  if (loading.value || items.value.length === 0) {
+    return {
+      locations: [],
+      connections: []
+    };
+  }
+  
+  try {
+    items.value.forEach(item => {
+      // ໃຊ້ optional chaining ແລະ nullish coalescing
+      const fromLocation = item.from_location_detail?.location_name_la;
+      const toLocation = item.to_location_detail?.location_name_la;
+      
+      if (fromLocation) {
+        locations.add(fromLocation);
+      }
+      if (toLocation) {
+        locations.add(toLocation);
+      }
+      
+      connections.push({
+        from: fromLocation || 'ບໍ່ມີຂໍ້ມູນ',
+        to: toLocation || 'ບໍ່ມີຂໍ້ມູນ',
+        transfer_date: item.transfer_date,
+        transfer_id: item.transfer_id,
+        transfer_reason: item.transfer_reason,
+        isCompleted: !!item.actual_arrival
+      });
     });
-  });
+  } catch (error) {
+    console.error('Error in pathData computation:', error);
+    return {
+      locations: [],
+      connections: []
+    };
+  }
   
   return {
     locations: Array.from(locations),
@@ -70,8 +114,20 @@ const pathData = computed(() => {
 const loadData = async () => {
   try {
     loading.value = true;
+    
+    if (!id) {
+      console.error('No asset_list_id provided');
+      return;
+    }
+    
+    console.log('Loading data for asset_list_id:', id);
+    
     transactionLog.filter_asset_list.query.asset_list_id = id;
     await transactionLog.getDatadetail();
+    
+    // Debug: ເບິ່ງຂໍ້ມູນທີ່ໄດ້ຮັບ
+    console.log('Loaded data:', transactionLog.responst_transaction_log);
+    
   } catch (error) {
     console.error('Error loading data:', error);
   } finally {
@@ -81,20 +137,49 @@ const loadData = async () => {
 
 const formatDate = (dateString: string) => {
   if (!dateString) return '-';
-  return new Date(dateString).toLocaleDateString('lo-LA');
+  try {
+    return new Date(dateString).toLocaleDateString('lo-LA');
+  } catch (error) {
+    console.error('Date formatting error:', error);
+    return '-';
+  }
 };
 
 const getStatusColor = (item: any) => {
+  if (!item) return 'grey';
   if (item.actual_arrival) return 'success';
   if (new Date(item.transfer_date) < new Date()) return 'error';
   return 'warning';
 };
 
 const getStatusText = (item: any) => {
+  if (!item) return 'ບໍ່ມີຂໍ້ມູນ';
   if (item.actual_arrival) return 'ສຳເລັດແລ້ວ';
   if (new Date(item.transfer_date) < new Date()) return 'ຊ້າກວ່າກຳນົດ';
   return 'ກຳລັງດຳເນີນການ';
 };
+
+// Watcher ສຳລັບ debug
+watch(() => transactionLog.responst_transaction_log, (newValue) => {
+  console.log('Transaction log data changed:', newValue);
+  
+  if (newValue) {
+    if (Array.isArray(newValue)) {
+      console.log('Array data, length:', newValue.length);
+      newValue.forEach((item, index) => {
+        console.log(`Item ${index}:`, {
+          transfer_id: item.transfer_id,
+          has_from_location: !!item.from_location_detail,
+          has_to_location: !!item.to_location_detail,
+          from_location_name: item.from_location_detail?.location_name_la,
+          to_location_name: item.to_location_detail?.location_name_la
+        });
+      });
+    } else {
+      
+    }
+  }
+}, { deep: true, immediate: true });
 
 onMounted(() => {
   loadData();
@@ -185,11 +270,11 @@ onMounted(() => {
                         <div class="transfer-info">
                           <div class="d-flex align-center mb-1">
                             <v-icon size="14" color="blue" class="mr-1">mdi-map-marker</v-icon>
-                            <span class="text-caption">{{ item.from_location_id }}</span>
+                            <span class="text-caption">{{ item.from_location_detail.location_name_la }}</span>
                           </div>
                           <div class="d-flex align-center mb-1">
                             <v-icon size="14" color="green" class="mr-1">mdi-map-marker-check</v-icon>
-                            <span class="text-caption">{{ item.to_location_id }}</span>
+                            <span class="text-caption">{{ item.to_location_detail.location_name_la }}</span>
                           </div>
                           <div class="d-flex align-center">
                             <v-icon size="14" color="orange" class="mr-1">mdi-calendar</v-icon>
