@@ -1,5 +1,23 @@
 <script setup lang="ts">
 const title = "ຈັດການຂໍ້ມູນຫັກຄ່າຫຼູ້ຍຫຽ້ນຊັບສົມບັດ";
+const accoutStore = accountMethodStore();
+const fassetStore = faAssetStore();
+const accoutdata = computed(() => {
+  return accoutStore.response_account_method_list || [];
+});
+const res = computed(() => {
+  const data = fassetStore.response_fa_asset_list || [];
+  const maindata = accoutStore.response_account_method_list || [];
+  const fiterData = maindata.filter((item) => item.ref_id);
+  return fiterData.map((item: any) => {
+    const ref_id = data.find((code: any) => code.asset_list_id === item.ref_id);
+    return {
+      ...item,
+      ref_id_text: ref_id ? ref_id.asset_spec : item.ref_id,
+      ref_id_detail: ref_id ? ref_id.dpca_type : item.ref_id,
+    };
+  });
+});
 const {
   canEdit,
   canDelete,
@@ -19,22 +37,14 @@ const role1 = computed(() => {
 const headers = computed(() => [
   {
     title: "ລະຫັດຊັບສົມບັດ",
-    value: "asset_list_id",
+    value: "ref_id",
     align: "start" as const,
     sortable: true,
     filterable: true,
     width: "180px",
     class: "text-primary font-weight-bold",
   },
-  {
-    title: "ເລກບາໂຄດ",
-    value: "asset_tag",
-    align: "center" as const,
-    sortable: true,
-    filterable: true,
-    width: "180px",
-    class: "text-center",
-  },
+
   {
     title: "ຊື່ຊັບສົມບັດ",
     value: "asset_id_detail.asset_name_la",
@@ -117,41 +127,42 @@ const headers = computed(() => [
     : []),
 ]);
 
-const fassetStore = faAssetStore();
-const res = computed(() => {
-  const data = fassetStore.response_fa_asset_list || [];
-  if (!data || !Array.isArray(data)) return [];
+// const fassetStore = faAssetStore();
+// const res = computed(() => {
+//   const data = fassetStore.response_fa_asset_list || [];
+//   if (!data || !Array.isArray(data)) return [];
 
-  return data.filter(
-    (item) => item.Auth_Status === "A" && item.Auth_Status_ARC === "A"
-  );
-});
+//   return data.filter(
+//     (item) => item.Auth_Status === "A" && item.Auth_Status_ARC === "A"
+//   );
+// });
 
-const formatCurrency = (value: string | number) => {
-  if (!value) return "0";
-  const num = typeof value === "string" ? parseFloat(value) : value;
-  return new Intl.NumberFormat("lo-LA", {
-    style: "currency",
-    currency: "LAK",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(num);
-};
+// const formatCurrency = (value: string | number) => {
+//   if (!value) return "0";
+//   const num = typeof value === "string" ? parseFloat(value) : value;
+//   return new Intl.NumberFormat("lo-LA", {
+//     style: "currency",
+//     currency: "LAK",
+//     minimumFractionDigits: 0,
+//     maximumFractionDigits: 0,
+//   }).format(num);
+// };
 
-const formatDate = (date: string) => {
-  if (!date) return "";
-  return new Date(date).toLocaleDateString("lo-LA");
-};
+// const formatDate = (date: string) => {
+//   if (!date) return "";
+//   return new Date(date).toLocaleDateString("lo-LA");
+// };
 
-const transferAsset = (item: any) => {
-  goPath(`/property/faassetdetription/create?asset_list_id=${item.asset_list_id}`);
-};
+// const transferAsset = (item: any) => {
+//   goPath(`/property/faassetdetription/create?asset_list_id=${item.asset_list_id}`);
+// };
 
-const viewHistory = (item: any) => {
-  goPath(`/property/transfer_log/detail/?asset_list_id=${item.asset_list_id}`);
-};
+// const viewHistory = (item: any) => {
+//   goPath(`/property/transfer_log/detail/?asset_list_id=${item.asset_list_id}`);
+// };
 
 onMounted(() => {
+  accoutStore.GetAccountMethodList();
   fassetStore.GetFaAssetList();
   initializeRole();
   roleStore.GetRoleDetail();
@@ -173,9 +184,7 @@ onMounted(() => {
       class="text-no-wrap"
       flat
       :items="res"
-      :headers="headers"
       :items-per-page="10"
-      :loading="fassetStore.isLoading"
       loading-text="ກຳລັງໂຫລດຂໍ້ມູນ..."
       no-data-text="ບໍ່ມີຂໍ້ມູນ"
     >
@@ -225,6 +234,9 @@ onMounted(() => {
 
       <template v-slot:item.asset_value="{ item }">
         {{ formatCurrency(item.asset_value) }}
+      </template>
+      <template v-slot:item.acc_type="{ item }">
+        {{ item.ref_id_text }}
       </template>
 
       <template v-slot:item.asset_value_remain="{ item }">
