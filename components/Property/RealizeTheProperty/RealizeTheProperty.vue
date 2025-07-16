@@ -95,16 +95,16 @@ const headers = computed(() => {
       width: "120px",
       class: "text-end",
     },
-    {
-      title: "ມູນຄ່າຍັງເຫຼືອ",
-      value: "asset_value_remain",
-      key: "asset_value_remain",
-      align: "end",
-      sortable: true,
-      filterable: false,
-      width: "120px",
-      class: "text-end",
-    },
+    // {
+    //   title: "ມູນຄ່າຍັງເຫຼືອ",
+    //   value: "asset_value_remain",
+    //   key: "asset_value_remain",
+    //   align: "end",
+    //   sortable: true,
+    //   filterable: false,
+    //   width: "120px",
+    //   class: "text-end",
+    // },
     // {
     //   title: "ມູນຄ່າສະສົມ",
     //   value: "asset_accu_dpca_value",
@@ -249,7 +249,7 @@ const headers = computed(() => {
     ></v-col>
 
     <v-data-table
-    style="font-size: 80%;"
+    style="font-size: 75%;"
       :items="filterAssetType || []"
       :headers="headers"
       class="text-no-wrap"
@@ -320,8 +320,8 @@ const headers = computed(() => {
         <b style="color: blue">{{ column.title }}</b>
       </template>
 
-      <template v-slot:item.asset_list_id="{ item }">
-        <v-chip style="border: 1px #76ff03 solid" color="primary">{{
+      <template v-slot:item.asset_list_id="{ item }" style="font-size: 10%;">
+        <v-chip style="border:   solid" color="primary" >{{
           item.asset_list_id
         }}</v-chip>
       </template>
@@ -353,7 +353,7 @@ const headers = computed(() => {
           <v-chip color="info"> ຖືກ Reject </v-chip>
         </div>
       </template>
-      <template v-slot:item.asset_value_remainMonth="{ item }">
+      <template v-slot:item.asset_value_remainMonth="{ item }" ">
         <v-chip style="border: 1px solid" color="primary">
           {{ Number(item.asset_value_remainMonth).toLocaleString("en-US") }}
           {{ item.asset_currency }}
@@ -432,3 +432,6 @@ const headers = computed(() => {
     </v-data-table>
   </div>
 </template>
+<style>
+
+</style>

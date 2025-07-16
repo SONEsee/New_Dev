@@ -46,6 +46,22 @@ export const useMasterStore = defineStore("master", {
         console.error(error);
       }
     },
+    async getStatus(){
+      this.isloading = true;
+      try {
+          const res = await axios.get<MasterModel.MasterRespons[]>(`/api/master-types/tree/A/`,{
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+        },
+      });if(res.status === 200){
+        this.respone_data_master = res.data
+      }
+      } catch (error) {
+        console.error("Error fetching status:", error);
+      }
+    
+    },
     async getCAT() {
       this.isloading = true;
       this.error = null;
