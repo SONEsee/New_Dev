@@ -1,6 +1,10 @@
 import vuetify, { transformAssetUrls } from "vite-plugin-vuetify";
 import { resolve } from "path";
 export default defineNuxtConfig({
+  //   devServer: {
+  //   port: 8000,
+  //   host: 'samcacc.com.la'  
+  // },
   devtools: { enabled: false },
   ssr: false,
   compatibilityDate: "2024-04-03",

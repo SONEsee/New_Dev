@@ -2,6 +2,10 @@
 definePageMeta({
   layout: "login",
 });
+
+useHead({
+  title: "Login",
+});
 </script>
 
 <template style="background-color: #f0f2f5">
