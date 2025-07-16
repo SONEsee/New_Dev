@@ -159,7 +159,7 @@
                 </template>
 
                 <template v-if="!rail">
-                  <v-list-item
+                  <!-- <v-list-item
                     v-for="(subMenu, subMenuIndex) in mainMenu.sub_menus"
                     :key="`sub-${module.module_Id}-${mainMenu.menu_id}-${subMenu.sub_menu_id}`"
                     :value="subMenu.sub_menu_id"
@@ -175,7 +175,24 @@
                       style="margin-bottom: 10px; background-color: #FAFAFA; font-weight: 700 !important; font-family: inherit;"
 
                     class="sub-menu-item"
-                  />
+                  /> -->
+                  <v-list-item
+  v-for="(subMenu, subMenuIndex) in mainMenu.sub_menus"
+  :key="`sub-${module.module_Id}-${mainMenu.menu_id}-${subMenu.sub_menu_id}`"
+  :value="subMenu.sub_menu_id"
+  :title="subMenu.sub_menu_name_la"
+  :prepend-icon="convertIcon(subMenu.sub_menu_icon)"
+  :to="subMenu.sub_menu_urls === '#' ? undefined : {
+    path: cleanUrl(subMenu.sub_menu_urls),
+    query: { sub_menu_id: subMenu.sub_menu_id },
+  }"
+  :active="route.path === cleanUrl(subMenu.sub_menu_urls)"
+  variant="plain"
+  color="accent"
+  style="margin-bottom: 10px; background-color: #FAFAFA; font-weight: 700 !important; font-family: inherit;"
+  class="sub-menu-item"
+  @click="handleMenuClick(subMenu)"
+/>
                 </template>
               </v-list-group>
             </template>
@@ -408,6 +425,27 @@ const clearLocalStorage = () => {
     localStorage.clear();
   }
 };
+// const handleMenuClick = (subMenu:any) => {
+//   if (subMenu.sub_menu_urls === '#') {
+//     CallSwal({
+//       title: "ຂໍອະໄພ",
+//       text: "ໜ້ານີ້ກຳລັງພັດທະນາຢູ",
+//       icon: "info",
+//       confirmButtonText: "OK",
+//     }); 
+//   }
+// }
+const handleMenuClick = (subMenu: any, event?: Event) => {
+  if (subMenu.sub_menu_urls === '#') {
+    event?.preventDefault();
+    CallSwal({
+      title: "ຂໍອະໄພ",
+       text: `ໜ້າ "${subMenu.sub_menu_name_la}" ກຳລັງພັດທະນາຢູ....`,
+      icon: "info",
+      confirmButtonText: "OK",
+    });
+  }
+}
 </script>
 <style>
 .v-list-item--active {

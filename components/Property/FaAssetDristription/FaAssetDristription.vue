@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const title = "ຈັດການຂໍ້ມູນການເຄື່ອນຍ້າຍຊັບສົມບັດ";
+const title = "ຈັດການຂໍ້ມູນຫັກຄ່າຫຼູ້ຍຫຽ້ນຊັບສົມບັດ";
 const {
   canEdit,
   canDelete,
@@ -16,7 +16,6 @@ const role1 = computed(() => {
   return roleStore.responst_data_detail;
 });
 
-// Headers ສຳລັບການເຄື່ອນຍ້າຍຊັບສົມບັດ
 const headers = computed(() => [
   {
     title: "ລະຫັດຊັບສົມບັດ",
@@ -83,7 +82,7 @@ const headers = computed(() => [
   },
   {
     title: "ສະຖານະ",
-    value: "asset_status_detail.MC_name_la",
+    value: "Record_Status",
     align: "center" as const,
     sortable: true,
     filterable: true,
@@ -93,7 +92,7 @@ const headers = computed(() => [
   ...(canView.value
     ? [
         {
-          title: "ເຄື່ອນຍ້າຍ",
+          title: "ຫັກຄ່າຫຼູ້ຍຫຽ້ນ",
           value: "transfer",
           align: "center" as const,
           sortable: false,
@@ -145,13 +144,11 @@ const formatDate = (date: string) => {
 };
 
 const transferAsset = (item: any) => {
-  goPath(`/property/transfer_log/create/?asset_list_id=${item.asset_list_id}`
-  )
+  goPath(`/property/faassetdetription/create?asset_list_id=${item.asset_list_id}`);
 };
 
 const viewHistory = (item: any) => {
-  goPath(`/property/transfer_log/detail/?asset_list_id=${item.asset_list_id}`
-  )
+  goPath(`/property/transfer_log/detail/?asset_list_id=${item.asset_list_id}`);
 };
 
 onMounted(() => {
@@ -162,5 +159,108 @@ onMounted(() => {
 </script>
 
 <template>
+  <div class="pa-4">
+    <GlobalTextTitleLine :title="title" />
+    <!-- <pre>{{ res }}</pre> -->
+    <!-- <v-data-table
+      :items="res"
+      :headers="headers"
+      class="text-no-wrap"
+    >
+    
+  </v-data-table> -->
+    <v-data-table
+      class="text-no-wrap"
+      flat
+      :items="res"
+      :headers="headers"
+      :items-per-page="10"
+      :loading="fassetStore.isLoading"
+      loading-text="ກຳລັງໂຫລດຂໍ້ມູນ..."
+      no-data-text="ບໍ່ມີຂໍ້ມູນ"
+    >
+      <template v-slot:header.asset_list_id="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
+      </template>
 
+      <template v-slot:header.asset_tag="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
+      </template>
+
+      <template v-slot:header.asset_id_detail.asset_name_la="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
+      </template>
+
+      <template
+        v-slot:header.asset_id_detail.asset_type_detail.type_name_la="{
+          column,
+        }"
+      >
+        <b style="color: blue">{{ column.title }}</b>
+      </template>
+
+      <template v-slot:header.location_detail.location_name_la="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
+      </template>
+
+      <template v-slot:header.asset_value="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
+      </template>
+
+      <template v-slot:header.asset_value_remain="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
+      </template>
+
+      <template v-slot:header.Record_Status="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
+      </template>
+
+      <template v-slot:header.transfer="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
+      </template>
+
+      <template v-slot:header.history="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
+      </template>
+
+      <template v-slot:item.asset_value="{ item }">
+        {{ formatCurrency(item.asset_value) }}
+      </template>
+
+      <template v-slot:item.asset_value_remain="{ item }">
+        {{ formatCurrency(item.asset_value_remain) }}
+      </template>
+
+      <template v-slot:item.Record_Status="{ item }">
+        <v-icon
+          icon="mdi-toggle-switch"
+          v-if="item.Record_Status === 'O'"
+          color="primary"
+        ></v-icon>
+        <v-icon
+          icon="mdi-toggle-switch-off-outline"
+          v-if="item.Record_Status === 'C'"
+          color="red"
+        ></v-icon>
+      </template>
+
+      <template v-slot:item.transfer="{ item }">
+        <v-btn
+          color="primary"
+          size="small"
+          variant="tonal"
+          @click="transferAsset(item)"
+        >
+          <v-icon start>mdi-swap-horizontal</v-icon>
+          ຫັກຄ່າຫຼູຍຫຽ້ນ
+        </v-btn>
+      </template>
+
+      <template v-slot:item.history="{ item }">
+        <v-btn icon size="small" color="info" @click="viewHistory(item)">
+          <v-icon>mdi-history</v-icon>
+        </v-btn>
+      </template>
+    </v-data-table>
+  </div>
 </template>
