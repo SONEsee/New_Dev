@@ -183,6 +183,9 @@ const canApproveMaster = computed(() => {
 // Get Reference_No from route query parameters
 const referenceNo = computed(() => route.query.Reference_No)
 
+const referenceNoSubstring = computed(() => referenceNo.value?.substring(0, 2))
+console.log('Reference_No substring:', referenceNoSubstring.value);
+
 // Load data functions
 const loadData = async () => {
   try {
@@ -1365,15 +1368,15 @@ watch(permissions, (newPermissions) => {
                     <v-icon size="12">mdi-eye</v-icon>
                     ເບິ່ງ
                   </v-chip>
-                  <v-chip
-                    v-if="canEdit"
-                    color="warning"
-                    size="x-small"
-                    variant="flat"
-                  >
-                    <v-icon size="12">mdi-pencil</v-icon>
-                    ແກ້
-                  </v-chip>
+                    <v-chip
+                      v-if="canEdit && referenceNoSubstring.value === 'GL'"
+                      color="warning"
+                      size="x-small"
+                      variant="flat"
+                    >
+                      <v-icon size="12">mdi-pencil</v-icon>
+                      ແກ້
+                    </v-chip>
                   <v-chip
                     v-if="canDelete"
                     color="error"

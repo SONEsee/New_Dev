@@ -28,7 +28,10 @@
   "devDependencies": {
     "@types/numeral": "^2.0.5",
     "dayjs-nuxt": "^2.1.11",
+    "express": "^5.1.0",
+    "http-proxy-middleware": "^3.0.5",
     "nuxt-lodash": "^2.5.3",
+    "open": "^10.2.0",
     "sass": "^1.83.0",
     "vite-plugin-vuetify": "^2.0.4",
     "vuetify": "^3.7.6"

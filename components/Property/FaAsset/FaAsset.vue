@@ -10,6 +10,9 @@ const masterdata = computed(() => {
   const response = masterStore.resposne_status_puamsuepuamkrsang;
   return response?.MasterCodes ?? [];
 });
+const statusmartet = computed(() => {
+  return masterStore.respone_data_master;
+});
 const response = computed(() => {
   return assetStores.response_asset_list || [];
 });
@@ -25,10 +28,30 @@ const response = computed(() => {
 // });
 const mockData = computed(() => {
   const data = faAssetStoreInstance.response_fa_asset_list || [];
-  return data.filter(
+  const masterCodes = statusmartet.value?.MasterCodes || [] ;
+
+  const filteredData = data.filter(
     (item) => !(item.asset_status === "AC" && item.Auth_Status_ARC !== "A")
   );
+
+  return filteredData.map((item) => {
+    const authStatus = masterCodes.find(
+      (code:any) => code.MC_code === item.Auth_Status
+    );
+
+    return {
+      ...item,
+      Auth_Status_Text: authStatus ? authStatus.MC_name_la : item.Auth_Status,
+      Auth_Status_Detail: authStatus ? authStatus.MC_detail : "",
+    };
+  });
 });
+// const mockData = computed(() => {
+//   const data = faAssetStoreInstance.response_fa_asset_list || [];
+//   return data.filter(
+//     (item) => !(item.asset_status === "AC" && item.Auth_Status_ARC !== "A")
+//   );
+// });
 const STORAGE_KEY = "asset_filters";
 
 const loadFiltersFromStorage = () => {
@@ -75,56 +98,7 @@ watch(
   { deep: true }
 );
 
-onMounted(() => {
-  assetStores.GetAssetList();
-  typeAssetStore.GetPropertyCategoryById();
-  faAssetStoreInstance.GetFaAssetList();
-});
 
-const handleStatusChange = async (item: any, newStatus: string) => {
-  try {
-    const statusTexts = {
-      ACTIVE: "ເປີດໃຊ້ງານ",
-      INACTIVE: "ປິດໃຊ້ງານ",
-      MAINTENANCE: "ບຳລຸງຮັກສາ",
-      DISPOSED: "ຖອນຈຳໜ່າຍ",
-    };
-
-    const notification = await CallSwal({
-      title: "ຢືນຢັນ",
-      text: `ທ່ານຕ້ອງການປ່ຽນສະຖານະເປັນ "${
-        statusTexts[newStatus as keyof typeof statusTexts]
-      }" ໃຊ່ບໍ່?`,
-      icon: "question",
-      confirmButtonText: "ຕົກລົງ",
-      cancelButtonText: "ຍົກເລີກ",
-      showCancelButton: true,
-    });
-    if (notification.isConfirmed) {
-      await faAssetStoreInstance.UpdateAssetStatus(item.id, newStatus as any);
-    }
-  } catch (error) {
-    console.error("Error updating status:", error);
-  }
-};
-
-const calculateDepreciation = async (item: any) => {
-  try {
-    const notification = await CallSwal({
-      title: "ຢືນຢັນ",
-      text: `ທ່ານຕ້ອງການຄິດເສື່ອມລາຄາສຳລັບຊັບສົມບັດນີ້ໃຊ່ບໍ່?`,
-      icon: "question",
-      confirmButtonText: "ຕົກລົງ",
-      cancelButtonText: "ຍົກເລີກ",
-      showCancelButton: true,
-    });
-    if (notification.isConfirmed) {
-      await faAssetStoreInstance.CalculateDepreciation(item.id);
-    }
-  } catch (error) {
-    console.error("Error calculating depreciation:", error);
-  }
-};
 
 const {
   canEdit,
@@ -444,7 +418,10 @@ onMounted(async () => {
   loading.value = true;
   try {
     loadFiltersFromStorage();
-
+    assetStores.GetAssetList();
+    masterStore.getStatus();
+    typeAssetStore.GetPropertyCategoryById();
+    faAssetStoreInstance.GetFaAssetList();
     assetStores.GetAssetList();
     typeAssetStore.GetPropertyCategoryById();
     faAssetStoreInstance.GetFaAssetList();
@@ -543,12 +520,22 @@ const hanoff = async (item: any) => {
     });
   }
 };
+const getAuthStatusColor = (authStatusCode: string) => {
+  const colors = {
+    A: "success",    
+    U: "warning",   
+    R: "error",      
+    P: "info",       
+  };
+  return colors[authStatusCode as keyof typeof colors] || "grey";
+};
 </script>
 
 <template>
   <div class="pa-2">
     <GlobalTextTitleLine :title="title" />
     <pre>
+    <!-- data:  {{ statusmartet }} -->
   <!-- {{ masterdata }} -->
 <!-- {{ response }} -->
 </pre>
@@ -704,7 +691,7 @@ const hanoff = async (item: any) => {
         </template>
 
         <template v-slot:item.asset_list_id="{ item }">
-          <v-chip color="primary" variant="outlined" size="small">
+          <v-chip color="primary" size="small" variant="flat">
             {{ item.asset_list_id }}
           </v-chip>
         </template>
@@ -717,17 +704,17 @@ const hanoff = async (item: any) => {
           <span>{{ item.asset_serial_no || "-" }}</span>
         </template>
         <template v-slot:item.asset_accu_dpca_value="{ item }">
-          <v-chip color="primary">{{
+          <v-chip color="primary" size="small" variant="flat">{{
             item.asset_accu_dpca_value || "-"
           }}</v-chip>
         </template>
         <template v-slot:item.asset_type_id="{ item }">
-          <v-chip color="primary">{{
+          <v-chip color="primary" size="small" variant="flat">{{
             item.asset_id_detail.asset_name_la || "-"
           }}</v-chip>
         </template>
         <template v-slot:item.Auth_Status="{ item }">
-          <v-chip color="">
+          <!-- <v-chip color="">
             <div v-if="item.Auth_Status === 'U'">
               <p class="text-primary">ລໍຖ້າອະນຸມັດ</p>
             </div>
@@ -740,11 +727,14 @@ const hanoff = async (item: any) => {
             <div v-if="item.Auth_Status === 'P'">
               <p class="text-warning">ກຳລັງດຳເນີນການ</p>
             </div>
+          </v-chip> -->
+          <v-chip size="small" variant="flat"  :color="getAuthStatusColor(item.Auth_Status)" >
+            {{ item.Auth_Status_Text }}
           </v-chip>
         </template>
 
         <template v-slot:item.type_of_pay="{ item }">
-          <v-chip color="primary" v-if="item.type_of_pay === '1101100'">
+          <v-chip color="primary" v-if="item.type_of_pay === '1101100'" size="small" variant="flat">
             {{ item.type_of_pay_detail.MC_name_la || "-" }}
           </v-chip>
         </template>
@@ -755,7 +745,7 @@ const hanoff = async (item: any) => {
               :color="
                 item.asset_value_remainMonth > 1000000 ? 'success' : 'primary'
               "
-              variant="flat"
+              size="small" variant="flat"
             >
               {{
                 new Intl.NumberFormat("en-US", {
@@ -771,16 +761,16 @@ const hanoff = async (item: any) => {
           {{ formatDate(item.asset_date) }}
         </template>
 
-        <template v-slot:item.asset_value="{ item }">
+        <template v-slot:item.asset_value="{ item }" size="small" variant="flat">
           <div class="text-end">
-            <span class="font-weight-bold">{{
+            <span class="font-weight-bold font-small" size="small" variant="flat">{{
               formatCurrency(item.asset_value, item.asset_currency)
             }}</span>
           </div>
         </template>
 
         <template v-slot:item.asset_value_remain="{ item }">
-          <div class="text-end">
+          <div class="text-end" size="small" variant="flat">
             <span class="font-weight-bold text-success">{{
               formatCurrency(item.asset_value_remain, item.asset_currency)
             }}</span>
