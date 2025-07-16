@@ -195,7 +195,7 @@ const loadData = async () => {
     }
 
     // Load master data
-    const masterResponse = await axios.get('/api/journal-log-master/journal-log-active/', {
+    const masterResponse = await axios.get('/api/journal-log-master/journal-log-detail/', {
       params: { 
         Reference_No: referenceNo.value,
       },
@@ -425,9 +425,112 @@ const deleteByPairAccount = async (referenceSubNo) => {
     deletingRefSubNo.value = null
   }
 }
+// Pending function - following the same pattern as approveItem
+const pendingItem = async (item) => {
+  const result = await Swal.fire({
+    icon: 'question',
+    title: 'ຢືນຢັນການຕັ້ງເປັນລໍຖ້າ',
+    text: `ທ່ານຕ້ອງການຕັ້ງລາຍການ ${item.Reference_No} ເປັນສະຖານະລໍຖ້າແທ້ບໍ?`,
+    showCancelButton: true,
+    confirmButtonText: 'ຕັ້ງເປັນລໍຖ້າ',
+    cancelButtonText: 'ຍົກເລີກ',
+    confirmButtonColor: '#f59e0b',
+    cancelButtonColor: '#9e9e9e'
+  })
 
-// Reject by pair account function
-const rejectByPairAccount = async (referenceSubNo) => {
+  if (result.isConfirmed) {
+    try {
+      // Array to store promises for parallel execution
+      const pendingPromises = []
+
+      // 1. Always call pending-all endpoint (updates MASTER, LOG, and HIST tables)
+      console.log('Calling pending-all for:', item.Reference_No)
+      pendingPromises.push(
+        axios.post('/api/journal-entries/pending-all/', {
+          Reference_No: item.Reference_No
+        }, getAuthHeaders())
+      )
+
+      // 2. Call pending-asset endpoint if Ac_relatives exists and is not empty
+      if (item.Ac_relatives && item.Ac_relatives.trim() !== '') {
+        console.log('Calling pending-asset for:', item.Ac_relatives)
+        pendingPromises.push(
+          axios.post('/api/journal-entries/pending-asset/', { 
+            Ac_relatives: item.Ac_relatives,
+            module_id: "AS"
+          }, getAuthHeaders())
+        )
+      } else {
+        console.log('No Ac_relatives found or empty, skipping asset pending')
+      }
+
+      // Execute all API calls in parallel
+      const responses = await Promise.all(pendingPromises)
+      
+      // Log responses
+      console.log('Pending-all response:', responses[0].data)
+      if (responses[1]) {
+        console.log('Pending-asset response:', responses[1].data)
+      }
+
+      // Show success message
+      let successMessage = responses[0].data.message || 'ຕັ້ງລາຍການເປັນສະຖານະລໍຖ້າສຳເລັດແລ້ວ'
+      
+      // If asset was also set to pending, add to success message
+      if (responses[1] && responses[1].data.success) {
+        successMessage += '\nຕັ້ງຊັບສິນເປັນສະຖານະລໍຖ້າສຳເລັດ'
+      }
+
+      Swal.fire({
+        icon: 'success',
+        title: 'ສຳເລັດ',
+        text: successMessage,
+        timer: 2000,
+        showConfirmButton: false
+      })
+      
+      // Reload data to show updated status
+      await loadData()
+      
+    } catch (error) {
+      console.error('Error setting item to pending:', error)
+      
+      let errorMessage = 'ບໍ່ສາມາດຕັ້ງລາຍການເປັນສະຖານະລໍຖ້າໄດ້'
+      
+      // Handle errors from either endpoint
+      if (error.response?.data?.error) {
+        const backendError = error.response.data.error
+        if (backendError.includes('already pending')) {
+          errorMessage = 'ລາຍການນີ້ຢູ່ໃນສະຖານະລໍຖ້າແລ້ວ'
+        } else if (backendError.includes('already approved')) {
+          errorMessage = 'ລາຍການນີ້ໄດ້ຮັບການອະນຸມັດແລ້ວ'
+        } else if (backendError.includes('Invalid module_id')) {
+          errorMessage = 'ປະເພດໂມດູນບໍ່ຖືກຕ້ອງ'
+        } else if (backendError.includes('No asset found')) {
+          errorMessage = 'ບໍ່ພົບຊັບສິນທີ່ຕ້ອງການຕັ້ງເປັນລໍຖ້າ'
+        } else if (backendError.includes('Ac_relatives is required')) {
+          errorMessage = 'ຂາດຂໍ້ມູນ Ac_relatives'
+        } else {
+          errorMessage = backendError
+        }
+      } else if (error.response?.status === 404) {
+        errorMessage = 'ບໍ່ພົບລາຍການທີ່ຕ້ອງການຕັ້ງເປັນລໍຖ້າ'
+      } else if (error.response?.status === 400) {
+        errorMessage = error.response.data?.detail || 'ຂໍ້ມູນບໍ່ຖືກຕ້ອງ'
+      }
+      
+      Swal.fire({
+        icon: 'error',
+        title: 'ຂໍ້ຜິດພາດ',
+        text: errorMessage,
+        confirmButtonText: 'ຕົກລົງ'
+      })
+    }
+  }
+}
+
+// Updated reject by pair account function - actually sets Auth_Status = P (pending)
+const rejectByPairAccount = async (referenceSubNo, item = null) => {
   if (!referenceSubNo) {
     Swal.fire({
       icon: 'error',
@@ -438,255 +541,255 @@ const rejectByPairAccount = async (referenceSubNo) => {
     return
   }
 
-const result = await Swal.fire({
-  icon: 'warning',
-  title: 'ດັດເເກ້ຄູ່ບັນຊີ',
-  html: `
-    <div class="rejection-content">
-      <p class="rejection-subtitle">ທ່ານຕ້ອງການປະຕິເສດບັນທຶກຄູ່:</p>
-      <div class="reference-number">${referenceSubNo}</div>
-      <p class="rejection-warning text-styles">ການປະຕິເສດນີ້ຈະປະຕິເສດທັງຄູ່ບັນທຶກ (Debit ແລະ Credit)</p>
-    </div>
-  `,
-  input: 'textarea',
-  inputLabel: 'ເຫດຜົນໃນການປະຕິເສດ *',
-  inputPlaceholder: 'ກະລຸນາໃສ່ເຫດຜົນການປະຕິເສດ...',
-  inputAttributes: {
-    'aria-label': 'Rejection reason',
-    'rows': 3,
-    'maxlength': 250,
-    'class': 'custom-textarea'
-  },
-  inputValidator: (value) => {
-    if (!value || value.trim().length === 0) {
-      return 'ກະລຸນາໃສ່ເຫດຜົນໃນການປະຕິເສດ'
-    }
-    if (value.trim().length < 1) {
-      return 'ເຫດຜົນຕ້ອງມີຢ່າງນ້ອຍ 1 ຕົວອັກສອນ'
-    }
-    if (value.length > 250) {
-      return 'ເຫດຜົນຕ້ອງບໍ່ເກີນ 250 ຕົວອັກສອນ'
-    }
-  },
-  showCancelButton: true,
-  confirmButtonText: '<i class="fas fa-times-circle"></i> ຢັ້ງຢືນ',
-  cancelButtonText: '<i class="fas fa-arrow-left"></i> ຍົກເລີກ',
-  confirmButtonColor: '#ef4444',
-  cancelButtonColor: '#6b7280',
-  buttonsStyling: false,
-  customClass: {
-    popup: 'custom-popup',
-    title: 'custom-title',
-    htmlContainer: 'custom-html',
-    input: 'custom-input',
-    inputLabel: 'custom-input-label',
-    confirmButton: 'custom-confirm-btn',
-    cancelButton: 'custom-cancel-btn',
-    actions: 'custom-actions'
-  },
-  width: '560px',
-  padding: '2rem',
-  background: '#ffffff',
-  backdrop: 'rgba(0, 0, 0, 0.6)',
-  showClass: {
-    popup: 'animate__animated animate__fadeInDown animate__faster'
-  },
-  hideClass: {
-    popup: 'animate__animated animate__fadeOutUp animate__faster'
-  },
-  didOpen: () => {
-    // Add custom styles
-    const style = document.createElement('style');
-    style.textContent = `
-      /* Custom SweetAlert2 Styles */
-      .custom-popup {
-        border-radius: 16px !important;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
-        border: 1px solid rgba(229, 231, 235, 0.8) !important;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  const result = await Swal.fire({
+    icon: 'warning',
+    title: 'ປະຕິເສດຄູ່ບັນຊີ',
+    html: `
+      <div class="rejection-content">
+        <p class="rejection-subtitle">ທ່ານຕ້ອງການປະຕິເສດບັນທຶກຄູ່:</p>
+        <div class="reference-number">${referenceSubNo}</div>
+        <p class="rejection-warning text-styles">ການປະຕິເສດນີ້ຈະປະຕິເສດທັງຄູ່ບັນທຶກ (Debit ແລະ Credit)</p>
+      </div>
+    `,
+    input: 'textarea',
+    inputLabel: 'ເຫດຜົນໃນການປະຕິເສດ *',
+    inputPlaceholder: 'ກະລຸນາໃສ່ເຫດຜົນການປະຕິເສດ...',
+    inputAttributes: {
+      'aria-label': 'Rejection reason',
+      'rows': 3,
+      'maxlength': 250,
+      'class': 'custom-textarea'
+    },
+    inputValidator: (value) => {
+      if (!value || value.trim().length === 0) {
+        return 'ກະລຸນາໃສ່ເຫດຜົນໃນການປະຕິເສດ'
       }
-      
-      .custom-title {
-        font-family: Noto Sans Lao, sans-serif !important;
-        font-size: 1.5rem !important;
-        font-weight: 600 !important;
-        color: #1f2937 !important;
-        margin-bottom: 1rem !important;
-        line-height: 1.2 !important;
+      if (value.trim().length < 1) {
+        return 'ເຫດຜົນຕ້ອງມີຢ່າງນ້ອຍ 1 ຕົວອັກສອນ'
       }
-      
-      .custom-html {
-        margin-bottom: 1rem !important;
+      if (value.length > 250) {
+        return 'ເຫດຜົນຕ້ອງບໍ່ເກີນ 250 ຕົວອັກສອນ'
       }
-      
-      .rejection-content {
-       font-family: Noto Sans Lao, sans-serif !important;
-        text-align: center;
-        line-height: 1.3;
-      }
-      
-      .rejection-subtitle {
-       font-family: Noto Sans Lao, sans-serif !important;
-        font-size: 1rem;
-        color: #6b7280;
-        margin-bottom: 0.5rem;
-        font-weight: 400;
-        line-height: 1.3;
-      }
-      
-      .reference-number {
-       font-family: Noto Sans Lao, sans-serif !important;
-        display: inline-block;
-        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-        color: #92400e;
-        padding: 0.5rem 1rem;
-        border-radius: 8px;
-        font-weight: 600;
-        font-size: 1.1rem;
-        margin: 0.5rem 0;
-        border: 1px solid #f59e0b;
-        letter-spacing: 0.025em;
-      }
-      
-      .rejection-warning {
-        font-size: 0.875rem;
-        color: #dc2626;
-        margin-top: 0.75rem;
-        background: #fef2f2;
-        padding: 0.5rem;
-        border-radius: 8px;
-        border-left: 4px solid #ef4444;
-        font-weight: 500;
-        line-height: 1.3;
-      }
-      
-      .custom-input-label {
-       font-family: Noto Sans Lao, sans-serif !important;
-        font-weight: 600 !important;
-        color: #374151 !important;
-        margin-bottom: 0.5rem !important;
-        font-size: 0.95rem !important;
-      }
-      
-      .custom-input {
-       font-family: Noto Sans Lao, sans-serif !important;
-        border: 2px solid #e5e7eb !important;
-        border-radius: 12px !important;
-        padding: 0.875rem !important;
-        font-size: 0.95rem !important;
-        line-height: 1.3 !important;
-        transition: all 0.2s ease !important;
-        resize: vertical !important;
-        min-height: 80px !important;
-      }
-      
-      .custom-input:focus {
-        border-color: #3b82f6 !important;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
-        outline: none !important;
-      }
-      
-      .custom-actions {
-        gap: 0.75rem !important;
-        margin-top: 2rem !important;
-      }
-      
-      .custom-confirm-btn {
-       font-family: Noto Sans Lao, sans-serif !important;
-        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 10px !important;
-        padding: 0.75rem 1.5rem !important;
-        font-weight: 600 !important;
-        font-size: 0.95rem !important;
-        transition: all 0.2s ease !important;
-        min-width: 120px !important;
-        box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.3) !important;
-      }
-      
-      .custom-confirm-btn:hover {
-        transform: translateY(-1px) !important;
-        box-shadow: 0 8px 12px -1px rgba(239, 68, 68, 0.4) !important;
-        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
-      }
-      
-      .custom-cancel-btn {
-       font-family: Noto Sans Lao, sans-serif !important;
-        background: #f8fafc !important;
-        color: #6b7280 !important;
-        border: 2px solid #e5e7eb !important;
-        border-radius: 10px !important;
-        padding: 0.75rem 1.5rem !important;
-        font-weight: 600 !important;
-        font-size: 0.95rem !important;
-        transition: all 0.2s ease !important;
-        min-width: 120px !important;
-      }
-      
-      .custom-cancel-btn:hover {
-        background: #f1f5f9 !important;
-        border-color: #d1d5db !important;
-        color: #4b5563 !important;
-        transform: translateY(-1px) !important;
-      }
-      
-      /* Warning icon enhancement */
-      .swal2-icon.swal2-warning {
-        border-color: #f59e0b !important;
-        color: #f59e0b !important;
-        background: rgba(245, 158, 11, 0.1) !important;
-      }
-      
-      /* Character counter */
-      .swal2-input:focus + .char-counter {
-        opacity: 1;
-      }
-      
-      /* Validation error styling */
-      .swal2-validation-message {
-        background: #fef2f2 !important;
-        color: #dc2626 !important;
-        border: 1px solid #fecaca !important;
-        border-radius: 8px !important;
-        font-weight: 500 !important;
-      }
-    `;
-    document.head.appendChild(style);
-    
-    // Add character counter
-    const textarea = document.querySelector('.custom-input');
-    if (textarea) {
-      const counter = document.createElement('div');
-      counter.className = 'char-counter';
-      counter.style.cssText = `
-        position: absolute;
-        right: 12px;
-        bottom: 8px;
-        font-size: 0.75rem;
-        color: #9ca3af;
-        font-weight: 500;
-        pointer-events: none;
-        opacity: 0;
-        transition: opacity 0.2s ease;
+    },
+    showCancelButton: true,
+    confirmButtonText: '<i class="fas fa-times-circle"></i> ຢັ້ງຢືນ',
+    cancelButtonText: '<i class="fas fa-arrow-left"></i> ຍົກເລີກ',
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#6b7280',
+    buttonsStyling: false,
+    customClass: {
+      popup: 'custom-popup',
+      title: 'custom-title',
+      htmlContainer: 'custom-html',
+      input: 'custom-input',
+      inputLabel: 'custom-input-label',
+      confirmButton: 'custom-confirm-btn',
+      cancelButton: 'custom-cancel-btn',
+      actions: 'custom-actions'
+    },
+    width: '560px',
+    padding: '2rem',
+    background: '#ffffff',
+    backdrop: 'rgba(0, 0, 0, 0.6)',
+    showClass: {
+      popup: 'animate__animated animate__fadeInDown animate__faster'
+    },
+    hideClass: {
+      popup: 'animate__animated animate__fadeOutUp animate__faster'
+    },
+    didOpen: () => {
+      // Add custom styles
+      const style = document.createElement('style');
+      style.textContent = `
+        /* Custom SweetAlert2 Styles */
+        .custom-popup {
+          border-radius: 16px !important;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+          border: 1px solid rgba(229, 231, 235, 0.8) !important;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+        }
+        
+        .custom-title {
+          font-family: Noto Sans Lao, sans-serif !important;
+          font-size: 1.5rem !important;
+          font-weight: 600 !important;
+          color: #1f2937 !important;
+          margin-bottom: 1rem !important;
+          line-height: 1.2 !important;
+        }
+        
+        .custom-html {
+          margin-bottom: 1rem !important;
+        }
+        
+        .rejection-content {
+         font-family: Noto Sans Lao, sans-serif !important;
+          text-align: center;
+          line-height: 1.3;
+        }
+        
+        .rejection-subtitle {
+         font-family: Noto Sans Lao, sans-serif !important;
+          font-size: 1rem;
+          color: #6b7280;
+          margin-bottom: 0.5rem;
+          font-weight: 400;
+          line-height: 1.3;
+        }
+        
+        .reference-number {
+         font-family: Noto Sans Lao, sans-serif !important;
+          display: inline-block;
+          background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+          color: #92400e;
+          padding: 0.5rem 1rem;
+          border-radius: 8px;
+          font-weight: 600;
+          font-size: 1.1rem;
+          margin: 0.5rem 0;
+          border: 1px solid #f59e0b;
+          letter-spacing: 0.025em;
+        }
+        
+        .rejection-warning {
+          font-size: 0.875rem;
+          color: #dc2626;
+          margin-top: 0.75rem;
+          background: #fef2f2;
+          padding: 0.5rem;
+          border-radius: 8px;
+          border-left: 4px solid #ef4444;
+          font-weight: 500;
+          line-height: 1.3;
+        }
+        
+        .custom-input-label {
+         font-family: Noto Sans Lao, sans-serif !important;
+          font-weight: 600 !important;
+          color: #374151 !important;
+          margin-bottom: 0.5rem !important;
+          font-size: 0.95rem !important;
+        }
+        
+        .custom-input {
+         font-family: Noto Sans Lao, sans-serif !important;
+          border: 2px solid #e5e7eb !important;
+          border-radius: 12px !important;
+          padding: 0.875rem !important;
+          font-size: 0.95rem !important;
+          line-height: 1.3 !important;
+          transition: all 0.2s ease !important;
+          resize: vertical !important;
+          min-height: 80px !important;
+        }
+        
+        .custom-input:focus {
+          border-color: #3b82f6 !important;
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+          outline: none !important;
+        }
+        
+        .custom-actions {
+          gap: 0.75rem !important;
+          margin-top: 2rem !important;
+        }
+        
+        .custom-confirm-btn {
+         font-family: Noto Sans Lao, sans-serif !important;
+          background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+          color: white !important;
+          border: none !important;
+          border-radius: 10px !important;
+          padding: 0.75rem 1.5rem !important;
+          font-weight: 600 !important;
+          font-size: 0.95rem !important;
+          transition: all 0.2s ease !important;
+          min-width: 120px !important;
+          box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.3) !important;
+        }
+        
+        .custom-confirm-btn:hover {
+          transform: translateY(-1px) !important;
+          box-shadow: 0 8px 12px -1px rgba(239, 68, 68, 0.4) !important;
+          background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
+        }
+        
+        .custom-cancel-btn {
+         font-family: Noto Sans Lao, sans-serif !important;
+          background: #f8fafc !important;
+          color: #6b7280 !important;
+          border: 2px solid #e5e7eb !important;
+          border-radius: 10px !important;
+          padding: 0.75rem 1.5rem !important;
+          font-weight: 600 !important;
+          font-size: 0.95rem !important;
+          transition: all 0.2s ease !important;
+          min-width: 120px !important;
+        }
+        
+        .custom-cancel-btn:hover {
+          background: #f1f5f9 !important;
+          border-color: #d1d5db !important;
+          color: #4b5563 !important;
+          transform: translateY(-1px) !important;
+        }
+        
+        /* Warning icon enhancement */
+        .swal2-icon.swal2-warning {
+          border-color: #f59e0b !important;
+          color: #f59e0b !important;
+          background: rgba(245, 158, 11, 0.1) !important;
+        }
+        
+        /* Character counter */
+        .swal2-input:focus + .char-counter {
+          opacity: 1;
+        }
+        
+        /* Validation error styling */
+        .swal2-validation-message {
+          background: #fef2f2 !important;
+          color: #dc2626 !important;
+          border: 1px solid #fecaca !important;
+          border-radius: 8px !important;
+          font-weight: 500 !important;
+        }
       `;
+      document.head.appendChild(style);
       
-      const updateCounter = () => {
-        const current = textarea.value.length;
-        const max = 250;
-        counter.textContent = `${current}/${max}`;
-        counter.style.color = current > max * 0.9 ? '#ef4444' : '#9ca3af';
-      };
-      
-      textarea.parentNode.style.position = 'relative';
-      textarea.parentNode.appendChild(counter);
-      textarea.addEventListener('input', updateCounter);
-      textarea.addEventListener('focus', () => counter.style.opacity = '1');
-      textarea.addEventListener('blur', () => counter.style.opacity = '0');
-      updateCounter();
+      // Add character counter
+      const textarea = document.querySelector('.custom-input');
+      if (textarea) {
+        const counter = document.createElement('div');
+        counter.className = 'char-counter';
+        counter.style.cssText = `
+          position: absolute;
+          right: 12px;
+          bottom: 8px;
+          font-size: 0.75rem;
+          color: #9ca3af;
+          font-weight: 500;
+          pointer-events: none;
+          opacity: 0;
+          transition: opacity 0.2s ease;
+        `;
+        
+        const updateCounter = () => {
+          const current = textarea.value.length;
+          const max = 250;
+          counter.textContent = `${current}/${max}`;
+          counter.style.color = current > max * 0.9 ? '#ef4444' : '#9ca3af';
+        };
+        
+        textarea.parentNode.style.position = 'relative';
+        textarea.parentNode.appendChild(counter);
+        textarea.addEventListener('input', updateCounter);
+        textarea.addEventListener('focus', () => counter.style.opacity = '1');
+        textarea.addEventListener('blur', () => counter.style.opacity = '0');
+        updateCounter();
+      }
     }
-  }
-})
+  })
 
   if (!result.isConfirmed) return
 
@@ -694,27 +797,102 @@ const result = await Swal.fire({
     isRejectingPair.value = true
     rejectingRefSubNo.value = referenceSubNo
 
-    await axios.post(`/api/journal-entries/reject-by-pair-account/`, {
-      Reference_sub_No: referenceSubNo,
-      comments: result.value.trim()
-    }, getAuthHeaders())
+    // Array to store promises for parallel execution (like approve function)
+    const pendingPromises = []
 
-    Swal.fire({
-      icon: 'success',
-      title: 'ສຳເລັດ',
-      text: 'ປະຕິເສດບັນທຶກຄູ່ສຳເລັດແລ້ວ',
-      timer: 2000,
-      showConfirmButton: false
-    })
+    // If we have the full item object, use the enhanced approach
+    if (item && item.Reference_No) {
+      // 1. Always call pending-all endpoint (updates MASTER, LOG, and HIST tables)
+      console.log('Calling pending-all for:', item.Reference_No)
+      pendingPromises.push(
+        axios.post('/api/journal-entries/pending-all/', {
+          Reference_No: item.Reference_No,
+          comments: result.value.trim()
+        }, getAuthHeaders())
+      )
+
+      // 2. Call pending-asset endpoint if Ac_relatives exists and is not empty
+      if (item.Ac_relatives && item.Ac_relatives.trim() !== '') {
+        console.log('Calling pending-asset for:', item.Ac_relatives)
+        pendingPromises.push(
+          axios.post('/api/journal-entries/pending-asset/', { 
+            Ac_relatives: item.Ac_relatives,
+            module_id: "AS",
+            comments: result.value.trim()
+          }, getAuthHeaders())
+        )
+      } else {
+        console.log('No Ac_relatives found or empty, skipping asset pending')
+      }
+
+      // Execute all API calls in parallel
+      const responses = await Promise.all(pendingPromises)
+      
+      // Log responses
+      console.log('Pending-all response:', responses[0].data)
+      if (responses[1]) {
+        console.log('Pending-asset response:', responses[1].data)
+      }
+
+      // Show success message
+      let successMessage = responses[0].data.message || 'ປະຕິເສດບັນທຶກຄູ່ສຳເລັດແລ້ວ'
+      
+      // If asset was also processed, add to success message
+      if (responses[1] && responses[1].data.success) {
+        successMessage += '\nປະຕິເສດຊັບສິນສຳເລັດ'
+      }
+
+      Swal.fire({
+        icon: 'success',
+        title: 'ສຳເລັດ',
+        text: successMessage,
+        timer: 2000,
+        showConfirmButton: false
+      })
+
+    } else {
+      // Fallback: use the simple pending-by-pair-account endpoint
+      await axios.post('/api/journal-entries/reject-by-pair-account/', {
+        Reference_sub_No: referenceSubNo,
+        comments: result.value.trim()
+      }, getAuthHeaders())
+
+      Swal.fire({
+        icon: 'success',
+        title: 'ສຳເລັດ',
+        text: 'ປະຕິເສດບັນທຶກຄູ່ສຳເລັດແລ້ວ',
+        timer: 2000,
+        showConfirmButton: false
+      })
+    }
 
     // Reload data
     await loadData()
 
   } catch (error) {
-    console.error('Error rejecting journal entry pair:', error)
+    console.error('Error setting journal entry pair to pending:', error)
     
     let errorMessage = 'ບໍ່ສາມາດປະຕິເສດບັນທຶກຄູ່ໄດ້'
-    if (error.response?.status === 404) {
+    
+    // Handle errors from either endpoint (like approve function)
+    if (error.response?.data?.error) {
+      const backendError = error.response.data.error
+      if (backendError.includes('already pending')) {
+        errorMessage = 'ລາຍການນີ້ຢູ່ໃນສະຖານະລໍຖ້າແລ້ວ'
+      } else if (backendError.includes('already approved')) {
+        errorMessage = 'ລາຍການນີ້ໄດ້ຮັບການອະນຸມັດແລ້ວ'
+      } else if (backendError.includes('problematic entries')) {
+        errorMessage = 'ມີລາຍການທີ່ມີບັນຫາ (P ຫຼື R) ບໍ່ສາມາດປະຕິເສດໄດ້'
+      } else if (backendError.includes('Invalid module_id')) {
+        errorMessage = 'ປະເພດໂມດູນບໍ່ຖືກຕ້ອງ'
+      } else if (backendError.includes('No asset found')) {
+        errorMessage = 'ບໍ່ພົບຊັບສິນທີ່ຕ້ອງການປະຕິເສດ'
+      } else if (backendError.includes('Ac_relatives is required')) {
+        errorMessage = 'ຂາດຂໍ້ມູນ Ac_relatives'
+      } else {
+        errorMessage = backendError
+      }
+    } else if (error.response?.status === 404) {
       errorMessage = 'ບໍ່ພົບບັນທຶກທີ່ຕ້ອງການປະຕິເສດ'
     } else if (error.response?.status === 400) {
       errorMessage = error.response.data?.detail || 'ຂໍ້ມູນບໍ່ຖືກຕ້ອງ'
@@ -731,6 +909,10 @@ const result = await Swal.fire({
     isRejectingPair.value = false
     rejectingRefSubNo.value = null
   }
+}
+
+const rejectByPairAccountOnly = (referenceSubNo, item = null) => {
+  return rejectByPairAccount(referenceSubNo, 'pending', item)
 }
 
 // Updated editByPairAccount function - CORRECTED VERSION
