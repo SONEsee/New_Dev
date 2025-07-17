@@ -163,6 +163,7 @@
                 clearable
                 @update:model-value="loadData"
                 hide-details
+                :loading="loadingAuthStatus"
               ></v-select>
             </v-col>
             <v-col cols="12" md="2">
@@ -461,9 +462,14 @@ const {
 
 // State
 const loading = ref(false)
+const loadingAuthStatus = ref(false)
 const items = ref([])
 const modules = ref([])
 const currencies = ref([])
+const authStatusOptions = ref([]) // Changed from fixed array to reactive ref
+
+// Auth Status Mapping (for consistent reference)
+const authStatusMapping = ref(new Map())
 
 // Current user (get from localStorage or auth store)
 const currentUser = computed(() => {
@@ -496,14 +502,6 @@ const summary = reactive({
   rejected: 0,
   correction: 0
 })
-
-// Auth status options
-const authStatusOptions = [
-  { value: 'U', text: 'ລໍຖ້າອະນຸມັດ' },
-  { value: 'A', text: 'ອະນຸມັດແລ້ວ' },
-  { value: 'R', text: 'ປະຕິເສດ' },
-  { value: 'P', text: 'ຖ້າເເກ້ໄຂ' }
-]
 
 // Table headers
 const headers = [
@@ -538,6 +536,73 @@ const navigateToCreate = () => {
   router.push(createUrl)
 }
 
+// Load Auth Status Options from API
+const loadAuthStatusOptions = async () => {
+  try {
+    loadingAuthStatus.value = true
+    console.log('Loading auth status options from API...')
+    
+    const response = await axios.get('/api/master-types/tree/A', getAuthHeaders())
+    
+    if (response.data && response.data.MasterCodes) {
+      // Map API response to component format
+      authStatusOptions.value = response.data.MasterCodes
+        .filter(code => code.Status === 'T') // Only active statuses
+        .map(code => ({
+          value: code.MC_code,
+          text: code.MC_name_la
+        }))
+      
+      // Create mapping for status text lookup
+      authStatusMapping.value.clear()
+      response.data.MasterCodes
+        .filter(code => code.Status === 'T')
+        .forEach(code => {
+          authStatusMapping.value.set(code.MC_code, {
+            text: code.MC_name_la,
+            color: getStatusColorFromCode(code.MC_code),
+            icon: getStatusIconFromCode(code.MC_code)
+          })
+        })
+      
+      console.log('Auth status options loaded:', authStatusOptions.value)
+      console.log('Auth status mapping created:', authStatusMapping.value)
+    }
+  } catch (error) {
+    console.error('Error loading auth status options:', error)
+    // Fallback to default options if API fails
+    authStatusOptions.value = [
+      { value: 'U', text: 'ລໍຖ້າອະນຸມັດ' },
+      { value: 'A', text: 'ອະນຸມັດແລ້ວ' },
+      { value: 'R', text: 'ປະຕິເສດ' },
+      { value: 'P', text: 'ຖ້າເແກ້ໄຂ' }
+    ]
+  } finally {
+    loadingAuthStatus.value = false
+  }
+}
+
+// Helper function to determine status color based on code
+const getStatusColorFromCode = (code) => {
+  switch(code) {
+    case 'A': return 'success'
+    case 'R': return 'error'
+    case 'U': return 'warning'
+    case 'P': return 'info'
+    default: return 'grey'
+  }
+}
+
+// Helper function to determine status icon based on code
+const getStatusIconFromCode = (code) => {
+  switch(code) {
+    case 'A': return 'mdi-check-circle'
+    case 'R': return 'mdi-close-circle'
+    case 'U': return 'mdi-clock-outline'
+    case 'P': return 'mdi-pencil-circle'
+    default: return 'mdi-help-circle'
+  }
+}
 
 // Methods
 const formatNumber = (num, decimals = 2) => {
@@ -559,6 +624,11 @@ const formatDateTime = (date) => {
 }
 
 const getStatusColor = (status) => {
+  // Use dynamic mapping if available, otherwise fallback to hardcoded
+  if (authStatusMapping.value.has(status)) {
+    return authStatusMapping.value.get(status).color
+  }
+  // Fallback for backward compatibility
   switch(status) {
     case 'A': return 'success'
     case 'R': return 'error'
@@ -569,6 +639,11 @@ const getStatusColor = (status) => {
 }
 
 const getStatusIcon = (status) => {
+  // Use dynamic mapping if available, otherwise fallback to hardcoded
+  if (authStatusMapping.value.has(status)) {
+    return authStatusMapping.value.get(status).icon
+  }
+  // Fallback for backward compatibility
   switch(status) {
     case 'A': return 'mdi-check-circle'
     case 'R': return 'mdi-close-circle'
@@ -579,6 +654,11 @@ const getStatusIcon = (status) => {
 }
 
 const getStatusText = (status) => {
+  // Use dynamic mapping if available, otherwise fallback to hardcoded
+  if (authStatusMapping.value.has(status)) {
+    return authStatusMapping.value.get(status).text
+  }
+  // Fallback for backward compatibility
   switch(status) {
     case 'A': return 'ອະນຸມັດແລ້ວ'
     case 'R': return 'ປະຕິເສດ'
@@ -587,8 +667,6 @@ const getStatusText = (status) => {
     default: return 'ບໍ່ຮູ້'
   }
 }
-
-
 
 const getModuleName = (moduleId) => {
   if (!moduleId) return '-'
@@ -761,9 +839,12 @@ onMounted(async () => {
     permissions: permissions.value
   })
   
-  // Load reference data
-  loadModules()
-  loadCurrencies()
+  // Load reference data concurrently
+  await Promise.all([
+    loadAuthStatusOptions(), // NEW: Load auth status options from API
+    loadModules(),
+    loadCurrencies()
+  ])
   
   // Load main data (only if user has view permission)
   if (canView.value) {

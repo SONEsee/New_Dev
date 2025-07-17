@@ -460,7 +460,7 @@ const getAuthStatusColor = (authStatusCode: string) => {
           <v-icon icon="mdi-check-underline" style="color: darkgreen;"></v-icon>
           </v-chip
         >
-        <p v-if="item.asset_status==='AC' && item.Auth_Status!=='A'">ຖືກກົດຮັບຮູ້ແລ້ວ</p>
+        <!-- <p v-if="item.asset_status==='AC' && item.Auth_Status!=='A'">ຖືກກົດຮັບຮູ້ແລ້ວ</p> -->
         <v-btn
           v-if="item.Auth_Status === 'U'"
           class=""

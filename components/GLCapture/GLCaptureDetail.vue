@@ -79,6 +79,18 @@ const getAccountCode = (accountId) => {
   return ''
 }
 
+function handleEdit(entry) {
+  if (canEdit && referenceNoSubstring.value === 'GL') {
+    editByPairAccount(entry)
+  } else {
+    Swal.fire({
+      icon: 'warning',
+      title: 'ບໍ່ອະນຸຍາດ',
+      text: 'ທ່ານບໍ່ມີສິດແກ້ໄຂລາຍການນີ້',
+      confirmButtonText: 'ຕົກລົງ'
+    })
+  }
+}
 // Add this helper function to get currency info
 const getCurrencyInfo = (ccyCode) => {
   if (!ccyCode) return null
@@ -705,19 +717,36 @@ const rejectByPairAccount = async (referenceSubNo, item) => {
     },
     getAuthHeaders()
   )
-
-  // If Ac_relatives exists, call pending-asset endpoint
-  if (item && item.Ac_relatives && item.Ac_relatives.trim() !== '') {
-    console.log('Calling pending-asset for:', item.Ac_relatives)
-    await axios.post(
-      '/api/journal-entries/pending-asset/',
-      {
-        Ac_relatives: item.Ac_relatives,
-        module_id: "AS"
-      },
-      getAuthHeaders()
-    )
-  }
+    
+  // // If Ac_relatives exists, call pending-asset endpoint
+  // if (item && item.Ac_relatives && item.Ac_relatives.trim() !== '') {
+  //   console.log('Calling pending-asset for:', item.Ac_relatives)
+  //   await axios.post(
+  //     '/api/journal-entries/pending-asset/',
+  //     {
+  //       Ac_relatives: item.Ac_relatives,
+  //       module_id: "AS"
+  //     },
+  //     getAuthHeaders()
+  //   )
+  // }
+      if (
+      referenceNoSubstring.value !== 'GL' &&
+      item &&
+      item.Ac_relatives &&
+      item.Ac_relatives.trim() !== ''
+    ) {
+      console.log('Calling pending-asset for:', item.Ac_relatives)
+      await axios.post(
+        '/api/journal-entries/pending-asset/',
+        {
+          Ac_relatives: item.Ac_relatives,
+          module_id: "AS"
+        },
+        getAuthHeaders()
+      )
+      console.log('Pending asset updated successfully')
+    }
     console.log('Pending asset updated successfully')
 
     Swal.fire({
@@ -1030,20 +1059,104 @@ const fixRejectedEntry = async () => {
       successDetails.push(`• ບັນຊີ Debit: ${requestData.debit_account_no}`)
       successDetails.push(`• ບັນຊີ Credit: ${requestData.credit_account_no}`)
     }
+Swal.fire({
+  icon: 'success',
+  title: 'ສຳເລັດ',
+  html: `
+    <div class="text-left">
+      <p><strong>ແກ້ໄຂບັນທຶກຄູ່ສຳເລັດແລ້ວ!</strong></p>
+      <hr class="my-2">
+      ${successDetails.map(detail => `<p><small>${detail}</small></p>`).join('')}
+    </div>
+  `,
+  footer: `
+    <div class="swal-footer-wrapper">
+      <a href="/glcapture" class="swal-back-link">
+        <i class="mdi mdi-arrow-left swal-back-icon"></i>
+        ກັບໄປ GLCaptureRead
+      </a>
+    </div>
+    <style>
+      .swal-footer-wrapper {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        margin-top: 10px;
+      }
 
-    Swal.fire({
-      icon: 'success',
-      title: 'ສຳເລັດ',
-      html: `
-        <div class="text-left">
-          <p><strong>ແກ້ໄຂບັນທຶກຄູ່ສຳເລັດແລ້ວ!</strong></p>
-          <hr class="my-2">
-          ${successDetails.map(detail => `<p><small>${detail}</small></p>`).join('')}
-        </div>
-      `,
-      timer: 4000,
-      showConfirmButton: false
-    })
+      .swal-back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: #ffffff !important;
+        text-decoration: none !important;
+        font-size: 14px;
+        font-weight: 500;
+        padding: 10px 20px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #d4af37, #ffd700, #b8860b);
+        border: 1px solid #b8860b;
+        box-shadow: 0 2px 4px rgba(212, 175, 55, 0.3);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .swal-back-link::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.5s ease;
+      }
+
+      .swal-back-link:hover {
+        background: linear-gradient(135deg, #ffd700, #ffed4e, #d4af37);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
+        color: #ffffff !important;
+      }
+
+      .swal-back-link:hover::before {
+        left: 100%;
+      }
+
+      .swal-back-link:active {
+        transform: translateY(0px);
+        box-shadow: 0 2px 4px rgba(212, 175, 55, 0.3);
+      }
+
+      .swal-back-icon {
+        font-size: 16px;
+        transition: transform 0.3s ease;
+      }
+
+      .swal-back-link:hover .swal-back-icon {
+        transform: translateX(-3px);
+      }
+
+      /* Responsive design */
+      @media (max-width: 640px) {
+        .swal-back-link {
+          font-size: 13px;
+          padding: 8px 16px;
+        }
+        
+        .swal-back-icon {
+          font-size: 14px;
+        }
+      }
+    </style>
+  `,
+  customClass: {
+    footer: 'text-center'
+  },
+  timer: 6000,
+  showConfirmButton: false
+})
 
     // Close dialog and reload data
     closeEditDialog()
@@ -1369,7 +1482,7 @@ watch(permissions, (newPermissions) => {
                     ເບິ່ງ
                   </v-chip>
                     <v-chip
-                      v-if="canEdit && referenceNoSubstring.value === 'GL'"
+                      v-if="canEdit && referenceNoSubstring.value === 'GL' "
                       color="warning"
                       size="x-small"
                       variant="flat"
@@ -1688,7 +1801,7 @@ watch(permissions, (newPermissions) => {
                         <template v-if="canView">
                           <v-tooltip text="ແກ້ໄຂຄູ່ບັນທຶກ" location="top">
                             <template #activator="{ props }">
-                              <v-btn
+                              <!-- <v-btn
                                 v-if="entry.Auth_Status === 'P' && canEdit"
                                 v-bind="props"
                                 icon
@@ -1701,7 +1814,21 @@ watch(permissions, (newPermissions) => {
                                 class="action-btn-small"
                               >
                                 <v-icon size="16">mdi-pencil</v-icon>
-                              </v-btn>
+                              </v-btn> -->
+                               <v-btn
+                                v-if="entry.Auth_Status === 'P' && canEdit"
+                                  v-bind="props"
+                                  icon
+                                  size="small"
+                                  variant="text"
+                                  color="info"
+                                  @click="handleEdit(entry)"
+                                  :disabled="isEditingPair"
+                                  :loading="editingRefSubNo === entry.Reference_sub_No"
+                                  class="action-btn-small"
+                                >
+                                  <v-icon size="16">mdi-pencil</v-icon>
+                                </v-btn>
                             </template>
                           </v-tooltip>
 

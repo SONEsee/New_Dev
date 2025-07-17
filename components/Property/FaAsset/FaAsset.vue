@@ -28,15 +28,15 @@ const response = computed(() => {
 // });
 const mockData = computed(() => {
   const data = faAssetStoreInstance.response_fa_asset_list || [];
-  const masterCodes = statusmartet.value?.MasterCodes || [] ;
+  const masterCodes = statusmartet.value?.MasterCodes || [];
 
   const filteredData = data.filter(
-    (item) => !(item.asset_status === "AC" && item.Auth_Status_ARC !== "A")
+    (item) => item.asset_status && item.Auth_Status_ARC
   );
 
   return filteredData.map((item) => {
     const authStatus = masterCodes.find(
-      (code:any) => code.MC_code === item.Auth_Status
+      (code: any) => code.MC_code === item.Auth_Status
     );
 
     return {
@@ -97,8 +97,6 @@ watch(
   },
   { deep: true }
 );
-
-
 
 const {
   canEdit,
@@ -522,10 +520,10 @@ const hanoff = async (item: any) => {
 };
 const getAuthStatusColor = (authStatusCode: string) => {
   const colors = {
-    A: "success",    
-    U: "warning",   
-    R: "error",      
-    P: "info",       
+    A: "success",
+    U: "warning",
+    R: "error",
+    P: "info",
   };
   return colors[authStatusCode as keyof typeof colors] || "grey";
 };
@@ -728,13 +726,22 @@ const getAuthStatusColor = (authStatusCode: string) => {
               <p class="text-warning">ກຳລັງດຳເນີນການ</p>
             </div>
           </v-chip> -->
-          <v-chip size="small" variant="flat"  :color="getAuthStatusColor(item.Auth_Status)" >
+          <v-chip
+            size="small"
+            variant="flat"
+            :color="getAuthStatusColor(item.Auth_Status)"
+          >
             {{ item.Auth_Status_Text }}
           </v-chip>
         </template>
 
         <template v-slot:item.type_of_pay="{ item }">
-          <v-chip color="primary" v-if="item.type_of_pay === '1101100'" size="small" variant="flat">
+          <v-chip
+            color="primary"
+            v-if="item.type_of_pay === '1101100'"
+            size="small"
+            variant="flat"
+          >
             {{ item.type_of_pay_detail.MC_name_la || "-" }}
           </v-chip>
         </template>
@@ -745,7 +752,8 @@ const getAuthStatusColor = (authStatusCode: string) => {
               :color="
                 item.asset_value_remainMonth > 1000000 ? 'success' : 'primary'
               "
-              size="small" variant="flat"
+              size="small"
+              variant="flat"
             >
               {{
                 new Intl.NumberFormat("en-US", {
@@ -761,11 +769,18 @@ const getAuthStatusColor = (authStatusCode: string) => {
           {{ formatDate(item.asset_date) }}
         </template>
 
-        <template v-slot:item.asset_value="{ item }" size="small" variant="flat">
+        <template
+          v-slot:item.asset_value="{ item }"
+          size="small"
+          variant="flat"
+        >
           <div class="text-end">
-            <span class="font-weight-bold font-small" size="small" variant="flat">{{
-              formatCurrency(item.asset_value, item.asset_currency)
-            }}</span>
+            <span
+              class="font-weight-bold font-small"
+              size="small"
+              variant="flat"
+              >{{ formatCurrency(item.asset_value, item.asset_currency) }}</span
+            >
           </div>
         </template>
 
