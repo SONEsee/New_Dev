@@ -8,6 +8,7 @@ const accoutdata = computed(() => {
 const res = computed(() => {
   const data = fassetStore.response_fa_asset_list || [];
   const maindata = accoutStore.response_account_method_list || [];
+  
   const fiterData = maindata.filter((item) => item.ref_id);
   return fiterData.map((item: any) => {
     const ref_id = data.find((code: any) => code.asset_list_id === item.ref_id);
