@@ -239,6 +239,10 @@ const loadData = async () => {
 
     journalEntries.value = entriesResponse.data.results || entriesResponse.data || []
 
+    const ac_relatives_array = journalEntries.value.map(entry => entry.Ac_relatives || [])
+    journalEntries.value.forEach((entry, index) => {
+      console.log(`Entry ${index} Ac_relatives:`, entry.Ac_relatives)
+    })
     // Debug journal entries structure
     if (journalEntries.value.length > 0) {
       console.log('Sample journal entry structure:', journalEntries.value[0])
@@ -1213,7 +1217,7 @@ Swal.fire({
 }
 
 // Approve function
-const approveItem = async (item) => {
+const approveItem = async (item, entry) => {
   const result = await Swal.fire({
     icon: 'question',
     title: 'ຢືນຢັນການອະນຸມັດ',
@@ -1232,24 +1236,32 @@ const approveItem = async (item) => {
 
       // 1. Always call approve-all endpoint (updates MASTER, LOG, and HIST tables)
       console.log('Calling approve-all for:', item.Reference_No)
+      console.log('Calling approve-all for:', item)
+
       approvalPromises.push(
         axios.post('/api/journal-entries/approve-all/', {
           Reference_No: item.Reference_No
         }, getAuthHeaders())
       )
 
-      // 2. Call approve-asset endpoint if Ac_relatives exists and is not empty
-      if (item.Ac_relatives && item.Ac_relatives.trim() !== '') {
-        console.log('Calling approve-asset for:', item.Ac_relatives)
+      // Collect all unique Ac_relatives from journalEntries
+      const assetRelatives = [
+        ...new Set(
+          journalEntries.value
+            .map(e => e.Ac_relatives && e.Ac_relatives.trim())
+            .filter(Boolean)
+        )
+      ]
+
+      // Add approve-asset calls for each unique Ac_relatives
+      assetRelatives.forEach(ac => {
         approvalPromises.push(
           axios.post('/api/journal-entries/approve-asset/', {
-            Ac_relatives: item.Ac_relatives,
+            Ac_relatives: ac,
             module_id: "AS"
           }, getAuthHeaders())
         )
-      } else {
-        console.log('No Ac_relatives found or empty, skipping asset approval')
-      }
+      })
 
       // Execute all API calls in parallel
       const responses = await Promise.all(approvalPromises)
