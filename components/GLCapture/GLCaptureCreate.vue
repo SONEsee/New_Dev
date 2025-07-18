@@ -1599,8 +1599,14 @@ const submitJournal = async () => {
           <p><strong>ລາຍການທີ່ມີລາຍລະອຽດ:</strong> ${entriesWithDescription.value}/${journalEntries.value.length}</p>
         </div>
       `,
+      showDenyButton: true,
+      denyButtonText: `<i class="mdi mdi-arrow-left "></i> ກັບໄປຫນ້າການບັນທຶກ`,
+      denyButtonColor: '#1976d2',
       confirmButtonText: 'ຕົກລົງ',
-      timer: 7000
+      timer: 7000,
+      preDeny: () => {
+        window.location.href = '/glcapture'
+      },
     })
 
     if (autoReferenceMode.value) {
