@@ -784,6 +784,7 @@ export const faAssetStore = defineStore("faAsset", {
             icon: "success",
             showCancelButton: false,
             showConfirmButton: false,
+            timer: 1000,
           });
 
           await this.GetFaAssetList();
