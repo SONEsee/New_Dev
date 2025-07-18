@@ -124,7 +124,7 @@ const res = computed(() => {
   if (!data || !Array.isArray(data)) return [];
 
   return data.filter(
-    (item) => item.Auth_Status === "A" && item.Auth_Status_ARC === "A"
+    (item) => item.Auth_Status  && item.Auth_Status_ARC 
   );
 });
 
