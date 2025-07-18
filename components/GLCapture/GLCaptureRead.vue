@@ -168,7 +168,7 @@
             </v-col>
             <v-col cols="12" md="2">
               <v-text-field
-                v-model="filters.dateFrom"
+                v-model="filters.date"
                 label="ວັນທີເລີ່ມ"
                 type="date"
                 variant="outlined"
@@ -490,8 +490,8 @@ const filters = reactive({
   module_id: null,
   Ccy_cd: null,
   Auth_Status: null,
-  dateFrom: today,
-  dateTo: today
+  date: today,
+
 })
 
 // Summary
@@ -689,8 +689,7 @@ const loadData = async () => {
     if (filters.module_id) params.module_id = filters.module_id
     if (filters.Ccy_cd) params.Ccy_cd = filters.Ccy_cd
     if (filters.Auth_Status) params.Auth_Status = filters.Auth_Status
-    if (filters.dateFrom) params.Value_date__gte = filters.dateFrom
-    if (filters.dateTo) params.Value_date__lte = filters.dateTo
+    if (filters.date) params.Value_date = filters.date
     
     // Exclude soft deleted
     params.delete_stat__ne = 'D'

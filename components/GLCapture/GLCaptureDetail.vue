@@ -1253,15 +1253,20 @@ const approveItem = async (item, entry) => {
         )
       ]
 
-      // Add approve-asset calls for each unique Ac_relatives
-      assetRelatives.forEach(ac => {
-        approvalPromises.push(
-          axios.post('/api/journal-entries/approve-asset/', {
-            Ac_relatives: ac,
-            module_id: "AS"
-          }, getAuthHeaders())
-        )
-      })
+      const referenceNoSubstring = item.Reference_No.substring(0, 2)
+      console.log('Unique Ac_relatives found:', assetRelatives)
+
+      // Add approve-asset calls for each unique Ac_relatives if not 'GL'
+      if (referenceNoSubstring !== 'GL') {
+        assetRelatives.forEach(ac => {
+          approvalPromises.push(
+            axios.post('/api/journal-entries/approve-asset/', {
+              Ac_relatives: ac,
+              module_id: "AS"
+            }, getAuthHeaders())
+          )
+        })
+}
 
       // Execute all API calls in parallel
       const responses = await Promise.all(approvalPromises)
