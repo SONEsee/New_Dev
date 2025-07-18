@@ -1,5 +1,36 @@
 <template>
   <div class="journal-entry-container">
+    <!-- Working Day Status Alert -->
+    <v-alert
+      v-if="!canCreateJournal || workingDayError"
+      :type="!isWorkingDay ? 'error' : 'warning'"
+      class="mb-4"
+      :loading="loadingWorkingDay || loadingDataEntry"
+      prominent
+      border="start"
+      variant="tonal"
+    >
+      <v-alert-title class="d-flex align-center">
+        <v-icon class="mr-2">{{ !isWorkingDay ? 'mdi-calendar-remove' : 'mdi-information' }}</v-icon>
+        {{ !isWorkingDay ? 'ມື້ນີ້ບໍ່ສາມາດສ້າງ Journal' : 'ແຈ້ງເຕືອນ' }}
+      </v-alert-title>
+      <div class="mt-2">
+        {{ getStatusMessage }}
+      </div>
+      <template #append v-if="!isWorkingDay">
+        <v-btn
+          size="small"
+          variant="outlined"
+          color="error"
+          @click="checkWorkingDay"
+          :loading="loadingWorkingDay"
+        >
+          <v-icon left size="small">mdi-refresh</v-icon>
+          ກວດສອບໃໝ່
+        </v-btn>
+      </template>
+    </v-alert>
+
     <!-- Header -->
     <div class="page-header">
       <h2 class="page-title">
@@ -9,7 +40,7 @@
     </div>
 
     <!-- Main Form Card -->
-    <v-card class="form-card" elevation="2">
+    <v-card class="form-card" elevation="2" :disabled="!canCreateJournal">
       <v-card-text class="pa-4">
         <v-form ref="form" v-model="valid" lazy-validation>
           <!-- Basic Information Section -->
@@ -29,7 +60,17 @@
                   @change="updateReferenceNumber" 
                   prepend-inner-icon="mdi-calendar"
                   hide-details="auto"
-                />
+                  :disabled="isValueDateDisabled || !canCreateJournal"
+                  :class="{ 'value-date-disabled': isValueDateDisabled }"
+                >
+                  <template #append-inner v-if="isValueDateDisabled">
+                    <v-tooltip text="ການກຳນົດຄ່າ BACK_VALUE ປິດການແກ້ໄຂວັນທີ່">
+                      <template #activator="{ props }">
+                        <v-icon v-bind="props" size="small" color="warning">mdi-lock</v-icon>
+                      </template>
+                    </v-tooltip>
+                  </template>
+                </v-text-field>
               </v-col>
 
               <v-col cols="12" md="2">
@@ -50,6 +91,7 @@
                   class="module-field"
                   clearable
                   hide-no-data
+                  :disabled="!canCreateJournal"
                 >
                   <template #item="{ props, item }">
                     <v-list-item v-bind="props" class="compact-item"></v-list-item>
@@ -74,6 +116,7 @@
                   no-data-text="ບໍ່ມີຂໍ້ມູນລະຫັດການເຄື່ອນໄຫວ"
                   clearable
                   hide-no-data
+                  :disabled="!canCreateJournal"
                 >
                   <template #item="{ props, item }">
                     <v-list-item v-bind="props" class="compact-item"></v-list-item>
@@ -99,6 +142,7 @@
                   class="currency-field"
                   clearable
                   hide-no-data
+                  :disabled="!canCreateJournal"
                 >
                   <template #item="{ props, item }">
                     <v-list-item v-bind="props" class="compact-item"></v-list-item>
@@ -111,7 +155,7 @@
                   v-model="journalData.Reference_No" 
                   label="ເລກອ້າງອີງ *" 
                   :rules="referenceRules"
-                  :disabled="autoReferenceMode" 
+                  :disabled="autoReferenceMode || !canCreateJournal" 
                   variant="outlined" 
                   density="compact" 
                   counter="30"
@@ -139,6 +183,7 @@
                   prepend-inner-icon="mdi-calendar-range" 
                   hide-details="auto" 
                   no-data-text="ບໍ່ມີຂໍ້ມູນຮອບການເງິນ"
+                  :disabled="!canCreateJournal"
                 >
                   <template #append-inner>
                     <v-btn 
@@ -148,6 +193,7 @@
                       color="info" 
                       @click="refreshAutoSelection"
                       title="ເລືອກອັດຕະໂນມັດຕາມປີປັດຈຸບັນ"
+                      :disabled="!canCreateJournal"
                     >
                       <v-icon size="small">mdi-refresh-auto</v-icon>
                     </v-btn>
@@ -175,7 +221,7 @@
                   variant="outlined" 
                   density="compact"
                   :loading="loading.periodCodes" 
-                  :disabled="!journalData.fin_cycle"
+                  :disabled="!journalData.fin_cycle || !canCreateJournal"
                   prepend-inner-icon="mdi-calendar-clock" 
                   hide-details="auto" 
                   no-data-text="ບໍ່ມີຂໍ້ມູນລະຫັດໄລຍະ"
@@ -197,6 +243,7 @@
                   hide-details="auto"
                   placeholder="ໃສ່ຂໍ້ຄວາມເພີ່ມເຕີມຫຼັກ..."
                   @input="onMainDescriptionChange"
+                  :disabled="!canCreateJournal"
                 />
               </v-col>
             </v-row>
@@ -215,6 +262,7 @@
               @click="onMainCurrencyChange"
               :loading="loading.exchangeRate" 
               class="ml-2"
+              :disabled="!canCreateJournal"
             >
               <v-icon size="small">mdi-refresh</v-icon>
               ໂຫລດໃໝ່
@@ -234,7 +282,7 @@
                   size="small" 
                   variant="outlined" 
                   @click="addJournalEntry"
-                  :disabled="loading.submit" 
+                  :disabled="loading.submit || !canCreateJournal" 
                   class="action-btn"
                 >
                   <v-icon left size="small">mdi-plus</v-icon>
@@ -245,7 +293,7 @@
                   size="small" 
                   variant="text" 
                   @click="addQuickEntry" 
-                  :disabled="loading.submit"
+                  :disabled="loading.submit || !canCreateJournal"
                   class="action-btn"
                 >
                   <v-icon left size="small">mdi-lightning-bolt</v-icon>
@@ -256,7 +304,7 @@
                   size="small" 
                   variant="text" 
                   @click="fillSubTextFromMain"
-                  :disabled="loading.submit || !journalData.Addl_sub_text"
+                  :disabled="loading.submit || !journalData.Addl_sub_text || !canCreateJournal"
                   class="action-btn"
                 >
                   <v-icon left size="small">mdi-format-text</v-icon>
@@ -270,6 +318,7 @@
                   :loading="loading.debitAccounts || loading.creditAccounts"
                   class="action-btn"
                   title="Refresh account lists"
+                  :disabled="!canCreateJournal"
                 >
                   <v-icon left size="small">mdi-refresh</v-icon>
                   ໂຫລດບັນຊີ
@@ -323,7 +372,7 @@
                         hide-details="auto"
                         @update:model-value="onAccountChange(entry, 'DebitAccount')"
                         no-data-text="ບໍ່ມີຂໍ້ມູນບັນຊີ"
-                        :disabled="loading.debitAccounts"
+                        :disabled="loading.debitAccounts || !canCreateJournal"
                       >
 
                       </v-autocomplete>
@@ -350,7 +399,7 @@
                         hide-details="auto"
                         @update:model-value="onAccountChange(entry, 'CreditAccount')"
                         no-data-text="ບໍ່ມີຂໍ້ມູນບັນຊີ"
-                        :disabled="loading.creditAccounts"
+                        :disabled="loading.creditAccounts || !canCreateJournal"
                       >
 
                       </v-autocomplete>
@@ -377,6 +426,7 @@
                         hide-details="auto"
                         class="amount-field"
                         placeholder="0.00"
+                        :disabled="!canCreateJournal"
                       ></v-text-field>
                     </v-col>
 
@@ -393,6 +443,7 @@
                         placeholder="ລາຍລະອຽດເພີ່ມເຕີມ..."
                         class="entry-sub-text-field"
                         @blur="onEntrySubTextBlur(entry, index)"
+                        :disabled="!canCreateJournal"
                       >
                         <template #append-inner>
                           <v-menu>
@@ -403,7 +454,7 @@
                                 variant="text"
                                 color="info"
                                 v-bind="props"
-                                :disabled="!journalData.Addl_sub_text && subTextSuggestions.length === 0"
+                                :disabled="(!journalData.Addl_sub_text && subTextSuggestions.length === 0) || !canCreateJournal"
                               >
                                 <v-icon size="small">mdi-dots-vertical</v-icon>
                               </v-btn>
@@ -451,7 +502,7 @@
                           color="info"
                           variant="text"
                           @click="duplicateEntry(index)"
-                          :disabled="loading.submit"
+                          :disabled="loading.submit || !canCreateJournal"
                           title="ຄັດລອກແຖວ"
                         >
                           <v-icon size="small">mdi-content-duplicate</v-icon>
@@ -461,7 +512,7 @@
                           size="small"
                           color="error"
                           @click="removeJournalEntry(index)"
-                          :disabled="loading.submit"
+                          :disabled="loading.submit || !canCreateJournal"
                           title="ລຶບແຖວ"
                         >
                           <v-icon size="small">mdi-delete</v-icon>
@@ -528,7 +579,7 @@
               <v-btn 
                 color="primary" 
                 size="default" 
-                :disabled="!isFormValid || loading.submit"
+                :disabled="!isFormValid || loading.submit || !canCreateJournal"
                 @click="submitJournal" 
                 :loading="loading.submit"
                 class="submit-btn-compact"
@@ -541,7 +592,7 @@
                 variant="outlined" 
                 size="default" 
                 @click="resetForm" 
-                :disabled="loading.submit"
+                :disabled="loading.submit || !canCreateJournal"
                 class="secondary-btn-compact"
               >
                 <v-icon left size="small">mdi-refresh</v-icon>
@@ -583,6 +634,9 @@ import { useRouter } from 'vue-router'
 import axios from '@/helpers/axios'
 import Swal from 'sweetalert2'
 
+// Router
+const router = useRouter()
+
 // Reactive state
 const valid = ref(true)
 const formRef = ref(null)
@@ -590,6 +644,36 @@ const autoReferenceMode = ref(false)
 const selectedTemplate = ref(null)
 const debitAccounts = ref([])
 const creditAccounts = ref([])
+
+// Working Day and Data Entry Configuration
+const loadingWorkingDay = ref(false)
+const loadingDataEntry = ref(false)
+const isWorkingDay = ref(false)
+const workingDayMessage = ref('')
+const workingDayError = ref('')
+const isValueDateDisabled = ref(false)
+const dataEntryConfig = ref(null)
+
+// Interfaces for TypeScript-like structure
+const WorkingDayResponse = {
+  available: Boolean,
+  reason: String
+}
+
+const DataEntryConfig = {
+  data_entry_id: String,
+  JRN_REKEY_REQUIRED: String,
+  JRN_REKEY_VALUE_DATE: String,
+  JRN_REKEY_AMOUNT: String,
+  JRN_REKEY_TXN_CODE: String,
+  BACK_VALUE: String,
+  MOD_NO: String,
+  Record_Status: String,
+  Auth_Status: String,
+  Once_Auth: String,
+  Maker_Id: String,
+  Checker_Id: String
+}
 
 const journalData = reactive({
   Reference_No: '',
@@ -635,6 +719,135 @@ const currentPeriodCode = computed(() => {
   const year = currentYear.value
   const month = currentMonth.value.toString().padStart(2, '0')
   return `${year}${month}`
+})
+
+// Working Day Check Function
+const checkWorkingDay = async () => {
+  loadingWorkingDay.value = true
+  try {
+    const response = await axios.get('/api/end-of-day-journal/check/', {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    })
+
+    if (response.status === 200) {
+      const data = response.data
+      isWorkingDay.value = data.available
+      workingDayMessage.value = data.reason
+      
+      if (data.available) {
+        workingDayError.value = ''
+        console.log('Working day check passed:', data.reason)
+      } else {
+        workingDayError.value = 'ມື້ນີ້ບໍ່ສາມາດສ້າງ Journal ໄດ້' // "Today is not available to create Journal"
+        console.log('Working day check failed:', data.reason)
+      }
+    }
+  } catch (error) {
+    console.error("Working day check failed:", error)
+    isWorkingDay.value = false
+    
+    if (error.response?.status === 400) {
+      workingDayError.value = error.response.data.reason || 'ວັນນີ້ບໍ່ແມ່ນວັນເຮັດການ'
+    } else if (error.response?.status === 500) {
+      workingDayError.value = 'ເກີດຂໍ້ຜິດພາດໃນລະບົບ'
+    } else {
+      workingDayError.value = error.response?.data?.reason || 'ເກີດຂໍ້ຜິດພາດໃນການກວດສອບວັນເຮັດການ'
+    }
+  } finally {
+    loadingWorkingDay.value = false
+  }
+}
+
+// Check Data Entry Configuration for BACK_VALUE
+const checkDataEntryConfig = async () => {
+  loadingDataEntry.value = true
+  try {
+    const response = await axios.get('/api/mttb-data-entry/', {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    })
+
+    if (response.status === 200 && response.data.length > 0) {
+      const config = response.data[0] // Get first configuration
+      dataEntryConfig.value = config
+      
+      // Check BACK_VALUE to determine if value_date should be disabled
+      if (config.BACK_VALUE === 'Y') {
+        isValueDateDisabled.value = false // Enable value_date input
+        console.log('BACK_VALUE is Y: Value date input enabled')
+      } else {
+        isValueDateDisabled.value = true // Disable value_date input
+        console.log('BACK_VALUE is N: Value date input disabled')
+      }
+    }
+  } catch (error) {
+    console.error("Data entry config check failed:", error)
+    // Default to disabled if error occurs
+    isValueDateDisabled.value = true
+    
+    if (error.response?.status === 500) {
+      console.error('ເກີດຂໍ້ຜິດພາດໃນການກວດສອບການກຳນົດຄ່າ')
+    }
+  } finally {
+    loadingDataEntry.value = false
+  }
+}
+
+// Combined validation function
+const validateJournalCreation = async () => {
+  try {
+    // Run both checks in parallel
+    await Promise.all([
+      checkWorkingDay(),
+      checkDataEntryConfig()
+    ])
+    
+    // Final validation
+    if (!isWorkingDay.value) {
+      return {
+        canCreate: false,
+        message: 'ມື້ນີ້ບໍ່ສາມາດສ້າງ Journal ໄດ້', // "Today is not available to create Journal"
+        reason: workingDayError.value
+      }
+    }
+    
+    return {
+      canCreate: true,
+      message: 'ສາມາດສ້າງ Journal ໄດ້',
+      valueDateDisabled: isValueDateDisabled.value
+    }
+    
+  } catch (error) {
+    console.error('Validation failed:', error)
+    return {
+      canCreate: false,
+      message: 'ເກີດຂໍ້ຜິດພາດໃນການກວດສອບ',
+      reason: 'System error during validation'
+    }
+  }
+}
+
+// Computed property for form validation
+const canCreateJournal = computed(() => {
+  return isWorkingDay.value && !loadingWorkingDay.value && !loadingDataEntry.value
+})
+
+// Helper function to get status message
+const getStatusMessage = computed(() => {
+  if (loadingWorkingDay.value || loadingDataEntry.value) {
+    return 'ກຳລັງກວດສອບ...' // "Checking..."
+  }
+  
+  if (!isWorkingDay.value) {
+    return workingDayError.value || 'ມື້ນີ້ບໍ່ສາມາດສ້າງ Journal ໄດ້'
+  }
+  
+  return 'ສາມາດສ້າງ Journal ໄດ້' // "Can create Journal"
 })
 
 const descriptionTemplates = ref([
@@ -752,7 +965,7 @@ const entriesWithDescription = computed(() => {
 })
 
 const isFormValid = computed(() => {
-  if (!valid.value || journalEntries.value.length === 0) {
+  if (!valid.value || journalEntries.value.length === 0 || !canCreateJournal.value) {
     return false
   }
 
@@ -1044,7 +1257,6 @@ const duplicateEntry = (index) => {
 }
 
 const goBack = () => {
-  const router = useRouter()
   if (window.history.length > 1) {
     router.back()
   } else {
@@ -1586,34 +1798,170 @@ const submitJournal = async () => {
 
     const response = await axios.post('/api/journal-entries/batch_create/', batchPayload, getAuthHeaders())
 
-    await Swal.fire({
-      icon: 'success',
-      title: 'ສຳເລັດ!',
-      html: `
-        <div style="text-align: left;">
-          <p><strong>ເລກອ້າງອີງ:</strong> ${response.data.reference_no || journalData.Reference_No}</p>
-          <p><strong>ຈຳນວນລາຍການທີ່ສ້າງ:</strong> ${response.data.entries?.length || batchPayload.entries.length}</p>
-          <p><strong>ຈຳນວນແຖວຟອມ:</strong> ${journalEntries.value.length}</p>
-          <p><strong>ເດບິດລວມ:</strong> ${formatNumber(totalDebit)} ${journalData.Ccy_cd}</p>
-          <p><strong>ເຄຣດິດລວມ:</strong> ${formatNumber(totalCredit)} ${journalData.Ccy_cd}</p>
-          <p><strong>ລາຍການທີ່ມີລາຍລະອຽດ:</strong> ${entriesWithDescription.value}/${journalEntries.value.length}</p>
+    const result = await Swal.fire({
+    icon: 'success',
+    title: 'ສຳເລັດ!',
+    html: `
+      <div style="
+        text-align: left; 
+        font-family: 'Roboto', sans-serif;
+        color: #424242;
+        line-height: 1.5;
+        margin: 8px 0;
+      ">
+        <div style="
+          background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+          border-radius: 8px;
+          padding: 16px;
+          border-left: 4px solid #4CAF50;
+          margin-bottom: 12px;
+        ">
+          <p style="margin: 6px 0; font-size: 14px;">
+            <span style="color: #666; font-weight: 500;">ເລກອ້າງອີງ:</span> 
+            <span style="color: #1976d2; font-weight: 600;">${response.data.reference_no || journalData.Reference_No}</span>
+          </p>
+          <p style="margin: 6px 0; font-size: 14px;">
+            <span style="color: #666; font-weight: 500;">ຈຳນວນລາຍການທີ່ສ້າງ:</span> 
+            <span style="color: #2e7d32; font-weight: 600;">${response.data.entries?.length || batchPayload.entries.length}</span>
+          </p>
+          <p style="margin: 6px 0; font-size: 14px;">
+            <span style="color: #666; font-weight: 500;">ຈຳນວນແຖວຟອມ:</span> 
+            <span style="color: #1976d2; font-weight: 600;">${journalEntries.value.length}</span>
+          </p>
         </div>
-      `,
-      showDenyButton: true,
-      denyButtonText: `<i class="mdi mdi-arrow-left "></i> ກັບໄປຫນ້າການບັນທຶກ`,
-      denyButtonColor: '#1976d2',
-      confirmButtonText: 'ຕົກລົງ',
-      timer: 7000,
-      preDeny: () => {
-        window.location.href = '/glcapture'
-      },
-    })
-
-    if (autoReferenceMode.value) {
-      setTimeout(() => {
-        generateReference()
-      }, 1000)
+        
+        <div style="
+          background: linear-gradient(135deg, #fff3e0 0%, #ffffff 100%);
+          border-radius: 8px;
+          padding: 16px;
+          border-left: 4px solid #FF9800;
+        ">
+          <p style="margin: 6px 0; font-size: 14px;">
+            <span style="color: #666; font-weight: 500;">ເດບິດລວມ:</span> 
+            <span style="color: #f57c00; font-weight: 600;">${formatNumber(totalDebit)} ${journalData.Ccy_cd}</span>
+          </p>
+          <p style="margin: 6px 0; font-size: 14px;">
+            <span style="color: #666; font-weight: 500;">ເຄຣດິດລວມ:</span> 
+            <span style="color: #f57c00; font-weight: 600;">${formatNumber(totalCredit)} ${journalData.Ccy_cd}</span>
+          </p>
+          <p style="margin: 6px 0; font-size: 14px;">
+            <span style="color: #666; font-weight: 500;">ລາຍການທີ່ມີລາຍລະອຽດ:</span> 
+            <span style="color: #1976d2; font-weight: 600;">${entriesWithDescription.value}/${journalEntries.value.length}</span>
+          </p>
+        </div>
+      </div>
+    `,
+    confirmButtonText: `<i class="mdi mdi-eye" style="margin-right: 6px;"></i>ເບິ່ງລາຍການ`,
+    
+    // Custom button colors using #E3F2FD template
+    confirmButtonColor: '#E8F5E8',
+    
+    // Clean dialog styling
+    width: '520px',
+    padding: '20px',
+    timer: 6000,
+    timerProgressBar: true,
+    allowOutsideClick: false,
+    allowEscapeKey: true,
+    backdrop: 'rgba(0,0,0,0.4)',
+    
+    // Custom CSS for cleaner appearance
+    customClass: {
+      popup: 'clean-success-popup',
+      title: 'clean-success-title',
+      htmlContainer: 'clean-success-content',
+      actions: 'clean-success-actions',
+      confirmButton: 'clean-confirm-button',
+      timerProgressBar: 'clean-timer-bar'
+    },
+    
+    // Add custom styles
+    didOpen: () => {
+      // Inject custom CSS
+      const style = document.createElement('style');
+      style.innerHTML = `
+        .clean-success-popup {
+          border-radius: 12px !important;
+          box-shadow: 0 8px 32px rgba(0,0,0,0.12) !important;
+          font-family: 'Roboto', sans-serif !important;
+        }
+        
+        .clean-success-title {
+          font-size: 20px !important;
+          font-weight: 600 !important;
+          color: #2e7d32 !important;
+          margin-bottom: 12px !important;
+        }
+        
+        .clean-success-content {
+          margin: 0 !important;
+          padding: 0 8px !important;
+        }
+        
+        .clean-success-actions {
+          margin-top: 20px !important;
+          gap: 8px !important;
+          flex-wrap: wrap !important;
+          justify-content: center !important;
+        }
+        
+        .clean-confirm-button {
+          background: #FFF3E0 !important;
+          color: #f57c00 !important;
+          border: 1px solid #FFCC02 !important;
+          font-size: 13px !important;
+          padding: 8px 16px !important;
+          border-radius: 6px !important;
+          font-weight: 500 !important;
+          min-width: 120px !important;
+          height: 36px !important;
+          transition: all 0.2s ease !important;
+        }
+        
+        .clean-confirm-button:hover {
+          background: #FFCC02 !important;
+          color: #e65100 !important;
+          transform: translateY(-1px) !important;
+          box-shadow: 0 2px 8px rgba(245,124,0,0.2) !important;
+        }
+        
+        .clean-timer-bar {
+          background: linear-gradient(90deg, #4CAF50 0%, #81C784 100%) !important;
+          height: 3px !important;
+        }
+        
+        .swal2-icon.swal2-success {
+          border-color: #4CAF50 !important;
+          color: #4CAF50 !important;
+        }
+        
+        .swal2-icon.swal2-success .swal2-success-line {
+          background-color: #4CAF50 !important;
+        }
+        
+        .swal2-icon.swal2-success .swal2-success-ring {
+          border-color: #4CAF50 !important;
+        }
+      `;
+      document.head.appendChild(style);
     }
+  });
+
+  // Handle different button clicks
+  if (result.isConfirmed) {
+    // Navigate to view journals or journal list
+    await navigateToJournalList()
+  } else {
+    // Timer expired or other dismissal - go back to capture
+    await navigateToCapture()
+  }
+
+  // Generate new reference if in auto mode
+  if (autoReferenceMode.value) {
+    setTimeout(() => {
+      generateReference()
+    }, 1000)
+  }
 
     resetForm()
   } catch (error) {
@@ -1713,6 +2061,27 @@ const resetForm = () => {
   })
 }
 
+const navigateToCapture = async () => {
+  try {
+    await router.push('/glcapture')
+  } catch (error) {
+    console.error('Navigation error:', error)
+    // Fallback to window.location if router fails
+    window.location.href = '/glcapture'
+  }
+}
+
+const navigateToJournalList = async () => {
+  try {
+    // Navigate to journal list/view page - adjust path as needed
+    await router.push('/glcapture') // or whatever your journal list route is
+  } catch (error) {
+    console.error('Navigation error:', error)
+    // Fallback navigation
+    await navigateToCapture()
+  }
+}
+
 // Watchers
 watch(() => journalData.Txn_code, onTransactionCodeChange)
 watch(() => journalData.Value_date, async (newDate) => {
@@ -1739,8 +2108,24 @@ watch(exchangeRate, (newRate) => {
   })
 })
 
+// Watch for working day changes
+watch(isWorkingDay, (newValue) => {
+  if (!newValue) {
+    // Show notification or disable form
+    console.log('Working day status changed: Journal creation not available')
+  }
+})
+
+// Watch for BACK_VALUE changes
+watch(isValueDateDisabled, (newValue) => {
+  console.log(`Value date input ${newValue ? 'disabled' : 'enabled'} based on BACK_VALUE setting`)
+})
+
 // Lifecycle
 onMounted(async () => {
+  // Initialize validation on component mount
+  await validateJournalCreation()
+  
   await Promise.all([
     loadModules(),
     loadCurrencies(),
@@ -1815,6 +2200,19 @@ onMounted(async () => {
 
 .currency-field {
   background: linear-gradient(135deg, #e8f5e8 0%, #ffffff 100%);
+}
+
+/* Value Date Disabled Styling */
+.value-date-disabled {
+  background: linear-gradient(135deg, #fce4ec 0%, #ffffff 100%) !important;
+}
+
+.value-date-disabled :deep(.v-field) {
+  background: linear-gradient(135deg, #fce4ec 0%, #ffffff 100%) !important;
+}
+
+.value-date-disabled :deep(.v-field--disabled) {
+  opacity: 0.7 !important;
 }
 
 .exchange-rate-info {
@@ -2075,6 +2473,31 @@ onMounted(async () => {
 .v-chip {
   font-size: 0.625rem !important;
   height: 16px !important;
+}
+
+/* Working Day Alert Custom Styling */
+.v-alert--prominent {
+  border-left-width: 4px !important;
+}
+
+.v-alert.v-alert--variant-tonal {
+  background: rgba(255, 245, 238, 0.9) !important;
+  border-color: #ff9800 !important;
+}
+
+.v-alert--type-error.v-alert--variant-tonal {
+  background: rgba(255, 235, 238, 0.9) !important;
+  border-color: #f44336 !important;
+}
+
+/* Disabled form state */
+.v-card--disabled {
+  opacity: 0.6 !important;
+  pointer-events: none !important;
+}
+
+.v-card--disabled .v-field {
+  background: #f5f5f5 !important;
 }
 
 /* Responsive design */
