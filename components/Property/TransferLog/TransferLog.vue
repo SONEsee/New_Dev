@@ -38,7 +38,7 @@ const headers = computed(() => [
   },
   {
     title: "ຊື່ຊັບສົມບັດ",
-    value: "asset_id_detail.asset_name_la",
+    value: "asset_spec",
     align: "start" as const,
     sortable: true,
     filterable: true,
@@ -124,7 +124,7 @@ const res = computed(() => {
   if (!data || !Array.isArray(data)) return [];
 
   return data.filter(
-    (item) => item.Auth_Status === "A" && item.Auth_Status_ARC === "A"
+    (item) => item.Auth_Status  && item.Auth_Status_ARC 
   );
 });
 
@@ -190,7 +190,7 @@ onMounted(() => {
         </template>
 
        
-        <template v-slot:header.asset_id_detail.asset_name_la="{ column }">
+        <template v-slot:header.asset_spec="{ column }">
           <b style="color:blue ">{{ column.title }}</b>
         </template>
 
