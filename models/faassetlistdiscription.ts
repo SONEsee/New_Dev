@@ -28,3 +28,54 @@ export interface AssetListIDDetail {
     asset_serial_no: string;
     asset_tag:       string;
 }
+
+
+
+export interface DepreciationRespons {
+    success:   boolean;
+    action:    string;
+    data:      Data;
+    timestamp: Date;
+}
+
+export interface Data {
+    success:                     boolean;
+    target_period:               TargetPeriod;
+    summary:                     Summary;
+    overdue_items:               any[];
+    due_items:                   AllItemsNeedingAttention[];
+    up_to_date_items:            any[];
+    all_items_needing_attention: AllItemsNeedingAttention[];
+}
+
+export interface AllItemsNeedingAttention {
+    mapping_id:             number;
+    asset_id:               string;
+    asset_name:             string;
+    asset_value:            number;
+    current_month:          number;
+    total_months:           number;
+    due_date:               string;
+    due_end_date:           string;
+    days_count:             number;
+    expected_depreciation:  number;
+    last_depreciation_date: string;
+    status_category:        string;
+    due_month_year:         string;
+    completion_percentage:  number;
+    status_message:         string;
+}
+
+export interface Summary {
+    total_due:        number;
+    total_overdue:    number;
+    total_up_to_date: number;
+    total_checked:    number;
+}
+
+export interface TargetPeriod {
+    month:         number;
+    year:          number;
+    month_name_la: string;
+    period:        string;
+}

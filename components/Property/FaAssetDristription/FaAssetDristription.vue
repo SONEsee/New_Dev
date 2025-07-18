@@ -1,235 +1,156 @@
 <script setup lang="ts">
-const accoutStore = accountMethodStore();
-const res = computed(() => {
-  return accoutStore.response_account_method_list;
-});
-onMounted(() => {
-  accoutStore.GetAccountMethodList();
-});
-</script>
-<template>
- <pre>{{ res }}</pre> 
-</template>
-<!-- <script setup lang="ts">
-const title = "ຈັດການຂໍ້ມູນຫັກຄ່າຫຼູ້ຍຫຽ້ນຊັບສົມບັດ";
-const accoutStore = accountMethodStore();
-const fassetStore = faAssetStore();
-const accoutdata = computed(() => {
-  return accoutStore.response_account_method_list || [];
-});
-const res = computed(() => {
-  const data = fassetStore.response_fa_asset_list || [];
-  const maindata = accoutStore.response_account_method_list || [];
+// ປັບຊື່ store ໃຫ້ຖືກຕ້ອງ
+const accountStore = accountMethodStore();
+const depreciationStore = useFassetLidtDescription();
 
-  const fiterData = maindata.filter((item) => item.ref_id);
-  return fiterData.map((item: any) => {
-    const ref_id = data.find((code: any) => code.asset_list_id === item.ref_id);
-    return {
-      ...item,
-      ref_id_text: ref_id ? ref_id.asset_spec : item.ref_id,
-      ref_id_detail: ref_id ? ref_id.dpca_type : item.ref_id,
-    };
-  });
-});
-const {
-  canEdit,
-  canDelete,
-  canView,
-  canAdd,
-  canRecordStatus,
-  canAuthorize,
-  hasPermission,
-  initializeRole,
-} = useRolePermissions();
-
-const roleStore = RoleStore();
-const role1 = computed(() => {
-  return roleStore.responst_data_detail;
+// ປັບຊື່ computed property ໃຫ້ຖືກຕ້ອງ
+const responseData = computed(() => {
+  return depreciationStore.respons_data_calculated;
 });
 
-const headers = computed(() => [
-  {
-    title: "ລະຫັດຊັບສົມບັດ",
-    value: "ref_id",
-    align: "start" as const,
-    sortable: true,
-    filterable: true,
-    width: "180px",
-    class: "text-primary font-weight-bold",
-  },
+const isLoading = computed(() => {
+  return !responseData.value || !responseData.value.data;
+});
 
-  {
-    title: "ຊື່ຊັບສົມບັດ",
-    value: "datamaping",
-    align: "start" as const,
-    sortable: true,
-    filterable: true,
-    width: "200px",
-    class: "text-start",
-  },
- 
-  {
-    title: "ມູນລວມຄ່າຊັບສົມບັດ",
-    value: "amount",
-    align: "end" as const,
-    sortable: true,
-    filterable: false,
-    width: "150px",
-    class: "text-end",
-  },
-  
-  {
-    title: "ສະຖານະ",
-    value: "Record_Status",
-    align: "center" as const,
-    sortable: true,
-    filterable: true,
-    width: "120px",
-    class: "text-center",
-  },
-  ...(canView.value
-    ? [
-        {
-          title: "ຫັກຄ່າຫຼູ້ຍຫຽ້ນ",
-          value: "transfer",
-          align: "center" as const,
-          sortable: false,
-          filterable: false,
-          width: "100px",
-          class: "text-center",
-        },
-      ]
-    : []),
-  ...(canView.value
-    ? [
-        {
-          title: "ປະຫວັດ",
-          value: "history",
-          align: "center" as const,
-          sortable: false,
-          filterable: false,
-          width: "80px",
-          class: "text-center",
-        },
-      ]
-    : []),
-]);
-
-
-
-const formatCurrency = (value: string | number) => {
-  if (!value) return "0";
-  const num = typeof value === "string" ? parseFloat(value) : value;
-  return new Intl.NumberFormat("lo-LA", {
-    style: "currency",
-    currency: "LAK",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(num);
+// ເພີ່ມ function ສຳລັບຄຳນວນລວມ
+const total = (items: any[]) => {
+  if (!items || !Array.isArray(items)) return 0;
+  return items.reduce((sum, item) => sum + (item.expected_depreciation || 0), 0).toLocaleString();
 };
 
+// ສຳລັບຟໍແມດຕົວເລບ
+const formatNumber = (num: number) => {
+  return num.toLocaleString('en-US');
+};
+
+const headers = [
+  { title: "ຂໍ້ມູນປະຈຳເດືອນ", key: "month_name", sortable: true },
+];
 
 onMounted(() => {
-  accoutStore.GetAccountMethodList();
-  fassetStore.GetFaAssetList();
-  initializeRole();
-  roleStore.GetRoleDetail();
+  accountStore.GetAccountMethodList();
+  depreciationStore.getdataCalculated();
 });
 </script>
 
 <template>
-  <div class="pa-4">
-    <GlobalTextTitleLine :title="title" />
-    <v-data-table
-      class="text-no-wrap"
-      flat
-      :headers="headers"
-      :items="res"
-      :items-per-page="10"
-      loading-text="ກຳລັງໂຫລດຂໍ້ມູນ..."
-      no-data-text="ບໍ່ມີຂໍ້ມູນ"
-    >
-      <template v-slot:header.ref_id="{ column }">
-        <b style="color: blue">{{ column.title }}</b>
-      </template>
+  <v-container fluid>
+    <div color="#E3F2FD" class="rounded-lg pa-4" style="border: 1px solid blue">
+   
+      <v-row v-if="isLoading">
+        <v-col cols="12" class="text-center">
+          <v-progress-circular 
+            indeterminate 
+            color="primary"
+            size="64"
+          ></v-progress-circular>
+          <div class="mt-4">ກຳລັງໂຫຼດຂໍ້ມູນ...</div>
+        </v-col>
+      </v-row>
 
-      <template v-slot:header.datamaping="{ column }">
-        <b style="color: blue">{{ column.title }}</b>
-      </template>
+     
+       <v-row v-else-if="responseData && responseData.data">
+        <v-col cols="12">
+          <v-card class="elevation-2">
+            <v-card-title class="text-h6 font-weight-bold bg-primary text-white">
+              ຂໍ້ມູນທີ່ຕອ້ງຫັກຄ່າຫຼູ້ຍຫຽ້ນພາຍໃນເດືອນ - {{ responseData.data.target_period.month_name_la }} {{ responseData.data.target_period.year }}
+            </v-card-title>
+            <v-card-text class="pa-0">
+              <v-table class="text-center">
+                <thead>
+                  <tr class="bg-grey-lighten-3">
+                    <th class="text-center font-weight-bold">ຫັກປະຈຳເດືອນ</th>
+                    <th class="text-center font-weight-bold">ຈຳນວນລາຍການທີ່ຫັກ</th>
+                    <th class="text-center font-weight-bold">ຈຳນວນເງິນທີ່ຕ້ອງຫັກ</th>
+                    <th class="text-center font-weight-bold">ຫັກຄ່າຫຼູ້ຍຫຽ້ນ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="pa-4">
+                      <div class="text-h5 text-primary font-weight-bold">
+                        {{ responseData.data.target_period.month }}/{{ responseData.data.target_period.year }}
+                      </div>
+                      <div class="text-body-2 text-grey-600">
+                        {{ responseData.data.target_period.month_name_la }}
+                      </div>
+                    </td>
+                    <td class="pa-4">
+                      <div class="text-h5 text-info font-weight-bold">
+                        {{ formatNumber(responseData.data.summary.total_due) }}
+                      </div>
+                      <div class="text-body-2 text-grey-600">ລາຍການທັງໝົດ</div>
+                    </td>
+                    <td class="pa-4">
+                      <div class="text-h5 text-error font-weight-bold">
+                        {{ total(responseData.data.due_items) }} ₭
+                      </div>
+                      <div class="text-body-2 text-grey-600">ລາຍການທີ່ຕ້ອງຫັກ</div>
+                    </td>
+                    <td class="pa-4">
+                      <v-btn color="primary" @click="goPath(`/property/faassetdetription/create`)">ຫັກຄ່າຫຼູ້ຍຫຽ້ນ</v-btn>
+                    </td>
+                  </tr>
+                </tbody>
+              </v-table>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
 
-      <template v-slot:header.amount="{ column }">
-        <b style="color: blue">{{ column.title }}</b>
-      </template>
+    
+    
+    </div>
+  </v-container>
+</template>
 
-      <template
-        v-slot:header.asset_id_detail.asset_type_detail.type_name_la="{
-          column,
-        }"
-      >
-        <b style="color: blue">{{ column.title }}</b>
-      </template>
+<style scoped>
+.text-h3 {
+  font-weight: bold;
+}
 
-      <template v-slot:header.location_detail.location_name_la="{ column }">
-        <b style="color: blue">{{ column.title }}</b>
-      </template>
+.v-card {
+  transition: transform 0.2s, box-shadow 0.2s;
+}
 
-      <template v-slot:header.asset_value="{ column }">
-        <b style="color: blue">{{ column.title }}</b>
-      </template>
+.v-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
 
-      <template v-slot:header.asset_value_remain="{ column }">
-        <b style="color: blue">{{ column.title }}</b>
-      </template>
+.font-weight-bold {
+  font-weight: 600;
+}
 
-      <template v-slot:header.Record_Status="{ column }">
-        <b style="color: blue">{{ column.title }}</b>
-      </template>
+.elevation-2 {
+  box-shadow: 0 3px 1px -2px rgba(0,0,0,.2), 0 2px 2px 0 rgba(0,0,0,.14), 0 1px 5px 0 rgba(0,0,0,.12);
+}
 
-      <template v-slot:header.transfer="{ column }">
-        <b style="color: blue">{{ column.title }}</b>
-      </template>
+.text-primary {
+  color: #1976d2 !important;
+}
 
-      <template v-slot:header.history="{ column }">
-        <b style="color: blue">{{ column.title }}</b>
-      </template>
+.text-info {
+  color: #2196f3 !important;
+}
 
-      <template v-slot:item.datamaping="{ item }">
-        {{ item.ref_id_text }}
-      </template>
-      <template v-slot:item.amount="{ item }">
-        {{ formatCurrency(item.amount) }}
-      </template>
+.text-error {
+  color: #f44336 !important;
+}
 
-      <template v-slot:item.Record_Status="{ item }">
-        <v-icon
-          icon="mdi-toggle-switch"
-          v-if="item.Record_Status === 'O'"
-          color="primary"
-        ></v-icon>
-        <v-icon
-          icon="mdi-toggle-switch-off-outline"
-          v-if="item.Record_Status === 'C'"
-          color="red"
-        ></v-icon>
-      </template>
+.text-success {
+  color: #4caf50 !important;
+}
 
-      <template v-slot:item.transfer="{ item }">
-        <v-btn
-          color="primary"
-          size="small"
-          variant="tonal"
-          @click="goPath(`/faassetdetription?sub_menu_id/?mon=`)"
-        >
-          <v-icon start>mdi-swap-horizontal</v-icon>
-          ຫັກຄ່າຫຼູຍຫຽ້ນ
-        </v-btn>
-      </template>
+.text-warning {
+  color: #ff9800 !important;
+}
 
-      <template v-slot:item.history="{ item }">
-        <v-btn icon size="small" color="info">
-          <v-icon>mdi-history</v-icon>
-        </v-btn>
-      </template>
-    </v-data-table>
-  </div>
-</template> -->
+.text-grey-600 {
+  color: #757575 !important;
+}
+
+.rounded-lg {
+  border-radius: 12px;
+}
+</style>
