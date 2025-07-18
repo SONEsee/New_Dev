@@ -83,7 +83,7 @@ const headers = [
     width: "80px",
   },
   {
-    title: "ກວດສອບ",
+    title: "ເບິ່ງ",
     key: "View_Detail",
     align: "center" as const,
     width: "80px",
