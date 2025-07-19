@@ -1,9 +1,9 @@
 <template>
   <v-app-bar
     :elevation="2"
-    class="d-flex align-center"
+    class="d-flex align-center "
     :style="{
-      background: 'linear-gradient(135deg, #c58c20 0%, #616161 100%)',
+      background: 'linear-gradient(135deg, #0D47A1 0%, #BBDEFB 100%)',
       color: 'white',
       height: '70px',
     }"
@@ -19,24 +19,24 @@
     </v-app-bar-title>
 
     <v-spacer></v-spacer>
-    <v-chip color="#ECEFF1"
+    <v-chip color="#0D47A1"
       ><h5 class="mr-5">ສິດການເຂົ້ານຳໃຊ້: {{ role }}</h5></v-chip
     >
 
     <v-menu min-width="200px" rounded>
       <template v-slot:activator="{ props }">
         <v-btn icon v-bind="props" style="flex-shrink: 0">
-          <v-avatar class="pa-3,mr-3" color="#BDBDBD" size="large">
+          <v-avatar class="pa-3,mr-3" color="#E3F2FD" size="large">
             <span class="text-h5" v-if="user">
               <v-icon
                 icon="mdi-account-circle-outline"
-                color="#c58c20"
+                color="#0D47A1"
               ></v-icon>
             </span>
             <span class="text-h5" v-else>
               <v-icon
                 icon="mdi-account-circle-outline"
-                color="#fdfdf5"
+                color="#0D47A1"
               ></v-icon>
             </span>
           </v-avatar>
@@ -56,7 +56,7 @@
             <p class="text-caption mt-1">ພະແນກ: {{ department }}</p>
             <v-divider class="my-3"></v-divider>
             <v-btn variant="text" rounded> ແກ້ໄຂຂໍ້ມູນສວນຕົວ </v-btn>
-            <v-divider class="my-3" color="#c58c20"></v-divider>
+            <v-divider class="my-3" color="#0D47A1"></v-divider>
             <v-btn variant="text" rounded @click="onLogout">
               ອອກຈາກລະບົບ
             </v-btn>
@@ -67,17 +67,17 @@
   </v-app-bar>
 
   <v-navigation-drawer
-    class="mt-1"
+    class="mt-2"
     v-model="drawer"
     permanent
     :rail="rail"
     order="1"
-    :style="{ background: '#FAFAFA', borderColor: '#c58c20' }"
+    :style="{ background: '#E3F2FD', borderColor: '#0D47A1' }"
   >
     <v-list nav density="comfortable" style="color: black; padding: 0">
       <template v-if="isLoading">
         <v-list-subheader
-          style="color: #cfd8dc; padding-left: 0px"
+          style="color: #e3f2fd; padding-left: 0px"
           v-show="!rail"
           >ກຳລັງໂຫຼດ...</v-list-subheader
         >
@@ -92,7 +92,7 @@
 
       <template v-else-if="error">
         <v-list-subheader
-          style="color: #c58c20; padding-left: 0px"
+          style="color: #0d47a1; padding-left: 0px"
           v-show="!rail"
           >ຂໍ້ຜິດພາດ</v-list-subheader
         >
@@ -123,7 +123,7 @@
               color: #000;
               font-weight: bold;
               padding-left: 0px;
-              background-color: #c58c20;
+              background-color: #0d47a1;
             "
             v-show="!rail"
             class="text-white"
@@ -144,7 +144,7 @@
             >
               <v-list-group
                 :value="mainMenu.menu_id"
-                style="background-color: #FAFAFA"
+                style="background-color: #e3f2fd"
               >
                 <template v-slot:activator="{ props }">
                   <v-list-item
@@ -159,7 +159,7 @@
                 </template>
 
                 <template v-if="!rail">
-                  <v-list-item
+                  <!-- <v-list-item
                     v-for="(subMenu, subMenuIndex) in mainMenu.sub_menus"
                     :key="`sub-${module.module_Id}-${mainMenu.menu_id}-${subMenu.sub_menu_id}`"
                     :value="subMenu.sub_menu_id"
@@ -175,6 +175,32 @@
                       style="margin-bottom: 10px; background-color: #FAFAFA; font-weight: 700 !important; font-family: inherit;"
 
                     class="sub-menu-item"
+                  /> -->
+                  <v-list-item
+                    v-for="(subMenu, subMenuIndex) in mainMenu.sub_menus"
+                    :key="`sub-${module.module_Id}-${mainMenu.menu_id}-${subMenu.sub_menu_id}`"
+                    :value="subMenu.sub_menu_id"
+                    :title="subMenu.sub_menu_name_la"
+                    :prepend-icon="convertIcon(subMenu.sub_menu_icon)"
+                    :to="
+                      subMenu.sub_menu_urls === '#'
+                        ? undefined
+                        : {
+                            path: cleanUrl(subMenu.sub_menu_urls),
+                            query: { sub_menu_id: subMenu.sub_menu_id },
+                          }
+                    "
+                    :active="route.path === cleanUrl(subMenu.sub_menu_urls)"
+                    variant="plain"
+                    color="accent"
+                    style="
+                      margin-bottom: 10px;
+                      background-color: #e3f2fd;
+                      font-weight: 700 !important;
+                      font-family: inherit;
+                    "
+                    class="sub-menu-item"
+                    @click="handleMenuClick(subMenu)"
                   />
                 </template>
               </v-list-group>
@@ -186,8 +212,8 @@
                 :title="rail ? '' : mainMenu.menu_name_la"
                 :to="mainMenu.menu_url ? cleanUrl(mainMenu.menu_url) : '#'"
                 variant="tonal"
-                color="#c58c20"
-                style="margin-bottom: 2px ;font-weight: bold;"
+                color="#0D47A1"
+                style="margin-bottom: 2px; font-weight: bold"
                 class="px-0"
               ></v-list-item>
             </template>
@@ -196,7 +222,7 @@
           <v-divider
             v-if="moduleIndex < responeMenuData.length - 1 && !rail"
             class="my-3 mx-0"
-            color="#c58c20"
+            color="#0D47A1"
             opacity="0.3"
           ></v-divider>
         </template>
@@ -204,7 +230,7 @@
 
       <template v-else>
         <v-list-subheader
-          style="color: #c58c20; padding-left: 0px"
+          style="color: #0d47a1; padding-left: 0px"
           v-show="!rail"
           >ເມນູ</v-list-subheader
         >
@@ -408,22 +434,42 @@ const clearLocalStorage = () => {
     localStorage.clear();
   }
 };
+// const handleMenuClick = (subMenu:any) => {
+//   if (subMenu.sub_menu_urls === '#') {
+//     CallSwal({
+//       title: "ຂໍອະໄພ",
+//       text: "ໜ້ານີ້ກຳລັງພັດທະນາຢູ",
+//       icon: "info",
+//       confirmButtonText: "OK",
+//     });
+//   }
+// }
+const handleMenuClick = (subMenu: any, event?: Event) => {
+  if (subMenu.sub_menu_urls === "#") {
+    event?.preventDefault();
+    CallSwal({
+      title: "ຂໍອະໄພ",
+      text: `ໜ້າ "${subMenu.sub_menu_name_la}" ກຳລັງພັດທະນາຢູ....`,
+      icon: "info",
+      confirmButtonText: "OK",
+    });
+  }
+};
 </script>
 <style>
 .v-list-item--active {
   flex: auto;
-  border-color: #c58c20 !important;
-  background-color: rgba(197, 140, 32, 0.1) !important;
+  border-color: #0d47a1 !important;
+  background-color: rgba(138, 133, 124, 0.1) !important;
   font-weight: bold;
 }
 .v-list-item {
-  color: #c58c20 !important;
+  color: #0d47a1 !important;
   flex: auto;
   font-weight: 700 !important;
-  
 }
 .v-icon {
-  color: #c58c20;
+  color: #0d47a1;
 }
 
 .v-list-subheader {
@@ -456,7 +502,7 @@ const clearLocalStorage = () => {
 }
 
 .v-list-group__items {
-  --v-list-item-base-color: #c58c20;
+  --v-list-item-base-color: #0d47a1;
 }
 
 .v-list-group__items .v-list-item {
@@ -466,7 +512,7 @@ const clearLocalStorage = () => {
 }
 
 .v-list-group__items .v-list-item--active {
-  border-left-color: #c58c20 !important;
+  border-left-color: #0d47a1 !important;
   background-color: rgba(197, 140, 32, 0.1) !important;
 }
 
@@ -505,7 +551,7 @@ const clearLocalStorage = () => {
 }
 
 .sub-menu-item.v-list-item--active {
-  border-left-color: #f2f7f8 !important;
+  border-left-color: #e3f2fd !important;
   background-color: rgba(250, 248, 244, 0.596) !important;
   font-weight: 700 !important;
 }
@@ -530,5 +576,4 @@ const clearLocalStorage = () => {
 .v-list-group__items .v-list-item .v-list-item-title {
   font-weight: 700 !important;
 }
-
 </style>

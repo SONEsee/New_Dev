@@ -912,9 +912,9 @@ const deleteMasterType = async (masterType: MasterType) => {
 const deleteMasterCode = async (masterCode: MasterCode) => {
   if (confirm(`ທ່ານຕ້ອງການລຶບ Master Code "${masterCode.MC_code}" ແທ້ບໍ?`)) {
     try {
-      await axios.delete(`api/master-codes/${masterCode.MC_id}/`, getAuthHeaders())
+      await axios.delete(`api/master-codes/${masterCode.MC_code}/`, getAuthHeaders())
       
-      const index = masterCodes.value.findIndex(c => c.MC_id === masterCode.MC_id)
+      const index = masterCodes.value.findIndex(c => c.MC_code === masterCode.MC_code)
       if (index !== -1) {
         masterCodes.value.splice(index, 1)
       }

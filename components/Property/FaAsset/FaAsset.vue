@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from "vue";
 import { CallSwal } from "#build/imports";
+import axios from "@/helpers/axios";
 const masterStore = useMasterStore();
 const assetStores = assetStore();
 const faAssetStoreInstance = faAssetStore();
@@ -8,6 +9,9 @@ const typeAssetStore = propertyStore();
 const masterdata = computed(() => {
   const response = masterStore.resposne_status_puamsuepuamkrsang;
   return response?.MasterCodes ?? [];
+});
+const statusmartet = computed(() => {
+  return masterStore.respone_data_master;
 });
 const response = computed(() => {
   return assetStores.response_asset_list || [];
@@ -17,17 +21,37 @@ const response = computed(() => {
 // });
 // const mockData = computed(() => {
 //   const data = faAssetStoreInstance.response_fa_asset_list || [];
-//   return data.filter(item => 
-//     item.asset_status === "AC" && 
+//   return data.filter(item =>
+//     item.asset_status === "AC" &&
 //     item.Auth_Status_ARC === "A"
 //   );
 // });
 const mockData = computed(() => {
   const data = faAssetStoreInstance.response_fa_asset_list || [];
-  return data.filter(item => 
-    !(item.asset_status === "AC" && item.Auth_Status_ARC !== "A")
+  const masterCodes = statusmartet.value?.MasterCodes || [];
+
+  const filteredData = data.filter(
+    (item) => item.asset_status && item.Auth_Status_ARC
   );
+
+  return filteredData.map((item) => {
+    const authStatus = masterCodes.find(
+      (code: any) => code.MC_code === item.Auth_Status
+    );
+
+    return {
+      ...item,
+      Auth_Status_Text: authStatus ? authStatus.MC_name_la : item.Auth_Status,
+      Auth_Status_Detail: authStatus ? authStatus.MC_detail : "",
+    };
+  });
 });
+// const mockData = computed(() => {
+//   const data = faAssetStoreInstance.response_fa_asset_list || [];
+//   return data.filter(
+//     (item) => !(item.asset_status === "AC" && item.Auth_Status_ARC !== "A")
+//   );
+// });
 const STORAGE_KEY = "asset_filters";
 
 const loadFiltersFromStorage = () => {
@@ -74,57 +98,6 @@ watch(
   { deep: true }
 );
 
-onMounted(() => {
-  assetStores.GetAssetList();
-  typeAssetStore.GetPropertyCategoryById();
-  faAssetStoreInstance.GetFaAssetList();
-});
-
-const handleStatusChange = async (item: any, newStatus: string) => {
-  try {
-    const statusTexts = {
-      ACTIVE: "ເປີດໃຊ້ງານ",
-      INACTIVE: "ປິດໃຊ້ງານ",
-      MAINTENANCE: "ບຳລຸງຮັກສາ",
-      DISPOSED: "ຖອນຈຳໜ່າຍ",
-    };
-
-    const notification = await CallSwal({
-      title: "ຢືນຢັນ",
-      text: `ທ່ານຕ້ອງການປ່ຽນສະຖານະເປັນ "${
-        statusTexts[newStatus as keyof typeof statusTexts]
-      }" ໃຊ່ບໍ່?`,
-      icon: "question",
-      confirmButtonText: "ຕົກລົງ",
-      cancelButtonText: "ຍົກເລີກ",
-      showCancelButton: true,
-    });
-    if (notification.isConfirmed) {
-      await faAssetStoreInstance.UpdateAssetStatus(item.id, newStatus as any);
-    }
-  } catch (error) {
-    console.error("Error updating status:", error);
-  }
-};
-
-const calculateDepreciation = async (item: any) => {
-  try {
-    const notification = await CallSwal({
-      title: "ຢືນຢັນ",
-      text: `ທ່ານຕ້ອງການຄິດເສື່ອມລາຄາສຳລັບຊັບສົມບັດນີ້ໃຊ່ບໍ່?`,
-      icon: "question",
-      confirmButtonText: "ຕົກລົງ",
-      cancelButtonText: "ຍົກເລີກ",
-      showCancelButton: true,
-    });
-    if (notification.isConfirmed) {
-      await faAssetStoreInstance.CalculateDepreciation(item.id);
-    }
-  } catch (error) {
-    console.error("Error calculating depreciation:", error);
-  }
-};
-
 const {
   canEdit,
   canDelete,
@@ -142,8 +115,6 @@ const role1 = computed(() => {
 });
 
 const title = "ຈັດການຊັບສົມບັດພວມຊື້ພວມກໍ່ສ້າງ";
-
-
 
 const currencies = [
   { title: "ກີບ (LAK)", value: "LAK" },
@@ -216,15 +187,15 @@ const headers = computed(() => [
     width: "120px",
     class: "text-center",
   },
-  {
-    title: "ປະເພດການຈ່າຍ",
-    value: "type_of_pay",
-    align: "center",
-    sortable: true,
-    filterable: true,
-    width: "150px",
-    class: "text-center",
-  },
+  // {
+  //   title: "ປະເພດການຈ່າຍ",
+  //   value: "type_of_pay",
+  //   align: "center",
+  //   sortable: true,
+  //   filterable: true,
+  //   width: "150px",
+  //   class: "text-center",
+  // },
   {
     title: "ວັນທີ່ໄດ້ຮັບ",
     value: "asset_date",
@@ -245,8 +216,17 @@ const headers = computed(() => [
     class: "text-center",
   },
   {
-    title: "ສະຖານະ",
+    title: "ສະຖານະອານຸມັດ",
     value: "Auth_Status",
+    align: "center",
+    sortable: true,
+    filterable: true,
+    width: "120px",
+    class: "text-center",
+  },
+  {
+    title: "ສະຖານະໃຊ້ງານ",
+    value: "Record_Status",
     align: "center",
     sortable: true,
     filterable: true,
@@ -407,7 +387,6 @@ const clearFilters = async () => {
   selectedassetCode.value = "all";
   search.value = "";
 
- 
   try {
     localStorage.removeItem(STORAGE_KEY);
   } catch (error) {
@@ -437,7 +416,10 @@ onMounted(async () => {
   loading.value = true;
   try {
     loadFiltersFromStorage();
-
+    assetStores.GetAssetList();
+    masterStore.getStatus();
+    typeAssetStore.GetPropertyCategoryById();
+    faAssetStoreInstance.GetFaAssetList();
     assetStores.GetAssetList();
     typeAssetStore.GetPropertyCategoryById();
     faAssetStoreInstance.GetFaAssetList();
@@ -454,12 +436,104 @@ onMounted(async () => {
     loading.value = false;
   }
 });
+const hanopen = async (item: any) => {
+  try {
+    const notification = await CallSwal({
+      title: "ຢືນຢັນ",
+      text: `ທ່ານຕ້ອງການເປີດຊັບສົມບັດ "${item.asset_tag}" ໃຊ່ບໍ່?`,
+      icon: "question",
+      confirmButtonText: "ເປີດ",
+      cancelButtonText: "ຍົກເລີກ",
+      showCancelButton: true,
+    });
+    if (notification.isConfirmed) {
+      const req = await axios.post(
+        `/api/asset_list/${item.asset_list_id}/set_open/`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+      if (req.status === 200 || req.status === 201) {
+        CallSwal({
+          title: "ສຳເລັດ",
+          text: "ເປີດຊັບສົມບັດແລ້ວ",
+          icon: "success",
+          showCancelButton: false,
+          showConfirmButton: false,
+          timer: 1500,
+        });
+        await faAssetStoreInstance.GetFaAssetList();
+      }
+    }
+  } catch (error) {
+    console.error("Error opening asset:", error);
+    CallSwal({
+      title: "ຂໍ້ຜິດພາດ",
+      text: "ຂໍ້ຜິດພາດໃນການເປີດຊັບສົມບັດ",
+      icon: "error",
+    });
+  }
+};
+const hanoff = async (item: any) => {
+  try {
+    const notification = await CallSwal({
+      title: "ຢືນຢັນ",
+      text: `ທ່ານຕ້ອງການປີດຊັບສົມບັດ "${item.asset_tag}" ໃຊ່ບໍ່?`,
+      icon: "question",
+      confirmButtonText: "ປີດ",
+      cancelButtonText: "ຍົກເລີກ",
+      showCancelButton: true,
+    });
+    if (notification.isConfirmed) {
+      const req = await axios.post(
+        `/api/asset_list/${item.asset_list_id}/set_close/`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+      if (req.status === 200 || req.status === 201) {
+        CallSwal({
+          title: "ສຳເລັດ",
+          text: "ປີດຊັບສົມບັດແລ້ວ",
+          icon: "success",
+          showCancelButton: false,
+          showConfirmButton: false,
+          timer: 1500,
+        });
+        await faAssetStoreInstance.GetFaAssetList();
+      }
+    }
+  } catch (error) {
+    console.error("Error opening asset:", error);
+    CallSwal({
+      title: "ຂໍ້ຜິດພາດ",
+      text: "ຂໍ້ຜິດພາດໃນການເປີດຊັບສົມບັດ",
+      icon: "error",
+    });
+  }
+};
+const getAuthStatusColor = (authStatusCode: string) => {
+  const colors = {
+    A: "success",
+    U: "warning",
+    R: "error",
+    P: "info",
+  };
+  return colors[authStatusCode as keyof typeof colors] || "grey";
+};
 </script>
 
 <template>
   <div class="pa-2">
     <GlobalTextTitleLine :title="title" />
     <pre>
+    <!-- data:  {{ statusmartet }} -->
   <!-- {{ masterdata }} -->
 <!-- {{ response }} -->
 </pre>
@@ -576,6 +650,9 @@ onMounted(async () => {
         <template v-slot:header.asset_value="{ column }">
           <b style="color: blue">{{ column.title }}</b>
         </template>
+        <template v-slot:header.Record_Status="{ column }">
+          <b style="color: blue">{{ column.title }}</b>
+        </template>
 
         <template v-slot:header.asset_value_remain="{ column }">
           <b style="color: blue">{{ column.title }}</b>
@@ -612,7 +689,7 @@ onMounted(async () => {
         </template>
 
         <template v-slot:item.asset_list_id="{ item }">
-          <v-chip color="primary" variant="outlined" size="small">
+          <v-chip color="primary" size="small" variant="flat">
             {{ item.asset_list_id }}
           </v-chip>
         </template>
@@ -625,35 +702,46 @@ onMounted(async () => {
           <span>{{ item.asset_serial_no || "-" }}</span>
         </template>
         <template v-slot:item.asset_accu_dpca_value="{ item }">
-          <v-chip color="primary">{{
+          <v-chip color="primary" size="small" variant="flat">{{
             item.asset_accu_dpca_value || "-"
           }}</v-chip>
         </template>
         <template v-slot:item.asset_type_id="{ item }">
-          <v-chip color="primary">{{
+          <v-chip color="primary" size="small" variant="flat">{{
             item.asset_id_detail.asset_name_la || "-"
           }}</v-chip>
         </template>
         <template v-slot:item.Auth_Status="{ item }">
-          <v-chip color="">
-            <div v-if="item.Auth_Status==='U'">
-            <p class="text-primary">ລໍຖ້າອະນຸມັດ</p>  
+          <!-- <v-chip color="">
+            <div v-if="item.Auth_Status === 'U'">
+              <p class="text-primary">ລໍຖ້າອະນຸມັດ</p>
             </div>
-            <div v-if="item.Auth_Status==='A'">
-            <p class="text-info">ອະນຸມັດແລ້ວ</p>  
+            <div v-if="item.Auth_Status === 'A'">
+              <p class="text-info">ອະນຸມັດແລ້ວ</p>
             </div>
-            <div v-if="item.Auth_Status==='R'">
-            <p class="text-error">ຖືກ Reject</p>  
+            <div v-if="item.Auth_Status === 'R'">
+              <p class="text-error">ຖືກ Reject</p>
             </div>
-            <div v-if="item.Auth_Status==='P'">
-            <p class="text-warning">ກຳລັງດຳເນີນການ</p>  
+            <div v-if="item.Auth_Status === 'P'">
+              <p class="text-warning">ກຳລັງດຳເນີນການ</p>
             </div>
+          </v-chip> -->
+          <v-chip
+            size="small"
+            variant="flat"
+            :color="getAuthStatusColor(item.Auth_Status)"
+          >
+            {{ item.Auth_Status_Text }}
           </v-chip>
         </template>
 
         <template v-slot:item.type_of_pay="{ item }">
-          <v-chip color="primary" v-if="item.type_of_pay === '1101100'"
-            >
+          <v-chip
+            color="primary"
+            v-if="item.type_of_pay === '1101100'"
+            size="small"
+            variant="flat"
+          >
             {{ item.type_of_pay_detail.MC_name_la || "-" }}
           </v-chip>
         </template>
@@ -664,6 +752,7 @@ onMounted(async () => {
               :color="
                 item.asset_value_remainMonth > 1000000 ? 'success' : 'primary'
               "
+              size="small"
               variant="flat"
             >
               {{
@@ -680,16 +769,23 @@ onMounted(async () => {
           {{ formatDate(item.asset_date) }}
         </template>
 
-        <template v-slot:item.asset_value="{ item }">
+        <template
+          v-slot:item.asset_value="{ item }"
+          size="small"
+          variant="flat"
+        >
           <div class="text-end">
-            <span class="font-weight-bold">{{
-              formatCurrency(item.asset_value, item.asset_currency)
-            }}</span>
+            <span
+              class="font-weight-bold font-small"
+              size="small"
+              variant="flat"
+              >{{ formatCurrency(item.asset_value, item.asset_currency) }}</span
+            >
           </div>
         </template>
 
         <template v-slot:item.asset_value_remain="{ item }">
-          <div class="text-end">
+          <div class="text-end" size="small" variant="flat">
             <span class="font-weight-bold text-success">{{
               formatCurrency(item.asset_value_remain, item.asset_currency)
             }}</span>
@@ -725,6 +821,25 @@ onMounted(async () => {
             </v-chip>
           </div>
         </template>
+        <template v-slot:item.Record_Status="{ item }">
+          <div class="text-center">
+            <v-btn v-if="item.Record_Status === 'O'" flat @click="hanoff(item)">
+              <v-icon icon="mdi-toggle-switch" color="info"></v-icon>
+            </v-btn>
+            <v-btn
+              v-if="item.Record_Status === 'C'"
+              flat
+              @click="hanopen(item)"
+            >
+              <v-icon
+                icon="mdi-toggle-switch-off-outline"
+                color="error"
+              ></v-icon>
+            </v-btn>
+            <!-- <v-icon v-if="item.Record_Status ==='O'" icon="mdi-toggle-switch"></v-icon>
+           <v-icon v-if="item.Record_Status ==='C'" icon="mdi-toggle-switch-off-outline"></v-icon> -->
+          </div>
+        </template>
 
         <template v-slot:item.view="{ item }">
           <v-btn
@@ -740,9 +855,9 @@ onMounted(async () => {
           />
         </template>
 
-        <template v-slot:item.edit="{ item }" >
+        <template v-slot:item.edit="{ item }">
           <v-btn
-         v-if="item.Auth_Status !== 'A'"
+            v-if="item.Auth_Status !== 'A'"
             small
             flat
             class="text-info"
@@ -755,7 +870,7 @@ onMounted(async () => {
 
         <template v-slot:item.delete="{ item }">
           <v-btn
-           v-if="item.Auth_Status !== 'A'"
+            v-if="item.Auth_Status !== 'A'"
             small
             flat
             class="text-error"

@@ -19,22 +19,37 @@ const mockData = computed(() => {
 });
 const handleSubmit = async (item: any) => {
   try {
-    const newStatus = item.record_stat === "O" ? "C" : "O";
-    const statusText = newStatus === "O" ? "ເປີດ" : "ປິດ";
+  
 
     const notification = await CallSwal({
       title: "ຢືນຢັນ",
-      text: `ທ່ານຕ້ອງການ${statusText}ສະຖານະວິທີການບັນຊີນີ້ໃຊ່ບໍ່?`,
+      text: `ທ່ານຕ້ອງການສະຖານະວິທີການບັນຊີນີ້ໃຊ່ບໍ່?`,
       icon: "question",
       confirmButtonText: "ຕົກລົງ",
       cancelButtonText: "ຍົກເລີກ",
       showCancelButton: true,
     });
     if (notification.isConfirmed) {
-      await accountMethodStoreInstance.UpdateAccountMethodStatus(
-        item.mapping_id,
-        newStatus
-      );
+      await accountMethodStoreInstance.UpdateAccountMethodStatus(item.mapping_id);
+    }
+  } catch (error) {
+    console.error("Error submitting form:", error);
+  }
+};
+const handleSubmitof = async (item: any) => {
+  try {
+  
+
+    const notification = await CallSwal({
+      title: "ຢືນຢັນ",
+      text: `ທ່ານຕ້ອງການສະຖານະວິທີການບັນຊີນີ້ໃຊ່ບໍ່?`,
+      icon: "question",
+      confirmButtonText: "ຕົກລົງ",
+      cancelButtonText: "ຍົກເລີກ",
+      showCancelButton: true,
+    });
+    if (notification.isConfirmed) {
+      await accountMethodStoreInstance.UpdateAccountMethodStatusof(item.mapping_id);
     }
   } catch (error) {
     console.error("Error submitting form:", error);
@@ -156,19 +171,19 @@ const headers = computed(() => [
   //   width: "140px",
   //   class: "text-center",
   // },
-  // ...(canRecordStatus.value
-  //   ? [
-  //       {
-  //         title: "ສະຖານະ",
-  //         value: "Record_Status",
-  //         align: "center",
-  //         sortable: true,
-  //         filterable: true,
-  //         width: "120px",
-  //         class: "text-center",
-  //       },
-  //     ]
-  //   : []),
+  ...(canRecordStatus.value
+    ? [
+        {
+          title: "ສະຖານະ",
+          value: "Record_Status",
+          align: "center",
+          sortable: true,
+          filterable: true,
+          width: "120px",
+          class: "text-center",
+        },
+      ]
+    : []),
   ...(canView.value
     ? [
         {
@@ -608,7 +623,7 @@ onMounted(async () => {
           <b style="color: blue">{{ column.title }}</b>
         </template>
 
-        <template v-slot:header.record_stat="{ column }">
+        <template v-slot:header.Record_Status="{ column }">
           <b style="color: blue">{{ column.title }}</b>
         </template>
 
@@ -725,12 +740,12 @@ onMounted(async () => {
         </div>
       </template> -->
 
-        <template v-slot:item.record_stat="{ item }">
+        <template v-slot:item.Record_Status="{ item }">
           <div>
             <v-btn
               v-if="item.Record_Status === 'O'"
               flat
-              @click="handleSubmit(item)"
+              @click="handleSubmitof(item)"
             >
               <v-icon color="success">mdi-toggle-switch</v-icon>
             </v-btn>

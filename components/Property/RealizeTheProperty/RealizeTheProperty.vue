@@ -3,6 +3,7 @@ import dayjs from "#build/dayjs.imports.mjs";
 import { formats } from "numeral";
 const title = "ໜ້າຈັດການການຮັບຮູ້ຊັບສິນ";
 const faassetStore = faAssetStore();
+const assetStores = assetStore();
 const selectAssetType = ref("all");
 const {
   canEdit,
@@ -17,7 +18,10 @@ const {
 // const respons = computed(() => {
 //   return faassetStore.response_fa_asset_list;
 // });
-const assetStores = assetStore();
+const masterStore = useMasterStore();
+const masterstatus = computed(()=>{
+  return masterStore.respone_data_master;
+})
 const response = computed(() => {
   return assetStores.response_asset_list || [];
 });
@@ -35,20 +39,45 @@ const roleStore = RoleStore();
 const role1 = computed(() => {
   return roleStore.responst_data_detail;
 });
+
 const filterAssetType = computed(() => {
   let data = respons.value;
-
+  const authStatus = masterstatus.value?.MasterCodes || [];
+  if (!Array.isArray(data)) {
+    return [];
+  }
   if (selectAssetType.value !== "all") {
     data = data.filter(
       (item: any) => item.asset_type_id === selectAssetType.value
     );
   }
-
-  return data;
+  return data.map((item: any) => {
+    const authStatusARC = authStatus.find(
+      (code: any) => code.MC_code === item.Auth_Status_ARC
+    );
+    return {
+      ...item,
+      Auth_Status_ARC_Text: authStatusARC ? authStatusARC.MC_name_la : item.Auth_Status_ARC,
+      Auth_Status_Detail: authStatusARC ? authStatusARC.MC_detail : '',
+    };
+  });
 });
+
+// const filterAssetType = computed(() => {
+//   let data = respons.value;
+
+//   if (selectAssetType.value !== "all") {
+//     data = data.filter(
+//       (item: any) => item.asset_type_id === selectAssetType.value
+//     );
+//   }
+
+//   return data;
+// });
 onMounted(() => {
   assetStores.GetAssetList();
   faassetStore.GetFaAssetList();
+  masterStore.getStatus();
   initializeRole();
   roleStore.GetRoleDetail();
 });
@@ -95,16 +124,16 @@ const headers = computed(() => {
       width: "120px",
       class: "text-end",
     },
-    {
-      title: "ມູນຄ່າຍັງເຫຼືອ",
-      value: "asset_value_remain",
-      key: "asset_value_remain",
-      align: "end",
-      sortable: true,
-      filterable: false,
-      width: "120px",
-      class: "text-end",
-    },
+    // {
+    //   title: "ມູນຄ່າຍັງເຫຼືອ",
+    //   value: "asset_value_remain",
+    //   key: "asset_value_remain",
+    //   align: "end",
+    //   sortable: true,
+    //   filterable: false,
+    //   width: "120px",
+    //   class: "text-end",
+    // },
     // {
     //   title: "ມູນຄ່າສະສົມ",
     //   value: "asset_accu_dpca_value",
@@ -229,6 +258,15 @@ const headers = computed(() => {
     // },
   ] as any;
 });
+const getAuthStatusColor = (authStatusCode: string) => {
+  const colors = {
+    A: "success",    
+    U: "warning",   
+    R: "error",      
+    P: "info",       
+  };
+  return colors[authStatusCode as keyof typeof colors] || "grey";
+};
 </script>
 <template>
   <div class="pa-4">
@@ -249,7 +287,8 @@ const headers = computed(() => {
     ></v-col>
 
     <v-data-table
-    style="font-size: 80%;"
+    
+    style="font-size: 75%;"
       :items="filterAssetType || []"
       :headers="headers"
       class="text-no-wrap"
@@ -301,6 +340,9 @@ const headers = computed(() => {
       <template v-slot:header.view="{ column }">
         <b style="color: blue">{{ column.title }}</b>
       </template>
+      <template v-slot:header.Auth_Status_ARC="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
+      </template>
 
       <template v-slot:header.edit="{ column }">
         <b style="color: blue">{{ column.title }}</b>
@@ -320,79 +362,82 @@ const headers = computed(() => {
         <b style="color: blue">{{ column.title }}</b>
       </template>
 
-      <template v-slot:item.asset_list_id="{ item }">
-        <v-chip style="border: 1px #76ff03 solid" color="primary">{{
+      <template v-slot:item.asset_list_id="{ item }" style="font-size: 10%;">
+        <v-chip style="border:   solid" color="primary" size="small" variant="flat" >{{
           item.asset_list_id
         }}</v-chip>
       </template>
       <template v-slot:item.asset_type_id="{ item }">
-        <v-chip style="border: 1px solid" color="info">{{
+        <v-chip style="border: 1px solid" color="info" size="small" variant="flat">{{
           item.asset_id_detail.asset_name_la
         }}</v-chip>
       </template>
       <template v-slot:item.asset_value="{ item }">
-        <v-chip style="border: 1px solid" color="info">
+        <v-chip style="border: 1px solid" color="info" size="small" variant="flat">
           {{ Number(item.asset_value).toLocaleString("en-US") }}
           {{ item.asset_currency }}
         </v-chip>
       </template>
       <template v-slot:item.asset_value_remain="{ item }">
-        <v-chip style="border: 1px solid" color="primary">
+        <v-chip style="border: 1px solid" color="primary" size="small" variant="flat">
           {{ Number(item.asset_value_remain).toLocaleString("en-US") }}
           {{ item.asset_currency }}
         </v-chip>
       </template>
       <template v-slot:item.Auth_Status_ARC="{ item }">
-        <div v-if="item.Auth_Status_ARC === 'U'">
-          <v-chip color="info"> ລໍຖ້າການອະນຸມັດ </v-chip>
+        <!-- <div v-if="item.Auth_Status_ARC === 'U'">
+          <v-chip color="info" size="small" variant="flat"> ລໍຖ້າການອະນຸມັດ </v-chip>
         </div>
         <div v-if="item.Auth_Status_ARC === 'P'">
-          <v-chip color="info"> ກຳລັງດຳເນີນການ </v-chip>
+          <v-chip color="info" size="small" variant="flat"> ກຳລັງດຳເນີນການ </v-chip>
         </div>
         <div v-if="item.Auth_Status_ARC === 'R'">
-          <v-chip color="info"> ຖືກ Reject </v-chip>
-        </div>
+          <v-chip color="info" size="small" variant="flat"> ຖືກ Reject </v-chip>
+        </div> -->
+        <v-chip size="small" variant="flat" :color="getAuthStatusColor(item.Auth_Status_ARC)">
+          {{ item.Auth_Status_ARC_Text }}
+        </v-chip>
       </template>
-      <template v-slot:item.asset_value_remainMonth="{ item }">
-        <v-chip style="border: 1px solid" color="primary">
+      <template v-slot:item.asset_value_remainMonth="{ item }" >
+        <v-chip style="border: 1px solid" color="primary" size="small" variant="flat">
           {{ Number(item.asset_value_remainMonth).toLocaleString("en-US") }}
           {{ item.asset_currency }}
         </v-chip>
       </template>
       <template v-slot:item.asset_status="{ item }">
         <div v-if="item.asset_status === 'UC'">
-          <v-chip style="border: 1px solid" color="info">
+          <v-chip style="border: 1px solid" color="info" size="small" variant="flat">
             {{ item.asset_status_detail.MC_name_la }}
           </v-chip>
         </div>
         <div v-if="item.asset_status === 'AC'">
-          <v-chip style="border: 1px solid" color="success">
+          <v-chip style="border: 1px solid" color="success" size="small" variant="flat">
             {{ item.asset_status_detail.MC_name_la }}
           </v-chip>
         </div>
         <div v-if="item.asset_status === 'AI'">
-          <v-chip style="border: 1px solid" color="error">
+          <v-chip style="border: 1px solid" color="error" size="small" variant="flat">
             {{ item.asset_status_detail.MC_name_la }}
           </v-chip>
         </div>
         <div v-if="item.asset_status === 'MT'">
-          <v-chip style="border: 1px solid" color="warning">
+          <v-chip style="border: 1px solid" color="warning" size="small" variant="flat">
             {{ item.asset_status_detail.MC_name_la }}
           </v-chip>
         </div>
         <div v-if="item.asset_status === 'DS'">
-          <v-chip style="border: 1px solid" color="deep-purple">
+          <v-chip style="border: 1px solid" color="deep-purple" size="small" variant="flat">
             {{ item.asset_status_detail.MC_name_la }}
           </v-chip>
         </div>
         <div v-if="item.asset_status === 'DM'">
-          <v-chip style="border: 1px solid" color="deep-orange">
+          <v-chip style="border: 1px solid" color="deep-orange" size="small" variant="flat">
             {{ item.asset_status_detail.MC_name_la }}
           </v-chip>
         </div>
       </template>
       <template v-slot:item.type_of_pay="{ item }">
-        <v-chip style="border: 1px solid" color="primary">
+        <v-chip style="border: 1px solid" color="primary" size="small" variant="flat">
           {{ item.type_of_pay_detail.MC_name_la }}
         </v-chip>
       </template>
@@ -415,7 +460,7 @@ const headers = computed(() => {
           <v-icon icon="mdi-check-underline" style="color: darkgreen;"></v-icon>
           </v-chip
         >
-        <p v-if="item.asset_status==='AC' && item.Auth_Status!=='A'">ຖືກກົດຮັບຮູ້ແລ້ວ</p>
+        <!-- <p v-if="item.asset_status==='AC' && item.Auth_Status!=='A'">ຖືກກົດຮັບຮູ້ແລ້ວ</p> -->
         <v-btn
           v-if="item.Auth_Status === 'U'"
           class=""
@@ -432,3 +477,6 @@ const headers = computed(() => {
     </v-data-table>
   </div>
 </template>
+<style>
+
+</style>
