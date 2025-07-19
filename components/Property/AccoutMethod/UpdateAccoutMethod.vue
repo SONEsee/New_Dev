@@ -22,8 +22,8 @@ watch(
 const handelSuvmit = async () => {
   const isValid = await form.value.validate();
   if (isValid) {
-   const notification = await CallSwal({
-      icon:"warning",
+    const notification = await CallSwal({
+      icon: "warning",
       title: "ຕອງການຢືນຢັນ",
       text: "ທ່ານຕ້ອງການອັບເດດຂໍ້ມູນນີ້ ຫຼື ບໍ່?",
       showCancelButton: true,
@@ -31,11 +31,10 @@ const handelSuvmit = async () => {
       cancelButtonText: "ຍົກເລີກ",
       confirmButtonColor: "primary",
       cancelButtonColor: "error",
-
-    });if(notification.isConfirmed){
+    });
+    if (notification.isConfirmed) {
       await accountMethodStoreInstance.UpdateAccountMethod(id);
     }
-    
   }
 };
 onMounted(() => {
@@ -121,7 +120,9 @@ const title = "ລາຍລະອຽດການຕັ້ງຄ່າທືກ�
           <v-col cols="12">
             <div class="d-flex justify-center align-center mt-4">
               <v-btn type="submit" color="primary" class="mr-4"> ບັນທືກ</v-btn>
-              <v-btn @click="goPath('/property/accountmethod/')" color="error"> ຍົກເລີກ</v-btn>
+              <v-btn @click="goPath('/property/accountmethod/')" color="error">
+                ຍົກເລີກ</v-btn
+              >
             </div></v-col
           >
         </v-row>
