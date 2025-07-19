@@ -260,7 +260,7 @@
                         <div class="d-flex align-center justify-space-between mb-3">
                           <div class="d-flex align-center">
                             <v-icon color="info" class="mr-2">mdi-eye-check</v-icon>
-                            <span class="font-weight-medium">ກວດສອບ</span>
+                            <span class="font-weight-medium">ເບິ່ງ</span>
                           </div>
                           <v-chip
                             :color="form.View_Detail === 1 ? 'success' : 'default'"

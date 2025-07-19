@@ -79,6 +79,18 @@ const getAccountCode = (accountId) => {
   return ''
 }
 
+function handleEdit(entry) {
+  if (canEdit && referenceNoSubstring.value === 'GL') {
+    editByPairAccount(entry)
+  } else {
+    Swal.fire({
+      icon: 'warning',
+      title: 'ບໍ່ອະນຸຍາດ',
+      text: 'ທ່ານບໍ່ມີສິດແກ້ໄຂລາຍການນີ້',
+      confirmButtonText: 'ຕົກລົງ'
+    })
+  }
+}
 // Add this helper function to get currency info
 const getCurrencyInfo = (ccyCode) => {
   if (!ccyCode) return null
@@ -183,6 +195,9 @@ const canApproveMaster = computed(() => {
 // Get Reference_No from route query parameters
 const referenceNo = computed(() => route.query.Reference_No)
 
+const referenceNoSubstring = computed(() => referenceNo.value?.substring(0, 2))
+console.log('Reference_No substring:', referenceNoSubstring.value);
+
 // Load data functions
 const loadData = async () => {
   try {
@@ -195,7 +210,7 @@ const loadData = async () => {
     }
 
     // Load master data
-    const masterResponse = await axios.get('/api/journal-log-master/journal-log-active/', {
+    const masterResponse = await axios.get('/api/journal-log-master/journal-log-detail/', {
       params: { 
         Reference_No: referenceNo.value,
       },
@@ -224,6 +239,10 @@ const loadData = async () => {
 
     journalEntries.value = entriesResponse.data.results || entriesResponse.data || []
 
+    const ac_relatives_array = journalEntries.value.map(entry => entry.Ac_relatives || [])
+    journalEntries.value.forEach((entry, index) => {
+      console.log(`Entry ${index} Ac_relatives:`, entry.Ac_relatives)
+    })
     // Debug journal entries structure
     if (journalEntries.value.length > 0) {
       console.log('Sample journal entry structure:', journalEntries.value[0])
@@ -427,7 +446,7 @@ const deleteByPairAccount = async (referenceSubNo) => {
 }
 
 // Reject by pair account function
-const rejectByPairAccount = async (referenceSubNo) => {
+const rejectByPairAccount = async (referenceSubNo, item) => {
   if (!referenceSubNo) {
     Swal.fire({
       icon: 'error',
@@ -438,255 +457,255 @@ const rejectByPairAccount = async (referenceSubNo) => {
     return
   }
 
-const result = await Swal.fire({
-  icon: 'warning',
-  title: 'ດັດເເກ້ຄູ່ບັນຊີ',
-  html: `
-    <div class="rejection-content">
-      <p class="rejection-subtitle">ທ່ານຕ້ອງການປະຕິເສດບັນທຶກຄູ່:</p>
-      <div class="reference-number">${referenceSubNo}</div>
-      <p class="rejection-warning text-styles">ການປະຕິເສດນີ້ຈະປະຕິເສດທັງຄູ່ບັນທຶກ (Debit ແລະ Credit)</p>
-    </div>
-  `,
-  input: 'textarea',
-  inputLabel: 'ເຫດຜົນໃນການປະຕິເສດ *',
-  inputPlaceholder: 'ກະລຸນາໃສ່ເຫດຜົນການປະຕິເສດ...',
-  inputAttributes: {
-    'aria-label': 'Rejection reason',
-    'rows': 3,
-    'maxlength': 250,
-    'class': 'custom-textarea'
-  },
-  inputValidator: (value) => {
-    if (!value || value.trim().length === 0) {
-      return 'ກະລຸນາໃສ່ເຫດຜົນໃນການປະຕິເສດ'
-    }
-    if (value.trim().length < 1) {
-      return 'ເຫດຜົນຕ້ອງມີຢ່າງນ້ອຍ 1 ຕົວອັກສອນ'
-    }
-    if (value.length > 250) {
-      return 'ເຫດຜົນຕ້ອງບໍ່ເກີນ 250 ຕົວອັກສອນ'
-    }
-  },
-  showCancelButton: true,
-  confirmButtonText: '<i class="fas fa-times-circle"></i> ຢັ້ງຢືນ',
-  cancelButtonText: '<i class="fas fa-arrow-left"></i> ຍົກເລີກ',
-  confirmButtonColor: '#ef4444',
-  cancelButtonColor: '#6b7280',
-  buttonsStyling: false,
-  customClass: {
-    popup: 'custom-popup',
-    title: 'custom-title',
-    htmlContainer: 'custom-html',
-    input: 'custom-input',
-    inputLabel: 'custom-input-label',
-    confirmButton: 'custom-confirm-btn',
-    cancelButton: 'custom-cancel-btn',
-    actions: 'custom-actions'
-  },
-  width: '560px',
-  padding: '2rem',
-  background: '#ffffff',
-  backdrop: 'rgba(0, 0, 0, 0.6)',
-  showClass: {
-    popup: 'animate__animated animate__fadeInDown animate__faster'
-  },
-  hideClass: {
-    popup: 'animate__animated animate__fadeOutUp animate__faster'
-  },
-  didOpen: () => {
-    // Add custom styles
-    const style = document.createElement('style');
-    style.textContent = `
-      /* Custom SweetAlert2 Styles */
-      .custom-popup {
-        border-radius: 16px !important;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
-        border: 1px solid rgba(229, 231, 235, 0.8) !important;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  const result = await Swal.fire({
+    icon: 'warning',
+    title: 'ດັດເເກ້ຄູ່ບັນຊີ',
+    html: `
+      <div class="rejection-content">
+        <p class="rejection-subtitle">ທ່ານຕ້ອງການປະຕິເສດບັນທຶກຄູ່:</p>
+        <div class="reference-number">${referenceSubNo}</div>
+        <p class="rejection-warning text-styles">ການປະຕິເສດນີ້ຈະປະຕິເສດທັງຄູ່ບັນທຶກ (Debit ແລະ Credit)</p>
+      </div>
+    `,
+    input: 'textarea',
+    inputLabel: 'ເຫດຜົນໃນການປະຕິເສດ *',
+    inputPlaceholder: 'ກະລຸນາໃສ່ເຫດຜົນການປະຕິເສດ...',
+    inputAttributes: {
+      'aria-label': 'Rejection reason',
+      'rows': 3,
+      'maxlength': 250,
+      'class': 'custom-textarea'
+    },
+    inputValidator: (value) => {
+      if (!value || value.trim().length === 0) {
+        return 'ກະລຸນາໃສ່ເຫດຜົນໃນການປະຕິເສດ'
       }
-      
-      .custom-title {
-        font-family: Noto Sans Lao, sans-serif !important;
-        font-size: 1.5rem !important;
-        font-weight: 600 !important;
-        color: #1f2937 !important;
-        margin-bottom: 1rem !important;
-        line-height: 1.2 !important;
+      if (value.trim().length < 1) {
+        return 'ເຫດຜົນຕ້ອງມີຢ່າງນ້ອຍ 1 ຕົວອັກສອນ'
       }
-      
-      .custom-html {
-        margin-bottom: 1rem !important;
+      if (value.length > 250) {
+        return 'ເຫດຜົນຕ້ອງບໍ່ເກີນ 250 ຕົວອັກສອນ'
       }
-      
-      .rejection-content {
-       font-family: Noto Sans Lao, sans-serif !important;
-        text-align: center;
-        line-height: 1.3;
-      }
-      
-      .rejection-subtitle {
-       font-family: Noto Sans Lao, sans-serif !important;
-        font-size: 1rem;
-        color: #6b7280;
-        margin-bottom: 0.5rem;
-        font-weight: 400;
-        line-height: 1.3;
-      }
-      
-      .reference-number {
-       font-family: Noto Sans Lao, sans-serif !important;
-        display: inline-block;
-        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-        color: #92400e;
-        padding: 0.5rem 1rem;
-        border-radius: 8px;
-        font-weight: 600;
-        font-size: 1.1rem;
-        margin: 0.5rem 0;
-        border: 1px solid #f59e0b;
-        letter-spacing: 0.025em;
-      }
-      
-      .rejection-warning {
-        font-size: 0.875rem;
-        color: #dc2626;
-        margin-top: 0.75rem;
-        background: #fef2f2;
-        padding: 0.5rem;
-        border-radius: 8px;
-        border-left: 4px solid #ef4444;
-        font-weight: 500;
-        line-height: 1.3;
-      }
-      
-      .custom-input-label {
-       font-family: Noto Sans Lao, sans-serif !important;
-        font-weight: 600 !important;
-        color: #374151 !important;
-        margin-bottom: 0.5rem !important;
-        font-size: 0.95rem !important;
-      }
-      
-      .custom-input {
-       font-family: Noto Sans Lao, sans-serif !important;
-        border: 2px solid #e5e7eb !important;
-        border-radius: 12px !important;
-        padding: 0.875rem !important;
-        font-size: 0.95rem !important;
-        line-height: 1.3 !important;
-        transition: all 0.2s ease !important;
-        resize: vertical !important;
-        min-height: 80px !important;
-      }
-      
-      .custom-input:focus {
-        border-color: #3b82f6 !important;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
-        outline: none !important;
-      }
-      
-      .custom-actions {
-        gap: 0.75rem !important;
-        margin-top: 2rem !important;
-      }
-      
-      .custom-confirm-btn {
-       font-family: Noto Sans Lao, sans-serif !important;
-        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 10px !important;
-        padding: 0.75rem 1.5rem !important;
-        font-weight: 600 !important;
-        font-size: 0.95rem !important;
-        transition: all 0.2s ease !important;
-        min-width: 120px !important;
-        box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.3) !important;
-      }
-      
-      .custom-confirm-btn:hover {
-        transform: translateY(-1px) !important;
-        box-shadow: 0 8px 12px -1px rgba(239, 68, 68, 0.4) !important;
-        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
-      }
-      
-      .custom-cancel-btn {
-       font-family: Noto Sans Lao, sans-serif !important;
-        background: #f8fafc !important;
-        color: #6b7280 !important;
-        border: 2px solid #e5e7eb !important;
-        border-radius: 10px !important;
-        padding: 0.75rem 1.5rem !important;
-        font-weight: 600 !important;
-        font-size: 0.95rem !important;
-        transition: all 0.2s ease !important;
-        min-width: 120px !important;
-      }
-      
-      .custom-cancel-btn:hover {
-        background: #f1f5f9 !important;
-        border-color: #d1d5db !important;
-        color: #4b5563 !important;
-        transform: translateY(-1px) !important;
-      }
-      
-      /* Warning icon enhancement */
-      .swal2-icon.swal2-warning {
-        border-color: #f59e0b !important;
-        color: #f59e0b !important;
-        background: rgba(245, 158, 11, 0.1) !important;
-      }
-      
-      /* Character counter */
-      .swal2-input:focus + .char-counter {
-        opacity: 1;
-      }
-      
-      /* Validation error styling */
-      .swal2-validation-message {
-        background: #fef2f2 !important;
-        color: #dc2626 !important;
-        border: 1px solid #fecaca !important;
-        border-radius: 8px !important;
-        font-weight: 500 !important;
-      }
-    `;
-    document.head.appendChild(style);
-    
-    // Add character counter
-    const textarea = document.querySelector('.custom-input');
-    if (textarea) {
-      const counter = document.createElement('div');
-      counter.className = 'char-counter';
-      counter.style.cssText = `
-        position: absolute;
-        right: 12px;
-        bottom: 8px;
-        font-size: 0.75rem;
-        color: #9ca3af;
-        font-weight: 500;
-        pointer-events: none;
-        opacity: 0;
-        transition: opacity 0.2s ease;
+    },
+    showCancelButton: true,
+    confirmButtonText: '<i class="fas fa-times-circle"></i> ຢັ້ງຢືນ',
+    cancelButtonText: '<i class="fas fa-arrow-left"></i> ຍົກເລີກ',
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#6b7280',
+    buttonsStyling: false,
+    customClass: {
+      popup: 'custom-popup',
+      title: 'custom-title',
+      htmlContainer: 'custom-html',
+      input: 'custom-input',
+      inputLabel: 'custom-input-label',
+      confirmButton: 'custom-confirm-btn',
+      cancelButton: 'custom-cancel-btn',
+      actions: 'custom-actions'
+    },
+    width: '560px',
+    padding: '2rem',
+    background: '#ffffff',
+    backdrop: 'rgba(0, 0, 0, 0.6)',
+    showClass: {
+      popup: 'animate__animated animate__fadeInDown animate__faster'
+    },
+    hideClass: {
+      popup: 'animate__animated animate__fadeOutUp animate__faster'
+    },
+    didOpen: () => {
+      // Add custom styles
+      const style = document.createElement('style');
+      style.textContent = `
+        /* Custom SweetAlert2 Styles */
+        .custom-popup {
+          border-radius: 16px !important;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+          border: 1px solid rgba(229, 231, 235, 0.8) !important;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+        }
+        
+        .custom-title {
+          font-family: Noto Sans Lao, sans-serif !important;
+          font-size: 1.5rem !important;
+          font-weight: 600 !important;
+          color: #1f2937 !important;
+          margin-bottom: 1rem !important;
+          line-height: 1.2 !important;
+        }
+        
+        .custom-html {
+          margin-bottom: 1rem !important;
+        }
+        
+        .rejection-content {
+          font-family: Noto Sans Lao, sans-serif !important;
+          text-align: center;
+          line-height: 1.3;
+        }
+        
+        .rejection-subtitle {
+          font-family: Noto Sans Lao, sans-serif !important;
+          font-size: 1rem;
+          color: #6b7280;
+          margin-bottom: 0.5rem;
+          font-weight: 400;
+          line-height: 1.3;
+        }
+        
+        .reference-number {
+          font-family: Noto Sans Lao, sans-serif !important;
+          display: inline-block;
+          background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+          color: #92400e;
+          padding: 0.5rem 1rem;
+          border-radius: 8px;
+          font-weight: 600;
+          font-size: 1.1rem;
+          margin: 0.5rem 0;
+          border: 1px solid #f59e0b;
+          letter-spacing: 0.025em;
+        }
+        
+        .rejection-warning {
+          font-size: 0.875rem;
+          color: #dc2626;
+          margin-top: 0.75rem;
+          background: #fef2f2;
+          padding: 0.5rem;
+          border-radius: 8px;
+          border-left: 4px solid #ef4444;
+          font-weight: 500;
+          line-height: 1.3;
+        }
+        
+        .custom-input-label {
+          font-family: Noto Sans Lao, sans-serif !important;
+          font-weight: 600 !important;
+          color: #374151 !important;
+          margin-bottom: 0.5rem !important;
+          font-size: 0.95rem !important;
+        }
+        
+        .custom-input {
+          font-family: Noto Sans Lao, sans-serif !important;
+          border: 2px solid #e5e7eb !important;
+          border-radius: 12px !important;
+          padding: 0.875rem !important;
+          font-size: 0.95rem !important;
+          line-height: 1.3 !important;
+          transition: all 0.2s ease !important;
+          resize: vertical !important;
+          min-height: 80px !important;
+        }
+        
+        .custom-input:focus {
+          border-color: #3b82f6 !important;
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+          outline: none !important;
+        }
+        
+        .custom-actions {
+          gap: 0.75rem !important;
+          margin-top: 2rem !important;
+        }
+        
+        .custom-confirm-btn {
+          font-family: Noto Sans Lao, sans-serif !important;
+          background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+          color: white !important;
+          border: none !important;
+          border-radius: 10px !important;
+          padding: 0.75rem 1.5rem !important;
+          font-weight: 600 !important;
+          font-size: 0.95rem !important;
+          transition: all 0.2s ease !important;
+          min-width: 120px !important;
+          box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.3) !important;
+        }
+        
+        .custom-confirm-btn:hover {
+          transform: translateY(-1px) !important;
+          box-shadow: 0 8px 12px -1px rgba(239, 68, 68, 0.4) !important;
+          background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
+        }
+        
+        .custom-cancel-btn {
+          font-family: Noto Sans Lao, sans-serif !important;
+          background: #f8fafc !important;
+          color: #6b7280 !important;
+          border: 2px solid #e5e7eb !important;
+          border-radius: 10px !important;
+          padding: 0.75rem 1.5rem !important;
+          font-weight: 600 !important;
+          font-size: 0.95rem !important;
+          transition: all 0.2s ease !important;
+          min-width: 120px !important;
+        }
+        
+        .custom-cancel-btn:hover {
+          background: #f1f5f9 !important;
+          border-color: #d1d5db !important;
+          color: #4b5563 !important;
+          transform: translateY(-1px) !important;
+        }
+        
+        /* Warning icon enhancement */
+        .swal2-icon.swal2-warning {
+          border-color: #f59e0b !important;
+          color: #f59e0b !important;
+          background: rgba(245, 158, 11, 0.1) !important;
+        }
+        
+        /* Character counter */
+        .swal2-input:focus + .char-counter {
+          opacity: 1;
+        }
+        
+        /* Validation error styling */
+        .swal2-validation-message {
+          background: #fef2f2 !important;
+          color: #dc2626 !important;
+          border: 1px solid #fecaca !important;
+          border-radius: 8px !important;
+          font-weight: 500 !important;
+        }
       `;
+      document.head.appendChild(style);
       
-      const updateCounter = () => {
-        const current = textarea.value.length;
-        const max = 250;
-        counter.textContent = `${current}/${max}`;
-        counter.style.color = current > max * 0.9 ? '#ef4444' : '#9ca3af';
-      };
-      
-      textarea.parentNode.style.position = 'relative';
-      textarea.parentNode.appendChild(counter);
-      textarea.addEventListener('input', updateCounter);
-      textarea.addEventListener('focus', () => counter.style.opacity = '1');
-      textarea.addEventListener('blur', () => counter.style.opacity = '0');
-      updateCounter();
+      // Add character counter
+      const textarea = document.querySelector('.custom-input');
+      if (textarea) {
+        const counter = document.createElement('div');
+        counter.className = 'char-counter';
+        counter.style.cssText = `
+          position: absolute;
+          right: 12px;
+          bottom: 8px;
+          font-size: 0.75rem;
+          color: #9ca3af;
+          font-weight: 500;
+          pointer-events: none;
+          opacity: 0;
+          transition: opacity 0.2s ease;
+        `;
+        
+        const updateCounter = () => {
+          const current = textarea.value.length;
+          const max = 250;
+          counter.textContent = `${current}/${max}`;
+          counter.style.color = current > max * 0.9 ? '#ef4444' : '#9ca3af';
+        };
+        
+        textarea.parentNode.style.position = 'relative';
+        textarea.parentNode.appendChild(counter);
+        textarea.addEventListener('input', updateCounter);
+        textarea.addEventListener('focus', () => counter.style.opacity = '1');
+        textarea.addEventListener('blur', () => counter.style.opacity = '0');
+        updateCounter();
+      }
     }
-  }
-})
+  })
 
   if (!result.isConfirmed) return
 
@@ -694,15 +713,50 @@ const result = await Swal.fire({
     isRejectingPair.value = true
     rejectingRefSubNo.value = referenceSubNo
 
-    await axios.post(`/api/journal-entries/reject-by-pair-account/`, {
+ await axios.post(
+    `/api/journal-entries/reject-by-pair-account/`,
+    {
       Reference_sub_No: referenceSubNo,
       comments: result.value.trim()
-    }, getAuthHeaders())
+    },
+    getAuthHeaders()
+  )
+    
+  // // If Ac_relatives exists, call pending-asset endpoint
+  // if (item && item.Ac_relatives && item.Ac_relatives.trim() !== '') {
+  //   console.log('Calling pending-asset for:', item.Ac_relatives)
+  //   await axios.post(
+  //     '/api/journal-entries/pending-asset/',
+  //     {
+  //       Ac_relatives: item.Ac_relatives,
+  //       module_id: "AS"
+  //     },
+  //     getAuthHeaders()
+  //   )
+  // }
+      if (
+      referenceNoSubstring.value !== 'GL' &&
+      item &&
+      item.Ac_relatives &&
+      item.Ac_relatives.trim() !== ''
+    ) {
+      console.log('Calling pending-asset for:', item.Ac_relatives)
+      await axios.post(
+        '/api/journal-entries/pending-asset/',
+        {
+          Ac_relatives: item.Ac_relatives,
+          module_id: "AS"
+        },
+        getAuthHeaders()
+      )
+      console.log('Pending asset updated successfully')
+    }
+    console.log('Pending asset updated successfully')
 
     Swal.fire({
       icon: 'success',
       title: 'ສຳເລັດ',
-      text: 'ປະຕິເສດບັນທຶກຄູ່ສຳເລັດແລ້ວ',
+      text: 'ປະຕິເສດບັນທຶກຄູ່ແລະປັບສະຖານະຊັບສິນສຳເລັດແລ້ວ',
       timer: 2000,
       showConfirmButton: false
     })
@@ -711,11 +765,11 @@ const result = await Swal.fire({
     await loadData()
 
   } catch (error) {
-    console.error('Error rejecting journal entry pair:', error)
+    console.error('Error rejecting journal entry pair or updating pending asset:', error)
     
-    let errorMessage = 'ບໍ່ສາມາດປະຕິເສດບັນທຶກຄູ່ໄດ້'
+    let errorMessage = 'ບໍ່ສາມາດປະຕິເສດບັນທຶກຄູ່ ຫຼືປັບສະຖານະຊັບສິນໄດ້'
     if (error.response?.status === 404) {
-      errorMessage = 'ບໍ່ພົບບັນທຶກທີ່ຕ້ອງການປະຕິເສດ'
+      errorMessage = 'ບໍ່ພົບບັນທຶກທີ່ຕ້ອງການປະຕິເສດ ຫຼືຂໍ້ມູນຊັບສິນ'
     } else if (error.response?.status === 400) {
       errorMessage = error.response.data?.detail || 'ຂໍ້ມູນບໍ່ຖືກຕ້ອງ'
     }
@@ -1009,20 +1063,104 @@ const fixRejectedEntry = async () => {
       successDetails.push(`• ບັນຊີ Debit: ${requestData.debit_account_no}`)
       successDetails.push(`• ບັນຊີ Credit: ${requestData.credit_account_no}`)
     }
+Swal.fire({
+  icon: 'success',
+  title: 'ສຳເລັດ',
+  html: `
+    <div class="text-left">
+      <p><strong>ແກ້ໄຂບັນທຶກຄູ່ສຳເລັດແລ້ວ!</strong></p>
+      <hr class="my-2">
+      ${successDetails.map(detail => `<p><small>${detail}</small></p>`).join('')}
+    </div>
+  `,
+  footer: `
+    <div class="swal-footer-wrapper">
+      <a href="/glcapture" class="swal-back-link">
+        <i class="mdi mdi-arrow-left swal-back-icon"></i>
+        ກັບໄປ GLCaptureRead
+      </a>
+    </div>
+    <style>
+      .swal-footer-wrapper {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        margin-top: 10px;
+      }
 
-    Swal.fire({
-      icon: 'success',
-      title: 'ສຳເລັດ',
-      html: `
-        <div class="text-left">
-          <p><strong>ແກ້ໄຂບັນທຶກຄູ່ສຳເລັດແລ້ວ!</strong></p>
-          <hr class="my-2">
-          ${successDetails.map(detail => `<p><small>${detail}</small></p>`).join('')}
-        </div>
-      `,
-      timer: 4000,
-      showConfirmButton: false
-    })
+      .swal-back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: #ffffff !important;
+        text-decoration: none !important;
+        font-size: 14px;
+        font-weight: 500;
+        padding: 10px 20px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #d4af37, #ffd700, #b8860b);
+        border: 1px solid #b8860b;
+        box-shadow: 0 2px 4px rgba(212, 175, 55, 0.3);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .swal-back-link::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.5s ease;
+      }
+
+      .swal-back-link:hover {
+        background: linear-gradient(135deg, #ffd700, #ffed4e, #d4af37);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
+        color: #ffffff !important;
+      }
+
+      .swal-back-link:hover::before {
+        left: 100%;
+      }
+
+      .swal-back-link:active {
+        transform: translateY(0px);
+        box-shadow: 0 2px 4px rgba(212, 175, 55, 0.3);
+      }
+
+      .swal-back-icon {
+        font-size: 16px;
+        transition: transform 0.3s ease;
+      }
+
+      .swal-back-link:hover .swal-back-icon {
+        transform: translateX(-3px);
+      }
+
+      /* Responsive design */
+      @media (max-width: 640px) {
+        .swal-back-link {
+          font-size: 13px;
+          padding: 8px 16px;
+        }
+        
+        .swal-back-icon {
+          font-size: 14px;
+        }
+      }
+    </style>
+  `,
+  customClass: {
+    footer: 'text-center'
+  },
+  timer: 6000,
+  showConfirmButton: false
+})
 
     // Close dialog and reload data
     closeEditDialog()
@@ -1079,7 +1217,7 @@ const fixRejectedEntry = async () => {
 }
 
 // Approve function
-const approveItem = async (item) => {
+const approveItem = async (item, entry) => {
   const result = await Swal.fire({
     icon: 'question',
     title: 'ຢືນຢັນການອະນຸມັດ',
@@ -1098,24 +1236,37 @@ const approveItem = async (item) => {
 
       // 1. Always call approve-all endpoint (updates MASTER, LOG, and HIST tables)
       console.log('Calling approve-all for:', item.Reference_No)
+      console.log('Calling approve-all for:', item)
+
       approvalPromises.push(
         axios.post('/api/journal-entries/approve-all/', {
           Reference_No: item.Reference_No
         }, getAuthHeaders())
       )
 
-      // 2. Call approve-asset endpoint if Ac_relatives exists and is not empty
-      if (item.Ac_relatives && item.Ac_relatives.trim() !== '') {
-        console.log('Calling approve-asset for:', item.Ac_relatives)
-        approvalPromises.push(
-          axios.post('/api/journal-entries/approve-asset/', { 
-            Ac_relatives: item.Ac_relatives,
-            module_id: "AS"
-          }, getAuthHeaders())
+      // Collect all unique Ac_relatives from journalEntries
+      const assetRelatives = [
+        ...new Set(
+          journalEntries.value
+            .map(e => e.Ac_relatives && e.Ac_relatives.trim())
+            .filter(Boolean)
         )
-      } else {
-        console.log('No Ac_relatives found or empty, skipping asset approval')
-      }
+      ]
+
+      const referenceNoSubstring = item.Reference_No.substring(0, 2)
+      console.log('Unique Ac_relatives found:', assetRelatives)
+
+      // Add approve-asset calls for each unique Ac_relatives if not 'GL'
+      if (referenceNoSubstring !== 'GL') {
+        assetRelatives.forEach(ac => {
+          approvalPromises.push(
+            axios.post('/api/journal-entries/approve-asset/', {
+              Ac_relatives: ac,
+              module_id: "AS"
+            }, getAuthHeaders())
+          )
+        })
+}
 
       // Execute all API calls in parallel
       const responses = await Promise.all(approvalPromises)
@@ -1218,7 +1369,21 @@ const rejectItem = async (item) => {
         Reference_No: item.Reference_No,
         rejection_reason: result.value.trim()
       }, getAuthHeaders())
-      
+
+    // If Ac_relatives exists, call reject-asset endpoint
+      if (item && item.Ac_relatives && item.Ac_relatives.trim() !== '') {
+        console.log('Calling reject-asset for:', item.Ac_relatives)
+        await axios.post(
+          '/api/journal-entries/reject-asset/',
+          {
+            Ac_relatives: item.Ac_relatives,
+            module_id: "AS"
+          },
+          getAuthHeaders()
+        )
+      }
+        console.log('Reject asset updated successfully')
+
       Swal.fire({
         icon: 'success',
         title: 'ສຳເລັດ',
@@ -1333,15 +1498,15 @@ watch(permissions, (newPermissions) => {
                     <v-icon size="12">mdi-eye</v-icon>
                     ເບິ່ງ
                   </v-chip>
-                  <v-chip
-                    v-if="canEdit"
-                    color="warning"
-                    size="x-small"
-                    variant="flat"
-                  >
-                    <v-icon size="12">mdi-pencil</v-icon>
-                    ແກ້
-                  </v-chip>
+                    <v-chip
+                      v-if="canEdit && referenceNoSubstring.value === 'GL' "
+                      color="warning"
+                      size="x-small"
+                      variant="flat"
+                    >
+                      <v-icon size="12">mdi-pencil</v-icon>
+                      ແກ້
+                    </v-chip>
                   <v-chip
                     v-if="canDelete"
                     color="error"
@@ -1653,7 +1818,7 @@ watch(permissions, (newPermissions) => {
                         <template v-if="canView">
                           <v-tooltip text="ແກ້ໄຂຄູ່ບັນທຶກ" location="top">
                             <template #activator="{ props }">
-                              <v-btn
+                              <!-- <v-btn
                                 v-if="entry.Auth_Status === 'P' && canEdit"
                                 v-bind="props"
                                 icon
@@ -1666,7 +1831,21 @@ watch(permissions, (newPermissions) => {
                                 class="action-btn-small"
                               >
                                 <v-icon size="16">mdi-pencil</v-icon>
-                              </v-btn>
+                              </v-btn> -->
+                               <v-btn
+                                v-if="entry.Auth_Status === 'P' && canEdit"
+                                  v-bind="props"
+                                  icon
+                                  size="small"
+                                  variant="text"
+                                  color="info"
+                                  @click="handleEdit(entry)"
+                                  :disabled="isEditingPair"
+                                  :loading="editingRefSubNo === entry.Reference_sub_No"
+                                  class="action-btn-small"
+                                >
+                                  <v-icon size="16">mdi-pencil</v-icon>
+                                </v-btn>
                             </template>
                           </v-tooltip>
 
@@ -1679,7 +1858,7 @@ watch(permissions, (newPermissions) => {
                                 size="small"
                                 variant="text"
                                 color="warning"
-                                @click="rejectByPairAccount(entry.Reference_sub_No)"
+                                @click="rejectByPairAccount(entry.Reference_sub_No, entry)"
                                 :disabled="isRejectingPair || entry.Auth_Status === 'R' || entry.Auth_Status === 'A'"
                                 :loading="rejectingRefSubNo === entry.Reference_sub_No"
                                 class="action-btn-small"
