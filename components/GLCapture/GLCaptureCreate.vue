@@ -2,28 +2,53 @@
   <div class="journal-entry-container">
     <!-- Working Day Status Alert -->
     <v-alert
-      v-if="!canCreateJournal || workingDayError"
-      :type="!isWorkingDay ? 'error' : 'warning'"
+      v-if="!isAvailable || error"
+      :type="!isAvailable ? 'error' : 'warning'"
       class="mb-4"
-      :loading="loadingWorkingDay || loadingDataEntry"
+      :loading="pending"
       prominent
       border="start"
       variant="tonal"
     >
       <v-alert-title class="d-flex align-center">
-        <v-icon class="mr-2">{{ !isWorkingDay ? 'mdi-calendar-remove' : 'mdi-information' }}</v-icon>
-        {{ !isWorkingDay ? 'ມື້ນີ້ບໍ່ສາມາດສ້າງ Journal' : 'ແຈ້ງເຕືອນ' }}
+        <v-icon class="mr-2">{{ !isAvailable ? 'mdi-calendar-remove' : 'mdi-information' }}</v-icon>
+        {{ !isAvailable ? 'ມື້ນີ້ບໍ່ສາມາດບັນທຶກບັນຊີໄດ້' : 'ແຈ້ງເຕືອນ' }}
       </v-alert-title>
       <div class="mt-2">
-        {{ getStatusMessage }}
+        {{ error ? error.message : permissionReason }}
       </div>
-      <template #append v-if="!isWorkingDay">
+      
+      <!-- Bypass Info Display -->
+      <div v-if="bypassInfo" class="mt-3 pa-2 bg-grey-lighten-4 rounded">
+        <v-row dense>
+          <v-col cols="6" md="3">
+            <v-chip size="small" :color="bypassInfo.working_day_bypassed ? 'success' : 'warning'" variant="flat">
+              <v-icon left size="small">mdi-cog</v-icon>
+              MOD_NO: {{ bypassInfo.working_day_bypassed ? 'Y' : 'N' }}
+            </v-chip>
+          </v-col>
+          <v-col cols="6" md="3">
+            <v-chip size="small" :color="bypassInfo.eod_check_bypassed ? 'success' : 'info'" variant="flat">
+              <v-icon left size="small">mdi-calendar-edit</v-icon>
+              BACK_VALUE: {{ bypassInfo.eod_check_bypassed ? 'Y' : 'N' }}
+            </v-chip>
+          </v-col>
+          <v-col cols="12" md="6">
+            <span class="text-caption text-grey-darken-1">
+              <v-icon size="small" class="mr-1">mdi-information-outline</v-icon>
+              {{ bypassInfo.working_day_bypassed ? 'ອະນຸຍາດເຮັດວຽກໃນວັນພັກ' : 'ບໍ່ອະນຸຍາດເຮັດວຽກໃນວັນພັກ' }}
+            </span>
+          </v-col>
+        </v-row>
+      </div>
+      
+      <template #append>
         <v-btn
           size="small"
           variant="outlined"
-          color="error"
-          @click="checkWorkingDay"
-          :loading="loadingWorkingDay"
+          :color="!isAvailable ? 'error' : 'info'"
+          @click="refresh"
+          :loading="pending"
         >
           <v-icon left size="small">mdi-refresh</v-icon>
           ກວດສອບໃໝ່
@@ -40,7 +65,7 @@
     </div>
 
     <!-- Main Form Card -->
-    <v-card class="form-card" elevation="2" :disabled="!canCreateJournal">
+    <v-card class="form-card" elevation="2" :disabled="!isAvailable">
       <v-card-text class="pa-4">
         <v-form ref="form" v-model="valid" lazy-validation>
           <!-- Basic Information Section -->
@@ -60,7 +85,7 @@
                   @change="updateReferenceNumber" 
                   prepend-inner-icon="mdi-calendar"
                   hide-details="auto"
-                  :disabled="isValueDateDisabled || !canCreateJournal"
+                  :disabled="isValueDateDisabled || !isAvailable"
                   :class="{ 'value-date-disabled': isValueDateDisabled }"
                 >
                   <template #append-inner v-if="isValueDateDisabled">
@@ -91,7 +116,7 @@
                   class="module-field"
                   clearable
                   hide-no-data
-                  :disabled="!canCreateJournal"
+                  :disabled="!isAvailable"
                 >
                   <template #item="{ props, item }">
                     <v-list-item v-bind="props" class="compact-item"></v-list-item>
@@ -116,7 +141,7 @@
                   no-data-text="ບໍ່ມີຂໍ້ມູນລະຫັດການເຄື່ອນໄຫວ"
                   clearable
                   hide-no-data
-                  :disabled="!canCreateJournal"
+                  :disabled="!isAvailable"
                 >
                   <template #item="{ props, item }">
                     <v-list-item v-bind="props" class="compact-item"></v-list-item>
@@ -142,7 +167,7 @@
                   class="currency-field"
                   clearable
                   hide-no-data
-                  :disabled="!canCreateJournal"
+                  :disabled="!isAvailable"
                 >
                   <template #item="{ props, item }">
                     <v-list-item v-bind="props" class="compact-item"></v-list-item>
@@ -155,7 +180,7 @@
                   v-model="journalData.Reference_No" 
                   label="ເລກອ້າງອີງ *" 
                   :rules="referenceRules"
-                  :disabled="autoReferenceMode || !canCreateJournal" 
+                  :disabled="autoReferenceMode || !isAvailable" 
                   variant="outlined" 
                   density="compact" 
                   counter="30"
@@ -183,7 +208,7 @@
                   prepend-inner-icon="mdi-calendar-range" 
                   hide-details="auto" 
                   no-data-text="ບໍ່ມີຂໍ້ມູນຮອບການເງິນ"
-                  :disabled="!canCreateJournal"
+                  :disabled="!isAvailable"
                 >
                   <template #append-inner>
                     <v-btn 
@@ -193,7 +218,7 @@
                       color="info" 
                       @click="refreshAutoSelection"
                       title="ເລືອກອັດຕະໂນມັດຕາມປີປັດຈຸບັນ"
-                      :disabled="!canCreateJournal"
+                      :disabled="!isAvailable"
                     >
                       <v-icon size="small">mdi-refresh-auto</v-icon>
                     </v-btn>
@@ -221,7 +246,7 @@
                   variant="outlined" 
                   density="compact"
                   :loading="loading.periodCodes" 
-                  :disabled="!journalData.fin_cycle || !canCreateJournal"
+                  :disabled="!journalData.fin_cycle || !isAvailable"
                   prepend-inner-icon="mdi-calendar-clock" 
                   hide-details="auto" 
                   no-data-text="ບໍ່ມີຂໍ້ມູນລະຫັດໄລຍະ"
@@ -243,7 +268,7 @@
                   hide-details="auto"
                   placeholder="ໃສ່ຂໍ້ຄວາມເພີ່ມເຕີມຫຼັກ..."
                   @input="onMainDescriptionChange"
-                  :disabled="!canCreateJournal"
+                  :disabled="!isAvailable"
                 />
               </v-col>
             </v-row>
@@ -262,7 +287,7 @@
               @click="onMainCurrencyChange"
               :loading="loading.exchangeRate" 
               class="ml-2"
-              :disabled="!canCreateJournal"
+              :disabled="!isAvailable"
             >
               <v-icon size="small">mdi-refresh</v-icon>
               ໂຫລດໃໝ່
@@ -282,7 +307,7 @@
                   size="small" 
                   variant="outlined" 
                   @click="addJournalEntry"
-                  :disabled="loading.submit || !canCreateJournal" 
+                  :disabled="loading.submit || !isAvailable" 
                   class="action-btn"
                 >
                   <v-icon left size="small">mdi-plus</v-icon>
@@ -293,7 +318,7 @@
                   size="small" 
                   variant="text" 
                   @click="addQuickEntry" 
-                  :disabled="loading.submit || !canCreateJournal"
+                  :disabled="loading.submit || !isAvailable"
                   class="action-btn"
                 >
                   <v-icon left size="small">mdi-lightning-bolt</v-icon>
@@ -304,7 +329,7 @@
                   size="small" 
                   variant="text" 
                   @click="fillSubTextFromMain"
-                  :disabled="loading.submit || !journalData.Addl_sub_text || !canCreateJournal"
+                  :disabled="loading.submit || !journalData.Addl_sub_text || !isAvailable"
                   class="action-btn"
                 >
                   <v-icon left size="small">mdi-format-text</v-icon>
@@ -318,7 +343,7 @@
                   :loading="loading.debitAccounts || loading.creditAccounts"
                   class="action-btn"
                   title="Refresh account lists"
-                  :disabled="!canCreateJournal"
+                  :disabled="!isAvailable"
                 >
                   <v-icon left size="small">mdi-refresh</v-icon>
                   ໂຫລດບັນຊີ
@@ -372,7 +397,7 @@
                         hide-details="auto"
                         @update:model-value="onAccountChange(entry, 'DebitAccount')"
                         no-data-text="ບໍ່ມີຂໍ້ມູນບັນຊີ"
-                        :disabled="loading.debitAccounts || !canCreateJournal"
+                        :disabled="loading.debitAccounts || !isAvailable"
                       >
 
                       </v-autocomplete>
@@ -399,7 +424,7 @@
                         hide-details="auto"
                         @update:model-value="onAccountChange(entry, 'CreditAccount')"
                         no-data-text="ບໍ່ມີຂໍ້ມູນບັນຊີ"
-                        :disabled="loading.creditAccounts || !canCreateJournal"
+                        :disabled="loading.creditAccounts || !isAvailable"
                       >
 
                       </v-autocomplete>
@@ -426,7 +451,7 @@
                         hide-details="auto"
                         class="amount-field"
                         placeholder="0.00"
-                        :disabled="!canCreateJournal"
+                        :disabled="!isAvailable"
                       ></v-text-field>
                     </v-col>
 
@@ -443,7 +468,7 @@
                         placeholder="ລາຍລະອຽດເພີ່ມເຕີມ..."
                         class="entry-sub-text-field"
                         @blur="onEntrySubTextBlur(entry, index)"
-                        :disabled="!canCreateJournal"
+                        :disabled="!isAvailable"
                       >
                         <template #append-inner>
                           <v-menu>
@@ -454,7 +479,7 @@
                                 variant="text"
                                 color="info"
                                 v-bind="props"
-                                :disabled="(!journalData.Addl_sub_text && subTextSuggestions.length === 0) || !canCreateJournal"
+                                :disabled="(!journalData.Addl_sub_text && subTextSuggestions.length === 0) || !isAvailable"
                               >
                                 <v-icon size="small">mdi-dots-vertical</v-icon>
                               </v-btn>
@@ -502,7 +527,7 @@
                           color="info"
                           variant="text"
                           @click="duplicateEntry(index)"
-                          :disabled="loading.submit || !canCreateJournal"
+                          :disabled="loading.submit || !isAvailable"
                           title="ຄັດລອກແຖວ"
                         >
                           <v-icon size="small">mdi-content-duplicate</v-icon>
@@ -512,7 +537,7 @@
                           size="small"
                           color="error"
                           @click="removeJournalEntry(index)"
-                          :disabled="loading.submit || !canCreateJournal"
+                          :disabled="loading.submit || !isAvailable"
                           title="ລຶບແຖວ"
                         >
                           <v-icon size="small">mdi-delete</v-icon>
@@ -579,7 +604,7 @@
               <v-btn 
                 color="primary" 
                 size="default" 
-                :disabled="!isFormValid || loading.submit || !canCreateJournal"
+                :disabled="!isFormValid || loading.submit || !isAvailable"
                 @click="submitJournal" 
                 :loading="loading.submit"
                 class="submit-btn-compact"
@@ -592,7 +617,7 @@
                 variant="outlined" 
                 size="default" 
                 @click="resetForm" 
-                :disabled="loading.submit || !canCreateJournal"
+                :disabled="loading.submit || !isAvailable"
                 class="secondary-btn-compact"
               >
                 <v-icon left size="small">mdi-refresh</v-icon>
@@ -637,6 +662,20 @@ import Swal from 'sweetalert2'
 // Router
 const router = useRouter()
 
+// Use the journal permission composable
+const {
+  data: permissionData,
+  pending,
+  error,
+  isAvailable,
+  permissionReason,
+  isBypassActive,
+  bypassInfo,
+  checkPermission,
+  refresh,
+  clearError
+} = useJournalPermission()
+
 // Reactive state
 const valid = ref(true)
 const formRef = ref(null)
@@ -645,35 +684,11 @@ const selectedTemplate = ref(null)
 const debitAccounts = ref([])
 const creditAccounts = ref([])
 
-// Working Day and Data Entry Configuration
-const loadingWorkingDay = ref(false)
-const loadingDataEntry = ref(false)
-const isWorkingDay = ref(false)
-const workingDayMessage = ref('')
-const workingDayError = ref('')
-const isValueDateDisabled = ref(false)
-const dataEntryConfig = ref(null)
-
-// Interfaces for TypeScript-like structure
-const WorkingDayResponse = {
-  available: Boolean,
-  reason: String
-}
-
-const DataEntryConfig = {
-  data_entry_id: String,
-  JRN_REKEY_REQUIRED: String,
-  JRN_REKEY_VALUE_DATE: String,
-  JRN_REKEY_AMOUNT: String,
-  JRN_REKEY_TXN_CODE: String,
-  BACK_VALUE: String,
-  MOD_NO: String,
-  Record_Status: String,
-  Auth_Status: String,
-  Once_Auth: String,
-  Maker_Id: String,
-  Checker_Id: String
-}
+// Computed property for value date disabled state based on bypass info
+const isValueDateDisabled = computed(() => {
+  // Enable value date input if BACK_VALUE bypass is active (eod_check_bypassed = true)
+  return bypassInfo.value ? !bypassInfo.value.eod_check_bypassed : true
+})
 
 const journalData = reactive({
   Reference_No: '',
@@ -719,135 +734,6 @@ const currentPeriodCode = computed(() => {
   const year = currentYear.value
   const month = currentMonth.value.toString().padStart(2, '0')
   return `${year}${month}`
-})
-
-// Working Day Check Function
-const checkWorkingDay = async () => {
-  loadingWorkingDay.value = true
-  try {
-    const response = await axios.get('/api/end-of-day-journal/check/', {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    })
-
-    if (response.status === 200) {
-      const data = response.data
-      isWorkingDay.value = data.available
-      workingDayMessage.value = data.reason
-      
-      if (data.available) {
-        workingDayError.value = ''
-        console.log('Working day check passed:', data.reason)
-      } else {
-        workingDayError.value = 'ມື້ນີ້ບໍ່ສາມາດສ້າງ Journal ໄດ້' // "Today is not available to create Journal"
-        console.log('Working day check failed:', data.reason)
-      }
-    }
-  } catch (error) {
-    console.error("Working day check failed:", error)
-    isWorkingDay.value = false
-    
-    if (error.response?.status === 400) {
-      workingDayError.value = error.response.data.reason || 'ວັນນີ້ບໍ່ແມ່ນວັນເຮັດການ'
-    } else if (error.response?.status === 500) {
-      workingDayError.value = 'ເກີດຂໍ້ຜິດພາດໃນລະບົບ'
-    } else {
-      workingDayError.value = error.response?.data?.reason || 'ເກີດຂໍ້ຜິດພາດໃນການກວດສອບວັນເຮັດການ'
-    }
-  } finally {
-    loadingWorkingDay.value = false
-  }
-}
-
-// Check Data Entry Configuration for BACK_VALUE
-const checkDataEntryConfig = async () => {
-  loadingDataEntry.value = true
-  try {
-    const response = await axios.get('/api/mttb-data-entry/', {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    })
-
-    if (response.status === 200 && response.data.length > 0) {
-      const config = response.data[0] // Get first configuration
-      dataEntryConfig.value = config
-      
-      // Check BACK_VALUE to determine if value_date should be disabled
-      if (config.BACK_VALUE === 'Y') {
-        isValueDateDisabled.value = false // Enable value_date input
-        console.log('BACK_VALUE is Y: Value date input enabled')
-      } else {
-        isValueDateDisabled.value = true // Disable value_date input
-        console.log('BACK_VALUE is N: Value date input disabled')
-      }
-    }
-  } catch (error) {
-    console.error("Data entry config check failed:", error)
-    // Default to disabled if error occurs
-    isValueDateDisabled.value = true
-    
-    if (error.response?.status === 500) {
-      console.error('ເກີດຂໍ້ຜິດພາດໃນການກວດສອບການກຳນົດຄ່າ')
-    }
-  } finally {
-    loadingDataEntry.value = false
-  }
-}
-
-// Combined validation function
-const validateJournalCreation = async () => {
-  try {
-    // Run both checks in parallel
-    await Promise.all([
-      checkWorkingDay(),
-      checkDataEntryConfig()
-    ])
-    
-    // Final validation
-    if (!isWorkingDay.value) {
-      return {
-        canCreate: false,
-        message: 'ມື້ນີ້ບໍ່ສາມາດສ້າງ Journal ໄດ້', // "Today is not available to create Journal"
-        reason: workingDayError.value
-      }
-    }
-    
-    return {
-      canCreate: true,
-      message: 'ສາມາດສ້າງ Journal ໄດ້',
-      valueDateDisabled: isValueDateDisabled.value
-    }
-    
-  } catch (error) {
-    console.error('Validation failed:', error)
-    return {
-      canCreate: false,
-      message: 'ເກີດຂໍ້ຜິດພາດໃນການກວດສອບ',
-      reason: 'System error during validation'
-    }
-  }
-}
-
-// Computed property for form validation
-const canCreateJournal = computed(() => {
-  return isWorkingDay.value && !loadingWorkingDay.value && !loadingDataEntry.value
-})
-
-// Helper function to get status message
-const getStatusMessage = computed(() => {
-  if (loadingWorkingDay.value || loadingDataEntry.value) {
-    return 'ກຳລັງກວດສອບ...' // "Checking..."
-  }
-  
-  if (!isWorkingDay.value) {
-    return workingDayError.value || 'ມື້ນີ້ບໍ່ສາມາດສ້າງ Journal ໄດ້'
-  }
-  
-  return 'ສາມາດສ້າງ Journal ໄດ້' // "Can create Journal"
 })
 
 const descriptionTemplates = ref([
@@ -965,7 +851,7 @@ const entriesWithDescription = computed(() => {
 })
 
 const isFormValid = computed(() => {
-  if (!valid.value || journalEntries.value.length === 0 || !canCreateJournal.value) {
+  if (!valid.value || journalEntries.value.length === 0 || !isAvailable.value) {
     return false
   }
 
@@ -1331,7 +1217,7 @@ const onMainCurrencyChange = async () => {
       Swal.fire({
         icon: 'warning',
         title: 'ບໍ່ສາມາດໂຫລດອັດຕາແລກປ່ຽນ',
-        text: `ໃຊ້ອັດຕາແລກປ່ຽນເริ່ມຕົ້ນ 1:1 ສໍາລັບ ${journalData.Ccy_cd}`,
+        text: `ໃຊ້ອັດຕາແລກປ່ຽນເລີ່ມຕົ້ນ 1:1 ສໍາລັບ ${journalData.Ccy_cd}`,
         timer: 3000,
         showConfirmButton: false
       })
@@ -2108,24 +1994,56 @@ watch(exchangeRate, (newRate) => {
   })
 })
 
-// Watch for working day changes
-watch(isWorkingDay, (newValue) => {
-  if (!newValue) {
-    // Show notification or disable form
-    console.log('Working day status changed: Journal creation not available')
+// Watch for permission changes and show notifications
+watch(isAvailable, (newValue, oldValue) => {
+  if (oldValue !== undefined && newValue !== oldValue) {
+    if (newValue) {
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: 'ສາມາດບັນທຶກບັນຊີໄດ້ແລ້ວ',
+        text: permissionReason.value,
+        showConfirmButton: false,
+        timer: 4000,
+        timerProgressBar: true
+      })
+    } else {
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'warning',
+        title: 'ບໍ່ສາມາດບັນທຶກບັນຊີໄດ້',
+        text: permissionReason.value,
+        showConfirmButton: false,
+        timer: 5000,
+        timerProgressBar: true
+      })
+    }
   }
 })
 
-// Watch for BACK_VALUE changes
+// Watch for bypass info changes
+watch(bypassInfo, (newValue) => {
+  if (newValue) {
+    console.log('Bypass info updated:', {
+      working_day_bypassed: newValue.working_day_bypassed,
+      eod_check_bypassed: newValue.eod_check_bypassed
+    })
+  }
+}, { deep: true })
+
+// Watch for value date disabled changes
 watch(isValueDateDisabled, (newValue) => {
   console.log(`Value date input ${newValue ? 'disabled' : 'enabled'} based on BACK_VALUE setting`)
 })
 
 // Lifecycle
 onMounted(async () => {
-  // Initialize validation on component mount
-  await validateJournalCreation()
+  // Initialize journal permission check
+  await checkPermission()
   
+  // Load all necessary data
   await Promise.all([
     loadModules(),
     loadCurrencies(),
@@ -2488,6 +2406,23 @@ onMounted(async () => {
 .v-alert--type-error.v-alert--variant-tonal {
   background: rgba(255, 235, 238, 0.9) !important;
   border-color: #f44336 !important;
+}
+
+/* Bypass Configuration Display */
+.bg-grey-lighten-4 {
+  background-color: rgba(245, 245, 245, 0.8) !important;
+}
+
+.v-chip--size-small {
+  font-size: 0.75rem !important;
+  height: 24px !important;
+  padding: 0 8px !important;
+}
+
+/* Configuration Info Text */
+.text-caption {
+  font-size: 0.75rem !important;
+  line-height: 1.2 !important;
 }
 
 /* Disabled form state */
