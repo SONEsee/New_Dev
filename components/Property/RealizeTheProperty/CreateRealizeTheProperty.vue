@@ -113,7 +113,7 @@ const getDailyValue = () => {
   if (response.value.asset_value_remainMonth) {
     return parseFloat(response.value.asset_value_remainMonth) / 30;
   }
-
+// 11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111
   const assetValue = parseFloat(response.value.asset_value || "0");
   const salvageValue = parseFloat(response.value.asset_salvage_value || "0");
   const usefulLife = parseInt(String(response.value.asset_useful_life || "0"));

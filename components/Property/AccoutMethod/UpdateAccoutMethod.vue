@@ -129,9 +129,6 @@ const handelSuvmit = async () => {
       cancelButtonColor: "error",
     });
     if (notification.isConfirmed) {
-<<<<<<< HEAD
-      await accountMethodStoreInstance.UpdateAccountMethod(id);
-=======
       try {
         await accountMethodStoreInstance.UpdateAccountMethod(id);
         CallSwal({
@@ -147,7 +144,6 @@ const handelSuvmit = async () => {
           text: "ບໍ່ສາມາດອັບເດດຂໍ້ມູນໄດ້",
         });
       }
->>>>>>> origin/sonedevoficc
     }
   }
 };
@@ -201,80 +197,6 @@ const title = "ລາຍລະອຽດການຕັ້ງຄ່າທືກ�
             </v-list-item>
           </template>
 
-<<<<<<< HEAD
-            <GlobalCardTitle
-              :title="'ວັນທີ່ເລີ່ມຖຸລະກຳ'"
-              :text="
-                detail?.transaction_date
-                  ? new Date(detail.transaction_date).toLocaleDateString(
-                      'en-CA'
-                    )
-                  : ''
-              "
-            />
-          </v-col>
-          <v-col cols="12" md="3">
-            <GlobalCardTitle
-              :title="'ເລກບັນຊີ DR'"
-              :text="detail?.debit_account_id"
-            />
-            <GlobalCardTitle
-              :title="'ມູນຄ່າທັງໝົດ'"
-              :text="formatnumber(detail?.amount ?? 0).toString()"
-            />
-            <div v-if="detail?.Record_Status === 'C'">
-              <GlobalCardTitle
-                :title="'ສະຖານະບັນຊີ'"
-                :text="'ປິດບັນຊີ'"
-                color="red"
-              />
-            </div>
-            <div v-if="detail?.Record_Status === 'O'">
-              <GlobalCardTitle
-                :title="'ສະຖານະບັນຊີ'"
-                :text="'ປິດບັນຊີ'"
-                color="red"
-              />
-            </div>
-          </v-col>
-          <v-col cols="12" md="3">
-            <GlobalCardTitle
-              :title="'ເລກບັນຊີ CR'"
-              :text="detail?.credit_account_id"
-            />
-            <GlobalCardTitle
-              :title="'ມູນຄ່າຕົ້ນ'"
-              :text="formatnumber(detail?.amount_start ?? 0).toString()"
-            />
-            <!-- <GlobalCardTitle :title="'ລາຍລະອຽດ'" :text="detail?.description" /> -->
-            <v-label class="mb-1">
-              ລາຍລະອຽດ <span class="text-error">*</span>
-            </v-label>
-            <v-text-field
-              v-model="request.description"
-              variant="outlined"
-              density="compact"
-              class="formatted-number-input"
-            />
-          </v-col>
-          <v-col cols="12" md="3">
-            <GlobalCardTitle
-              :title="'ວັນທີບັນທືກ'"
-              :text="dayjs(detail?.Maker_DT_Stamp).format('DD/MM/YYYY')"
-            />
-            <GlobalCardTitle
-              :title="'ມູນຄ່າທ້າຍ'"
-              :text="formatnumber(detail?.amount_end ?? 0).toString()"
-            />
-          </v-col>
-          <v-col cols="12">
-            <div class="d-flex justify-center align-center mt-4">
-              <v-btn type="submit" color="primary" class="mr-4"> ບັນທືກ</v-btn>
-              <v-btn @click="goPath('/property/accountmethod/')" color="error">
-                ຍົກເລີກ</v-btn
-              >
-            </div></v-col
-=======
           <template #no-data>
             <v-list-item>
               <v-list-item-title>ບໍ່ພົບຂໍ້ມູນຊັບສົມບັດ</v-list-item-title>
@@ -408,7 +330,6 @@ const title = "ລາຍລະອຽດການຕັ້ງຄ່າທືກ�
             class="mr-4"
             :loading="accountMethodStoreInstance.isLoading"
             prepend-icon="mdi-content-save"
->>>>>>> origin/sonedevoficc
           >
             ບັນທືກ
           </v-btn>
