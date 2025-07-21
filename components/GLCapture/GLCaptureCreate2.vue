@@ -671,7 +671,8 @@ const submitJournal = async () => {
       title: 'ສຳເລັດ!',
       text: `ບັນທຶກລາຍການບັນຊີ ${journalData.Reference_No} ສຳເລັດແລ້ວ`,
       confirmButtonText: 'ຕົກລົງ',
-      timer: 3000
+      timer: 3000,
+
     })
     
     // Increment reference number for next entry
