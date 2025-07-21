@@ -5,7 +5,7 @@
       <div class="d-flex justify-space-between align-center">
         <h1 class="page-title-compact">
           <v-icon color="primary" size="20" class="mr-2">mdi-book-check</v-icon>
-          ລາຍການບັນທຶກບັນຊີ
+          ອະນຸມັດບັນທຶກບັນຊີ
         </h1>
         
         <!-- Permission indicators -->
