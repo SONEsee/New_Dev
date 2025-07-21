@@ -160,15 +160,15 @@ const headers = computed(() => [
     width: "120px",
     class: "text-end",
   },
-  {
-    title: "ມູນຄ່າຍັງເຫຼືອ",
-    value: "asset_value_remain",
-    align: "end",
-    sortable: true,
-    filterable: false,
-    width: "120px",
-    class: "text-end",
-  },
+  // {
+  //   title: "ມູນຄ່າຍັງເຫຼືອ",
+  //   value: "asset_value_remain",
+  //   align: "end",
+  //   sortable: true,
+  //   filterable: false,
+  //   width: "120px",
+  //   class: "text-end",
+  // },
   // {
   //   title: "ມູນຄ່າສະສົມ",
   //   value: "asset_accu_dpca_value",
@@ -247,19 +247,19 @@ const headers = computed(() => [
         },
       ]
     : []),
-  // ...(canEdit.value
-  //   ? [
-  //       {
-  //         title: "ແກ້ໄຂ",
-  //         value: "edit",
-  //         align: "center",
-  //         sortable: false,
-  //         filterable: false,
-  //         width: "80px",
-  //         class: "text-center",
-  //       },
-  //     ]
-  //   : []),
+  ...(canEdit.value
+    ? [
+        {
+          title: "ແກ້ໄຂ",
+          value: "edit",
+          align: "center",
+          sortable: false,
+          filterable: false,
+          width: "80px",
+          class: "text-center",
+        },
+      ]
+    : []),
   ...(canDelete.value
     ? [
         {
