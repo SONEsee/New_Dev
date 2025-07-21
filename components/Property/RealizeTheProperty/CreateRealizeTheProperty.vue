@@ -138,7 +138,7 @@ const getDailyValue = () => {
   if (response.value.asset_value_remainMonth) {
     return parseFloat(response.value.asset_value_remainMonth) / 30;
   }
-// 11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111
+  // 11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111
   const assetValue = parseFloat(response.value.asset_value || "0");
   const salvageValue = parseFloat(response.value.asset_salvage_value || "0");
   const usefulLife = parseInt(String(response.value.asset_useful_life || "0"));
@@ -499,7 +499,17 @@ const calculateDaysFromStart = () => {
   const timeDifference = currentDate.getTime() - new Date(startDate).getTime();
   return Math.max(0, Math.ceil(timeDifference / (1000 * 3600 * 24)));
 };
-
+const depreciableAmountForSave = computed(() => {
+  if (!response.value) return 0;
+  
+  const assetValue = parseFloat(response.value.asset_value || "0");
+  const salvageValue = parseFloat(response.value.asset_salvage_value || "0");
+  
+ 
+  const depreciableAmount = assetValue - salvageValue;
+  
+  return Math.max(0, depreciableAmount);
+});
 const depreciationSchedule = computed(() => {
   if (
     !response.value ||
@@ -896,6 +906,8 @@ const saveCalculation = async () => {
 
       request.asset_value_remainBegin = finalMonthlySetupValue.value.toString();
       request.asset_value_remainLast = displayMonthlyEndValue.value.toString();
+       request.accu_dpca_value_total = depreciableAmountForSave.value;
+       request.accu_dpca_value_total = depreciableAmountForSave.value;
       const journalData = generateCompleteJournalEntry();
 
       if (journalData) {
@@ -977,12 +989,15 @@ watch(
         ? Number(req.asset_value_remain)
         : 0;
 
-      // ລໍຖ້າ nextTick ແລ້ວຄ່ອຍອັບເດດ
+      
       nextTick(() => {
         request.asset_value_remainBegin =
           finalMonthlySetupValue.value.toFixed(2);
         request.asset_value_remainLast =
           displayMonthlyEndValue.value.toFixed(2);
+        const assetValue = parseFloat(req.asset_value || "0");
+const salvageValue = parseFloat(req.asset_salvage_value || "0");
+request.accu_dpca_value_total = Math.max(0, assetValue - salvageValue);
       });
 
       if (!request.dpca_start_date) {
@@ -1168,17 +1183,19 @@ onMounted(() => {
                   <v-card-text class="pt-4">
                     <v-row>
                       <v-col cols="12" md="2">
-                       <GlobalCardTitle
-  :title="'ມູນຄ່າຫັກຊັບສິນ'"
-  :text="
-    formatCurrency(
-      response?.asset_value && response?.asset_salvage_value 
-        ? parseFloat(response.asset_salvage_value)- parseFloat(response.asset_value) 
-        : 0,
-      response?.asset_currency || ''
-    )
-  "
-/>
+                        <GlobalCardTitle
+                          :title="'ມູນຄ່າຫັກຊັບສິນ'"
+                          :text="
+                            formatCurrency(
+                              response?.asset_value &&
+                                response?.asset_salvage_value
+                                ? 
+                                    parseFloat(response.asset_value)-parseFloat(response.asset_salvage_value) 
+                                : 0,
+                              response?.asset_currency || ''
+                            )
+                          "
+                        />
                       </v-col>
                       <v-col cols="12" md="2">
                         <GlobalCardTitle
