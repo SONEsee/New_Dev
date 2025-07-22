@@ -1,4 +1,4 @@
-```vue
+
 <script setup lang="ts">
 import { useRoute, useRouter } from "vue-router";
 
@@ -1254,53 +1254,7 @@ onMounted(() => {
             <GlobalTextTitleLine :title="title" />
           </v-col>
 
-          <!-- ສະແດງຂໍ້ມູນວັນທັງໝົດ -->
-          <v-col cols="12" v-if="getTotalDaysCalculation">
-            <v-card class="pa-3 bg-info-lighten-5">
-              <v-card-title class="text-subtitle-1"
-                >📅 ຂໍ້ມູນວັນທີ່ທັງໝົດ</v-card-title
-              >
-              <div class="text-caption">
-                <div>
-                  <strong>ອາຍຸການໃຊ້ງານ:</strong>
-                  {{ getTotalDaysCalculation.formatted.yearBreakdown }}
-                </div>
-                <div>
-                  <strong>ຈຳນວນວັນຈິງ:</strong>
-                  {{ getTotalDaysCalculation.formatted.totalDaysActual }}
-                </div>
-                <div>
-                  <strong>ຄືບໜ້າ:</strong>
-                  {{ getDepreciationDetails.daysInformation.currentProgress }}
-                </div>
-              </div>
-            </v-card>
-          </v-col>
-
-          <!-- ສະແດງຂໍ້ມູນເດືອນປັດຈຸບັນ -->
-          <v-col cols="12" v-if="getCurrentMonthDetails">
-            <v-card class="pa-3 bg-warning-lighten-5">
-              <v-card-title class="text-subtitle-1"
-                >🗓️ ລາຍລະອຽດເດືອນປັດຈຸບັນ</v-card-title
-              >
-              <div class="text-caption">
-                <div>
-                  <strong>ສະຖານະ:</strong>
-                  {{ getCurrentMonthDetails.formatted.currentStatus }}
-                </div>
-                <div>
-                  <strong>ວັນທີ່ເຫຼືອ:</strong>
-                  {{ getCurrentMonthDetails.formatted.daysRemaining }}
-                </div>
-                <div>
-                  <strong>ການຄິດໄລ່:</strong>
-                  {{ getCurrentMonthDetails.formatted.calculation }}
-                </div>
-              </div>
-            </v-card>
-          </v-col>
-          test
-          <pre>{{ getCurrentMonthDetails }}</pre>
+         
           <v-col cols="12" class="">
             <v-row>
               <v-col cols="12">
