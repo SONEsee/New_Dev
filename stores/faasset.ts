@@ -173,9 +173,10 @@ export const faAssetStore = defineStore("faAsset", {
             this.form_create_realizthe_property.asset_value_remainBegin || "", 
 
           asset_value_remain:
-            this.form_create_realizthe_property.asset_value_remain || 0, 
+            this.form_create_realizthe_property.accu_dpca_value_total || 0,
 
             accu_dpca_value_total: this.form_create_realizthe_property.accu_dpca_value_total || 0,
+           
         };
         
 

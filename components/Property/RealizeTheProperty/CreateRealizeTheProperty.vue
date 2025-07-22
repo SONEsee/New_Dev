@@ -1377,7 +1377,7 @@ onMounted(() => {
                           <div class="text-h6 text-purple-darken-2">
                             {{
                               formatCurrency(
-                                depreciationCalculator?.remainingValue || "0",
+                                depreciationSummary.totalDepreciation,
                                 response?.asset_currency || ""
                               )
                             }}
