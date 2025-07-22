@@ -132,7 +132,7 @@ const computedEndDate = computed(() => {
   return null;
 });
 
-// ✅ ການຄິດໄລ່ພື້ນຖານ (ແກ້ບັນຫາທົດສະນິຍົມ ແລະ ເພີ່ມການກວດສອບ)
+// ການຄິດໄລ່ພື້ນຖານ
 const depreciationBasicCalculation = computed(() => {
   if (!response.value) {
     console.error("ບໍ່ມີຂໍ້ມູນ response");
@@ -184,7 +184,7 @@ const depreciationBasicCalculation = computed(() => {
   };
 });
 
-// ✅ ມູນຄ່າຕົ້ນງວດ (ອີງໃສ່ displayStartDate)
+// ✅ ມູນຄ່າຕົ້ນງວດ (ຮອງຮັບການຄຳນວນຍ້ອນຫຼັງ)
 const monthlySetupValue = computed(() => {
   if (!response.value || !depreciationBasicCalculation.value) {
     console.error("ບໍ່ມີຂໍ້ມູນ response ຫຼື depreciationBasicCalculation");
@@ -194,9 +194,9 @@ const monthlySetupValue = computed(() => {
   const monthlyDepreciation = depreciationBasicCalculation.value.monthlyDepreciation;
   const startDate = new Date(displayStartDate.value);
   const currentDate = new Date();
-  const currentYear = currentDate.getFullYear();
-  const currentMonth = currentDate.getMonth();
-  const lastDayOfCurrentMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const startYear = startDate.getFullYear();
+  const startMonth = startDate.getMonth();
+  const lastDayOfStartMonth = new Date(startYear, startMonth + 1, 0).getDate();
 
   // ກວດສອບວ່າວັນທີ່ເລີ່ມຖືກຕ້ອງບໍ່
   if (isNaN(startDate.getTime())) {
@@ -204,59 +204,44 @@ const monthlySetupValue = computed(() => {
     return 0;
   }
 
-  // ຖ້າວັນທີ່ເລີ່ມຍັງບໍ່ມາເຖິງ
-  if (startDate > currentDate) {
-    if (startDate.getMonth() === currentMonth && startDate.getFullYear() === currentYear) {
-      const startDay = startDate.getDate();
-      const daysToUse = lastDayOfCurrentMonth - startDay + 1;
-      const setupValue = (monthlyDepreciation * daysToUse) / lastDayOfCurrentMonth;
-
-      console.log(`ການຄິດໄລ່ມູນຄ່າຕົ້ນງວດ (ອະນາຄົດ):
-        - ວັນທີ່ເລີ່ມ: ${startDate.toLocaleDateString('en-GB')}
-        - ວັນທີ່ທ້າຍເດືອນ: ${lastDayOfCurrentMonth}
-        - ວັນທີ່ໃຊ້ຈິງ: ${daysToUse} ວັນ
-        - ມູນຄ່າຕໍ່ເດືອນ: ${monthlyDepreciation.toLocaleString()}
-        - ສູດ: (${monthlyDepreciation.toLocaleString()} × ${daysToUse}) ÷ ${lastDayOfCurrentMonth}
-        - ມູນຄ່າຕົ້ນງວດ: ${setupValue.toLocaleString()}`);
-
-      return Math.round(setupValue * 100) / 100;
-    }
-    console.log("ວັນທີ່ເລີ່ມຢູ່ໃນອະນາຄົດ, ບໍ່ມີການຄິດໄລ່ມູນຄ່າຕົ້ນງວດ");
-    return 0;
-  }
-
   let daysToUse = 0;
   let calculationType = '';
+  let calculationMonth = '';
 
-  // ກໍລະນີ 1: ເລີ່ມໃນເດືອນປັດຈຸບັນ
-  if (startDate.getMonth() === currentMonth && startDate.getFullYear() === currentYear) {
+  // ກໍລະນີ 1: ວັນທີ່ເລີ່ມຢູ່ໃນອະດີດ (ຍ້ອນຫຼັງ)
+  if (startDate < currentDate) {
+    // ຄຳນວນສຳລັບເດືອນຂອງ displayStartDate
+    const startDay = startDate.getDate();
+    daysToUse = lastDayOfStartMonth - startDay + 1;
+    calculationType = 'ຄຳນວນຍ້ອນຫຼັງ';
+    calculationMonth = `ເດືອນ ${startMonth + 1}/${startYear}`;
+  }
+  // ກໍລະນີ 2: ວັນທີ່ເລີ່ມຢູ່ໃນປັດຈຸບັນ (ເດືອນດຽວກັບມື້ນີ້)
+  else if (startDate.getMonth() === currentDate.getMonth() && startDate.getFullYear() === currentDate.getFullYear()) {
     const currentDay = currentDate.getDate();
-    daysToUse = lastDayOfCurrentMonth - currentDay + 1;
+    daysToUse = lastDayOfStartMonth - currentDay + 1;
     calculationType = 'ເລີ່ມໃນເດືອນນີ້';
+    calculationMonth = `ເດືອນ ${startMonth + 1}/${startYear}`;
   }
-  // ກໍລະນີ 2: ເລີ່ມກ່ອນເດືອນປັດຈຸບັນ
-  else if (startDate < new Date(currentYear, currentMonth, 1)) {
-    const currentDay = currentDate.getDate();
-    daysToUse = lastDayOfCurrentMonth - currentDay + 1;
-    calculationType = 'ເລີ່ມກ່ອນເດືອນນີ້';
-  }
-  // ກໍລະນີ 3: ເລີ່ມຫຼັງເດືອນປັດຈຸບັນ
+  // ກໍລະນີ 3: ວັນທີ່ເລີ່ມຢູ່ໃນອະນາຄົດ
   else {
-    daysToUse = 0;
-    calculationType = 'ຍັງບໍ່ເລີ່ມຫັກ';
+    const startDay = startDate.getDate();
+    daysToUse = lastDayOfStartMonth - startDay + 1;
+    calculationType = 'ຈະເລີ່ມໃນອະນາຄົດ';
+    calculationMonth = `ເດືອນ ${startMonth + 1}/${startYear}`;
   }
 
   const setupValue = daysToUse > 0
-    ? (monthlyDepreciation * daysToUse) / lastDayOfCurrentMonth
+    ? (monthlyDepreciation * daysToUse) / lastDayOfStartMonth
     : 0;
 
   console.log(`ການຄິດໄລ່ມູນຄ່າຕົ້ນງວດ (${calculationType}):
     - ວັນທີ່ເລີ່ມ: ${startDate.toLocaleDateString('en-GB')}
-    - ວັນທີ່ປັດຈຸບັນ: ${currentDate.toLocaleDateString('en-GB')}
+    - ຄຳນວນສຳລັບ: ${calculationMonth}
     - ວັນທີ່ໃຊ້ຈິງ: ${daysToUse} ວັນ
-    - ວັນຈິງຂອງເດືອນ: ${lastDayOfCurrentMonth} ວັນ
+    - ວັນທັງໝົດໃນເດືອນ: ${lastDayOfStartMonth} ວັນ
     - ມູນຄ່າຕໍ່ເດືອນ: ${monthlyDepreciation.toLocaleString()}
-    - ສູດ: (${monthlyDepreciation.toLocaleString()} × ${daysToUse}) ÷ ${lastDayOfCurrentMonth}
+    - ສູດ: (${monthlyDepreciation.toLocaleString()} × ${daysToUse}) ÷ ${lastDayOfStartMonth}
     - ມູນຄ່າຕົ້ນງວດ: ${setupValue.toLocaleString()}`);
 
   return Math.round(setupValue * 100) / 100;
@@ -297,7 +282,7 @@ const displayMonthlyEndValue = computed(() => {
     : endValue;
 });
 
-// ✅ ປັບປຸງ getCurrentMonthDetails
+// ✅ ລາຍລະອຽດເດືອນປັດຈຸບັນ
 const getCurrentMonthDetails = computed(() => {
   const currentDate = new Date();
   const currentYear = currentDate.getFullYear();
@@ -409,12 +394,12 @@ const calculateDepreciationForAnyMonth = (targetYear: number, targetMonth: numbe
 const getYearlyDepreciationPlan = computed(() => {
   if (!response.value || !depreciationBasicCalculation.value) return null;
 
-  const currentDate = new Date();
-  const currentYear = currentDate.getFullYear();
+  const startDate = new Date(displayStartDate.value);
+  const startYear = startDate.getFullYear();
   const plan = [];
 
   for (let month = 0; month < 12; month++) {
-    const calculation = calculateDepreciationForAnyMonth(currentYear, month);
+    const calculation = calculateDepreciationForAnyMonth(startYear, month);
     if (calculation) {
       plan.push(calculation);
     }
@@ -423,7 +408,7 @@ const getYearlyDepreciationPlan = computed(() => {
   const totalAmount = plan.reduce((sum, item) => sum + item.monthlyAmount, 0);
 
   return {
-    year: currentYear,
+    year: startYear,
     months: plan,
     totalAmount: Math.round(totalAmount * 100) / 100,
     formattedTotal: formatNumber(totalAmount)
@@ -436,40 +421,34 @@ const getStartDateCalculationDetails = computed(() => {
 
   const monthlyDepreciation = depreciationBasicCalculation.value.monthlyDepreciation;
   const startDate = new Date(displayStartDate.value);
+  const startYear = startDate.getFullYear();
+  const startMonth = startDate.getMonth();
   const currentDate = new Date();
-  const currentMonth = currentDate.getMonth();
-  const currentYear = currentDate.getFullYear();
-  const monthDetails = getCurrentMonthDetails.value;
 
-  if (!monthDetails) return null;
+  const lastDayOfStartMonth = new Date(startYear, startMonth + 1, 0).getDate();
 
   let calculationType = '';
   let daysUsed = 0;
   let description = '';
 
-  if (startDate > currentDate && startDate.getMonth() === currentMonth && startDate.getFullYear() === currentYear) {
+  if (startDate > currentDate) {
     calculationType = 'ຈະເລີ່ມໃນອະນາຄົດ';
     const startDay = startDate.getDate();
-    daysUsed = monthDetails.lastDayOfMonth - startDay + 1;
-    description = `ຈາກວັນທີ່ ${startDay} ຫາ ${monthDetails.lastDayOfMonth} = ${daysUsed} ວັນ`;
-  } else if (startDate.getMonth() === currentMonth && startDate.getFullYear() === currentYear && startDate <= currentDate) {
-    calculationType = 'ເລີ່ມໃນເດືອນນີ້';
+    daysUsed = lastDayOfStartMonth - startDay + 1;
+    description = `ຈາກວັນທີ່ ${startDay} ຫາ ${lastDayOfStartMonth} = ${daysUsed} ວັນ`;
+  } else if (startDate.getMonth() === startMonth && startDate.getFullYear() === startYear && startDate <= currentDate) {
+    calculationType = 'ຄຳນວນຍ້ອນຫຼັງ ຫຼື ເລີ່ມໃນເດືອນນີ້';
     const startDay = startDate.getDate();
-    const currentDay = currentDate.getDate();
-    daysUsed = currentDay - startDay + 1;
-    description = `ຈາກວັນທີ່ ${startDay} ຫາ ${currentDay} = ${daysUsed} ວັນ`;
-  } else if (startDate < new Date(currentYear, currentMonth, 1)) {
-    calculationType = 'ເລີ່ມກ່ອນເດືອນນີ້';
-    daysUsed = currentDate.getDate();
-    description = `ຈາກຕົ້ນເດືອນຫາວັນທີ່ ${currentDate.getDate()} = ${daysUsed} ວັນ`;
+    daysUsed = lastDayOfStartMonth - startDay + 1;
+    description = `ຈາກວັນທີ່ ${startDay} ຫາ ${lastDayOfStartMonth} = ${daysUsed} ວັນ`;
   } else {
-    calculationType = 'ຍັງບໍ່ເລີ່ມຫັກ';
-    daysUsed = 0;
-    description = 'ວັນທີ່ເລີ່ມຫັກຍັງບໍ່ມາເຖິງ';
+    calculationType = 'ເລີ່ມກ່ອນເດືອນນີ້';
+    daysUsed = lastDayOfStartMonth;
+    description = `ທັງເດືອນ (1-${lastDayOfStartMonth}) = ${daysUsed} ວັນ`;
   }
 
   const calculatedValue = daysUsed > 0
-    ? (monthlyDepreciation * daysUsed) / monthDetails.totalDaysInMonth
+    ? (monthlyDepreciation * daysUsed) / lastDayOfStartMonth
     : 0;
 
   return {
@@ -477,12 +456,12 @@ const getStartDateCalculationDetails = computed(() => {
     currentDate: currentDate.toISOString().split('T')[0],
     calculationType,
     daysUsed,
-    totalDaysInMonth: monthDetails.totalDaysInMonth,
+    totalDaysInMonth: lastDayOfStartMonth,
     description,
     monthlyDepreciation,
     calculatedValue: Math.round(calculatedValue * 100) / 100,
     formula: daysUsed > 0
-      ? `(${formatNumber(monthlyDepreciation)} × ${daysUsed}) ÷ ${monthDetails.totalDaysInMonth} = ${formatNumber(calculatedValue)}`
+      ? `(${formatNumber(monthlyDepreciation)} × ${daysUsed}) ÷ ${lastDayOfStartMonth} = ${formatNumber(calculatedValue)}`
       : 'ບໍ່ມີການຄິດໄລ່',
     formatted: {
       startDate: `ວັນທີ່ເລີ່ມ: ${startDate.toLocaleDateString('en-GB')}`,
