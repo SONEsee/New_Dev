@@ -218,8 +218,8 @@ const fetchVillages = async () => {
     if (selectedProvince.value) params.append('pro_id', selectedProvince.value)
     if (selectedDistrict.value) params.append('dis_id', selectedDistrict.value)
     if (searchName.value) params.append('search_name', searchName.value)
-    
-    const url = Axios.get`/api/villages_list/?${params.toString()}`
+
+    const url = axios.get(`/api/villages_list/?${params.toString()}`)
     
     
     const response = await fetch(url, {

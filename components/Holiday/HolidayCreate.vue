@@ -69,7 +69,7 @@
                 class="day-empty"
               />
               
-              <!-- Day buttons -->
+              <!-- Day buttons - Show only actual days in month -->
               <v-btn
                 v-for="day in getDaysInMonth(selectedYear, index + 1)"
                 :key="day"
@@ -120,6 +120,9 @@
             <div class="text-body-2 mb-3 text-styles">
               ຈໍານວນວັນພັກທັງໝົດ: <strong class="text-amber-darken-4 text-styles">{{ totalHolidays }}</strong> ມື້
             </div>
+            <div class="text-body-2 mb-3 text-styles">
+              ການເກັບຂໍ້ມູນ: <strong class="text-grey-darken-2">{{ totalCharacters }}</strong> ຕົວອັກສອນ (31 ຕົວ/ເດືອນ)
+            </div>
             <v-btn
               color="grey-darken-2"
               size="large"
@@ -133,6 +136,19 @@
             </v-btn>
           </v-col>
         </v-row>
+      </v-card-text>
+    </v-card>
+
+    <!-- Debug Info -->
+    <v-card class="mt-4 elevation-2" v-if="showDebug">
+      <v-card-title class="text-h6">Debug Info</v-card-title>
+      <v-card-text>
+        <div class="text-caption mb-2">UI shows normal dates, but Holiday_List always stores 31 chars:</div>
+        <div v-for="(month, index) in monthData.slice(0, 3)" :key="index" class="mb-1">
+          <strong>{{ getMonthName(index + 1) }} ({{ getDaysInMonth(selectedYear, index + 1) }} days visible):</strong> 
+          <code class="text-caption">{{ month.join('') }}</code>
+          <span class="text-caption ml-2">({{ month.join('').length }} chars stored)</span>
+        </div>
       </v-card-text>
     </v-card>
 
@@ -165,8 +181,9 @@ const loading = ref(false)
 const snackbar = ref(false)
 const snackbarText = ref('')
 const snackbarColor = ref('success')
+const showDebug = ref(true) // Set to false to hide debug info
 
-// Legend items
+// Updated legend items - removed 'O' since it's not visible in UI
 const legendItems = [
   { code: 'H', label: 'ວັນພັກ', color: 'amber-darken-2', icon: 'mdi-star' },
   { code: 'W', label: 'ວັນປົກກະຕິ', color: 'grey-lighten-1', icon: 'mdi-briefcase' },
@@ -176,7 +193,7 @@ const legendItems = [
 // Weekday headers
 const weekDays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
 
-// 2D Array [12][31] of H/W/N
+// 2D Array [12][31] of H/W/N/O - Always 31 days per month
 const monthData = ref<string[][]>([])
 
 // Calculate total holidays
@@ -190,19 +207,35 @@ const totalHolidays = computed(() => {
   return count
 })
 
+// Calculate total characters (should always be 372 = 31 * 12)
+const totalCharacters = computed(() => {
+  let count = 0
+  monthData.value.forEach(month => {
+    count += month.length
+  })
+  return count
+})
+
 const initCalendar = () => {
   monthData.value = []
   for (let m = 0; m < 12; m++) {
-    const days = getDaysInMonth(selectedYear.value, m + 1)
+    const actualDays = getDaysInMonth(selectedYear.value, m + 1)
     const monthDays: string[] = []
 
-    for (let d = 1; d <= days; d++) {
-      const date = new Date(selectedYear.value, m, d)
-      const dayOfWeek = date.getDay()
-      if (dayOfWeek === 0 || dayOfWeek === 6) {
-        monthDays.push('N') // Weekend
+    // Always create exactly 31 entries
+    for (let d = 1; d <= 31; d++) {
+      if (d <= actualDays) {
+        // Real day exists in this month
+        const date = new Date(selectedYear.value, m, d)
+        const dayOfWeek = date.getDay()
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+          monthDays.push('N') // Weekend
+        } else {
+          monthDays.push('W') // Weekday
+        }
       } else {
-        monthDays.push('W') // Weekday
+        // Day doesn't exist in this month (e.g., Feb 29-31)
+        monthDays.push('O')
       }
     }
 
@@ -231,6 +264,7 @@ const getButtonColor = (code: string) => {
     case 'H': return 'amber-darken-2'
     case 'N': return 'red-darken-2'
     case 'W': return 'grey-lighten-1'
+    case 'O': return 'grey-darken-3'
     default: return 'grey'
   }
 }
@@ -241,11 +275,17 @@ const generateHolidayId = (year: number, month: number) => {
 
 const toggleDay = (monthIndex: number, day: number) => {
   const code = monthData.value[monthIndex][day - 1]
+  
+  // Since we only show actual days in UI, we don't need to check for 'O'
+  // But 'O' characters still exist in positions beyond actual days
+  
   if (code === 'H') {
+    // Convert holiday back to appropriate type
     const date = new Date(selectedYear.value, monthIndex, day)
     const dayOfWeek = date.getDay()
     monthData.value[monthIndex][day - 1] = (dayOfWeek === 0 || dayOfWeek === 6) ? 'N' : 'W'
   } else {
+    // Convert to holiday
     monthData.value[monthIndex][day - 1] = 'H'
   }
 }
@@ -254,9 +294,15 @@ const clearAllHolidays = () => {
   monthData.value.forEach((month, monthIndex) => {
     month.forEach((day, dayIndex) => {
       if (day === 'H') {
-        const date = new Date(selectedYear.value, monthIndex, dayIndex + 1)
-        const dayOfWeek = date.getDay()
-        monthData.value[monthIndex][dayIndex] = (dayOfWeek === 0 || dayOfWeek === 6) ? 'N' : 'W'
+        const actualDays = getDaysInMonth(selectedYear.value, monthIndex + 1)
+        const dayNumber = dayIndex + 1
+        
+        if (dayNumber <= actualDays) {
+          const date = new Date(selectedYear.value, monthIndex, dayNumber)
+          const dayOfWeek = date.getDay()
+          monthData.value[monthIndex][dayIndex] = (dayOfWeek === 0 || dayOfWeek === 6) ? 'N' : 'W'
+        }
+        // 'O' days remain 'O' (positions beyond actual days)
       }
     })
   })
@@ -278,15 +324,17 @@ const submitHoliday = async () => {
   loading.value = true
   try {
     for (let i = 0; i < 12; i++) {
-      const days = getDaysInMonth(selectedYear.value, i + 1)
       const record = {
         lcl_holiday_id: generateHolidayId(selectedYear.value, i + 1),
         HYear: selectedYear.value.toString(),
-        HMonth: String(i + 1).padStart(2, '0'), // <-- always 2 digits
+        HMonth: String(i + 1).padStart(2, '0'),
         HDate: `${selectedYear.value}-${String(i + 1).padStart(2, '0')}-01T00:00:00Z`,
-        Holiday_List: monthData.value[i].slice(0, days).join(''),
+        // Always use full 31-character string
+        Holiday_List: monthData.value[i].join(''),
         Record_Status: 'C',
       }
+
+      console.log(`Month ${i + 1} Holiday_List:`, record.Holiday_List, `(${record.Holiday_List.length} chars)`)
 
       await axios.post('/api/lcl_holiday/', record, {
         headers: {
