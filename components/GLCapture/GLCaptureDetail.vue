@@ -1305,8 +1305,8 @@ const approveItem = async (item, entry) => {
         timer: 2000,
         showConfirmButton: false,
         didClose: () => {
-    window.location.href = '/glcapture'
-  }
+          window.history.back()
+        }
       })
       
       // Reload data to show updated status
