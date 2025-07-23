@@ -315,19 +315,35 @@ const filteredData = computed(() => {
     );
   }
 
-  // ຈັດຮຽງໃຫ້ UC ຂຶ້ນກ່ອນ ແລ້ວຕາມດ້ວຍ ID ຫຼື ວັນທີ່
+  // ຈັດຮຽງໃຫ້ UC + Auth_Status_ARC = U + Auth_Status = U ຂຶ້ນກ່ອນ
   return data.sort((a, b) => {
-    // ຖ້າ a ແມ່ນ UC ແລະ b ບໍ່ແມ່ນ UC, a ຂຶ້ນກ່ອນ
-    if (a.asset_status === 'UC' && b.asset_status !== 'UC') {
-      return -1;
+    // ຟັງຊັນຊ່ວຍກຳນົດລຳດັບຄວາມສຳຄັນ
+    const getPriority = (item) => {
+      // ຄວາມສຳຄັນສູງສຸດ: UC + Auth_Status_ARC = U + Auth_Status = U
+      if (item.asset_status === 'UC' && 
+          item.Auth_Status_ARC === 'U' && 
+          item.Auth_Status === 'U') {
+        return 1;
+      }
+      
+      // ຄວາມສຳຄັນກາງ: UC ອື່ນໆ
+      if (item.asset_status === 'UC') {
+        return 2;
+      }
+      
+      // ຄວາມສຳຄັນຕ່ຳ: ສະຖານະອື່ນໆ
+      return 3;
+    };
+    
+    const priorityA = getPriority(a);
+    const priorityB = getPriority(b);
+    
+    // ຈັດຮຽງຕາມລຳດັບຄວາມສຳຄັນ
+    if (priorityA !== priorityB) {
+      return priorityA - priorityB;
     }
     
-    // ຖ້າ b ແມ່ນ UC ແລະ a ບໍ່ແມ່ນ UC, b ຂຶ້ນກ່ອນ
-    if (b.asset_status === 'UC' && a.asset_status !== 'UC') {
-      return 1;
-    }
-    
-    // ຖ້າທັງສອງແມ່ນ UC ຫຼື ທັງສອງບໍ່ແມ່ນ UC, ຈັດຮຽງຕາມ ID (ເກົ່າກວ່າກ່ອນ)
+    // ຖ້າມີຄວາມສຳຄັນເທົ່າກັນ, ຈັດຮຽງຕາມ ID (ເກົ່າກວ່າກ່ອນ)
     if (a.asset_list_id && b.asset_list_id) {
       return parseInt(a.asset_list_id) - parseInt(b.asset_list_id);
     }
@@ -340,7 +356,6 @@ const filteredData = computed(() => {
     return 0;
   });
 });
-
 const formatDate = (date: Date | null) => {
   if (!date) return "-";
   return new Intl.DateTimeFormat("lo-LA", {
