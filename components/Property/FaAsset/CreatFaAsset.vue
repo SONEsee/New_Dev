@@ -322,7 +322,7 @@ const submitForm = async () => {
         Ccy_cd:
           faAssetStoreInstance.form_create_fa_asset.currency_type || "LAK",
         Txn_code: "UNC",
-        Value_date: faAssetStoreInstance.form_create_fa_asset.asset_date,
+        Value_date: new Date(),
         Addl_text:
           `ພວມຊື້ພວມກໍ່ສ້າງ${faAssetStoreInstance.form_create_fa_asset.MC_name_la}` ||
           "",

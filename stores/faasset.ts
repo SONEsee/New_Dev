@@ -16,6 +16,7 @@ export const faAssetStore = defineStore("faAsset", {
       form_create_realizthe_property: {
         asset_value_remainBegin: "",
         asset_value_remainLast: "",
+        accu_dpca_value_total:0,
         asset_value_remain: 0,
         asset_accu_dpca_value: 0 as number | null,
         dpca_start_date: null as Date | null,
@@ -67,7 +68,7 @@ export const faAssetStore = defineStore("faAsset", {
         Reference_No: "",
         Ccy_cd: "",
         Txn_code: "UNC",
-        Value_date: null as Date | null,
+        Value_date: new Date(),
         Addl_text: "",
         fin_cycle: "",
         module_id: "AS",
@@ -172,8 +173,12 @@ export const faAssetStore = defineStore("faAsset", {
             this.form_create_realizthe_property.asset_value_remainBegin || "", 
 
           asset_value_remain:
-            this.form_create_realizthe_property.asset_value_remain || 0, 
+            this.form_create_realizthe_property.accu_dpca_value_total || 0,
+
+            accu_dpca_value_total: this.form_create_realizthe_property.accu_dpca_value_total || 0,
+           
         };
+        
 
         const res = await axios.patch<FaAssetModel.FaAsset>(
           `/api/asset_list/${id}/`,
@@ -216,9 +221,7 @@ export const faAssetStore = defineStore("faAsset", {
       try {
         const formData = {
           ...this.creat_form_jornal,
-          Value_date: this.creat_form_jornal.Value_date
-            ? new Date(this.creat_form_jornal.Value_date).toISOString()
-            : null,
+          Value_date: new Date().toISOString(),
           entries: this.creat_form_jornal.entries.map((entry) => ({
             ...entry,
             Account: entry.Account || null,
@@ -269,9 +272,10 @@ export const faAssetStore = defineStore("faAsset", {
       try {
         const formData = {
           ...this.creat_form_jornal,
-          Value_date: this.creat_form_jornal.Value_date
-            ? new Date(this.creat_form_jornal.Value_date).toISOString()
-            : null,
+          // Value_date: this.creat_form_jornal.Value_date
+          //   ? new Date(this.creat_form_jornal.Value_date).toISOString()
+          //   : null,
+          Value_date: new Date().toISOString(),
           entries: this.creat_form_jornal.entries.map((entry) => ({
             ...entry,
             Account: entry.Account || null,
@@ -424,7 +428,7 @@ export const faAssetStore = defineStore("faAsset", {
         Reference_No: "",
         Ccy_cd: "",
         Txn_code: "UNC",
-        Value_date: null,
+        Value_date: new Date(),
         Addl_text: "",
         fin_cycle: "",
         module_id: "AS",
@@ -784,6 +788,7 @@ export const faAssetStore = defineStore("faAsset", {
             icon: "success",
             showCancelButton: false,
             showConfirmButton: false,
+            timer: 1000,
           });
 
           await this.GetFaAssetList();
