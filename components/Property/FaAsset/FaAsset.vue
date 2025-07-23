@@ -315,9 +315,47 @@ const filteredData = computed(() => {
     );
   }
 
-  return data;
+  // ຈັດຮຽງໃຫ້ UC + Auth_Status_ARC = U + Auth_Status = U ຂຶ້ນກ່ອນ
+  return data.sort((a, b) => {
+    // ຟັງຊັນຊ່ວຍກຳນົດລຳດັບຄວາມສຳຄັນ
+    const getPriority = (item) => {
+      // ຄວາມສຳຄັນສູງສຸດ: UC + Auth_Status_ARC = U + Auth_Status = U
+      if (item.asset_status === 'UC' && 
+          item.Auth_Status_ARC === 'U' && 
+          item.Auth_Status === 'U') {
+        return 1;
+      }
+      
+      // ຄວາມສຳຄັນກາງ: UC ອື່ນໆ
+      if (item.asset_status === 'UC') {
+        return 2;
+      }
+      
+      // ຄວາມສຳຄັນຕ່ຳ: ສະຖານະອື່ນໆ
+      return 3;
+    };
+    
+    const priorityA = getPriority(a);
+    const priorityB = getPriority(b);
+    
+    // ຈັດຮຽງຕາມລຳດັບຄວາມສຳຄັນ
+    if (priorityA !== priorityB) {
+      return priorityA - priorityB;
+    }
+    
+    // ຖ້າມີຄວາມສຳຄັນເທົ່າກັນ, ຈັດຮຽງຕາມ ID (ເກົ່າກວ່າກ່ອນ)
+    if (a.asset_list_id && b.asset_list_id) {
+      return parseInt(a.asset_list_id) - parseInt(b.asset_list_id);
+    }
+    
+    // ຫຼື ຈັດຮຽງຕາມວັນທີ່ (ຖ້າມີ)
+    if (a.asset_date && b.asset_date) {
+      return new Date(a.asset_date).getTime() - new Date(b.asset_date).getTime();
+    }
+    
+    return 0;
+  });
 });
-
 const formatDate = (date: Date | null) => {
   if (!date) return "-";
   return new Intl.DateTimeFormat("lo-LA", {

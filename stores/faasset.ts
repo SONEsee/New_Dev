@@ -173,9 +173,10 @@ export const faAssetStore = defineStore("faAsset", {
             this.form_create_realizthe_property.asset_value_remainBegin || "", 
 
           asset_value_remain:
-            this.form_create_realizthe_property.asset_value_remain || 0, 
+            this.form_create_realizthe_property.accu_dpca_value_total || 0,
 
             accu_dpca_value_total: this.form_create_realizthe_property.accu_dpca_value_total || 0,
+           
         };
         
 
@@ -220,9 +221,7 @@ export const faAssetStore = defineStore("faAsset", {
       try {
         const formData = {
           ...this.creat_form_jornal,
-          Value_date: this.creat_form_jornal.Value_date
-            ? new Date(this.creat_form_jornal.Value_date).toISOString()
-            : null,
+          Value_date: new Date().toISOString(),
           entries: this.creat_form_jornal.entries.map((entry) => ({
             ...entry,
             Account: entry.Account || null,
@@ -276,6 +275,7 @@ export const faAssetStore = defineStore("faAsset", {
           // Value_date: this.creat_form_jornal.Value_date
           //   ? new Date(this.creat_form_jornal.Value_date).toISOString()
           //   : null,
+          Value_date: new Date().toISOString(),
           entries: this.creat_form_jornal.entries.map((entry) => ({
             ...entry,
             Account: entry.Account || null,
