@@ -315,7 +315,30 @@ const filteredData = computed(() => {
     );
   }
 
-  return data;
+  // ຈັດຮຽງໃຫ້ UC ຂຶ້ນກ່ອນ ແລ້ວຕາມດ້ວຍ ID ຫຼື ວັນທີ່
+  return data.sort((a, b) => {
+    // ຖ້າ a ແມ່ນ UC ແລະ b ບໍ່ແມ່ນ UC, a ຂຶ້ນກ່ອນ
+    if (a.asset_status === 'UC' && b.asset_status !== 'UC') {
+      return -1;
+    }
+    
+    // ຖ້າ b ແມ່ນ UC ແລະ a ບໍ່ແມ່ນ UC, b ຂຶ້ນກ່ອນ
+    if (b.asset_status === 'UC' && a.asset_status !== 'UC') {
+      return 1;
+    }
+    
+    // ຖ້າທັງສອງແມ່ນ UC ຫຼື ທັງສອງບໍ່ແມ່ນ UC, ຈັດຮຽງຕາມ ID (ເກົ່າກວ່າກ່ອນ)
+    if (a.asset_list_id && b.asset_list_id) {
+      return parseInt(a.asset_list_id) - parseInt(b.asset_list_id);
+    }
+    
+    // ຫຼື ຈັດຮຽງຕາມວັນທີ່ (ຖ້າມີ)
+    if (a.asset_date && b.asset_date) {
+      return new Date(a.asset_date).getTime() - new Date(b.asset_date).getTime();
+    }
+    
+    return 0;
+  });
 });
 
 const formatDate = (date: Date | null) => {
