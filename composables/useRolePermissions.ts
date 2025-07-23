@@ -63,8 +63,6 @@ export const useRolePermissions = () => {
     roleStore,
     roleData,
     permissions,
-    
-    
     initializeRole,
     hasPermission,
     hasAnyPermission,
