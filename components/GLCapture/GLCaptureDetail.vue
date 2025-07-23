@@ -1303,7 +1303,10 @@ const approveItem = async (item, entry) => {
         title: 'ສຳເລັດ',
         text: successMessage,
         timer: 2000,
-        showConfirmButton: false
+        showConfirmButton: false,
+        didClose: () => {
+    window.location.href = '/glcapture'
+  }
       })
       
       // Reload data to show updated status

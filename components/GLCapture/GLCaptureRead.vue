@@ -563,7 +563,7 @@ const loadData = async () => {
 
     // Exclude soft deleted
     params.delete_stat__ne = 'D'
-    params.ordering = '-Maker_DT_Stamp' // Order by newest first
+    // params.ordering = '-Auth_Status' // Order by newest first
 
     console.log('Loading data with params:', params)
     console.log('User permissions: ------>', {
