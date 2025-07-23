@@ -165,7 +165,7 @@
               </div>
               
               <div class="d-flex align-center" @click.stop>
-                <v-chip
+                <!-- <v-chip
                   color="primary"
                   size="small"
                   variant="flat"
@@ -181,7 +181,7 @@
                   class="mr-2"
                 >
                   {{ getVillagesByProvinceId(province.pro_id).length }} ບ້ານ
-                </v-chip>
+                </v-chip> -->
               </div>
             </div>
           </v-expansion-panel-title>
@@ -702,14 +702,14 @@ onMounted(() => {
 }
 
 .district-header {
-  background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #ffd6a0 100%);
   border-bottom: 1px solid #e0e0e0;
 }
 
 .district-name {
   font-size: 1rem;
   font-weight: 600;
-  color: #7b1fa2;
+  color: #ff7e27;
 }
 
 .district-desc {
