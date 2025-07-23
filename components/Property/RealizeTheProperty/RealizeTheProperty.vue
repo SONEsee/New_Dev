@@ -80,7 +80,7 @@ watch(
   selectAssetType,
   async (newValue) => {
     saveAssetTypeSelection(newValue);
-    
+
     // ຖ້າຕ້ອງການໃຫ້ filter ແບບ real-time ສາມາດເພີ່ມການເອີ້ນ API ຫຼື update filter ຢູ່ນີ້
     // ເຊັ່ນ: await faassetStore.GetFaAssetList();
   },
@@ -90,22 +90,21 @@ watch(
 const filterAssetType = computed(() => {
   let data = respons.value;
   const authStatus = masterstatus.value?.MasterCodes || [];
-  
+
   if (!Array.isArray(data)) {
     return [];
   }
-  
+
   // ການກັ່ນຕອງຕາມປະເພດທີ່ເລືອກ
   if (selectAssetType.value && selectAssetType.value !== "all") {
-    const selectedValue = typeof selectAssetType.value === 'object' 
-      ? selectAssetType.value.coa_id 
-      : selectAssetType.value;
-    
-    data = data.filter(
-      (item: any) => item.asset_type_id === selectedValue
-    );
+    const selectedValue =
+      typeof selectAssetType.value === "object"
+        ? selectAssetType.value.coa_id
+        : selectAssetType.value;
+
+    data = data.filter((item: any) => item.asset_type_id === selectedValue);
   }
-  
+
   // ແປງຂໍ້ມູນແລະເພີ່ມ Auth Status
   const mappedData = data.map((item: any) => {
     const authStatusARC = authStatus.find(
@@ -113,8 +112,10 @@ const filterAssetType = computed(() => {
     );
     return {
       ...item,
-      Auth_Status_ARC_Text: authStatusARC ? authStatusARC.MC_name_la : item.Auth_Status_ARC,
-      Auth_Status_Detail: authStatusARC ? authStatusARC.MC_detail : '',
+      Auth_Status_ARC_Text: authStatusARC
+        ? authStatusARC.MC_name_la
+        : item.Auth_Status_ARC,
+      Auth_Status_Detail: authStatusARC ? authStatusARC.MC_detail : "",
     };
   });
 
@@ -122,29 +123,29 @@ const filterAssetType = computed(() => {
   return mappedData.sort((a: any, b: any) => {
     // ຖ້າມີ created_at ຫຼື created_date field
     if (a.created_at && b.created_at) {
-      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      return (
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      );
     }
-    
-    // ຫຼື ຖ້າໃຊ້ asset_date
+
     if (a.asset_date && b.asset_date) {
-      return new Date(a.asset_date).getTime() - new Date(b.asset_date).getTime();
+      return (
+        new Date(a.asset_date).getTime() - new Date(b.asset_date).getTime()
+      );
     }
-    
-    // ຫຼື ຖ້າໃຊ້ asset_list_id (ID ນ້ອຍກວ່າແມ່ນສ້າງກ່ອນ)
+
     if (a.asset_list_id && b.asset_list_id) {
       return parseInt(a.asset_list_id) - parseInt(b.asset_list_id);
     }
-    
+
     return 0;
   });
 });
-// ຟັງຊັນເຄລຍການກັ່ນຕອງ
+
 const clearFilters = () => {
   selectAssetType.value = "all";
-  // ຖ້າມີການ filter ອື່ນໆ ສາມາດເຄລຍຢູ່ນີ້ເຊັ່ນກັນ
 };
 
-// ຟັງຊັນໂຫຼດຂໍ້ມູນເບື້ອງຕົ້ນແລະ apply filter
 const loadDataAndApplyFilter = async () => {
   try {
     await Promise.all([
@@ -153,9 +154,7 @@ const loadDataAndApplyFilter = async () => {
       masterStore.getStatus(),
     ]);
 
-    // ໂຫຼດການເລືອກທີ່ບັນທຶກໄວ້
     loadSavedAssetTypeSelection();
-    
   } catch (error) {
     console.error("Failed to load initial data:", error);
   }
@@ -273,10 +272,10 @@ const headers = computed(() => {
 
 const getAuthStatusColor = (authStatusCode: string) => {
   const colors = {
-    A: "success",    
-    U: "warning",   
-    R: "error",      
-    P: "info",       
+    A: "success",
+    U: "warning",
+    R: "error",
+    P: "info",
   };
   return colors[authStatusCode as keyof typeof colors] || "grey";
 };
@@ -290,12 +289,15 @@ defineExpose({
 <template>
   <div class="pa-4">
     <GlobalTextTitleLine :title="title" />
-    
+
     <v-row>
       <v-col cols="12" md="3">
         <v-autocomplete
           v-model="selectAssetType"
-          :items="[{ asset_name_la: 'ທັງໝົດ', coa_id: 'all' }, ...(response || [])]"
+          :items="[
+            { asset_name_la: 'ທັງໝົດ', coa_id: 'all' },
+            ...(response || []),
+          ]"
           item-title="asset_name_la"
           item-value="coa_id"
           label="ເລືອກຕາມປະເພດຊັບສົມບັດຍ່ອຍ"
@@ -313,19 +315,16 @@ defineExpose({
             <v-list-item
               v-bind="props"
               :title="item.raw.asset_name_la"
-              :subtitle="item.raw.coa_id !== 'all' ? `ID: ${item.raw.coa_id}` : ''"
+              :subtitle="
+                item.raw.coa_id !== 'all' ? `ID: ${item.raw.coa_id}` : ''
+              "
             />
           </template>
         </v-autocomplete>
       </v-col>
-      
+
       <v-col cols="12" md="2">
-        <v-btn
-          color="secondary"
-          variant="outlined"
-          @click="clearFilters"
-          block
-        >
+        <v-btn color="secondary" variant="outlined" @click="clearFilters" block>
           <v-icon class="mr-2">mdi-filter-remove</v-icon>
           ເຄລຍການກັ່ນຕອງ
         </v-btn>
@@ -333,7 +332,7 @@ defineExpose({
     </v-row>
 
     <v-data-table
-      style="font-size: 75%;"
+      style="font-size: 75%"
       :items="filterAssetType || []"
       :headers="headers"
       class="text-no-wrap"
@@ -408,70 +407,122 @@ defineExpose({
         <b style="color: blue">{{ column.title }}</b>
       </template>
       <template v-slot:item.asset_list_id="{ item }">
-        <v-chip style="border: solid" color="primary" size="small" variant="flat">{{
-          item.asset_list_id
-        }}</v-chip>
+        <v-chip
+          style="border: solid"
+          color="primary"
+          size="small"
+          variant="flat"
+          >{{ item.asset_list_id }}</v-chip
+        >
       </template>
-      
+
       <template v-slot:item.asset_type_id="{ item }">
-        <v-chip style="border: 1px solid" color="info" size="small" variant="flat">{{
-          item.asset_id_detail.asset_name_la
-        }}</v-chip>
+        <v-chip
+          style="border: 1px solid"
+          color="info"
+          size="small"
+          variant="flat"
+          >{{ item.asset_id_detail.asset_name_la }}</v-chip
+        >
       </template>
-      
+
       <template v-slot:item.asset_value="{ item }">
-        <v-chip style="border: 1px solid" color="info" size="small" variant="flat">
+        <v-chip
+          style="border: 1px solid"
+          color="info"
+          size="small"
+          variant="flat"
+        >
           {{ Number(item.asset_value).toLocaleString("en-US") }}
           {{ item.asset_currency }}
         </v-chip>
       </template>
-      
+
       <template v-slot:item.Auth_Status_ARC="{ item }">
-        <v-chip size="small" variant="flat" :color="getAuthStatusColor(item.Auth_Status_ARC)">
+        <v-chip
+          size="small"
+          variant="flat"
+          :color="getAuthStatusColor(item.Auth_Status_ARC)"
+        >
           {{ item.Auth_Status_ARC_Text }}
         </v-chip>
       </template>
-      
+
       <template v-slot:item.asset_value_remainMonth="{ item }">
-        <v-chip style="border: 1px solid" color="primary" size="small" variant="flat">
+        <v-chip
+          style="border: 1px solid"
+          color="primary"
+          size="small"
+          variant="flat"
+        >
           {{ Number(item.asset_value_remainMonth).toLocaleString("en-US") }}
           {{ item.asset_currency }}
         </v-chip>
       </template>
-      
+
       <template v-slot:item.asset_status="{ item }">
         <div v-if="item.asset_status === 'UC'">
-          <v-chip style="border: 1px solid" color="info" size="small" variant="flat">
+          <v-chip
+            style="border: 1px solid"
+            color="info"
+            size="small"
+            variant="flat"
+          >
             {{ item.asset_status_detail.MC_name_la }}
           </v-chip>
         </div>
         <div v-if="item.asset_status === 'AC'">
-          <v-chip style="border: 1px solid" color="success" size="small" variant="flat">
+          <v-chip
+            style="border: 1px solid"
+            color="success"
+            size="small"
+            variant="flat"
+          >
             {{ item.asset_status_detail.MC_name_la }}
           </v-chip>
         </div>
         <div v-if="item.asset_status === 'AI'">
-          <v-chip style="border: 1px solid" color="error" size="small" variant="flat">
+          <v-chip
+            style="border: 1px solid"
+            color="error"
+            size="small"
+            variant="flat"
+          >
             {{ item.asset_status_detail.MC_name_la }}
           </v-chip>
         </div>
         <div v-if="item.asset_status === 'MT'">
-          <v-chip style="border: 1px solid" color="warning" size="small" variant="flat">
+          <v-chip
+            style="border: 1px solid"
+            color="warning"
+            size="small"
+            variant="flat"
+          >
             {{ item.asset_status_detail.MC_name_la }}
           </v-chip>
         </div>
         <div v-if="item.asset_status === 'DS'">
-          <v-chip style="border: 1px solid" color="deep-purple" size="small" variant="flat">
+          <v-chip
+            style="border: 1px solid"
+            color="deep-purple"
+            size="small"
+            variant="flat"
+          >
             {{ item.asset_status_detail.MC_name_la }}
           </v-chip>
         </div>
         <div v-if="item.asset_status === 'DM'">
-          <v-chip style="border: 1px solid" color="deep-orange" size="small" variant="flat">
+          <v-chip
+            style="border: 1px solid"
+            color="deep-orange"
+            size="small"
+            variant="flat"
+          >
             {{ item.asset_status_detail.MC_name_la }}
           </v-chip>
         </div>
       </template>
-      
+
       <template v-slot:item.action="{ item }">
         <v-btn
           v-if="item.Auth_Status === 'A' && item.asset_status === 'UC'"
@@ -485,7 +536,7 @@ defineExpose({
           ຢັ້ງຢືນ
         </v-btn>
         <v-chip v-if="item.Auth_Status === 'A' && item.asset_status === 'AC'">
-          <v-icon icon="mdi-check-underline" style="color: darkgreen;"></v-icon>
+          <v-icon icon="mdi-check-underline" style="color: darkgreen"></v-icon>
         </v-chip>
         <v-btn
           v-if="item.Auth_Status === 'U'"
