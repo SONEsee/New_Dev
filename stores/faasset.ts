@@ -109,7 +109,7 @@ export const faAssetStore = defineStore("faAsset", {
         asset_spec: "",
         asset_date: null as Date | null,
         asset_currency: "LAK",
-        asset_value: 0,
+        asset_value: "",
         warranty_end_date: null as Date | null,
         supplier_id: null as number | null,
         dpca_type: "",
