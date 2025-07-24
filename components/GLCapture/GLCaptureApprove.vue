@@ -282,7 +282,7 @@
                     ></v-select>
                     <v-select
                       v-model="filters.selectedYear"
-                      :items="years"
+                      :items="year"
                       variant="outlined"
                       density="compact"
                       @update:model-value="loadData"
@@ -297,7 +297,7 @@
                 <template v-if="filters.dateFilterType === 'year'">
                   <v-select
                     v-model="filters.selectedYear"
-                    :items="years"
+                    :items="year"
                     variant="outlined"
                     density="compact"
                     @update:model-value="loadData"
