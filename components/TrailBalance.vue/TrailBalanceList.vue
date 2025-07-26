@@ -256,7 +256,7 @@ const searchText = ref('')
 
 const filters = ref({
   ac_ccy_id: 'LAK',
-  date_start: '2023-01-01',
+  date_start: new Date().toISOString().split('T')[0],
   date_end: new Date().toISOString().split('T')[0] // Current date
 })
 
