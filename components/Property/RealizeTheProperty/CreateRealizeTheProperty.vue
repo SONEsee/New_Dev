@@ -1391,7 +1391,7 @@ watch(
       request.asset_accu_dpca_value = req.asset_accu_dpca_value
         ? Number(req.asset_accu_dpca_value)
         : 0;
-      request.acc_no = req.acc_no || "";
+      
       request.asset_disposal_date = req.asset_disposal_date;
       request.asset_latest_date_dpca = req.asset_latest_date_dpca;
       request.asset_value_remain = req.asset_value_remain
