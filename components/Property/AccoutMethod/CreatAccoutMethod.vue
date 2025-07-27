@@ -225,7 +225,7 @@ onMounted(() => {
     <GlobalTextTitleLine :title="title" />
     <v-form ref="form" @submit.prevent="handleSubmit">
       <v-row no-gutters>
-        <v-col cols="12" md="6">
+        <v-col cols="12" md="4">
           <v-label class="mb-1">
             ລະຫັດປະເພດຊັບສົມບັດ <span class="text-error">*</span>
           </v-label>
@@ -252,7 +252,7 @@ onMounted(() => {
               />
             </template> </v-autocomplete
         ></v-col>
-        <v-col cols="12" md="6">
+        <v-col cols="12" md="8">
           <v-label class="mb-1">
             ຊັບສົມບັດ <span class="text-error">*</span>
           </v-label>
@@ -299,6 +299,7 @@ onMounted(() => {
             ຍອດເງິນ <span class="text-error">*</span>
           </v-label>
           <v-text-field
+          readonly
           class="pa-1"
             :model-value="formatNumber(request.amount || 0)"
             density="compact"
