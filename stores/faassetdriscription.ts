@@ -61,7 +61,7 @@ export const useFassetLidtDescription = defineStore("fassetlistdecription", {
       const req = await axios.post(`/api/depreciation/`, this.requres_data_post, {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("access")}` // ເພີ່ມ space
+          Authorization: `Bearer ${localStorage.getItem("access")}` 
         }
       });
       
@@ -72,8 +72,9 @@ export const useFassetLidtDescription = defineStore("fassetlistdecription", {
           text: "ທ່ານສຳເລັດການຫັກຄ່າເສື່ອມແລ້ວ",
           timer: 1000,
         });
+        this.getArrears()
         
-        // ອັບເດດຂໍ້ມູນໃຫມ່ຫຼັງຈາກສຳເລັດ
+       
         this.getArrears();
       }
     }
