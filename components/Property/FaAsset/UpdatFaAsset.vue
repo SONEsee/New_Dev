@@ -1,4 +1,4 @@
-
+<template></template>
 <!-- <script lang="ts" setup>
 import { CallSwal } from "#build/imports";
 import { useRouter, useRoute } from "vue-router";

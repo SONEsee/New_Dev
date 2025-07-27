@@ -224,12 +224,13 @@ onMounted(() => {
   <div class="pa-2">
     <GlobalTextTitleLine :title="title" />
     <v-form ref="form" @submit.prevent="handleSubmit">
-      <v-row>
+      <v-row no-gutters>
         <v-col cols="12" md="6">
           <v-label class="mb-1">
             ລະຫັດປະເພດຊັບສົມບັດ <span class="text-error">*</span>
           </v-label>
           <v-autocomplete
+          class="pa-1"
             v-model="request.asset_id"
             density="compact"
             label="ລະຫັດປະເພດຊັບສົມບັດ"
@@ -256,6 +257,7 @@ onMounted(() => {
             ຊັບສົມບັດ <span class="text-error">*</span>
           </v-label>
           <v-autocomplete
+          class="pa-1"
             v-model="request.ref_id"
             density="compact"
             variant="outlined"
@@ -292,11 +294,12 @@ onMounted(() => {
           
           </v-col
         >
-        <v-col cols="12" md="4">
+        <v-col cols="12" md="4" >
           <v-label class="mb-1">
             ຍອດເງິນ <span class="text-error">*</span>
           </v-label>
           <v-text-field
+          class="pa-1"
             :model-value="formatNumber(request.amount || 0)"
             density="compact"
             variant="outlined"
@@ -310,6 +313,7 @@ onMounted(() => {
             ບັນຊີເຄດິດ (Cr) <span class="text-error">*</span>
           </v-label>
           <v-text-field
+          class="pa-1"
             v-model="creditAccount"
             density="compact"
             variant="outlined"
@@ -319,11 +323,12 @@ onMounted(() => {
           />
         </v-col>
 
-        <v-col cols="12" md="4">
+        <v-col cols="12" md="4" class="">
           <v-label class="mb-1">
             ມູນຄ່າເລີ່ມຕົ້ນ <span class="text-error">*</span>
           </v-label>
           <v-text-field
+          class="pa-1"
             readonly
             :model-value="formatNumber(request.amount_start || 0)"
             density="compact"
@@ -338,6 +343,7 @@ onMounted(() => {
             ບັນຊີເດບິດ (Dr) <span class="text-error">*</span>
           </v-label>
           <v-text-field
+          class="pa-1"
             readonly
             v-model="debitAccount"
             density="compact"
@@ -366,6 +372,7 @@ onMounted(() => {
             ມູນຄ່າທ້າຍ <span class="text-error">*</span>
           </v-label>
           <v-text-field
+          class="pa-1"
             readonly
             :model-value="formatNumber(request.amount_end || 0)"
             density="compact"
@@ -382,12 +389,13 @@ onMounted(() => {
             ລາຍລະອຽດ <span class="text-error">*</span>
           </v-label>
           <v-textarea
+          class="pa-1"
             v-model="request.description"
             density="compact"
             variant="outlined"
             label="ລາຍລະອຽດ"
             placeholder="ລາຍລະອຽດ"
-            readonly
+            
         /></v-col>
 
         <v-col cols="12" class="d-flex flex-wrap justify-center">
@@ -409,6 +417,9 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.v-col {
+  padding: 0 !important;
+}
 .text-grey {
   color: #666;
 }
