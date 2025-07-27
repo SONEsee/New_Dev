@@ -182,6 +182,7 @@ const handleSubmit = async () => {
   if (isValid) {
     request.credit_account_id = creditAccount.value;
     request.debit_account_id = debitAccount.value;
+    
 
     console.log("ຂໍ້ມູນທີ່ຈະສົ່ງ:", request);
 
@@ -199,6 +200,7 @@ const asset = computed(() => {
 });
 
 onMounted(() => {
+  request.transaction_date = new Date().toISOString().split('T')[0] as any
   assetStores.GetAssetList();
   masterStettingStore.getSetting();
   masterStettingStore.getCAT();
@@ -355,11 +357,11 @@ onMounted(() => {
         </v-col>
 
         <v-col cols="12" md="4">
-          <!-- <v-label class="mb-1">
+          <v-label class="mb-1">
             ວັນທີເຮັດຖຸລະກຳ <span class="text-error">*</span>
-          </v-label> -->
-          <!-- <v-text-field
-          :hidden="true"
+          </v-label>
+          <v-text-field
+          style="display: none;"
             readonly
             v-model="request.transaction_date"
             density="compact"
@@ -367,7 +369,7 @@ onMounted(() => {
             label="ວັນທີເຮັດຖຸລະກຳ"
             placeholder="ວັນທີເຮັດຖຸລະກຳ"
             type="date"
-          /> -->
+          />
 
           <v-label class="mb-1">
             ມູນຄ່າທ້າຍ <span class="text-error">*</span>

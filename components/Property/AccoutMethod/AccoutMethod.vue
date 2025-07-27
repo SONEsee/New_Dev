@@ -13,6 +13,16 @@ const assetlist = computed(() => {
     return item.Auth_Status === "A" && item.Auth_Status_ARC === "A";
   });
 });
+const detailassetlis = computed(()=>{
+  const data = assetListStore.response_fa_asset_list;
+  if(Array.isArray(data)){
+    return data
+  }
+  if(data && typeof data === "object"){
+    return [data]
+  }
+  return []
+})
 const accountMethodStoreInstance = accountMethodStore();
 const mockData = computed(() => {
   return accountMethodStoreInstance.response_account_method_list || [];
@@ -84,7 +94,7 @@ const title = "ຈັດການຕັ້ງຄ່າບັນທຶກບັ�
 
 const accTypes = [
   { title: "ທັງໝົດ", value: "all" },
-  { title: "ຊັບສົມບັດ", value: "ASSET" },
+  { title: "ຊື່ຊັບສົມບັດ", value: "ASSET" },
   { title: "ເສື່ອມລາຄາ", value: "DEPRECIATION" },
   { title: "ຖອນຈຳໜ່າຍ", value: "DISPOSAL" },
 ];
@@ -109,7 +119,7 @@ const headers = computed(() => [
     class: "text-center",
   },
   {
-    title: "ປະເພດທຸລະກຳ",
+    title: "ຊື່ຊັບສົມບັດ",
     value: "acc_type",
     align: "center",
     sortable: true,
@@ -292,10 +302,36 @@ const headers = computed(() => [
 //     record_stat: "O",
 //   },
 // ]);
+const mappedData = computed(() => {
+  const accountMethods = mockData.value || [];
+  const assetDetails = detailassetlis.value || [];
+  
+  return accountMethods.map(method => {
+    // ຊອກຫາ asset detail ທີ່ກົງກັບ ref_id
+    const matchedAsset = assetDetails.find(asset => 
+      asset.asset_list_id === method.ref_id
+    );
+    
+    return {
+      ...method,
+      // ເພີ່ມຂໍ້ມູນ asset detail
+      asset_detail: matchedAsset || null,
+      // ເພີ່ມຂໍ້ມູນທີ່ຈຳເປັນສຳລັບການສະແດງຜົນ
+      asset_name: matchedAsset?.asset_id_detail?.asset_name_la || '-',
+      asset_code: matchedAsset?.asset_id_detail?.asset_code || '-',
+      asset_spec: matchedAsset?.asset_spec || '-',
+      location_name: matchedAsset?.location_detail?.location_name_la || '-',
+      supplier_name: matchedAsset?.supplier_detail?.supplier_name || '-',
+      asset_value: matchedAsset?.asset_value || '0',
+      asset_status: matchedAsset?.asset_status_detail?.MC_name_la || '-'
+    };
+  });
+});
 
+// ອັບເດດ filteredData ເພື່ອໃຊ້ mappedData
 const filteredData = computed(() => {
-  let data = mockData.value;
-
+  let data = mappedData.value;
+  
   if (selectedAccType.value !== "all") {
     data = data.filter((item) => item.ref_id === selectedAccType.value);
   }
@@ -311,12 +347,38 @@ const filteredData = computed(() => {
         item.credit_account_id
           .toLowerCase()
           .includes(search.value.toLowerCase()) ||
-        item.description?.toLowerCase().includes(search.value.toLowerCase())
+        item.description?.toLowerCase().includes(search.value.toLowerCase()) ||
+        item.asset_name?.toLowerCase().includes(search.value.toLowerCase()) ||
+        item.asset_spec?.toLowerCase().includes(search.value.toLowerCase())
     );
   }
 
   return data;
 });
+// const filteredData = computed(() => {
+//   let data = mockData.value;
+// const maindata = assetListStore.response_fa_asset_detail;
+//   if (selectedAccType.value !== "all") {
+//     data = data.filter((item) => item.ref_id === selectedAccType.value);
+//   }
+
+//   if (search.value) {
+//     data = data.filter(
+//       (item) =>
+//         item.mapping_id.toString().includes(search.value) ||
+//         item.ref_id.toString().includes(search.value) ||
+//         item.debit_account_id
+//           .toLowerCase()
+//           .includes(search.value.toLowerCase()) ||
+//         item.credit_account_id
+//           .toLowerCase()
+//           .includes(search.value.toLowerCase()) ||
+//         item.description?.toLowerCase().includes(search.value.toLowerCase())
+//     );
+//   }
+
+//   return data;
+// });
 
 const formatDate = (date: Date) => {
   if (!date) return "-";
@@ -391,26 +453,6 @@ const confirmDelete = async (item: any) => {
   }
 };
 
-// const generateJournal = async (item: any) => {
-//   try {
-//     const notification = await CallSwal({
-//       title: "ຢືນຢັນການສ້າງ Journal Entry",
-//       text: `ທ່ານຕ້ອງການສ້າງ Journal Entry ສຳລັບ Mapping ID "${item.mapping_id}" ໃຊ່ບໍ່?`,
-//       icon: "question",
-//       showCancelButton: true,
-//       confirmButtonText: "ສ້າງ",
-//       cancelButtonText: "ຍົກເລີກ",
-//       confirmButtonColor: "#28a745",
-//     });
-
-//     if (notification.isConfirmed) {
-//       await accountMethodStoreInstance.GenerateJournalEntry(item.mapping_id);
-//     }
-//   } catch (error) {
-//     console.error("Error generating journal:", error);
-//   }
-// };
-
 const clearFilters = async () => {
   selectedAccType.value = "all";
   search.value = "";
@@ -420,24 +462,19 @@ const statistics = computed(() => {
   const data = filteredData.value;
   return {
     total: data.length,
-    // asset: data.filter(item => item.acc_type === 'ASSET').length,
-    // depreciation: data.filter(item => item.acc_type === 'DEPRECIATION').length,
-    // disposal: data.filter(item => item.acc_type === 'DISPOSAL').length,
-    // withJournal: data.filter(item => item.journal_entry_id).length,
-    // withoutJournal: data.filter(item => !item.journal_entry_id).length,
-    // totalAmount: data.reduce((sum, item) => sum + item.amount, 0),
-    // active: data.filter(item => item.record_stat === 'O').length,
-    // inactive: data.filter(item => item.record_stat === 'C').length,
+    
   };
 });
 
 onMounted(async () => {
   accountMethodStoreInstance.GetAccountMethodList();
+ 
   loading.value = true;
   try {
     initializeRole();
     roleStore.GetRoleDetail();
     assetListStore.GetFaAssetList();
+  
     await new Promise((resolve) => setTimeout(resolve, 500));
   } catch (error) {
     errorMessage.value = "ເກີດຂໍ້ຜິດພາດໃນການໂຫຼດຂໍ້ມູນ";
@@ -453,45 +490,7 @@ onMounted(async () => {
     <GlobalTextTitleLine :title="title" />
 
     <v-col cols="12">
-      <!-- <pre>{{ assetlist }}</pre>  -->
-      <!-- <v-row class="mb-4">
-      <v-col cols="12" md="3">
-        <v-card variant="outlined">
-          <v-card-text class="text-center">
-            <v-icon size="32" color="primary" class="mb-2">mdi-format-list-bulleted</v-icon>
-            <div class="text-h4 text-primary">{{ statistics.total }}</div>
-            <div class="text-caption">ທັງໝົດ</div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-      <v-col cols="12" md="3">
-        <v-card variant="outlined">
-          <v-card-text class="text-center">
-            <v-icon size="32" color="success" class="mb-2">mdi-treasure-chest</v-icon>
-            <div class="text-h4 text-success">{{ statistics.asset }}</div>
-            <div class="text-caption">ຊັບສົມບັດ</div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-      <v-col cols="12" md="3">
-        <v-card variant="outlined">
-          <v-card-text class="text-center">
-            <v-icon size="32" color="warning" class="mb-2">mdi-trending-down</v-icon>
-            <div class="text-h4 text-warning">{{ statistics.depreciation }}</div>
-            <div class="text-caption">ເສື່ອມລາຄາ</div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-      <v-col cols="12" md="3">
-        <v-card variant="outlined">
-          <v-card-text class="text-center">
-            <v-icon size="32" color="error" class="mb-2">mdi-delete</v-icon>
-            <div class="text-h4 text-error">{{ statistics.disposal }}</div>
-            <div class="text-caption">ຖອນຈຳໜ່າຍ</div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row> -->
+     
 
       <v-row>
         <v-col cols="12" md="3">
@@ -550,36 +549,9 @@ onMounted(async () => {
           </v-btn>
         </v-col>
       </v-row>
-
-      <!-- <v-row class="mb-4">
-      <v-col cols="12">
-        <v-card variant="outlined" color="info">
-          <v-card-text>
-            <div class="d-flex flex-wrap justify-space-between align-center">
-              <div class="text-subtitle-1">
-                <v-icon class="mr-2">mdi-information</v-icon>
-                ສະຫຼຸບຂໍ້ມູນ: ມີທັງໝົດ {{ statistics.total }} ລາຍການ
-              </div>
-              <div class="d-flex flex-wrap gap-4">
-                <div class="text-center">
-                  <div class="text-caption">ມີ Journal Entry</div>
-                  <div class="text-h6 text-success">{{ statistics.withJournal }}</div>
-                </div>
-                <div class="text-center">
-                  <div class="text-caption">ບໍ່ມີ Journal Entry</div>
-                  <div class="text-h6 text-warning">{{ statistics.withoutJournal }}</div>
-                </div>
-                <div class="text-center">
-                  <div class="text-caption">ຍອດລວມ</div>
-                  <div class="text-h6 text-primary">{{ formatCurrency(statistics.totalAmount) }} LAK</div>
-                </div>
-              </div>
-            </div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row> -->
-
+<!-- <pre>{{ detailassetlis }}</pre> -->
+ <pre>{{  }}</pre>
+      
       <v-data-table
         :headers="headers"
         :items="filteredData || []"
@@ -659,9 +631,9 @@ onMounted(async () => {
               size="small"
             >
               <v-icon start size="small">{{
-                getAccTypeIcon(item.acc_type)
+                getAccTypeIcon(item.asset_spec)
               }}</v-icon>
-              {{ getAccTypeText(item.acc_type) }}
+              {{ getAccTypeText(item.asset_spec) }}
             </v-chip>
           </div>
         </template>
@@ -718,27 +690,7 @@ onMounted(async () => {
           {{ dayjs(item.transaction_date).format("DD/MM/YYYY ") }}
         </template>
 
-        <!-- <template v-slot:item.journal_entry_id="{ item }">
-        <div class="text-center">
-          <div v-if="item.journal_entry_id">
-            <v-chip color="success" variant="flat" size="small" class="mb-1">
-              <v-icon start size="small">mdi-check</v-icon>
-              {{ item.journal_entry_id }}
-            </v-chip>
-          </div>
-          <div v-else>
-            <v-btn
-              color="warning"
-              variant="outlined"
-              size="small"
-              @click="generateJournal(item)"
-              prepend-icon="mdi-plus"
-            >
-              ສ້າງ
-            </v-btn>
-          </div>
-        </div>
-      </template> -->
+       
 
         <template v-slot:item.Record_Status="{ item }">
           <div>
