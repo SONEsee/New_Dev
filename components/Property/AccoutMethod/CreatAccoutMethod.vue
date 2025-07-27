@@ -225,7 +225,7 @@ onMounted(() => {
     <GlobalTextTitleLine :title="title" />
     <v-form ref="form" @submit.prevent="handleSubmit">
       <v-row>
-        <v-col cols="12" md="4">
+        <v-col cols="12" md="6">
           <v-label class="mb-1">
             ລະຫັດປະເພດຊັບສົມບັດ <span class="text-error">*</span>
           </v-label>
@@ -249,9 +249,9 @@ onMounted(() => {
                 :title="item.raw.asset_name_la"
                 :subtitle="`ລະຫັດ: ${item.raw.asset_code}`"
               />
-            </template>
-          </v-autocomplete>
-
+            </template> </v-autocomplete
+        ></v-col>
+        <v-col cols="12" md="6">
           <v-label class="mb-1">
             ຊັບສົມບັດ <span class="text-error">*</span>
           </v-label>
@@ -289,47 +289,10 @@ onMounted(() => {
               </v-list-item>
             </template>
           </v-autocomplete>
-
-          <v-label class="mb-1">
-            ມູນຄ່າເລີ່ມຕົ້ນ <span class="text-error">*</span>
-          </v-label>
-          <v-text-field
-            :model-value="formatNumber(request.amount_start || 0)"
-            density="compact"
-            variant="outlined"
-            label="ມູນຄ່າຕົ້ນ"
-            placeholder="0.00"
-            @input="handleNumberInput($event, 'amount_start')"
-            @blur="handleNumberBlur"
-            @focus="handleNumberFocus"
-          />
-
-          <v-label class="mb-1">
-            ວັນທີເຮັດຖຸລະກຳ <span class="text-error">*</span>
-          </v-label>
-          <v-text-field
-            v-model="request.transaction_date"
-            density="compact"
-            variant="outlined"
-            label="ວັນທີເຮັດຖຸລະກຳ"
-            placeholder="ວັນທີເຮັດຖຸລະກຳ"
-            type="date"
-          />
-        </v-col>
-
+          
+          </v-col
+        >
         <v-col cols="12" md="4">
-          <v-label class="mb-1">
-            ບັນຊີເດບິດ (Dr) <span class="text-error">*</span>
-          </v-label>
-          <v-text-field
-            v-model="debitAccount"
-            density="compact"
-            variant="outlined"
-            label="ບັນຊີເດບິດ (Dr)"
-            placeholder="ບັນຊີເດບິດ"
-            readonly
-          />
-
           <v-label class="mb-1">
             ຍອດເງິນ <span class="text-error">*</span>
           </v-label>
@@ -343,23 +306,6 @@ onMounted(() => {
             @blur="handleNumberBlur"
             @focus="handleNumberFocus"
           />
-
-          <v-label class="mb-1">
-            ມູນຄ່າທ້າຍ <span class="text-error">*</span>
-          </v-label>
-          <v-text-field
-            :model-value="formatNumber(request.amount_end || 0)"
-            density="compact"
-            variant="outlined"
-            label="ມູນຄ່າທ້າຍ"
-            placeholder="0.00"
-            @input="handleNumberInput($event, 'amount_end')"
-            @blur="handleNumberBlur"
-            @focus="handleNumberFocus"
-          />
-        </v-col>
-
-        <v-col cols="12" md="4">
           <v-label class="mb-1">
             ບັນຊີເຄດິດ (Cr) <span class="text-error">*</span>
           </v-label>
@@ -371,8 +317,68 @@ onMounted(() => {
             placeholder="ບັນຊີເຄດິດ"
             readonly
           />
+        </v-col>
+
+        <v-col cols="12" md="4">
+          <v-label class="mb-1">
+            ມູນຄ່າເລີ່ມຕົ້ນ <span class="text-error">*</span>
+          </v-label>
+          <v-text-field
+            readonly
+            :model-value="formatNumber(request.amount_start || 0)"
+            density="compact"
+            variant="outlined"
+            label="ມູນຄ່າຕົ້ນ"
+            placeholder="0.00"
+            @input="handleNumberInput($event, 'amount_start')"
+            @blur="handleNumberBlur"
+            @focus="handleNumberFocus"
+          />
+          <v-label class="mb-1">
+            ບັນຊີເດບິດ (Dr) <span class="text-error">*</span>
+          </v-label>
+          <v-text-field
+            readonly
+            v-model="debitAccount"
+            density="compact"
+            variant="outlined"
+            label="ບັນຊີເດບິດ (Dr)"
+            placeholder="ບັນຊີເດບິດ"
+          />
+        </v-col>
+
+        <v-col cols="12" md="4">
+          <!-- <v-label class="mb-1">
+            ວັນທີເຮັດຖຸລະກຳ <span class="text-error">*</span>
+          </v-label> -->
+          <!-- <v-text-field
+          :hidden="true"
+            readonly
+            v-model="request.transaction_date"
+            density="compact"
+            variant="outlined"
+            label="ວັນທີເຮັດຖຸລະກຳ"
+            placeholder="ວັນທີເຮັດຖຸລະກຳ"
+            type="date"
+          /> -->
 
           <v-label class="mb-1">
+            ມູນຄ່າທ້າຍ <span class="text-error">*</span>
+          </v-label>
+          <v-text-field
+            readonly
+            :model-value="formatNumber(request.amount_end || 0)"
+            density="compact"
+            variant="outlined"
+            label="ມູນຄ່າທ້າຍ"
+            placeholder="0.00"
+            @input="handleNumberInput($event, 'amount_end')"
+            @blur="handleNumberBlur"
+            @focus="handleNumberFocus"
+          />
+        </v-col>
+        <v-col cols="8"
+          ><v-label class="mb-1">
             ລາຍລະອຽດ <span class="text-error">*</span>
           </v-label>
           <v-textarea
@@ -381,10 +387,10 @@ onMounted(() => {
             variant="outlined"
             label="ລາຍລະອຽດ"
             placeholder="ລາຍລະອຽດ"
-          />
-        </v-col>
+            readonly
+        /></v-col>
 
-        <v-col cols="12" class="d-flex flex-wrap justify-center mt-6">
+        <v-col cols="12" class="d-flex flex-wrap justify-center">
           <v-btn
             color="error"
             variant="outlined"

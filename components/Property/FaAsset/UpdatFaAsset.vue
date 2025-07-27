@@ -1,4 +1,5 @@
-<script lang="ts" setup>
+
+<!-- <script lang="ts" setup>
 import { CallSwal } from "#build/imports";
 import { useRouter, useRoute } from "vue-router";
 import { nextTick } from "vue";
@@ -362,10 +363,7 @@ const submitForm = async () => {
   }
 
   const requiredFields = [
-    {
-      field: faAssetStoreInstance.form_update_fa_asset.asset_type_id,
-      name: "ປະເພດຊັບສົມບັດ",
-    },
+    
     {
       field: faAssetStoreInstance.form_update_fa_asset.asset_value,
       name: "ມູນຄ່າເລີ່ມຕົ້ນ",
@@ -609,12 +607,11 @@ watch(
       faAssetStoreInstance.form_update_fa_asset.asset_disposal_date =
         req.asset_disposal_date;
       faAssetStoreInstance.form_update_fa_asset.asset_value =
-        req.asset_value || 0;
-      faAssetStoreInstance.form_update_fa_asset.MC_name_la =
-        req.MC_name_la || "";
-      faAssetStoreInstance.form_update_fa_asset.MC_detail = req.MC_detail || "";
+        req.asset_value;
       faAssetStoreInstance.form_update_fa_asset.type_of_pay =
-        req.type_of_pay || "";
+        req.type_of_pay;
+      
+      
     }
   }
 );
@@ -728,15 +725,15 @@ const rules = {
   },
 };
 
-// Enhanced onMounted with better error handling
+
 onMounted(async () => {
   try {
     loading.value = true;
 
-    // Load currency data
+  
     currencyStore.getDataCerrency();
 
-    // Load asset detail first
+   
     faAssetStoreInstance.GetFaAssetDetail(id);
 
     await Promise.all([
@@ -858,12 +855,12 @@ onMounted(async () => {
                         prepend-inner-icon="mdi-auto-fix"
                         hint="ສ້າງອັດຕະໂນມັດຈາກການເລືອກປະເພດຊັບສິນ"
                       >
-                      </v-text-field> -->
+                      </v-text-field> 
                       <GlobalCardTitle
                         :title="'ເລກບັນຊີ/DR'"
                         :text="detaildata?.acc_no"
                       />
-                      <!-- <label
+                      <label
                         >ເລກບັນຊີ/CR<span class="text-error">*</span></label
                       >
                       <v-autocomplete
@@ -880,7 +877,7 @@ onMounted(async () => {
                         :disabled="true"
                         
                       >
-                      </v-autocomplete> -->
+                      </v-autocomplete> 
                     </v-col>
                   </v-row>
                 </v-card-text>
@@ -905,7 +902,7 @@ onMounted(async () => {
                         <span class="text-error">*</span></label
                       >
                       <v-text-field
-                        v-model="formattedAssetValue"
+                        v-model="faAssetStoreInstance.form_update_fa_asset.asset_value"
                         :rules="[rules.required, rules.positiveNumber]"
                         placeholder="0"
                         density="compact"
@@ -1080,7 +1077,7 @@ onMounted(async () => {
                         density="compact"
                         variant="outlined"
                         hide-details="auto"
-                      ></v-text-field> -->
+                      ></v-text-field> 
                       <label
                         >ປະເພດຊັບສິນຄົງທີ່<span class="text-error"
                           >*</span
@@ -1221,7 +1218,7 @@ onMounted(async () => {
                         prefix="₭"
                         class="formatted-number-input"
                         :disabled="true"
-                      ></v-text-field> -->
+                      ></v-text-field> 
                       <label>ອັດຕາຄ່າຫຼູຍຫຽ້ນລາຄາ (%)</label>
                       <v-text-field
                         v-model.number="
@@ -1270,7 +1267,7 @@ onMounted(async () => {
                     <v-col cols="12" md="3">
                       <label>ມູນຄ່າຊາກ</label>
                       <v-text-field
-                        v-model="formattedSalvageValue"
+                        v-model="faAssetStoreInstance.form_update_fa_asset.asset_salvage_value"
                         :rules="[rules.positiveNumber]"
                         placeholder="0"
                         density="compact"
@@ -1404,4 +1401,4 @@ label {
 .text-dark {
   color: rgba(0, 0, 0, 0.87) !important;
 }
-</style>
+</style> -->
