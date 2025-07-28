@@ -135,7 +135,7 @@ const formattedSalvageValue = computed({
   get: () =>
     formatNumber(faAssetStoreInstance.form_update_fa_asset.asset_salvage_value),
   set: (val) => {
-    faAssetStoreInstance.form_update_fa_asset.asset_salvage_value  =
+    faAssetStoreInstance.form_update_fa_asset.asset_salvage_value =
       parseFormattedNumber(val);
   },
 });
@@ -362,10 +362,7 @@ const submitForm = async () => {
   }
 
   const requiredFields = [
-    {
-      field: faAssetStoreInstance.form_update_fa_asset.asset_type_id,
-      name: "ປະເພດຊັບສົມບັດ",
-    },
+   
     {
       field: faAssetStoreInstance.form_update_fa_asset.asset_value,
       name: "ມູນຄ່າເລີ່ມຕົ້ນ",
@@ -569,52 +566,32 @@ watch(
   () => faAssetStoreInstance.response_fa_asset_detail,
   (req) => {
     if (req) {
-      faAssetStoreInstance.form_update_fa_asset.aaset_ac_by = req.asset_ac_by;
-      faAssetStoreInstance.form_update_fa_asset.asset_serial_no =
-        req.asset_serial_no;
-      faAssetStoreInstance.form_update_fa_asset.asset_list_code =
-        req.asset_list_code;
-
-      faAssetStoreInstance.form_update_fa_asset.acc_no = req.acc_no || "";
-      faAssetStoreInstance.form_update_fa_asset.asset_tag = req.asset_tag || "";
-      faAssetStoreInstance.form_update_fa_asset.asset_location_id =
-        req.asset_location_id;
       faAssetStoreInstance.form_update_fa_asset.asset_spec =
         req.asset_spec || "";
-      faAssetStoreInstance.form_update_fa_asset.asset_date =
-        req.asset_date || "";
-      faAssetStoreInstance.form_update_fa_asset.asset_currency =
-        req.asset_currency || "LAK";
-      faAssetStoreInstance.form_update_fa_asset.warranty_end_date =
-        req.warranty_end_date;
-      faAssetStoreInstance.form_update_fa_asset.supplier_id =
-        req.supplier_id || 0;
-      faAssetStoreInstance.form_update_fa_asset.dpca_type = req.dpca_type || "";
-      faAssetStoreInstance.form_update_fa_asset.dpca_percentage =
-        req.dpca_percentage;
-      faAssetStoreInstance.form_update_fa_asset.asset_useful_life =
-        req.asset_useful_life || 0;
-      faAssetStoreInstance.form_update_fa_asset.asset_salvage_value =
-        req.asset_salvage_value;
-      faAssetStoreInstance.form_update_fa_asset.dpca_start_date =
-        req.dpca_start_date;
-      faAssetStoreInstance.form_update_fa_asset.dpca_end_date =
-        req.dpca_end_date;
-      faAssetStoreInstance.form_update_fa_asset.asset_accu_dpca_value =
-        req.asset_accu_dpca_value;
-      faAssetStoreInstance.form_update_fa_asset.asset_value_remain =
-        req.asset_value_remain;
-      faAssetStoreInstance.form_update_fa_asset.asset_latest_date_dpca =
-        req.asset_latest_date_dpca;
-      faAssetStoreInstance.form_update_fa_asset.asset_disposal_date =
-        req.asset_disposal_date;
-      faAssetStoreInstance.form_update_fa_asset.asset_value =
-        req.asset_value || 0;
-      faAssetStoreInstance.form_update_fa_asset.MC_name_la =
-        req.MC_name_la || "";
-      faAssetStoreInstance.form_update_fa_asset.MC_detail = req.MC_detail || "";
+      faAssetStoreInstance.form_update_fa_asset.dpca_type =
+        req.dpca_type || "";
       faAssetStoreInstance.form_update_fa_asset.type_of_pay =
         req.type_of_pay || "";
+      faAssetStoreInstance.form_update_fa_asset.asset_date = 
+  req.asset_date || new Date().toISOString();
+    
+
+      faAssetStoreInstance.form_update_fa_asset.asset_currency =
+        req.asset_currency || "LAK";
+
+      faAssetStoreInstance.form_update_fa_asset.supplier_id =
+        req.supplier_id || 0;
+      faAssetStoreInstance.form_update_fa_asset.asset_salvage_value =
+        req.asset_salvage_value || 0;
+      faAssetStoreInstance.form_update_fa_asset.asset_location_id =
+        req.asset_location_id || 0;
+
+      faAssetStoreInstance.form_update_fa_asset.asset_useful_life =
+        req.asset_useful_life || 0;
+      faAssetStoreInstance.form_update_fa_asset.asset_value =
+        req.asset_value || 0;
+
+      
     }
   }
 );
@@ -628,7 +605,6 @@ watch(
       );
 
       if (selectedAsset?.tangible_detail) {
-      
         if (!faAssetStoreInstance.form_update_fa_asset.MC_name_la) {
           faAssetStoreInstance.form_update_fa_asset.MC_name_la =
             selectedAsset.tangible_detail.MC_name_la || "";
@@ -680,28 +656,6 @@ watch(
   }
 );
 
-// Enhanced watch for master data
-watch(
-  [
-    () => noacc.value,
-    () => faAssetStoreInstance.form_update_fa_asset.type_of_pay,
-  ],
-  async ([newNoacc, newTypeOfPay]) => {
-    try {
-      if (newTypeOfPay) {
-        noaccStore.res_pons_filter.query.gl_code = newTypeOfPay;
-        await noaccStore.getSubData();
-      } else if (newNoacc && newNoacc.length > 0) {
-        noaccStore.res_pons_filter.query.gl_code = newNoacc[0].MC_detail;
-        await noaccStore.getSubData();
-      }
-    } catch (error) {
-      console.error("Error loading sub data:", error);
-    }
-  },
-  { immediate: true }
-);
-
 const rules = {
   required: (value: any) => !!value || "ກະລຸນາປ້ອນຂໍ້ມູນ",
   requiredSelect: (value: any) => !!value || "ກະລຸນາເລືອກຂໍ້ມູນ",
@@ -728,15 +682,12 @@ const rules = {
   },
 };
 
-// Enhanced onMounted with better error handling
 onMounted(async () => {
   try {
     loading.value = true;
 
-    // Load currency data
     currencyStore.getDataCerrency();
 
-    // Load asset detail first
     faAssetStoreInstance.GetFaAssetDetail(id);
 
     await Promise.all([
@@ -842,45 +793,11 @@ onMounted(async () => {
                         maxlength="500"
                         counter
                       ></v-textarea>
-                      <!-- <label
-                        >ປະເພດຊັບສິນຄົງທີ່<span class="text-error"
-                          >*</span
-                        ></label
-                      >
-                      <v-text-field
-                        :rules="[rules.required]"
-                        :value="computedAssetDisplayName"
-                        placeholder="ຊັບສົມບັດພວມຊື້ພວມກໍ່ສ້າງ - ປະເພດຊັບສິນ"
-                        density="compact"
-                        variant="outlined"
-                        hide-details="auto"
-                        readonly
-                        prepend-inner-icon="mdi-auto-fix"
-                        hint="ສ້າງອັດຕະໂນມັດຈາກການເລືອກປະເພດຊັບສິນ"
-                      >
-                      </v-text-field> -->
+
                       <GlobalCardTitle
                         :title="'ເລກບັນຊີ/DR'"
                         :text="detaildata?.acc_no"
                       />
-                      <!-- <label
-                        >ເລກບັນຊີ/CR<span class="text-error">*</span></label
-                      >
-                      <v-autocomplete
-                        v-model="
-                          faAssetStoreInstance.form_update_fa_asset.acc_no
-                        "
-                        :items="subgl || []"
-                        density="compact"
-                        variant="outlined"
-                        item-title="glsub_code"
-                        item-value="glsub_code"
-                        hide-details="auto"
-                        placeholder="ເລືອກເລກບັນຊີ"
-                        :disabled="true"
-                        
-                      >
-                      </v-autocomplete> -->
                     </v-col>
                   </v-row>
                 </v-card-text>
@@ -997,13 +914,7 @@ onMounted(async () => {
               </v-card>
             </v-col>
 
-            <v-col
-              cols="12"
-              v-show="
-                faAssetStoreInstance.form_update_fa_asset.has_depreciation ===
-                'Y'
-              "
-            >
+            <v-col cols="12">
               <v-card
                 variant="outlined"
                 class="mb-6"
@@ -1015,7 +926,13 @@ onMounted(async () => {
                 </v-card-title>
                 <v-card-text class="pt-4">
                   <v-row>
+                    <!-- <pre>{{ detaildata }}</pre>
+                  <pre> {{ doca_type }}</pre>  -->
                     <v-col cols="12" md="3">
+                      <!-- <GlobalCardTitle
+                        :title="'ວິທີຫັກຄ່າຫຼຸຍຫຽ້ນ'"
+                        :text="detaildata?.dpca_type"
+                      /> -->
                       <label
                         >ວິທີຫັກຄ່າຫຼຸຍຫຽ້ນ<span class="text-error"
                           >*</span
@@ -1034,6 +951,7 @@ onMounted(async () => {
                         :items="doca_type || []"
                         item-title="title"
                         item-value="value"
+                        readonly
                       ></v-autocomplete>
                       <label
                         >ອາຍຸການໃຊ້ງານ (ປີ)<span class="text-error"
@@ -1087,7 +1005,7 @@ onMounted(async () => {
                         ></label
                       >
                       <v-text-field
-                        :rules="[rules.required]"
+                      
                         :value="computedAssetDisplayName"
                         placeholder="ຊັບສົມບັດພວມຊື້ພວມກໍ່ສ້າງ - ປະເພດຊັບສິນ"
                         density="compact"
@@ -1104,6 +1022,7 @@ onMounted(async () => {
                         >ປະເພດການຊຳລະ<span class="text-error">*</span></label
                       >
                       <v-autocomplete
+                      readonly
                         v-model="
                           faAssetStoreInstance.form_update_fa_asset.type_of_pay
                         "
@@ -1179,6 +1098,7 @@ onMounted(async () => {
                         >ສະຖານທີ່ຕັ້ງ<span class="text-error">*</span></label
                       >
                       <v-select
+
                         v-model="
                           faAssetStoreInstance.form_update_fa_asset
                             .asset_location_id
@@ -1281,10 +1201,8 @@ onMounted(async () => {
                       ></v-text-field>
                       <label>ວັນທີ່ເລີ່ມຄິດລາຄາຫຼູ້ຍຫຽ້ນ</label>
                       <v-text-field
-                        v-model="
-                          faAssetStoreInstance.form_update_fa_asset
-                            .dpca_start_date
-                        "
+                        :disabled="true"
+                         
                         type="date"
                         density="compact"
                         variant="outlined"
