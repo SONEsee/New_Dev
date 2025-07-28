@@ -1,7 +1,7 @@
 <template>
   <v-app-bar
     :elevation="2"
-    class="d-flex align-center"
+    class="d-flex align-center "
     :style="{
       background: 'linear-gradient(135deg, #0D47A1 0%, #BBDEFB 100%)',
       color: 'white',
@@ -17,8 +17,6 @@
       ລະບົບບັນຊີ ບໍລິສັດລັດ ບໍລິຫານໜີ້ ແລະ ຊັບສິນ ຈຳກັດຜູ້ດຽວ (SAMC'S Accounting
       System)
     </v-app-bar-title>
-
-    <!-- Working Day Status Alert -->
     <v-tooltip bottom>
       <template v-slot:activator="{ props }">
         <v-btn
@@ -45,12 +43,10 @@
       </template>
       <span>{{ workingDayMessage || 'ກວດສອບວັນເຮັດການ' }}</span>
     </v-tooltip>
-
     <v-spacer></v-spacer>
-    
-    <v-chip color="#0D47A1">
-      <h5 class="mr-5">ສິດການເຂົ້ານຳໃຊ້: {{ role }}</h5>
-    </v-chip>
+    <v-chip color="#0D47A1"
+      ><h5 class="mr-5">ສິດການເຂົ້ານຳໃຊ້: {{ role }}</h5></v-chip
+    >
 
     <v-menu min-width="200px" rounded>
       <template v-slot:activator="{ props }">
@@ -94,56 +90,6 @@
       </v-card>
     </v-menu>
   </v-app-bar>
-
-  <!-- Working Day Status Snackbar -->
-  <v-snackbar
-    v-model="showWorkingDaySnackbar"
-    :color="isWorkingDay ? 'success' : 'error'"
-    :timeout="5000"
-    top
-    multi-line
-  >
-    <v-icon class="mr-2">
-      {{ isWorkingDay ? 'mdi-check-circle' : 'mdi-alert-circle' }}
-    </v-icon>
-    {{ workingDayMessage }}
-    
-    <template v-slot:actions>
-      <v-btn
-        color="white"
-        variant="text"
-        @click="showWorkingDaySnackbar = false"
-      >
-        ປິດ
-      </v-btn>
-    </template>
-  </v-snackbar>
-
-  <!-- Working Day Status Banner (Optional - shows permanent status) -->
-  <v-banner
-    v-if="!isWorkingDay && workingDayMessage"
-    :color="'error'"
-    :icon="'mdi-calendar-alert'"
-    lines="one"
-    sticky
-    class="working-day-banner"
-  >
-    <v-banner-text>
-      {{ workingDayMessage }}
-    </v-banner-text>
-    
-    <template v-slot:actions>
-      <v-btn
-        variant="text"
-        color="white"
-        size="small"
-        @click="checkWorkingDay"
-        :loading="loadingWorkingDay"
-      >
-        ກວດສອບໃໝ່
-      </v-btn>
-    </template>
-  </v-banner>
 
   <v-navigation-drawer
     class="mt-2"
