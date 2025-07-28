@@ -47,7 +47,7 @@ const allItems = computed(() => {
 });
 
 const headers = [
-  { title: "ລະຫັດ", key: "category", sortable: true  },
+  { title: "ລະຫັດ", key: "category", sortable: true },
   { title: "ຊື່ຊັບສິນ", key: "asset_name", sortable: true },
   { title: "ໄລຍະເວລາຫັກຄ່າຫຼູ້ຍຫຽ້ນ", key: "due_date", sortable: true },
   {
@@ -84,9 +84,19 @@ const getCategoryColor = (category: string) => {
       return "grey";
   }
 };
-const handelSubmit = async ()=>{
-    await dreptriptionStore.Caculater()
-}
+const handelSubmit = async () => {
+  const notification =  await CallSwal({
+    icon:"warning",
+    title:"ຄຳເຕືອນ",
+    text:"ທ່ານຕອ້ງການຫັກຄ່າຫຼູຍຫ້ຽນນີ້ບໍ...?",
+    showConfirmButton:true,
+    confirmButtonText:"ຕົກລົງ",
+    cancelButtonText:"ຍົກເລີກ"
+  });if(notification.isConfirmed){
+    await dreptriptionStore.Caculater();
+  }
+  
+};
 onMounted(() => {
   accoutStore.GetAccountMethodList();
   dreptriptionStore.getdataCalculated();
@@ -115,9 +125,9 @@ onMounted(() => {
     <div v-else-if="respontest?.success">
       <v-row>
         <v-col cols="12" class="text-center">
-          <h2 class="text-h4 mb-2">ລາຍການຫັກຄ່າຫຼູ້ຍຫຽ້ນປະຈຳເດືອນ</h2>
+          <h2 class=" mb-2">ລາຍການຫັກຄ່າຫຼູ້ຍຫ້ຽນປະຈຳເດືອນ</h2>
           <div v-if="targetPeriod">
-            <h3 class="text-h5 text-primary">
+            <h3 class=" text-primary">
               {{ targetPeriod.month_name_la }} {{ targetPeriod.year }}
             </h3>
             <p class="text-subtitle-1 text-grey">{{ targetPeriod.period }}</p>
@@ -127,10 +137,10 @@ onMounted(() => {
 
       <v-row>
         <v-col cols="12">
-          <v-card>
-             <v-btn color="primary" @click="handelSubmit">
-                ຫັກຄ່າຫຼູຍຫຽ້ນທັງໝົດ
-             </v-btn>
+          <v-card class="pa-2">
+            <v-btn color="primary" @click="handelSubmit">
+              ຫັກຄ່າຫຼູຍຫ້ຽນທັງໝົດ
+            </v-btn>
             <v-card-title>
               <v-icon left>mdi-table</v-icon>
               ລາຍລະອຽດທຸກລາຍການ
@@ -168,7 +178,7 @@ onMounted(() => {
               </template>
               <template v-slot:item.due_date="{ item }">
                 <v-chip variant="outlined" size="small">
-                   {{ item.due_end_date }} - {{ item.due_end_date }}
+                  {{ item.due_end_date }} - {{ item.due_end_date }}
                 </v-chip>
               </template>
 
@@ -215,7 +225,6 @@ onMounted(() => {
           </v-card>
         </v-col>
 
-     
         <v-col cols="12" v-if="dueItems.length > 0" class="mt-4">
           <v-card>
             <v-card-title class="bg-orange-lighten-5">
@@ -240,7 +249,6 @@ onMounted(() => {
       </v-row>
     </div>
 
-    <!-- Error State -->
     <v-row v-else>
       <v-col cols="12" class="text-center">
         <v-icon color="error" size="64">mdi-alert-circle</v-icon>

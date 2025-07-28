@@ -1,4 +1,5 @@
-<script lang="ts" setup>
+<template></template>
+<!-- <script lang="ts" setup>
 import { CallSwal } from "#build/imports";
 import { useRouter, useRoute } from "vue-router";
 import { nextTick } from "vue";
@@ -362,7 +363,11 @@ const submitForm = async () => {
   }
 
   const requiredFields = [
+<<<<<<< HEAD
    
+=======
+    
+>>>>>>> ad3a88eabf6d327d706fe46fab78462669d5677c
     {
       field: faAssetStoreInstance.form_update_fa_asset.asset_value,
       name: "ມູນຄ່າເລີ່ມຕົ້ນ",
@@ -568,6 +573,7 @@ watch(
     if (req) {
       faAssetStoreInstance.form_update_fa_asset.asset_spec =
         req.asset_spec || "";
+<<<<<<< HEAD
       faAssetStoreInstance.form_update_fa_asset.dpca_type =
         req.dpca_type || "";
       faAssetStoreInstance.form_update_fa_asset.type_of_pay =
@@ -591,6 +597,40 @@ watch(
       faAssetStoreInstance.form_update_fa_asset.asset_value =
         req.asset_value || 0;
 
+=======
+      faAssetStoreInstance.form_update_fa_asset.asset_date =
+        req.asset_date || "";
+      faAssetStoreInstance.form_update_fa_asset.asset_currency =
+        req.asset_currency || "LAK";
+      faAssetStoreInstance.form_update_fa_asset.warranty_end_date =
+        req.warranty_end_date;
+      faAssetStoreInstance.form_update_fa_asset.supplier_id =
+        req.supplier_id || 0;
+      faAssetStoreInstance.form_update_fa_asset.dpca_type = req.dpca_type || "";
+      faAssetStoreInstance.form_update_fa_asset.dpca_percentage =
+        req.dpca_percentage;
+      faAssetStoreInstance.form_update_fa_asset.asset_useful_life =
+        req.asset_useful_life || 0;
+      faAssetStoreInstance.form_update_fa_asset.asset_salvage_value =
+        req.asset_salvage_value;
+      faAssetStoreInstance.form_update_fa_asset.dpca_start_date =
+        req.dpca_start_date;
+      faAssetStoreInstance.form_update_fa_asset.dpca_end_date =
+        req.dpca_end_date;
+      faAssetStoreInstance.form_update_fa_asset.asset_accu_dpca_value =
+        req.asset_accu_dpca_value;
+      faAssetStoreInstance.form_update_fa_asset.asset_value_remain =
+        req.asset_value_remain;
+      faAssetStoreInstance.form_update_fa_asset.asset_latest_date_dpca =
+        req.asset_latest_date_dpca;
+      faAssetStoreInstance.form_update_fa_asset.asset_disposal_date =
+        req.asset_disposal_date;
+      faAssetStoreInstance.form_update_fa_asset.asset_value =
+        req.asset_value;
+      faAssetStoreInstance.form_update_fa_asset.type_of_pay =
+        req.type_of_pay;
+      
+>>>>>>> ad3a88eabf6d327d706fe46fab78462669d5677c
       
     }
   }
@@ -682,12 +722,23 @@ const rules = {
   },
 };
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> ad3a88eabf6d327d706fe46fab78462669d5677c
 onMounted(async () => {
   try {
     loading.value = true;
 
+<<<<<<< HEAD
     currencyStore.getDataCerrency();
 
+=======
+  
+    currencyStore.getDataCerrency();
+
+   
+>>>>>>> ad3a88eabf6d327d706fe46fab78462669d5677c
     faAssetStoreInstance.GetFaAssetDetail(id);
 
     await Promise.all([
@@ -793,11 +844,52 @@ onMounted(async () => {
                         maxlength="500"
                         counter
                       ></v-textarea>
+<<<<<<< HEAD
 
+=======
+                      <!-- <label
+                        >ປະເພດຊັບສິນຄົງທີ່<span class="text-error"
+                          >*</span
+                        ></label
+                      >
+                      <v-text-field
+                        :rules="[rules.required]"
+                        :value="computedAssetDisplayName"
+                        placeholder="ຊັບສົມບັດພວມຊື້ພວມກໍ່ສ້າງ - ປະເພດຊັບສິນ"
+                        density="compact"
+                        variant="outlined"
+                        hide-details="auto"
+                        readonly
+                        prepend-inner-icon="mdi-auto-fix"
+                        hint="ສ້າງອັດຕະໂນມັດຈາກການເລືອກປະເພດຊັບສິນ"
+                      >
+                      </v-text-field> 
+>>>>>>> ad3a88eabf6d327d706fe46fab78462669d5677c
                       <GlobalCardTitle
                         :title="'ເລກບັນຊີ/DR'"
                         :text="detaildata?.acc_no"
                       />
+<<<<<<< HEAD
+=======
+                      <label
+                        >ເລກບັນຊີ/CR<span class="text-error">*</span></label
+                      >
+                      <v-autocomplete
+                        v-model="
+                          faAssetStoreInstance.form_update_fa_asset.acc_no
+                        "
+                        :items="subgl || []"
+                        density="compact"
+                        variant="outlined"
+                        item-title="glsub_code"
+                        item-value="glsub_code"
+                        hide-details="auto"
+                        placeholder="ເລືອກເລກບັນຊີ"
+                        :disabled="true"
+                        
+                      >
+                      </v-autocomplete> 
+>>>>>>> ad3a88eabf6d327d706fe46fab78462669d5677c
                     </v-col>
                   </v-row>
                 </v-card-text>
@@ -822,7 +914,7 @@ onMounted(async () => {
                         <span class="text-error">*</span></label
                       >
                       <v-text-field
-                        v-model="formattedAssetValue"
+                        v-model="faAssetStoreInstance.form_update_fa_asset.asset_value"
                         :rules="[rules.required, rules.positiveNumber]"
                         placeholder="0"
                         density="compact"
@@ -998,7 +1090,7 @@ onMounted(async () => {
                         density="compact"
                         variant="outlined"
                         hide-details="auto"
-                      ></v-text-field> -->
+                      ></v-text-field> 
                       <label
                         >ປະເພດຊັບສິນຄົງທີ່<span class="text-error"
                           >*</span
@@ -1141,7 +1233,7 @@ onMounted(async () => {
                         prefix="₭"
                         class="formatted-number-input"
                         :disabled="true"
-                      ></v-text-field> -->
+                      ></v-text-field> 
                       <label>ອັດຕາຄ່າຫຼູຍຫຽ້ນລາຄາ (%)</label>
                       <v-text-field
                         v-model.number="
@@ -1190,7 +1282,7 @@ onMounted(async () => {
                     <v-col cols="12" md="3">
                       <label>ມູນຄ່າຊາກ</label>
                       <v-text-field
-                        v-model="formattedSalvageValue"
+                        v-model="faAssetStoreInstance.form_update_fa_asset.asset_salvage_value"
                         :rules="[rules.positiveNumber]"
                         placeholder="0"
                         density="compact"
@@ -1322,4 +1414,4 @@ label {
 .text-dark {
   color: rgba(0, 0, 0, 0.87) !important;
 }
-</style>
+</style> -->
