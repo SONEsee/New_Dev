@@ -18,6 +18,8 @@ const {
   canAuthorize,
   canAdd,
   hasPermission,
+  hasAllPermissions,
+  hasAnyPermission,
   permissions
 } = useRolePermissions()
 
@@ -80,13 +82,24 @@ const getAccountCode = (accountId) => {
 }
 
 function handleEdit(entry) {
-  if (canEdit && referenceNoSubstring.value === 'GL') {
+  // Allow editing for GL transactions and other specific types
+  const allowedTypes = ['GL']; // Add other types as needed
+  const isAllowedType = allowedTypes.includes(referenceNoSubstring.value);
+  
+  if (canEdit.value && isAllowedType) {
     editByPairAccount(entry)
-  } else {
+  } else if (!canEdit.value) {
     Swal.fire({
       icon: 'warning',
       title: 'ບໍ່ອະນຸຍາດ',
       text: 'ທ່ານບໍ່ມີສິດແກ້ໄຂລາຍການນີ້',
+      confirmButtonText: 'ຕົກລົງ'
+    })
+  } else {
+    Swal.fire({
+      icon: 'warning',
+      title: 'ບໍ່ອະນຸຍາດ',
+      text: 'ປະເພດລາຍການນີ້ບໍ່ສາມາດແກ້ໄຂໄດ້',
       confirmButtonText: 'ຕົກລົງ'
     })
   }
@@ -1290,7 +1303,10 @@ const approveItem = async (item, entry) => {
         title: 'ສຳເລັດ',
         text: successMessage,
         timer: 2000,
-        showConfirmButton: false
+        showConfirmButton: false,
+        didClose: () => {
+          window.history.back()
+        }
       })
       
       // Reload data to show updated status
@@ -1499,7 +1515,7 @@ watch(permissions, (newPermissions) => {
                     ເບິ່ງ
                   </v-chip>
                     <v-chip
-                      v-if="canEdit && referenceNoSubstring.value === 'GL' "
+                     v-if="canEdit"
                       color="warning"
                       size="x-small"
                       variant="flat"
@@ -1833,7 +1849,7 @@ watch(permissions, (newPermissions) => {
                                 <v-icon size="16">mdi-pencil</v-icon>
                               </v-btn> -->
                                <v-btn
-                                v-if="entry.Auth_Status === 'P' && canEdit"
+                                v-if="(entry.Auth_Status === 'U' || entry.Auth_Status === 'P') && canEdit"
                                   v-bind="props"
                                   icon
                                   size="small"

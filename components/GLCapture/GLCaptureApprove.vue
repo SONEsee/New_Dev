@@ -5,7 +5,7 @@
       <div class="d-flex justify-space-between align-center">
         <h1 class="page-title-compact">
           <v-icon color="primary" size="20" class="mr-2">mdi-book-check</v-icon>
-          ລາຍການບັນທຶກບັນຊີ
+          ອະນຸມັດບັນທຶກບັນຊີ
         </h1>
         
         <!-- Permission indicators -->
@@ -282,7 +282,7 @@
                     ></v-select>
                     <v-select
                       v-model="filters.selectedYear"
-                      :items="years"
+                      :items="year"
                       variant="outlined"
                       density="compact"
                       @update:model-value="loadData"
@@ -297,7 +297,7 @@
                 <template v-if="filters.dateFilterType === 'year'">
                   <v-select
                     v-model="filters.selectedYear"
-                    :items="years"
+                    :items="year"
                     variant="outlined"
                     density="compact"
                     @update:model-value="loadData"
@@ -1054,7 +1054,7 @@ const loadData = async () => {
     
     // Exclude soft deleted
     params.delete_stat__ne = 'D'
-    params.ordering = '-Maker_DT_Stamp' // Order by newest first
+    params.ordering = '-Auth_Status' // Order by newest first
     
     console.log('Loading data with params:', params)
     console.log('Date filter type:', filters.dateFilterType)

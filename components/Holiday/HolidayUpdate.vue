@@ -25,7 +25,7 @@ const router = useRouter()
 // State
 const holidayId = computed(() => route.query.id as string)
 const holiday = ref<Holiday | null>(null)
-const monthData = ref<string[]>([]) // Array of H/W/N for the month
+const monthData = ref<string[]>([]) // Array of H/W/N/O for 31 days
 const loading = ref(false)
 const error = ref('')
 const snackbar = ref(false)
@@ -53,9 +53,9 @@ const weekDays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
 
 // Legend items
 const legendItems = [
-  { code: 'H', label: 'ວັນພັກ', color: 'error', icon: 'mdi-star' },
-  { code: 'W', label: 'ວັນປົກກະຕິ', color: 'grey', icon: 'mdi-briefcase' },
-  { code: 'N', label: 'ວັນຢຸດ', color: 'info', icon: 'mdi-beach' }
+  { code: 'H', label: 'ວັນພັກ', color: 'amber-darken-2', icon: 'mdi-star' },
+  { code: 'W', label: 'ວັນປົກກະຕິ', color: 'grey-lighten-1', icon: 'mdi-briefcase' },
+  { code: 'N', label: 'ວັນຢຸດ', color: 'red-darken-4', icon: 'mdi-beach' }
 ]
 
 // Status items
@@ -82,16 +82,25 @@ const getFirstDayOffset = (year: number, month: number) => {
 
 const getButtonColor = (code: string) => {
   switch (code) {
-    case 'H': return 'error'
-    case 'N': return 'red-darken-2'
-    case 'W': return 'grey'
+    case 'H': return 'amber-darken-2'
+    case 'N': return 'red-darken-4'
+    case 'W': return 'grey-lighten-1'
     default: return 'grey'
   }
 }
 
-// Calculate total holidays
+// Calculate total holidays - only count H's within actual days
 const totalHolidays = computed(() => {
-  return monthData.value.filter(day => day === 'H').length
+  if (!holiday.value) return 0
+  const actualDays = getDaysInMonth(parseInt(holiday.value.HYear), parseInt(holiday.value.HMonth))
+  return monthData.value.slice(0, actualDays).filter(day => day === 'H').length
+})
+
+// Get only actual days for display
+const actualDaysData = computed(() => {
+  if (!holiday.value) return []
+  const actualDays = getDaysInMonth(parseInt(holiday.value.HYear), parseInt(holiday.value.HMonth))
+  return monthData.value.slice(0, actualDays)
 })
 
 // Show notification
@@ -101,30 +110,33 @@ const showNotification = (text: string, color: string = 'success') => {
   snackbar.value = true
 }
 
-// Initialize month data from Holiday_List
+// Initialize month data from Holiday_List (always 31 characters)
 const initMonthData = () => {
   if (!holiday.value) return
   
   const year = parseInt(holiday.value.HYear)
   const month = parseInt(holiday.value.HMonth)
-  const daysInMonth = getDaysInMonth(year, month)
+  const actualDays = getDaysInMonth(year, month)
   
   monthData.value = []
   
-  // Parse Holiday_List string
-  for (let d = 0; d < daysInMonth; d++) {
-    const char = holiday.value.Holiday_List[d]
-    if (char === 'H') {
-      monthData.value.push('H')
-    } else {
-      // Check if this day is a weekend
-      const date = new Date(year, month - 1, d + 1)
-      const dayOfWeek = date.getDay()
-      if (dayOfWeek === 0 || dayOfWeek === 6) {
-        monthData.value.push('N')
+  // Parse the 31-character Holiday_List
+  for (let d = 0; d < 31; d++) {
+    const char = holiday.value.Holiday_List[d] || 'O'
+    
+    if (d < actualDays) {
+      // Real day exists in this month
+      if (char === 'H') {
+        monthData.value.push('H')
       } else {
-        monthData.value.push('W')
+        // Determine if it should be weekend or weekday
+        const date = new Date(year, month - 1, d + 1)
+        const dayOfWeek = date.getDay()
+        monthData.value.push((dayOfWeek === 0 || dayOfWeek === 6) ? 'N' : 'W')
       }
+    } else {
+      // Day doesn't exist in this month
+      monthData.value.push('O')
     }
   }
 }
@@ -142,68 +154,71 @@ const fetchHoliday = async () => {
     })
     holiday.value = response.data
     initMonthData()
+    showNotification('ໂຫຼດຂໍ້ມູນສຳເລັດ', 'success')
   } catch (err: any) {
     error.value = err.response?.data?.message || 'Error fetching holiday'
-    showNotification('Error loading holiday data', 'error')
+    showNotification('ເກີດຂໍ້ຜິດພາດໃນການໂຫຼດຂໍ້ມູນ', 'error')
   } finally {
     loading.value = false
   }
 }
 
-// Toggle day status
+// Toggle day status (only for actual days)
 const toggleDay = (dayIndex: number) => {
   const code = monthData.value[dayIndex]
+  
   if (code === 'H') {
-    // Check if this day is a weekend
+    // Convert holiday back to appropriate type
     const year = parseInt(holiday.value!.HYear)
     const month = parseInt(holiday.value!.HMonth)
     const date = new Date(year, month - 1, dayIndex + 1)
     const dayOfWeek = date.getDay()
     monthData.value[dayIndex] = (dayOfWeek === 0 || dayOfWeek === 6) ? 'N' : 'W'
   } else {
+    // Convert to holiday
     monthData.value[dayIndex] = 'H'
   }
 }
 
-// Clear all holidays
+// Clear all holidays (only in actual days)
 const clearAllHolidays = () => {
+  if (!holiday.value) return
+  
+  const year = parseInt(holiday.value.HYear)
+  const month = parseInt(holiday.value.HMonth)
+  const actualDays = getDaysInMonth(year, month)
+  
   monthData.value = monthData.value.map((day, index) => {
-    if (day === 'H') {
-      const year = parseInt(holiday.value!.HYear)
-      const month = parseInt(holiday.value!.HMonth)
+    if (index < actualDays && day === 'H') {
       const date = new Date(year, month - 1, index + 1)
       const dayOfWeek = date.getDay()
       return (dayOfWeek === 0 || dayOfWeek === 6) ? 'N' : 'W'
     }
-    return day
+    return day // Keep 'O' for non-existent days
   })
-  showNotification('All holidays cleared', 'info')
+  showNotification('ລົບວັນພັກທັງໝົດແລ້ວ', 'info')
 }
 
 // Reset to original
 const resetToOriginal = () => {
   initMonthData()
-  showNotification('Reset to original data', 'info')
+  showNotification('ກັບຄືນຂໍ້ມູນເດີມແລ້ວ', 'info')
 }
 
-// Save holiday
+// Save holiday with correct 31-character format
 const saveHoliday = async () => {
   if (!holiday.value) return
   loading.value = true
+  
   try {
-    // Build Holiday_List string (31 characters)
-    const daysInMonth = monthData.value.length
+    // Build the 31-character Holiday_List string
     let holidayList = ''
     
-    // Add the actual days
-    for (let i = 0; i < daysInMonth; i++) {
-      holidayList += monthData.value[i] === 'H' ? 'H' : ' '
+    for (let i = 0; i < 31; i++) {
+      holidayList += monthData.value[i] || 'O'
     }
     
-    // Pad to 31 characters with 'X' for days that don't exist
-    for (let i = daysInMonth; i < 31; i++) {
-      holidayList += 'X'
-    }
+    console.log('Saving Holiday_List:', holidayList, `(${holidayList.length} chars)`)
     
     const updatedHoliday = {
       ...holiday.value,
@@ -217,13 +232,14 @@ const saveHoliday = async () => {
       },
     })
     
-    showNotification('Holiday updated successfully!', 'success')
+    showNotification('ບັນທຶກການແກ້ໄຂສຳເລັດ!', 'success')
     setTimeout(() => {
       router.push('/holiday/')
     }, 1500)
   } catch (err: any) {
     error.value = err.response?.data?.message || 'Error updating holiday'
-    showNotification('Failed to update holiday', 'error')
+    showNotification('ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກ', 'error')
+    console.error('Save error:', err)
   } finally {
     loading.value = false
   }
@@ -238,15 +254,16 @@ onMounted(() => fetchHoliday())
     <!-- Main Card -->
     <v-card elevation="2" class="rounded-lg">
       <!-- Header -->
-      <v-card-title class="text-styles text-black pa-6">
+      <v-card-title class="amber-gradient text-white pa-6">
         <v-row align="center">
           <v-col cols="12" md="8">
             <div class="d-flex align-center">
-              <v-icon size="x-large" class="mr-3">mdi-calendar-edit</v-icon>
+              <v-icon size="x-large" class="mr-3 text-white">mdi-calendar-edit</v-icon>
               <div>
-                <h2 class="text-h5 font-weight-bold text-styles">ແກ້ໄຂວັນພັກ</h2>
-                <p class="text-caption text-styles" v-if="holiday">
-                  {{ laoMonths[holiday.HMonth] }} {{ holiday.HYear }}
+                <h2 class="text-h5 font-weight-bold text-white">ແກ້ໄຂວັນພັກ</h2>
+                <p class="text-caption text-white" v-if="holiday">
+                  {{ laoMonths[holiday.HMonth] }} {{ holiday.HYear }} 
+                  ({{ getDaysInMonth(parseInt(holiday.HYear), parseInt(holiday.HMonth)) }} ມື້)
                 </p>
               </div>
             </div>
@@ -268,7 +285,7 @@ onMounted(() => fetchHoliday())
       <v-card-text class="pa-6">
         <!-- Loading State -->
         <div v-if="loading" class="text-center pa-8">
-          <v-progress-circular indeterminate color="primary" size="64" />
+          <v-progress-circular indeterminate color="amber-darken-2" size="64" />
           <p class="mt-4 text-h6">ກຳລັງໂຫຼດຂໍ້ມູນ...</p>
         </div>
 
@@ -290,6 +307,7 @@ onMounted(() => fetchHoliday())
                     readonly
                     variant="outlined"
                     prepend-icon="mdi-calendar"
+                    color="amber-darken-2"
                   />
                 </v-col>
                 <v-col cols="12" sm="6" md="3">
@@ -299,6 +317,7 @@ onMounted(() => fetchHoliday())
                     readonly
                     variant="outlined"
                     prepend-icon="mdi-calendar-month"
+                    color="amber-darken-2"
                   />
                 </v-col>
                 <v-col cols="12" sm="6" md="3">
@@ -310,6 +329,7 @@ onMounted(() => fetchHoliday())
                     item-value="value"
                     variant="outlined"
                     prepend-icon="mdi-database"
+                    color="amber-darken-2"
                   >
                     <template v-slot:selection="{ item }">
                       <v-chip :color="item.raw.color" size="small">
@@ -334,6 +354,7 @@ onMounted(() => fetchHoliday())
                     item-value="value"
                     variant="outlined"
                     prepend-icon="mdi-check-circle"
+                    color="amber-darken-2"
                   >
                     <template v-slot:selection="{ item }">
                       <v-chip :color="item.raw.color" size="small">
@@ -372,8 +393,8 @@ onMounted(() => fetchHoliday())
           </v-card>
 
           <!-- Calendar -->
-          <v-card variant="outlined" class="mb-6">
-            <v-card-title class="bg-grey-lighten-4">
+          <v-card variant="outlined" class="mb-6 elevation-3">
+            <v-card-title class="amber lighten-3 text-amber-darken-4">
               <v-icon class="mr-2">mdi-calendar-month</v-icon>
               ປະຕິທິນເດືອນ {{ laoMonths[holiday.HMonth] }} {{ holiday.HYear }}
             </v-card-title>
@@ -394,9 +415,9 @@ onMounted(() => fetchHoliday())
                   class="day-empty"
                 />
                 
-                <!-- Day buttons -->
+                <!-- Day buttons - only show actual days -->
                 <v-btn
-                  v-for="(dayCode, index) in monthData"
+                  v-for="(dayCode, index) in actualDaysData"
                   :key="index"
                   :color="getButtonColor(dayCode)"
                   @click="toggleDay(index)"
@@ -418,10 +439,10 @@ onMounted(() => fetchHoliday())
             <v-card-text>
               <v-row>
                 <v-col cols="12" md="6">
-                  <div class="text-h6 mb-2 text-styles">ເຄື່ອງມືຈັດການ</div>
+                  <div class="text-h6 mb-2">ເຄື່ອງມືຈັດການ</div>
                   <div class="d-flex flex-wrap gap-2">
                     <v-btn
-                      color="grey"
+                      color="amber-darken-2"
                       variant="outlined"
                       @click="clearAllHolidays"
                       size="small"
@@ -430,23 +451,41 @@ onMounted(() => fetchHoliday())
                       ລົບວັນພັກທັງໝົດ
                     </v-btn>
                     <v-btn
-                      color="grey"
+                      color="amber-darken-2"
                       variant="outlined"
                       @click="resetToOriginal"
                       size="small"
                     >
                       <v-icon start>mdi-restore</v-icon>
-                      ກັບຄືນຄ່າຍດັ່ງເລີ່ມຕົ້ນ
+                      ກັບຄືນຄ່າເດີມ
                     </v-btn>
                   </div>
                 </v-col>
                 <v-col cols="12" md="6" class="text-right">
-                  <div class="text-h6 mb-2 text-styles">ສັງລວມ</div>
-                  <div class="text-body-2 text-styles">
-                    ຈໍານວນວັນພັກທັງໝົດ: <strong class="text-error">{{ totalHolidays }}</strong> ມື້
+                  <div class="text-h6 mb-2">ສັງລວມ</div>
+                  <div class="text-body-2 mb-2">
+                    ຈໍານວນວັນພັກ: <strong class="text-amber-darken-4">{{ totalHolidays }}</strong> ມື້
+                  </div>
+                  <div class="text-body-2">
+                    ຂະໜາດຂໍ້ມູນ: <strong class="text-grey-darken-2">{{ monthData.length }}</strong> ຕົວອັກສອນ
                   </div>
                 </v-col>
               </v-row>
+            </v-card-text>
+          </v-card>
+
+          <!-- Debug Info (optional) -->
+          <v-card variant="outlined" class="mb-6" v-if="false">
+            <v-card-title class="text-h6">Debug Info</v-card-title>
+            <v-card-text>
+              <div class="text-caption">
+                <strong>Original Holiday_List:</strong> 
+                <code>{{ holiday.Holiday_List }}</code> ({{ holiday.Holiday_List?.length }} chars)
+              </div>
+              <div class="text-caption mt-2">
+                <strong>Current Holiday_List:</strong> 
+                <code>{{ monthData.join('') }}</code> ({{ monthData.length }} chars)
+              </div>
             </v-card-text>
           </v-card>
 
@@ -463,11 +502,13 @@ onMounted(() => fetchHoliday())
             </v-col>
             <v-col cols="auto">
               <v-btn 
-                color="primary" 
+                color="amber-darken-2" 
                 @click="saveHoliday" 
                 :loading="loading"
                 size="large"
                 prepend-icon="mdi-content-save"
+                variant="flat"
+                class="text-white"
               >
                 ບັນທຶກການແກ້ໄຂ
               </v-btn>
@@ -498,8 +539,8 @@ onMounted(() => fetchHoliday())
 </template>
 
 <style scoped>
-.primary-gradient {
-  background: linear-gradient(135deg, #1976D2 0%, #2196F3 100%);
+.amber-gradient {
+  background: linear-gradient(135deg, #FFA000 0%, #FFB300 100%);
 }
 
 .weekday-headers {
@@ -513,7 +554,7 @@ onMounted(() => fetchHoliday())
   text-align: center;
   font-weight: 600;
   font-size: 0.875rem;
-  color: #616161;
+  color: #6D4C41;
   padding: 8px 0;
 }
 
@@ -548,6 +589,10 @@ onMounted(() => fetchHoliday())
 /* Card hover effects */
 .v-card {
   transition: all 0.2s ease;
+}
+
+.v-card:hover {
+  transform: translateY(-1px);
 }
 
 /* Button animations */

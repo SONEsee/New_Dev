@@ -112,7 +112,18 @@ watch(search, (newValue) => {
 // Helper functions
 const monthToLao = (month: string) => laoMonths[month] || month
 const formatDate = (date: string | undefined) => date ? new Date(date).toLocaleDateString('lo-LA') : '-'
-const countHolidays = (holidayList: string) => holidayList ? holidayList.split('').filter(char => char === 'H').length : 0
+
+// Helper to get actual days in month
+const getDaysInMonth = (year: string, month: string) => {
+  return new Date(parseInt(year), parseInt(month), 0).getDate()
+}
+
+// Updated holiday counting - only count H's within actual days of the month
+const countHolidays = (holidayList: string, year: string, month: string) => {
+  if (!holidayList) return 0
+  const actualDays = getDaysInMonth(year, month)
+  return holidayList.slice(0, actualDays).split('').filter(char => char === 'H').length
+}
 
 // Status helpers
 const getStatusColor = (status: string) => {
@@ -268,14 +279,23 @@ const viewDetails = (holiday: Holiday) => {
   showDetails.value = true
 }
 
-// Visualize holiday pattern
-const getHolidayPattern = (holidayList: string) => {
+// Updated visualize holiday pattern - only show actual days of the month
+const getHolidayPattern = (holidayList: string, year: string, month: string) => {
   if (!holidayList) return []
-  return holidayList.split('').map((char, index) => ({
+  const actualDays = getDaysInMonth(year, month)
+  
+  return holidayList.slice(0, actualDays).split('').map((char, index) => ({
     day: index + 1,
     isHoliday: char === 'H',
-    isWeekend: char === 'N'
+    isWeekend: char === 'N',
+    isWorkday: char === 'W'
   }))
+}
+
+// Get preview pattern for table (first 10 actual days)
+const getPreviewPattern = (holidayList: string, year: string, month: string) => {
+  const pattern = getHolidayPattern(holidayList, year, month)
+  return pattern.slice(0, 10)
 }
 
 // Initialize
@@ -483,16 +503,18 @@ watch([selectedYear, selectedMonth, selectedStatus, selectedAuthStatus], () => {
               <div class="d-flex align-center">
                 <v-chip-group>
                   <v-chip
-                    v-for="(day, index) in getHolidayPattern(item.Holiday_List).slice(0, 10)"
+                    v-for="(day, index) in getPreviewPattern(item.Holiday_List, item.HYear, item.HMonth)"
                     :key="index"
-                    :color="day.isHoliday ? 'primary' : day.isWeekend ? 'grey lighten-2' : 'grey lighten-4'"
+                    :color="day.isHoliday ? 'primary' : day.isWeekend ? 'red-lighten-2' : 'grey-lighten-2'"
                     size="x-small"
                     class="ma-0"
                     :variant="day.isHoliday ? 'flat' : 'outlined'"
                   >
                     {{ day.day }}
                   </v-chip>
-                  <span v-if="item.Holiday_List.length > 10" class="text-caption text-grey ml-2">...</span>
+                  <span v-if="getDaysInMonth(item.HYear, item.HMonth) > 10" class="text-caption text-grey ml-2">
+                    +{{ getDaysInMonth(item.HYear, item.HMonth) - 10 }} ອື່ນໆ
+                  </span>
                 </v-chip-group>
                 <v-btn
                   icon="mdi-eye"
@@ -510,7 +532,7 @@ watch([selectedYear, selectedMonth, selectedStatus, selectedAuthStatus], () => {
                 variant="tonal"
                 size="small"
               >
-                {{ countHolidays(item.Holiday_List) }} ມື້
+                {{ countHolidays(item.Holiday_List, item.HYear, item.HMonth) }} ມື້
               </v-chip>
             </template>
 
@@ -630,35 +652,65 @@ watch([selectedYear, selectedMonth, selectedStatus, selectedAuthStatus], () => {
     </v-dialog>
 
     <!-- Details Dialog -->
-    <v-dialog v-model="showDetails" max-width="600" scrollable>
+    <v-dialog v-model="showDetails" max-width="700" scrollable>
       <v-card v-if="selectedHoliday" class="rounded-lg">
         <v-card-title class="basic-header pa-4">
           <v-icon color="primary" class="mr-2">mdi-calendar-star</v-icon>
           {{ monthToLao(selectedHoliday.HMonth) }} {{ selectedHoliday.HYear }}
+          <v-spacer />
+          <v-chip color="primary" variant="tonal" size="small">
+            {{ getDaysInMonth(selectedHoliday.HYear, selectedHoliday.HMonth) }} ມື້
+          </v-chip>
         </v-card-title>
         <v-card-text class="pa-4">
           <!-- Calendar Grid -->
           <div class="calendar-grid">
+            <!-- Weekday headers -->
             <div v-for="day in ['ອາ', 'ຈ', 'ອ', 'ພ', 'ພຫ', 'ສ', 'ສ']" :key="day" class="day-header">
               {{ day }}
             </div>
+            
+            <!-- Empty cells for month start alignment -->
             <div 
-              v-for="n in new Date(selectedHoliday.HYear, parseInt(selectedHoliday.HMonth) - 1, 1).getDay()" 
+              v-for="n in new Date(parseInt(selectedHoliday.HYear), parseInt(selectedHoliday.HMonth) - 1, 1).getDay()" 
               :key="`empty-${n}`"
               class="day-empty"
             />
+            
+            <!-- Calendar days - only show actual days of the month -->
             <div
-              v-for="(day, index) in getHolidayPattern(selectedHoliday.Holiday_List)"
+              v-for="(day, index) in getHolidayPattern(selectedHoliday.Holiday_List, selectedHoliday.HYear, selectedHoliday.HMonth)"
               :key="index"
               :class="['day-cell', {
                 'holiday': day.isHoliday,
-                'weekend': day.isWeekend
+                'weekend': day.isWeekend,
+                'workday': day.isWorkday
               }]"
             >
               <span class="day-number">{{ day.day }}</span>
               <v-icon v-if="day.isHoliday" size="x-small" class="day-icon">mdi-star</v-icon>
             </div>
           </div>
+          
+          <!-- Legend -->
+          <v-row class="mt-4">
+            <v-col cols="12">
+              <div class="text-caption text-medium-emphasis mb-2">ຄຳອະທິບາຍ:</div>
+              <v-chip-group>
+                <v-chip color="primary" variant="flat" size="small">
+                  <v-icon start size="x-small">mdi-star</v-icon>
+                  ວັນພັກ
+                </v-chip>
+                <v-chip color="red-lighten-2" variant="flat" size="small">
+                  ວັນຢຸດ
+                </v-chip>
+                <v-chip color="grey-lighten-2" variant="flat" size="small">
+                  ວັນເຮັດວຽກ
+                </v-chip>
+              </v-chip-group>
+            </v-col>
+          </v-row>
+          
           <!-- Details -->
           <v-row class="mt-4">
             <v-col cols="12" sm="6">
@@ -673,19 +725,29 @@ watch([selectedYear, selectedMonth, selectedStatus, selectedAuthStatus], () => {
                   <v-list-item-title>ເດືອນ</v-list-item-title>
                   <v-list-item-subtitle>{{ monthToLao(selectedHoliday.HMonth) }}</v-list-item-subtitle>
                 </v-list-item>
+                <v-list-item>
+                  <template #prepend><v-icon color="primary">mdi-calendar-remove</v-icon></template>
+                  <v-list-item-title>ວັນພັກ</v-list-item-title>
+                  <v-list-item-subtitle>{{ countHolidays(selectedHoliday.Holiday_List, selectedHoliday.HYear, selectedHoliday.HMonth) }} ມື້</v-list-item-subtitle>
+                </v-list-item>
               </v-list>
             </v-col>
             <v-col cols="12" sm="6">
               <v-list density="compact">
                 <v-list-item>
-                  <template #prepend><v-icon color="primary">mdi-calendar-remove</v-icon></template>
-                  <v-list-item-title>ວັນພັກ</v-list-item-title>
-                  <v-list-item-subtitle>{{ countHolidays(selectedHoliday.Holiday_List) }} ມື້</v-list-item-subtitle>
-                </v-list-item>
-                <v-list-item>
                   <template #prepend><v-icon color="primary">mdi-database</v-icon></template>
                   <v-list-item-title>ສະຖານະ</v-list-item-title>
                   <v-list-item-subtitle>{{ getStatusText(selectedHoliday.Record_Status) }}</v-list-item-subtitle>
+                </v-list-item>
+                <v-list-item>
+                  <template #prepend><v-icon color="primary">mdi-check-circle</v-icon></template>
+                  <v-list-item-title>ການອະນຸມັດ</v-list-item-title>
+                  <v-list-item-subtitle>{{ getAuthStatusText(selectedHoliday.Auth_Status) }}</v-list-item-subtitle>
+                </v-list-item>
+                <v-list-item>
+                  <template #prepend><v-icon color="primary">mdi-code-string</v-icon></template>
+                  <v-list-item-title>ຂະໜາດຂໍ້ມູນ</v-list-item-title>
+                  <v-list-item-subtitle>{{ selectedHoliday.Holiday_List?.length || 0 }} ຕົວອັກສອນ</v-list-item-subtitle>
                 </v-list-item>
               </v-list>
             </v-col>
@@ -694,6 +756,7 @@ watch([selectedYear, selectedMonth, selectedStatus, selectedAuthStatus], () => {
         <v-card-actions>
           <v-spacer />
           <v-btn variant="text" @click="showDetails = false">ປິດ</v-btn>
+          <v-btn color="primary" variant="flat" @click="editHoliday(selectedHoliday!)">ແກ້ໄຂ</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -741,6 +804,8 @@ watch([selectedYear, selectedMonth, selectedStatus, selectedAuthStatus], () => {
   grid-template-columns: repeat(7, 1fr);
   gap: 4px;
   padding: 8px;
+  background: #FAFAFA;
+  border-radius: 8px;
 }
 
 .day-header {
@@ -749,6 +814,8 @@ watch([selectedYear, selectedMonth, selectedStatus, selectedAuthStatus], () => {
   color: #757575;
   padding: 8px;
   font-size: 0.875rem;
+  background: #E3F2FD;
+  border-radius: 4px;
 }
 
 .day-cell {
@@ -757,39 +824,66 @@ watch([selectedYear, selectedMonth, selectedStatus, selectedAuthStatus], () => {
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  background: #FAFAFA;
+  background: #FFFFFF;
   position: relative;
   transition: all 0.2s ease;
   cursor: pointer;
+  border: 1px solid #E0E0E0;
 }
 
 .day-cell:hover {
   transform: scale(1.05);
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  z-index: 1;
 }
 
 .day-cell.holiday {
-  background: #BBDEFB;
-  color: #0D47A1;
+  background: #1976D2;
+  color: white;
+  border-color: #1565C0;
 }
 
 .day-cell.weekend {
-  background: #EEEEEE;
-  color: #616161;
+  background: #FFCDD2;
+  color: #C62828;
+  border-color: #EF9A9A;
+}
+
+.day-cell.workday {
+  background: #E8F5E8;
+  color: #2E7D32;
+  border-color: #C8E6C9;
 }
 
 .day-number {
   font-size: 0.875rem;
+  font-weight: 500;
 }
 
 .day-icon {
   position: absolute;
   top: 2px;
   right: 2px;
-  color: #0D47A1;
+  color: white;
 }
 
 .day-empty {
   /* Empty cell for alignment */
+}
+
+/* Responsive calendar */
+@media (max-width: 600px) {
+  .calendar-grid {
+    gap: 2px;
+    padding: 4px;
+  }
+  
+  .day-cell {
+    border-radius: 4px;
+  }
+  
+  .day-number {
+    font-size: 0.75rem;
+  }
 }
 </style>
