@@ -85,7 +85,7 @@ export const useFassetLidtDescription = defineStore("fassetlistdecription", {
       text: "ບໍ່ສາມາດຫັກຄ່າເສື່ອມໄດ້"
     });
   } finally {
-    this.isLoading = false; // ປິດ loading ໃນທຸກກໍລະນີ
+    this.isLoading = false; 
   }
 },
     async getArrears() {
@@ -125,6 +125,28 @@ export const useFassetLidtDescription = defineStore("fassetlistdecription", {
           params: {
             ...this.fillter_data_aldm_month_id.aldm_month_id,
           },
+        });
+        if (res.status === 200) {
+          this.respons_data_driscription_main = res.data;
+        }
+      } catch (error) {
+        CallSwal({
+          icon: "error",
+          title: "ຜຶດພາດ",
+          text: "ບໍ່ສາມາດດືງຂໍ້ມູນໄດ້",
+        });
+      } finally {
+        this.isLoading = false;
+      }
+    },
+    async getDataDetail(id:number) {
+      this.isLoading = true;
+      try {
+        const res = await axios.get(`/api/asset_list_dpca_main/${id}/`, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("access")}`,
+          }
         });
         if (res.status === 200) {
           this.respons_data_driscription_main = res.data;

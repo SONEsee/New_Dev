@@ -23,11 +23,7 @@ export const faAssetStore = defineStore("faAsset", {
         dpca_end_date: null as Date | null | string,
         asset_disposal_date: null as Date | null,
         asset_latest_date_dpca: null as Date | null,
-<<<<<<< HEAD
-       
-=======
         // acc_no: "",
->>>>>>> ad3a88eabf6d327d706fe46fab78462669d5677c
         asset_status: "AC"
       },
       form_create_fa_asset: {
@@ -148,11 +144,7 @@ export const faAssetStore = defineStore("faAsset", {
                 .split("T")[0]
             : null,
 
-<<<<<<< HEAD
-          
-=======
           // acc_no: this.form_create_realizthe_property.acc_no || "", 
->>>>>>> ad3a88eabf6d327d706fe46fab78462669d5677c
           asset_value_remainLast:
             this.form_create_realizthe_property.asset_value_remainLast || "", 
           asset_value_remainBegin:
