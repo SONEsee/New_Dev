@@ -76,6 +76,25 @@
 
         <v-divider class="mb-4" thickness="1" color="grey-lighten-3" />
 
+        <!-- Action Buttons Row -->
+        <v-row no-gutters class="mb-4">
+          <v-col cols="12" class="d-flex justify-end gap-2">
+            <v-btn
+              color="info"
+              prepend-icon="mdi-database-import"
+              :disabled="!filters.date_start || !filters.date_end || loading || transferLoading"
+              :loading="transferLoading"
+              @click="transferDataToDatabase"
+              elevation="2"
+            >
+              <span class="font-weight-medium">ນຳເຂົ້າຂໍ້ມູນໃສ່ລະບົບ</span>
+              <v-tooltip activator="parent" location="top">
+                ເອີ້ນ stored procedure ແລະນຳເຂົ້າຂໍ້ມູນໃບສົມທົບ
+              </v-tooltip>
+            </v-btn>
+          </v-col>
+        </v-row>
+
         <!-- Data Table -->
         <v-data-table
           :headers="headers"
@@ -156,6 +175,62 @@
       </v-card-text>
     </v-card>
 
+    <!-- Updated Confirmation Dialog -->
+    <v-dialog v-model="confirmDialog.show" max-width="500px" persistent>
+      <v-card>
+        <v-card-title class="text-h6 pa-4">
+          <v-icon start color="warning">mdi-database-import</v-icon>
+          ຢືນຢັນການນຳເຂົ້າຂໍ້ມູນ
+        </v-card-title>
+        <v-card-text class="pa-4">
+          <div class="text-body-1 mb-3">
+            ທ່ານຕ້ອງການເອີ້ນ <strong>stored procedure</strong> ແລະນຳເຂົ້າຂໍ້ມູນໃບສົມທົບໄປຍັງລະບົບບໍ?
+          </div>
+          <div class="text-body-2 text-grey-darken-1">
+            <strong>ລາຍລະອຽດການດຳເນີນງານ:</strong><br>
+            • ລຶບຂໍ້ມູນເກົ່າທັງໝົດຈາກຕາຕະລາງ Dairy_Report<br>
+            • ເອີ້ນ stored procedure: <code class="text-primary">Somtop_Trail_Balance_All_Currency_Temp_ACTB</code><br>
+            • ນຳເຂົ້າຂໍ້ມູນໃໝ່ທັງໝົດທີ່ໄດ້ຈາກ stored procedure<br><br>
+            
+            <strong>ຂໍ້ມູນທີ່ຈະປະມວນຜົນ:</strong><br>
+            • ວັນທີ: {{ filters.date_start }} ຫາ {{ filters.date_end }}<br>
+            • ປີງບ: {{ getCurrentYear() }}<br>
+            • ລະຫັດໄລຍະ: {{ getCurrentPeriod() }}<br>
+            • ປະເພດ: TRIAL_BALANCE
+          </div>
+          
+          <v-alert
+            type="warning"
+            variant="tonal"
+            class="mt-3"
+            density="compact"
+          >
+            <strong>ຄຳເຕືອນ:</strong> ການດຳເນີນງານນີ້ຈະລຶບຂໍ້ມູນເກົ່າທັງໝົດກ່ອນນຳເຂົ້າຂໍ້ມູນໃໝ່
+          </v-alert>
+        </v-card-text>
+        <v-card-actions class="pa-4">
+          <v-spacer />
+          <v-btn
+            color="grey"
+            variant="outlined"
+            @click="confirmDialog.show = false"
+            :disabled="transferLoading"
+          >
+            <v-icon start>mdi-close</v-icon>
+            ຍົກເລີກ
+          </v-btn>
+          <v-btn
+            color="info"
+            @click="confirmTransfer"
+            :loading="transferLoading"
+          >
+            <v-icon start>mdi-database-check</v-icon>
+            ຢືນຢັນນຳເຂົ້າ
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <!-- Notification Snackbar -->
     <v-snackbar
       v-model="snackbar.show"
@@ -195,15 +270,20 @@ const getAuthHeaders = () => ({
 
 // Reactive state
 const loading = ref(false)
+const transferLoading = ref(false)
 const searchText = ref('')
 
 const filters = ref({
   ac_ccy_id: 'LAK',
-  date_start: '2023-01-01',
+  date_start: new Date().toISOString().split('T')[0],
   date_end: new Date().toISOString().split('T')[0] // Current date
 })
 
 const results = ref([])
+
+const confirmDialog = ref({
+  show: false
+})
 
 const snackbar = ref({
   show: false,
@@ -270,6 +350,18 @@ const headers = [
   }
 ]
 
+// Helper functions for date parsing
+const getCurrentYear = (): string => {
+  return new Date().getFullYear().toString()
+}
+
+const getCurrentPeriod = (): string => {
+  const now = new Date()
+  const year = now.getFullYear().toString()
+  const month = (now.getMonth() + 1).toString().padStart(2, '0')
+  return `${year}${month}`
+}
+
 // Methods
 const fetchTrialBalance = async () => {
   try {
@@ -323,6 +415,115 @@ const fetchTrialBalance = async () => {
     
   } finally {
     loading.value = false
+  }
+}
+
+// Updated transferDataToDatabase function - simplified since we don't need to transform data
+const transferDataToDatabase = () => {
+  // Validate required fields
+  if (!filters.value.date_start || !filters.value.date_end) {
+    showSnackbar('ກະລຸນາລະບຸວັນທີເລີ່ມຕົ້ນແລະວັນທີສິ້ນສຸດ', 'warning', 'mdi-alert')
+    return
+  }
+
+  confirmDialog.value.show = true
+}
+
+// Updated confirmTransfer function to use new API
+const confirmTransfer = async () => {
+  try {
+    transferLoading.value = true
+
+    // Validate token exists
+    const token = localStorage.getItem("token")
+    if (!token) {
+      showSnackbar('ກະລຸນາເຂົ້າສູ່ລະບົບກ່ອນ', 'error', 'mdi-alert-circle')
+      return
+    }
+
+    // Validate required data
+    if (!filters.value.date_start || !filters.value.date_end) {
+      showSnackbar('ກະລຸນາລະບຸວັນທີເລີ່ມຕົ້ນແລະວັນທີສິ້ນສຸດ', 'warning', 'mdi-alert')
+      return
+    }
+
+    // Prepare payload for the new bulk-insert-allcurrency API
+    const payload = {
+      date_start: filters.value.date_start,
+      date_end: filters.value.date_end,
+      fin_year: getCurrentYear(),
+      period_code: getCurrentPeriod(),
+      category: 'TRIAL_BALANCE'
+    }
+
+    // Send data to the new bulk-insert-allcurrency API endpoint
+    const response = await axios.post('/api/dairy-report/bulk-insert-allcurrency/', payload, getAuthHeaders())
+
+    confirmDialog.value.show = false
+
+    if (response.data.status === 'success') {
+      const successMessage = `ນຳເຂົ້າຂໍ້ມູນສຳເລັດ - ${response.data.inserted_count || 0} ລາຍການ`
+      
+      // Show additional details if available
+      if (response.data.cleared_records > 0) {
+        const detailMessage = `ລຶບຂໍ້ມູນເກົ່າ: ${response.data.cleared_records} ລາຍການ, ນຳເຂົ້າໃໝ່: ${response.data.inserted_count} ລາຍການ`
+        showSnackbar(detailMessage, 'success', 'mdi-database-check')
+      } else {
+        showSnackbar(successMessage, 'success', 'mdi-database-check')
+      }
+
+      // Log additional info for debugging
+      console.log('Transfer successful:', {
+        cleared: response.data.cleared_records,
+        inserted: response.data.inserted_count,
+        failed: response.data.failed_count,
+        dateRange: response.data.date_range
+      })
+
+      // Show warning if there were failed records
+      if (response.data.failed_count > 0) {
+        setTimeout(() => {
+          showSnackbar(
+            `ມີ ${response.data.failed_count} ລາຍການຜິດພາດ - ກະລຸນາກວດສອບ log`,
+            'warning',
+            'mdi-alert-circle'
+          )
+        }, 3000)
+      }
+
+    } else {
+      throw new Error(response.data.message || 'Unknown error occurred')
+    }
+
+  } catch (error) {
+    console.error('Error transferring data:', error)
+    
+    let errorMessage = 'ເກີດຂໍ້ຜິດພາດໃນການນຳເຂົ້າຂໍ້ມູນ'
+    let errorIcon = 'mdi-database-alert'
+    
+    if (error?.response?.status === 401) {
+      errorMessage = 'ໂທເຄນໝົດອາຍຸ ກະລຸນາເຂົ້າສູ່ລະບົບໃໝ່'
+      errorIcon = 'mdi-account-alert'
+    } else if (error?.response?.status === 403) {
+      errorMessage = 'ທ່ານບໍ່ມີສິດໃນການນຳເຂົ້າຂໍ້ມູນ'  
+      errorIcon = 'mdi-lock-alert'
+    } else if (error?.response?.status === 400) {
+      // Handle validation errors from the backend
+      errorMessage = error?.response?.data?.message || 'ຂໍ້ມູນບໍ່ຖືກຕ້ອງ'
+      errorIcon = 'mdi-form-select'
+    } else if (error?.response?.data?.message) {
+      errorMessage = error.response.data.message
+    } else if (error?.response?.data?.detail) {
+      errorMessage = error.response.data.detail
+    } else if (error?.message) {
+      errorMessage = error.message
+    }
+    
+    showSnackbar(errorMessage, 'error', errorIcon)
+    confirmDialog.value.show = false
+    
+  } finally {
+    transferLoading.value = false
   }
 }
 
