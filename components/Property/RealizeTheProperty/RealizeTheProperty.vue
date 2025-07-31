@@ -119,9 +119,9 @@ const filterAssetType = computed(() => {
     };
   });
 
-  // ຈັດຮຽງຕາມວັນທີ່ສ້າງ (ເກົ່າກວ່າຢູ່ເທິງ)
+
   return mappedData.sort((a: any, b: any) => {
-    // ຖ້າມີ created_at ຫຼື created_date field
+  
     if (a.created_at && b.created_at) {
       return (
         new Date(a.created_at).getTime() - new Date(b.created_at).getTime()

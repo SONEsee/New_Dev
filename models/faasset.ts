@@ -18,7 +18,7 @@ export interface FaAsset{
     dpca_type:               string;
     dpca_percentage:         string;
     asset_useful_life:       number;
-    asset_salvage_value:     string;
+    asset_salvage_value:     number;
     dpca_start_date:         null;
     dpca_end_date:           null;
     accu_dpca_value_total:   null;

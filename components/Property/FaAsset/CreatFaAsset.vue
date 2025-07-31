@@ -1432,6 +1432,7 @@ onMounted(async () => {
                         >ປະເພດການຊຳລະ<span class="text-error">*</span></label
                       >
                       <v-autocomplete
+                     
                         v-model="
                           faAssetStoreInstance.form_create_fa_asset.type_of_pay
                         "
