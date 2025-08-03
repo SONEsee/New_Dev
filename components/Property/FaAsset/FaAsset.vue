@@ -653,6 +653,7 @@ const getAuthStatusColor = (authStatusCode: string) => {
       </v-row>
 
       <v-data-table
+      :loading="faAssetStoreInstance.isLoading"
         :headers="headers"
         :items="filteredData || []"
         class="text-no-wrap"
