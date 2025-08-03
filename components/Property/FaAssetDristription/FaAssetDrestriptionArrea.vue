@@ -63,7 +63,7 @@ onMounted(() => {
           class="mr-2"
           @click="processBulkItems"
         >
-          ປະມວນຜົນ ({{ selectedItems.length }})
+          ຫັກຄ່າຫຼູ້ຍຫຽ້ນ ({{ selectedItems.length }})
         </v-btn>
         <v-btn
           color="secondary"

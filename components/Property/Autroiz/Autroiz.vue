@@ -131,25 +131,35 @@ const debugSelection = () => {
 };
 
 const approveSelected = () => {
-  if (selectedItems.value.length === 0) return;
+  
+  const aldm_ids = selectedItems.value
+  .map((item: any) => item.aldm_id)
+  .filter((id: any) => id !== undefined && id !== null);
 
-  console.log(
-    "Approving items:",
-    selectedItems.value.map((item: any) => item.aldm_id)
-  );
+Object.assign(mainStore.confirm_form_mark, {
 
-  alert(`ກຳລັງອະນຸມັດ ${selectedItems.value.length} ລາຍການ`);
+  aldm_ids: aldm_ids,     
+ 
+});
+  console.log("id_select",selectedItems.value)
+  mainStore.postConfirm();
+  selectedItems.value = [];
 };
 
 const rejectSelected = () => {
-  if (selectedItems.value.length === 0) return;
+ const aldm_ids = selectedItems.value
+  .map((item: any) => item.aldm_id)
+  .filter((id: any) => id !== undefined && id !== null);
 
-  console.log(
-    "Rejecting items:",
-    selectedItems.value.map((item: any) => item.aldm_id)
-  );
+Object.assign(mainStore.reject_form_mark, {
 
-  alert(`ກຳລັງປະຕິເສດ ${selectedItems.value.length} ລາຍການ`);
+  aldm_ids: aldm_ids, 
+   
+ 
+});
+  console.log("id_select",selectedItems.value)
+  mainStore.postReject();
+  selectedItems.value = [];
 };
 const formatCurrency = (value: any): any => {
   new Intl.NumberFormat("en-US", {
@@ -204,6 +214,7 @@ onMounted(() => {
     </div>
 
     <v-data-table
+      :loading="mainStore.isLoading"
       :items="responseData"
       :headers="headers"
       class="elevation-1"
@@ -269,7 +280,13 @@ onMounted(() => {
       </template>
 
       <template v-slot:item.action="{ item }">
-        <v-btn v-if="item.Auth_Status === 'U'" flat @click="goPath(`/property/autoriz/addprove/?id_autoriz=${item.aldm_id}`)">
+        <v-btn
+          v-if="item.Auth_Status === 'U'"
+          flat
+          @click="
+            goPath(`/property/autoriz/addprove/?id_autoriz=${item.aldm_id}`)
+          "
+        >
           <v-icon icon="mdi-toggle-switch-off-outline" color="error"></v-icon>
         </v-btn>
         <v-btn v-if="item.Auth_Status === 'A'" flat readonly>
@@ -290,7 +307,6 @@ onMounted(() => {
 
     <div v-if="selectedItems.length > 0" class="mt-4 d-flex justify-end gap-2">
       <v-btn
-      
         color="success"
         variant="elevated"
         prepend-icon="mdi-check-circle"
