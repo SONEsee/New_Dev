@@ -58,7 +58,7 @@ export const useFassetLidtDescription = defineStore("fassetlistdecription", {
     });
     
     if (notification.isConfirmed) {
-      const req = await axios.post(`/api/depreciation/`, this.requres_data_post, {
+      const req = await axios.post(`/api/depreciation-with-journal/`, this.requres_data_post, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("access")}` 
@@ -261,7 +261,7 @@ export const useFassetLidtDescription = defineStore("fassetlistdecription", {
       try {
         const res =
           await axios.post<AssetListDrisTionModel.DepreciationRespons>(
-            `/api/depreciation/`,
+            `/api/depreciation-with-journal/`,
             this.getdata,
             {
               headers: {
@@ -284,7 +284,7 @@ export const useFassetLidtDescription = defineStore("fassetlistdecription", {
       try {
         const res =
           await axios.post<AssetListDrisTionModel.DepreciationRespons>(
-            `/api/depreciation/`,
+            `/api/depreciation-with-journal/`,
             this.postdata,
             {
               headers: {
