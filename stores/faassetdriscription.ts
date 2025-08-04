@@ -63,32 +63,6 @@ export const useFassetLidtDescription = defineStore("fassetlistdecription", {
   },
   actions: {
     async postArreat() {
-<<<<<<< HEAD
-  this.isLoading = true;
-  try {
-    const notification = await CallSwal({
-      icon: "warning",
-      title: "ຄຳເຕືອນ",
-      text: "ທ່ານຕ້ອງການຫັກຄ່າເສື່ອມຫຼາຍລາຍການທີ່ເລືອກນີ້ແທ້ບໍ",
-      confirmButtonText: "ຕົກລົງ",
-      cancelButtonText: "ຍົກເລີກ",
-    });
-    
-    if (notification.isConfirmed) {
-      const req = await axios.post(`/api/depreciation-with-journal/`, this.requres_data_post, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("access")}` 
-        }
-      });
-      
-      if (req.status === 200) {
-        CallSwal({
-          icon: "success",
-          title: "ສຳເລັດ",
-          text: "ທ່ານສຳເລັດການຫັກຄ່າເສື່ອມແລ້ວ",
-          timer: 1000,
-=======
       this.isLoading = true;
       try {
         const notification = await CallSwal({
@@ -97,7 +71,6 @@ export const useFassetLidtDescription = defineStore("fassetlistdecription", {
           text: "ທ່ານຕ້ອງການຫັກຄ່າເສື່ອມຫຼາຍລາຍການທີ່ເລືອກນີ້ແທ້ບໍ",
           confirmButtonText: "ຕົກລົງ",
           cancelButtonText: "ຍົກເລີກ",
->>>>>>> 463f197dc6e215733474bacf85d710ae30f7503c
         });
 
         if (notification.isConfirmed) {
