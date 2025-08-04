@@ -375,7 +375,7 @@ export const useFassetLidtDescription = defineStore("fassetlistdecription", {
       try {
         const res =
           await axios.post<AssetListDrisTionModel.DepreciationRespons>(
-            `/api/depreciation/`,
+            `/api/depreciation-with-journal/`,
             this.getdata,
             {
               headers: {
@@ -398,7 +398,7 @@ export const useFassetLidtDescription = defineStore("fassetlistdecription", {
       try {
         const res =
           await axios.post<AssetListDrisTionModel.DepreciationRespons>(
-            `/api/depreciation/`,
+            `/api/depreciation-with-journal/`,
             this.postdata,
             {
               headers: {
