@@ -12,10 +12,10 @@
         <v-form @submit.prevent="fetchTrialBalance" class="mb-4">
           <v-row no-gutters class="mb-4">
             <v-col cols="12" md="3" class="pe-md-2 mb-3 mb-md-0">
-              <v-text-field
+              <v-select
                 v-model="filters.ac_ccy_id"
+                :items="currencyOptions"
                 label="ສະກຸນເງິນ (Currency)"
-                placeholder="LAK, USD"
                 variant="outlined"
                 density="compact"
                 prepend-inner-icon="mdi-currency-usd"
@@ -138,6 +138,13 @@
               <td class="text-truncate" :title="item._Desc">
                 {{ item._Desc }}
               </td>
+              <!-- Currency column (only shown for All Currency view) -->
+              <td v-if="isAllCurrency" class="text-center font-weight-medium">
+                <v-chip size="small" :color="getCurrencyColor(item.Currency)" variant="tonal">
+                  {{ item.Currency }}
+                </v-chip>
+              </td>
+              <!-- Amount columns (using normalized field names) -->
               <td class="text-end font-mono">
                 <span class="amount-cell">{{ formatCurrency(item.Opening_Dr) }}</span>
               </td>
@@ -256,7 +263,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import axios from '@/helpers/axios'
 import * as XLSX from 'xlsx'
 
@@ -273,8 +280,16 @@ const loading = ref(false)
 const transferLoading = ref(false)
 const searchText = ref('')
 
+// Currency options
+const currencyOptions = ref([
+  { title: 'All Currencies (LCY)', value: 'ALL' },
+  { title: 'LAK - Lao Kip', value: 'LAK' },
+  { title: 'USD - US Dollar', value: 'USD' },
+  { title: 'THB - Thai Baht', value: 'THB' }
+])
+
 const filters = ref({
-  ac_ccy_id: 'LAK',
+  ac_ccy_id: 'ALL', // Default to ALL
   date_start: new Date().toISOString().split('T')[0],
   date_end: new Date().toISOString().split('T')[0] // Current date
 })
@@ -292,63 +307,91 @@ const snackbar = ref({
   icon: 'mdi-check-circle'
 })
 
+// Computed property for dynamic currency display
+const currentCurrencyDisplay = computed(() => {
+  return filters.value.ac_ccy_id === 'ALL' ? 'LCY' : filters.value.ac_ccy_id
+})
+
+// Computed property to check if showing all currencies
+const isAllCurrency = computed(() => {
+  return filters.value.ac_ccy_id === 'ALL'
+})
+
 // Table configuration
-const headers = [
-  { 
-    title: 'ເລກບັນຊີ', 
-    key: 'GL', 
-    width: '120px',
-    sortable: true
-  },
-  { 
-    title: 'ລາຍລະອຽດ (Description)', 
-    key: '_Desc', 
-    width: '300px',
-    sortable: true
-  },
-  { 
-    title: 'Opening Dr', 
-    key: 'Opening_Dr', 
-    width: '140px', 
-    align: 'end',
-    sortable: true
-  },
-  { 
-    title: 'Opening Cr', 
-    key: 'Opening_Cr', 
-    width: '140px', 
-    align: 'end',
-    sortable: true
-  },
-  { 
-    title: 'Flow Dr', 
-    key: 'Flow_Dr', 
-    width: '140px', 
-    align: 'end',
-    sortable: true
-  },
-  { 
-    title: 'Flow Cr', 
-    key: 'Flow_Cr', 
-    width: '140px', 
-    align: 'end',
-    sortable: true
-  },
-  { 
-    title: 'Closing Dr', 
-    key: 'Closing_Dr', 
-    width: '140px', 
-    align: 'end',
-    sortable: true
-  },
-  { 
-    title: 'Closing Cr', 
-    key: 'Closing_Cr', 
-    width: '140px', 
-    align: 'end',
-    sortable: true
+const headers = computed(() => {
+  const baseHeaders = [
+    { 
+      title: 'ເລກບັນຊີ', 
+      key: 'GL', 
+      width: '120px',
+      sortable: true
+    },
+    { 
+      title: 'ລາຍລະອຽດ (Description)', 
+      key: '_Desc', 
+      width: '300px',
+      sortable: true
+    }
+  ]
+
+  // Add Currency column for All Currency view
+  if (isAllCurrency.value) {
+    baseHeaders.push({
+      title: 'ສະກຸນເງິນ',
+      key: 'Currency',
+      width: '80px',
+      sortable: true
+    })
   }
-]
+
+  // Add amount columns (using same field names for both modes)
+  const amountColumns = [
+    { 
+      title: 'Opening Dr', 
+      key: 'Opening_Dr', 
+      width: '140px', 
+      align: 'end',
+      sortable: true
+    },
+    { 
+      title: 'Opening Cr', 
+      key: 'Opening_Cr', 
+      width: '140px', 
+      align: 'end',
+      sortable: true
+    },
+    { 
+      title: 'Flow Dr', 
+      key: 'Flow_Dr', 
+      width: '140px', 
+      align: 'end',
+      sortable: true
+    },
+    { 
+      title: 'Flow Cr', 
+      key: 'Flow_Cr', 
+      width: '140px', 
+      align: 'end',
+      sortable: true
+    },
+    { 
+      title: 'Closing Dr', 
+      key: 'Closing_Dr', 
+      width: '140px', 
+      align: 'end',
+      sortable: true
+    },
+    { 
+      title: 'Closing Cr', 
+      key: 'Closing_Cr', 
+      width: '140px', 
+      align: 'end',
+      sortable: true
+    }
+  ]
+
+  return [...baseHeaders, ...amountColumns]
+})
 
 // Helper functions for date parsing
 const getCurrentYear = (): string => {
@@ -362,7 +405,7 @@ const getCurrentPeriod = (): string => {
   return `${year}${month}`
 }
 
-// Methods
+// Updated fetchTrialBalance method to handle ALL currency option
 const fetchTrialBalance = async () => {
   try {
     loading.value = true
@@ -379,13 +422,49 @@ const fetchTrialBalance = async () => {
       showSnackbar('ກະລຸນາຕື່ມຂໍ້ມູນໃຫ້ຄົບຖ້ວນ', 'warning', 'mdi-alert')
       return
     }
+
+    let apiEndpoint = ''
+    let payload = {}
+
+    // Check if ALL currency is selected
+    if (filters.value.ac_ccy_id === 'ALL') {
+      apiEndpoint = '/api/trial-balance-allccy/'
+      payload = {
+        date_start: filters.value.date_start,
+        date_end: filters.value.date_end
+      }
+    } else {
+      apiEndpoint = '/api/trial-balance/'
+      payload = {
+        ac_ccy_id: filters.value.ac_ccy_id,
+        date_start: filters.value.date_start,
+        date_end: filters.value.date_end
+      }
+    }
     
-    const { data } = await axios.post('/api/trial-balance/', filters.value, getAuthHeaders())
+    const { data } = await axios.post(apiEndpoint, payload, getAuthHeaders())
     
-    results.value = data.data || []
+    // Normalize data: convert _LCY fields to regular fields for all currency data
+    let normalizedData = data.data || []
     
+    if (filters.value.ac_ccy_id === 'ALL') {
+      normalizedData = normalizedData.map(item => ({
+        ...item,
+        // Map LCY fields (LAK equivalent) to standard field names
+        Opening_Dr: item.Opening_Dr_LCY || item.Opening_Dr || 0,
+        Opening_Cr: item.Opening_Cr_LCY || item.Opening_Cr || 0,
+        Flow_Dr: item.Flow_Dr_LCY || item.Flow_Dr || 0,
+        Flow_Cr: item.Flow_Cr_LCY || item.Flow_Cr || 0,
+        Closing_Dr: item.Closing_Dr_LCY || item.Closing_Dr || 0,
+        Closing_Cr: item.Closing_Cr_LCY || item.Closing_Cr || 0
+      }))
+    }
+    
+    results.value = normalizedData
+    
+    const currencyText = filters.value.ac_ccy_id === 'ALL' ? 'All Currencies (LCY)' : filters.value.ac_ccy_id
     showSnackbar(
-      `ດຶງຂໍ້ມູນສຳເລັດ - ພົບ ${results.value.length} ລາຍການ`, 
+      `ດຶງຂໍ້ມູນສຳເລັດ (${currencyText}) - ພົບ ${results.value.length} ລາຍການ`, 
       'success', 
       'mdi-check-circle'
     )
@@ -535,6 +614,18 @@ const formatCurrency = (value: number | string): string => {
   })
 }
 
+// Helper function to get currency color for chips
+const getCurrencyColor = (currency: string): string => {
+  const colors: Record<string, string> = {
+    'LAK': 'primary',
+    'USD': 'success', 
+    'THB': 'warning',
+    'EUR': 'info',
+    'JPY': 'secondary'
+  }
+  return colors[currency] || 'grey'
+}
+
 const showSnackbar = (message: string, color: string = 'success', icon: string = 'mdi-check-circle') => {
   snackbar.value = {
     show: true,
@@ -544,6 +635,7 @@ const showSnackbar = (message: string, color: string = 'success', icon: string =
   }
 }
 
+// Updated exportToExcel function to handle currency display
 const exportToExcel = () => {
   try {
     if (!results.value.length) {
@@ -551,17 +643,28 @@ const exportToExcel = () => {
       return
     }
 
-    // Prepare data for export
-    const exportData = results.value.map(item => ({
-      'GL Code': item.GL,
-      'ລາຍລະອຽດ (Description)': item._Desc,
-      'Opening Dr': Number(item.Opening_Dr || 0),
-      'Opening Cr': Number(item.Opening_Cr || 0),
-      'Flow Dr': Number(item.Flow_Dr || 0),
-      'Flow Cr': Number(item.Flow_Cr || 0),
-      'Closing Dr': Number(item.Closing_Dr || 0),
-      'Closing Cr': Number(item.Closing_Cr || 0)
-    }))
+    // Prepare data for export with normalized field names
+    const exportData = results.value.map(item => {
+      const baseData: any = {
+        'GL Code': item.GL,
+        'ລາຍລະອຽດ (Description)': item._Desc
+      }
+
+      // Add Currency column for All Currency view
+      if (isAllCurrency.value) {
+        baseData['Currency'] = item.Currency
+      }
+
+      // Add amount columns (using normalized field names)
+      baseData['Opening Dr'] = Number(item.Opening_Dr || 0)
+      baseData['Opening Cr'] = Number(item.Opening_Cr || 0)
+      baseData['Flow Dr'] = Number(item.Flow_Dr || 0)
+      baseData['Flow Cr'] = Number(item.Flow_Cr || 0)
+      baseData['Closing Dr'] = Number(item.Closing_Dr || 0)
+      baseData['Closing Cr'] = Number(item.Closing_Cr || 0)
+
+      return baseData
+    })
 
     // Create workbook
     const wb = XLSX.utils.book_new()
@@ -571,14 +674,25 @@ const exportToExcel = () => {
     const colWidths = []
     colWidths[0] = { wch: 12 } // GL Code
     colWidths[1] = { wch: 40 } // Description
-    for (let i = 2; i < 8; i++) {
-      colWidths[i] = { wch: 15 } // Amount columns
+    
+    let columnIndex = 2
+    if (isAllCurrency.value) {
+      colWidths[columnIndex] = { wch: 10 } // Currency column
+      columnIndex++
+    }
+    
+    // Amount columns
+    for (let i = columnIndex; i < columnIndex + 6; i++) {
+      colWidths[i] = { wch: 15 }
     }
     ws['!cols'] = colWidths
 
+    // Dynamic currency display for export
+    const currencyDisplay = currentCurrencyDisplay.value
+    
     // Add title row
     XLSX.utils.sheet_add_aoa(ws, [
-      [`ລາຍງານໃບສົມທົບ (Trial Balance) - ສະກຸນເງິນ: ${filters.value.ac_ccy_id}`],
+      [`ລາຍງານໃບສົມທົບ (Trial Balance) - ສະກຸນເງິນ: ${currencyDisplay}`],
       [`ວັນທີ: ${filters.value.date_start} ຫາ ${filters.value.date_end}`],
       [''] // Empty row
     ], { origin: 'A1' })
@@ -591,13 +705,13 @@ const exportToExcel = () => {
 
     // Generate filename
     const currentDate = new Date().toISOString().split('T')[0]
-    const filename = `Trial_Balance_${filters.value.ac_ccy_id}_${currentDate}.xlsx`
+    const filename = `Trial_Balance_${currencyDisplay}_${currentDate}.xlsx`
 
     // Save file
     XLSX.writeFile(wb, filename)
 
     showSnackbar(
-      `ສົ່ງອອກຂໍ້ມູນສຳເລັດ - ${results.value.length} ລາຍການ`, 
+      `ສົ່ງອອກຂໍ້ມູນສຳເລັດ (${currencyDisplay}) - ${results.value.length} ລາຍການ`, 
       'success', 
       'mdi-download'
     )

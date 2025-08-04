@@ -85,8 +85,7 @@
                   @change="updateReferenceNumber" 
                   prepend-inner-icon="mdi-calendar"
                   hide-details="auto"
-                  :disabled="isValueDateDisabled || !isAvailable"
-                  :class="{ 'value-date-disabled': isValueDateDisabled }"
+
                 >
                   <template #append-inner v-if="isValueDateDisabled">
                     <v-tooltip text="ການກຳນົດຄ່າ BACK_VALUE ປິດການແກ້ໄຂວັນທີ່">

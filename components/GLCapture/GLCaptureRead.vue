@@ -13,7 +13,7 @@
           <v-tooltip text="ສິດເຂົ້າເຖິງຂອງທ່ານ" location="bottom">
             <template #activator="{ props }">
               <div v-bind="props" class="d-flex gap-1">
-                <v-chip v-if="canView" color="primary" size="x-small" variant="flat">
+                <v-chip v-if="canAdd" color="primary" size="x-small" variant="flat">
                   <v-icon size="12">mdi-plus</v-icon>
                   ເພິ່ມ
                 </v-chip>
@@ -84,12 +84,12 @@
             </v-col>
             <v-col cols="12" md="2">
               <v-select v-model="filters.module_id" :items="modules" item-title="module_name_la" item-value="module_Id"
-                label="ໂມດູນ" variant="outlined" density="compact" clearable @update:model-value="loadData"
+                label="ໂມດູນ" variant="outlined" density="compact" clearable @update:model-value="handleFilterChange"
                 hide-details></v-select>
             </v-col>
             <v-col cols="12" md="2">
               <v-select v-model="filters.Ccy_cd" :items="currencies" item-title="ccy_code" item-value="ccy_code"
-                label="ສະກຸນເງິນ" variant="outlined" density="compact" clearable @update:model-value="loadData"
+                label="ສະກຸນເງິນ" variant="outlined" density="compact" clearable @update:model-value="handleFilterChange"
                 hide-details></v-select>
             </v-col>
             <v-col cols="12" md="2">
@@ -99,7 +99,7 @@
             </v-col>
             <v-col cols="12" md="2">
               <v-text-field v-model="filters.date" label="ວັນທີເລີ່ມ" type="date" variant="outlined" density="compact"
-                @update:model-value="loadData" hide-details></v-text-field>
+                @update:model-value="handleFilterChange" hide-details></v-text-field>
             </v-col>
             <v-col cols="12" md="1">
               <v-btn color="primary" variant="flat" @click="loadData" :loading="loading" block size="small">
@@ -108,13 +108,29 @@
               </v-btn>
             </v-col>
           </v-row>
+          
+          <!-- Clear Filters Button -->
+          <v-row dense class="mt-1">
+            <v-col cols="12" class="text-right">
+              <v-btn color="grey" variant="text" @click="clearAllFilters" size="x-small">
+                <v-icon left size="14">mdi-filter-off</v-icon>
+                ລຶບຕົວກອງ
+              </v-btn>
+            </v-col>
+          </v-row>
         </v-card-text>
       </v-card>
 
-      <!-- Summary Cards - Thinner -->
+      <!-- Summary Cards - Updated with active state -->
       <v-row dense class="mb-3">
         <v-col cols="6" sm="3" md="2">
-          <v-card class="summary-card-thin" elevation="1">
+          <v-card 
+            class="summary-card-thin" 
+            :class="{ 'active-filter': filters.Auth_Status === null }"
+            elevation="1" 
+            @click="setAuthStatusFilter(null)" 
+            style="cursor:pointer"
+          >
             <v-card-text class="pa-2">
               <div class="d-flex align-center">
                 <v-icon size="20" color="primary" class="mr-2">mdi-file-document-multiple</v-icon>
@@ -127,7 +143,13 @@
           </v-card>
         </v-col>
         <v-col cols="6" sm="3" md="2">
-          <v-card class="summary-card-thin" elevation="1">
+          <v-card 
+            class="summary-card-thin" 
+            :class="{ 'active-filter': filters.Auth_Status === 'U' }"
+            elevation="1" 
+            @click="setAuthStatusFilter('U')" 
+            style="cursor:pointer"
+          >
             <v-card-text class="pa-2">
               <div class="d-flex align-center">
                 <v-icon size="20" color="warning" class="mr-2">mdi-clock-outline</v-icon>
@@ -140,7 +162,13 @@
           </v-card>
         </v-col>
         <v-col cols="6" sm="3" md="2">
-          <v-card class="summary-card-thin" elevation="1">
+          <v-card 
+            class="summary-card-thin" 
+            :class="{ 'active-filter': filters.Auth_Status === 'A' }"
+            elevation="1" 
+            @click="setAuthStatusFilter('A')" 
+            style="cursor:pointer"
+          >
             <v-card-text class="pa-2">
               <div class="d-flex align-center">
                 <v-icon size="20" color="success" class="mr-2">mdi-check-circle</v-icon>
@@ -153,7 +181,13 @@
           </v-card>
         </v-col>
         <v-col cols="6" sm="3" md="2">
-          <v-card class="summary-card-thin" elevation="1">
+          <v-card 
+            class="summary-card-thin" 
+            :class="{ 'active-filter': filters.Auth_Status === 'R' }"
+            elevation="1" 
+            @click="setAuthStatusFilter('R')" 
+            style="cursor:pointer"
+          >
             <v-card-text class="pa-2">
               <div class="d-flex align-center">
                 <v-icon size="20" color="error" class="mr-2">mdi-close-circle</v-icon>
@@ -166,7 +200,13 @@
           </v-card>
         </v-col>
         <v-col cols="6" sm="3" md="2">
-          <v-card class="summary-card-thin" elevation="1">
+          <v-card 
+            class="summary-card-thin" 
+            :class="{ 'active-filter': filters.Auth_Status === 'P' }"
+            elevation="1" 
+            @click="setAuthStatusFilter('P')" 
+            style="cursor:pointer"
+          >
             <v-card-text class="pa-2">
               <div class="d-flex align-center">
                 <v-icon size="20" color="info" class="mr-2">mdi-pencil-circle</v-icon>
@@ -182,15 +222,37 @@
 
       <!-- Data Table - Compact -->
       <v-card elevation="1" class="data-table-card-thin">
+        <!-- Updated Data Table Title -->
         <v-card-title class="d-flex justify-space-between align-center pa-3">
           <span class="text-h6">
             ລາຍການບັນທຶກບັນຊີ
             <v-chip size="small" color="primary" variant="outlined" class="ml-2">
               {{ canAuthorize ? 'ທັງໝົດ' : 'ຂອງຂ້ອຍ' }}
             </v-chip>
+            <!-- Show current filter status -->
+            <v-chip 
+              v-if="filters.Auth_Status" 
+              size="small" 
+              :color="getStatusColor(filters.Auth_Status)" 
+              variant="flat" 
+              class="ml-2"
+            >
+              <v-icon left size="12">{{ getStatusIcon(filters.Auth_Status) }}</v-icon>
+              {{ getStatusText(filters.Auth_Status) }}
+            </v-chip>
+            <v-chip 
+              v-else 
+              size="small" 
+              color="grey" 
+              variant="flat" 
+              class="ml-2"
+            >
+              <v-icon left size="12">mdi-filter-off</v-icon>
+              ທັງໝົດ
+            </v-chip>
           </span>
           <div>
-            <v-btn v-if="canEdit" color="primary" variant="flat" @click="navigateToCreate" prepend-icon="mdi-plus"
+            <v-btn v-if="canAdd" color="primary" variant="flat" @click="navigateToCreate" prepend-icon="mdi-plus"
               class="mr-2" size="small">
               ເພີ່ມບັນທຶກໃຫມ່
             </v-btn>
@@ -275,7 +337,6 @@
           <template v-slot:item.maker_name="{ item }">
             <div class="text-caption-thin">
               <div v-if="item.Maker_Id" class="text-compact">{{ item.maker_name || item.Maker_Id }}</div>
-              <!-- <div class="text-grey text-xs">{{ formatDateTime(item.Maker_DT_Stamp) }}</div> -->
             </div>
           </template>
 
@@ -286,7 +347,6 @@
                 title="ເບິ່ງລາຍລະອຽດ">
                 <v-icon size="14">mdi-eye</v-icon>
               </v-btn>
-
 
               <v-btn
                 v-if="canDelete && (canAuthorize || item.Maker_Id === currentUser?.user_id) && item.Auth_Status !== 'A' && item.Auth_Status !== 'R'"
@@ -319,7 +379,9 @@ console.log('Submenu ID:', submenu_id)
 const roleStore = RoleStore()
 const role1 = computed(() =>{
   return roleStore.respons_data_role;
-})// Role Permissions
+})
+
+// Role Permissions
 const {
   initializeRole,
   canView,
@@ -336,7 +398,7 @@ const loadingAuthStatus = ref(false)
 const items = ref([])
 const modules = ref([])
 const currencies = ref([])
-const authStatusOptions = ref([]) // Changed from fixed array to reactive ref
+const authStatusOptions = ref([])
 
 // Auth Status Mapping (for consistent reference)
 const authStatusMapping = ref(new Map())
@@ -359,9 +421,8 @@ const filters = reactive({
   search: '',
   module_id: null,
   Ccy_cd: null,
-  Auth_Status: null,
+  Auth_Status: 'U', // Default to pending approval
   date: today,
-
 })
 
 // Summary
@@ -380,7 +441,6 @@ const headers = [
   { title: 'ເລກອ້າງອີງ', key: 'Reference_No', sortable: true },
   { title: 'ເນື້ອໃນ', key: 'Addl_text', sortable: true },
   { title: 'ຈຳນວນເງິນ', key: 'Fcy_Amount', align: 'end', sortable: true },
-
   { title: 'ຜູ້ສ້າງ', key: 'maker_name', sortable: true },
   { title: 'ວັນທີ', key: 'Value_date', sortable: true },
   { title: 'ສະຖານະ', key: 'Auth_Status', sortable: true },
@@ -404,6 +464,54 @@ const viewDetails = (item) => {
 const navigateToCreate = () => {
   const createUrl = `/glcapture/create?sub_menu_id=${submenu_id}`
   router.push(createUrl)
+}
+
+// NEW: Load summary data (without Auth_Status filter)
+const loadSummaryData = async () => {
+  try {
+    console.log('Loading summary data...')
+    
+    // Build query params for summary (without Auth_Status filter)
+    const params = {
+      show_all: canAuthorize.value ? 'true' : 'false'
+    }
+
+    // Add other filters but NOT Auth_Status
+    if (filters.search) params.search = filters.search
+    if (filters.module_id) params.module_id = filters.module_id
+    if (filters.Ccy_cd) params.Ccy_cd = filters.Ccy_cd
+    if (filters.date) params.Value_date = filters.date
+
+    // Exclude soft deleted
+    params.delete_stat__ne = 'D'
+
+    console.log('Loading summary with params:', params)
+
+    const response = await axios.get('/api/journal-log-master/', {
+      params,
+      ...getAuthHeaders()
+    })
+
+    const allItems = response.data.results || response.data || []
+    
+    // Update summary with all records
+    summary.total = allItems.length
+    summary.pending = allItems.filter(i => i.Auth_Status === 'U').length
+    summary.approved = allItems.filter(i => i.Auth_Status === 'A').length
+    summary.rejected = allItems.filter(i => i.Auth_Status === 'R').length
+    summary.correction = allItems.filter(i => i.Auth_Status === 'P').length
+
+    console.log('Summary updated:', {
+      total: summary.total,
+      pending: summary.pending,
+      approved: summary.approved,
+      rejected: summary.rejected,
+      correction: summary.correction
+    })
+
+  } catch (error) {
+    console.error('Error loading summary data:', error)
+  }
 }
 
 // Load Auth Status Options from API
@@ -533,7 +641,7 @@ const getStatusText = (status) => {
     case 'A': return 'ອະນຸມັດແລ້ວ'
     case 'R': return 'ປະຕິເສດ'
     case 'U': return 'ລໍຖ້າອະນຸມັດ'
-    case 'P': return 'ຖ້າເເກ້ໄຂ'
+    case 'P': return 'ຖ້າເແກ້ໄຂ'
     default: return 'ບໍ່ຮູ້'
   }
 }
@@ -544,29 +652,32 @@ const getModuleName = (moduleId) => {
   return module ? module.module_name_la : moduleId
 }
 
+// MODIFIED: Load filtered data for table
 const loadData = async () => {
   try {
     loading.value = true
 
-    // Build query params
+    // Load summary data first (this gets all records for accurate counts)
+    await loadSummaryData()
+
+    // Build query params for table data (including Auth_Status filter)
     const params = {
-      // **KEY ADDITION**: Add permission-based filtering
       show_all: canAuthorize.value ? 'true' : 'false'
     }
 
-    // Add filter params
+    // Add ALL filters including Auth_Status
     if (filters.search) params.search = filters.search
     if (filters.module_id) params.module_id = filters.module_id
     if (filters.Ccy_cd) params.Ccy_cd = filters.Ccy_cd
-    if (filters.Auth_Status) params.Auth_Status = filters.Auth_Status
+    if (filters.Auth_Status) params.Auth_Status = filters.Auth_Status // This is the key difference
     if (filters.date) params.Value_date = filters.date
 
     // Exclude soft deleted
     params.delete_stat__ne = 'D'
-    params.ordering = '-Auth_Status' // Order by newest first
+    params.ordering = '-Auth_Status'
 
-    console.log('Loading data with params:', params)
-    console.log('User permissions: ------>', {
+    console.log('Loading table data with params:', params)
+    console.log('User permissions:', {
       canAdd: canAdd.value, 
       canView: canView.value,
       canEdit: canEdit.value,
@@ -582,11 +693,8 @@ const loadData = async () => {
 
     items.value = response.data.results || response.data || []
 
-    console.log(`Loaded ${items.value.length} items`)
-    console.log(`Permission level: ${canAuthorize.value ? 'ALL RECORDS' : 'OWN RECORDS ONLY'}`)
-
-    // Update summary
-    updateSummary()
+    console.log(`Loaded ${items.value.length} filtered items for table`)
+    console.log(`Auth_Status filter: ${filters.Auth_Status || 'none'}`)
 
   } catch (error) {
     console.error('Error loading data:', error)
@@ -599,14 +707,6 @@ const loadData = async () => {
   } finally {
     loading.value = false
   }
-}
-
-const updateSummary = () => {
-  summary.total = items.value.length
-  summary.pending = items.value.filter(i => i.Auth_Status === 'U').length
-  summary.approved = items.value.filter(i => i.Auth_Status === 'A').length
-  summary.rejected = items.value.filter(i => i.Auth_Status === 'R').length
-  summary.correction = items.value.filter(i => i.Auth_Status === 'P').length
 }
 
 const loadModules = async () => {
@@ -625,6 +725,40 @@ const loadCurrencies = async () => {
   } catch (error) {
     console.error('Error loading currencies:', error)
   }
+}
+
+// Set Auth Status Filter
+const setAuthStatusFilter = (status) => {
+  filters.Auth_Status = status
+  loadData() // This will reload table data with new filter but keep summary intact
+}
+
+// Method to handle non-Auth_Status filter changes
+const handleFilterChange = () => {
+  // When other filters change, we still want to maintain the current Auth_Status filter
+  // and update both summary and table data
+  loadData()
+}
+
+// Method to clear all filters
+const clearAllFilters = () => {
+  filters.search = ''
+  filters.module_id = null
+  filters.Ccy_cd = null
+  filters.Auth_Status = 'U' // Reset to default
+  filters.date = today
+  loadData()
+}
+
+// Method to show filter summary in console (for debugging)
+const logCurrentFilters = () => {
+  console.log('Current Filters:', {
+    search: filters.search,
+    module_id: filters.module_id,
+    Ccy_cd: filters.Ccy_cd,
+    Auth_Status: filters.Auth_Status,
+    date: filters.date
+  })
 }
 
 const deleteItem = async (item) => {
@@ -690,7 +824,7 @@ const exportData = () => {
 
 // Search with debounce
 const searchDebounced = debounce(() => {
-  loadData()
+  handleFilterChange()
 }, 500)
 
 // Lifecycle
@@ -713,10 +847,13 @@ onMounted(async () => {
 
   // Load reference data concurrently
   await Promise.all([
-    loadAuthStatusOptions(), // NEW: Load auth status options from API
+    loadAuthStatusOptions(),
     loadModules(),
     loadCurrencies()
   ])
+
+  // Set default filter to 'U' (pending approval) - already set in reactive definition
+  console.log('Default filter set to:', filters.Auth_Status)
 
   // Load main data (only if user has view permission)
   if (canView.value) {
@@ -782,6 +919,24 @@ onMounted(async () => {
 
 .summary-card-thin:hover {
   transform: translateY(-1px);
+}
+
+/* Active filter state for summary cards */
+.summary-card-thin.active-filter {
+  border: 2px solid #1976d2 !important;
+  background: linear-gradient(135deg, rgba(25, 118, 210, 0.05) 0%, rgba(25, 118, 210, 0.1) 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.2) !important;
+}
+
+.summary-card-thin.active-filter .summary-value-thin {
+  color: #1976d2;
+  font-weight: 700;
+}
+
+.summary-card-thin.active-filter .summary-label-thin {
+  color: #1976d2;
+  font-weight: 600;
 }
 
 .summary-value-thin {

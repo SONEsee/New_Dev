@@ -136,8 +136,9 @@
                 variant="outlined"
                 density="compact"
                 clearable
-                @update:model-value="loadData"
+                @update:model-value="handleFilterChange"
                 hide-details
+                :loading="loadingReferences"
               ></v-select>
             </v-col>
             
@@ -152,8 +153,9 @@
                 variant="outlined"
                 density="compact"
                 clearable
-                @update:model-value="loadData"
+                @update:model-value="handleFilterChange"
                 hide-details
+                :loading="loadingReferences"
               ></v-select>
             </v-col>
             
@@ -168,9 +170,9 @@
                 variant="outlined"
                 density="compact"
                 clearable
-                @update:model-value="loadData"
+                @update:model-value="setAuthStatusFilter"
                 hide-details
-                :loading="loadingAuthStatus"
+                :loading="loadingReferences"
               ></v-select>
             </v-col>
             
@@ -231,7 +233,7 @@
                     type="date"
                     variant="outlined"
                     density="compact"
-                    @update:model-value="loadData"
+                    @update:model-value="handleFilterChange"
                     hide-details
                     class="date-input"
                     placeholder="ເລືອກວັນທີ"
@@ -246,7 +248,7 @@
                       type="date"
                       variant="outlined"
                       density="compact"
-                      @update:model-value="loadData"
+                      @update:model-value="handleFilterChange"
                       hide-details
                       class="date-input"
                       placeholder="ຈາກວັນທີ"
@@ -257,7 +259,7 @@
                       type="date"
                       variant="outlined"
                       density="compact"
-                      @update:model-value="loadData"
+                      @update:model-value="handleFilterChange"
                       hide-details
                       class="date-input"
                       placeholder="ເຖິງວັນທີ"
@@ -275,17 +277,17 @@
                       item-value="value"
                       variant="outlined"
                       density="compact"
-                      @update:model-value="loadData"
+                      @update:model-value="handleFilterChange"
                       hide-details
                       class="month-input"
                       placeholder="ເລືອກເດືອນ"
                     ></v-select>
                     <v-select
                       v-model="filters.selectedYear"
-                      :items="year"
+                      :items="years"
                       variant="outlined"
                       density="compact"
-                      @update:model-value="loadData"
+                      @update:model-value="handleFilterChange"
                       hide-details
                       class="year-input"
                       placeholder="ເລືອກປີ"
@@ -297,10 +299,10 @@
                 <template v-if="filters.dateFilterType === 'year'">
                   <v-select
                     v-model="filters.selectedYear"
-                    :items="year"
+                    :items="years"
                     variant="outlined"
                     density="compact"
-                    @update:model-value="loadData"
+                    @update:model-value="handleFilterChange"
                     hide-details
                     class="year-input"
                     placeholder="ເລືອກປີ"
@@ -359,15 +361,24 @@
         </v-card-text>
       </v-card>
 
-      <!-- Summary Cards - Thinner -->
+      <!-- Summary Cards with Loading States -->
       <v-row dense class="mb-3">
         <v-col cols="6" sm="3" md="2">
-          <v-card class="summary-card-thin" elevation="1">
+          <v-card 
+            class="summary-card-thin" 
+            :class="{ 'active-filter': filters.Auth_Status === null }"
+            elevation="1"
+            @click="setAuthStatusFilter(null)"
+            style="cursor:pointer"
+          >
             <v-card-text class="pa-2">
               <div class="d-flex align-center">
                 <v-icon size="20" color="primary" class="mr-2">mdi-file-document-multiple</v-icon>
                 <div>
-                  <div class="summary-value-thin">{{ summary.total }}</div>
+                  <div class="summary-value-thin">
+                    <v-skeleton-loader v-if="loading" type="text" width="40"></v-skeleton-loader>
+                    <span v-else>{{ summary.total }}</span>
+                  </div>
                   <div class="summary-label-thin">ລາຍການທັງໝົດ</div>
                 </div>
               </div>
@@ -375,12 +386,21 @@
           </v-card>
         </v-col>
         <v-col cols="6" sm="3" md="2">
-          <v-card class="summary-card-thin" elevation="1">
+          <v-card 
+            class="summary-card-thin" 
+            :class="{ 'active-filter': filters.Auth_Status === 'U' }"
+            elevation="1"
+            @click="setAuthStatusFilter('U')"
+            style="cursor:pointer"
+          >
             <v-card-text class="pa-2">
               <div class="d-flex align-center">
                 <v-icon size="20" color="warning" class="mr-2">mdi-clock-outline</v-icon>
                 <div>
-                  <div class="summary-value-thin">{{ summary.pending }}</div>
+                  <div class="summary-value-thin">
+                    <v-skeleton-loader v-if="loading" type="text" width="40"></v-skeleton-loader>
+                    <span v-else>{{ summary.pending }}</span>
+                  </div>
                   <div class="summary-label-thin">ລໍຖ້າອະນຸມັດ</div>
                 </div>
               </div>
@@ -388,12 +408,21 @@
           </v-card>
         </v-col>
         <v-col cols="6" sm="3" md="2">
-          <v-card class="summary-card-thin" elevation="1">
+          <v-card 
+            class="summary-card-thin" 
+            :class="{ 'active-filter': filters.Auth_Status === 'A' }"
+            elevation="1"
+            @click="setAuthStatusFilter('A')"
+            style="cursor:pointer"
+          >
             <v-card-text class="pa-2">
               <div class="d-flex align-center">
                 <v-icon size="20" color="success" class="mr-2">mdi-check-circle</v-icon>
                 <div>
-                  <div class="summary-value-thin">{{ summary.approved }}</div>
+                  <div class="summary-value-thin">
+                    <v-skeleton-loader v-if="loading" type="text" width="40"></v-skeleton-loader>
+                    <span v-else>{{ summary.approved }}</span>
+                  </div>
                   <div class="summary-label-thin">ອະນຸມັດແລ້ວ</div>
                 </div>
               </div>
@@ -401,12 +430,21 @@
           </v-card>
         </v-col>
         <v-col cols="6" sm="3" md="2">
-          <v-card class="summary-card-thin" elevation="1">
+          <v-card 
+            class="summary-card-thin" 
+            :class="{ 'active-filter': filters.Auth_Status === 'R' }"
+            elevation="1"
+            @click="setAuthStatusFilter('R')"
+            style="cursor:pointer"
+          >
             <v-card-text class="pa-2">
               <div class="d-flex align-center">
                 <v-icon size="20" color="error" class="mr-2">mdi-close-circle</v-icon>
                 <div>
-                  <div class="summary-value-thin">{{ summary.rejected }}</div>
+                  <div class="summary-value-thin">
+                    <v-skeleton-loader v-if="loading" type="text" width="40"></v-skeleton-loader>
+                    <span v-else>{{ summary.rejected }}</span>
+                  </div>
                   <div class="summary-label-thin">ປະຕິເສດ</div>
                 </div>
               </div>
@@ -414,12 +452,21 @@
           </v-card>
         </v-col>
         <v-col cols="6" sm="3" md="2">
-          <v-card class="summary-card-thin" elevation="1">
+          <v-card 
+            class="summary-card-thin" 
+            :class="{ 'active-filter': filters.Auth_Status === 'P' }"
+            elevation="1"
+            @click="setAuthStatusFilter('P')"
+            style="cursor:pointer"
+          >
             <v-card-text class="pa-2">
               <div class="d-flex align-center">
                 <v-icon size="20" color="info" class="mr-2">mdi-pencil-circle</v-icon>
                 <div>
-                  <div class="summary-value-thin">{{ summary.correction }}</div>
+                  <div class="summary-value-thin">
+                    <v-skeleton-loader v-if="loading" type="text" width="40"></v-skeleton-loader>
+                    <span v-else>{{ summary.correction }}</span>
+                  </div>
                   <div class="summary-label-thin">ຖ້າເແກ້ໄຂ</div>
                 </div>
               </div>
@@ -428,13 +475,45 @@
         </v-col>
       </v-row>
 
-      <!-- Data Table - Compact -->
+      <!-- Data Table with Pagination -->
       <v-card elevation="1" class="data-table-card-thin">
         <v-card-title class="d-flex justify-space-between align-center pa-3">
           <span class="text-h6">
             ລາຍການບັນທຶກບັນຊີ
             <v-chip size="small" color="primary" variant="outlined" class="ml-2">
               {{ canAuthorize ? 'ທັງໝົດ' : 'ຂອງຂ້ອຍ' }}
+            </v-chip>
+            <!-- Show current filter status -->
+            <v-chip 
+              v-if="filters.Auth_Status" 
+              size="small" 
+              :color="getStatusColor(filters.Auth_Status)" 
+              variant="flat" 
+              class="ml-2"
+            >
+              <v-icon left size="12">{{ getStatusIcon(filters.Auth_Status) }}</v-icon>
+              {{ getStatusText(filters.Auth_Status) }}
+            </v-chip>
+            <v-chip 
+              v-else 
+              size="small" 
+              color="grey" 
+              variant="flat" 
+              class="ml-2"
+            >
+              <v-icon left size="12">mdi-filter-off</v-icon>
+              ທັງໝົດ
+            </v-chip>
+
+            <!-- Pagination Info -->
+            <v-chip 
+              v-if="pagination.totalItems > 0"
+              size="small" 
+              color="info" 
+              variant="outlined" 
+              class="ml-2"
+            >
+              {{ pagination.currentPage }} / {{ pagination.totalPages }} ໜ້າ ({{ pagination.totalItems }} ລາຍການ)
             </v-chip>
           </span>
           <div>
@@ -454,6 +533,7 @@
               variant="text"
               @click="loadData"
               size="small"
+              :loading="loading"
             >
               <v-icon left size="16">mdi-refresh</v-icon>
               ໂຫຼດໃໝ່
@@ -461,16 +541,29 @@
           </div>
         </v-card-title>
         
+        <!-- Table with Loading State -->
         <v-data-table
           :headers="headers"
           :items="items"
           :loading="loading"
+          loading-text="ກຳລັງໂຫຼດຂໍ້ມູນ..."
           :search="filters.search"
-          :items-per-page="10"
+          :items-per-page="-1"
           density="compact"
           class="elevation-0 full-width-table-thin"
           item-value="JRNLLog_id"
+          hide-default-footer
         >
+          <!-- Loading template -->
+          <template v-slot:loading>
+            <v-skeleton-loader
+              v-for="n in pagination.pageSize"
+              :key="n"
+              type="table-row"
+              class="mx-auto"
+            ></v-skeleton-loader>
+          </template>
+
           <!-- Reference No -->
           <template v-slot:item.Reference_No="{ item }">
             <v-chip
@@ -487,8 +580,8 @@
 
           <!-- Module -->
           <template v-slot:item.module_id="{ item }">
-            <span v-if="item.module_id" class="text-compact">
-              {{ getModuleName(item.module_id) }}
+            <span v-if="item.module_name_la" class="text-compact">
+              {{ item.module_name_la }}
             </span>
             <span v-else class="text-grey">-</span>
           </template>
@@ -497,7 +590,7 @@
           <template v-slot:item.Fcy_Amount="{ item }">
             <div class="text-right text-compact">
               <strong>{{ formatNumber(item.Fcy_Amount) }}</strong>
-              <span class="text-grey ml-1">{{ item.Ccy_cd }}</span>
+              <span class="text-grey ml-1">{{ item.ccy_code || item.Ccy_cd }}</span>
             </div>
           </template>
 
@@ -580,13 +673,39 @@
             </div>
           </template>
         </v-data-table>
+
+        <!-- Custom Pagination -->
+        <v-card-actions class="justify-space-between pa-3">
+          <div class="d-flex align-center gap-2">
+            <span class="text-caption">ສະແດງ {{ pagination.pageSize }} ລາຍການຕໍ່ໜ້າ</span>
+            <v-select
+              v-model="pagination.pageSize"
+              :items="[10, 25, 50, 100]"
+              density="compact"
+              variant="outlined"
+              hide-details
+              @update:model-value="onPageSizeChange"
+              style="width: 80px;"
+            ></v-select>
+          </div>
+          
+          <v-pagination
+            v-model="pagination.currentPage"
+            :length="pagination.totalPages"
+            :total-visible="7"
+            @update:model-value="onPageChange"
+            density="compact"
+            size="small"
+            :disabled="loading"
+          ></v-pagination>
+        </v-card-actions>
       </v-card>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from '@/helpers/axios'
 import Swal from 'sweetalert2'
@@ -612,16 +731,31 @@ const {
   permissions
 } = useRolePermissions()
 
+// Performance Tracking
+const performanceTracker = {
+  start() {
+    this.startTime = performance.now()
+  },
+  end(operation) {
+    const duration = performance.now() - this.startTime
+    console.log(`⚡ ${operation}: ${duration.toFixed(2)}ms`)
+    if (duration > 500) {
+      console.warn(`🐌 Slow operation: ${operation} - ${duration}ms`)
+    }
+  }
+}
+
 // State
 const loading = ref(false)
-const loadingAuthStatus = ref(false)
+const loadingReferences = ref(false)
 const items = ref([])
 const modules = ref([])
 const currencies = ref([])
 const authStatusOptions = ref([])
 
-// Auth Status Mapping (for consistent reference)
-const authStatusMapping = ref(new Map())
+// Cache for reference data
+const referenceDataCache = new Map()
+const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
 // Current user (get from localStorage or auth store)
 const currentUser = computed(() => {
@@ -634,9 +768,17 @@ const currentUser = computed(() => {
   }
 })
 
-const today = new Date().toISOString().slice(0, 10) // 'YYYY-MM-DD'
+const today = new Date().toISOString().slice(0, 10)
 const currentYear = new Date().getFullYear()
 const currentMonth = new Date().getMonth() + 1
+
+// Pagination
+const pagination = reactive({
+  currentPage: 1,
+  pageSize: 25,
+  totalPages: 0,
+  totalItems: 0
+})
 
 // Date Filter Types
 const dateFilterTypes = ref([
@@ -676,7 +818,7 @@ const filters = reactive({
   search: '',
   module_id: null,
   Ccy_cd: null,
-  Auth_Status: null,
+  Auth_Status: 'U', // Default to pending
   dateFilterType: 'all',
   specificDate: '',
   dateFrom: '',
@@ -769,14 +911,14 @@ const activeFilterChips = computed(() => {
 
 // Table headers
 const headers = [
-  { title: 'ໂມດູນ', key: 'module_id', sortable: true },
-  { title: 'ລະຫັດ', key: 'Txn_code', sortable: true },
-  { title: 'ເລກອ້າງອີງ', key: 'Reference_No', sortable: true },
-  { title: 'ເນື້ອໃນ', key: 'Addl_text', sortable: true },
-  { title: 'ຈຳນວນເງິນ', key: 'Fcy_Amount', align: 'end', sortable: true },
-  { title: 'ຜູ້ສ້າງ', key: 'maker_name', sortable: true },
-  { title: 'ວັນທີ', key: 'Value_date', sortable: true },
-  { title: 'ສະຖານະ', key: 'Auth_Status', sortable: true },
+  { title: 'ໂມດູນ', key: 'module_id', sortable: false },
+  { title: 'ລະຫັດ', key: 'Txn_code', sortable: false },
+  { title: 'ເລກອ້າງອີງ', key: 'Reference_No', sortable: false },
+  { title: 'ເນື້ອໃນ', key: 'Addl_text', sortable: false },
+  { title: 'ຈຳນວນເງິນ', key: 'Fcy_Amount', align: 'end', sortable: false },
+  { title: 'ຜູ້ສ້າງ', key: 'maker_name', sortable: false },
+  { title: 'ວັນທີ', key: 'Value_date', sortable: false },
+  { title: 'ສະຖານະ', key: 'Auth_Status', sortable: false },
   { title: 'ການກະທຳ', key: 'actions', sortable: false, align: 'center' }
 ]
 
@@ -787,6 +929,19 @@ const getAuthHeaders = () => ({
   }
 })
 
+// Cache Helper Functions
+const getCachedData = (key) => {
+  const cached = referenceDataCache.get(key)
+  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+    return cached.data
+  }
+  return null
+}
+
+const setCachedData = (key, data) => {
+  referenceDataCache.set(key, { data, timestamp: Date.now() })
+}
+
 // Enhanced Date Filter Methods
 const getDateFilterLabel = () => {
   const type = dateFilterTypes.value.find(d => d.value === filters.dateFilterType)
@@ -794,9 +949,8 @@ const getDateFilterLabel = () => {
 }
 
 const onDateFilterTypeChange = () => {
-  // Clear previous date filters when type changes
   clearDateFilterValues()
-  loadData()
+  handleFilterChange()
 }
 
 const clearDateFilterValues = () => {
@@ -810,7 +964,7 @@ const clearDateFilterValues = () => {
 const clearDateFilter = () => {
   filters.dateFilterType = 'all'
   clearDateFilterValues()
-  loadData()
+  handleFilterChange()
 }
 
 const removeFilter = (filterKey) => {
@@ -829,9 +983,9 @@ const removeFilter = (filterKey) => {
       break
     case 'dateFilter':
       clearDateFilter()
-      return // clearDateFilter already calls loadData
+      return // clearDateFilter already calls handleFilterChange
   }
-  loadData()
+  handleFilterChange()
 }
 
 const clearAllFilters = () => {
@@ -842,150 +996,13 @@ const clearAllFilters = () => {
   clearDateFilter()
 }
 
-// Navigate to details page
+// Navigation
 const viewDetails = (item) => {
   const detailUrl = `/glcapture/detail?Reference_No=${item.Reference_No}&sub_menu_id=${submenu_id}`
   router.push(detailUrl)
 }
 
-// Load Auth Status Options from API
-const loadAuthStatusOptions = async () => {
-  try {
-    loadingAuthStatus.value = true
-    console.log('Loading auth status options from API...')
-    
-    const response = await axios.get('/api/master-types/tree/A', getAuthHeaders())
-    
-    if (response.data && response.data.MasterCodes) {
-      // Map API response to component format
-      authStatusOptions.value = response.data.MasterCodes
-        .filter(code => code.Status === 'T') // Only active statuses
-        .map(code => ({
-          value: code.MC_code,
-          text: code.MC_name_la
-        }))
-      
-      // Create mapping for status text lookup
-      authStatusMapping.value.clear()
-      response.data.MasterCodes
-        .filter(code => code.Status === 'T')
-        .forEach(code => {
-          authStatusMapping.value.set(code.MC_code, {
-            text: code.MC_name_la,
-            color: getStatusColorFromCode(code.MC_code),
-            icon: getStatusIconFromCode(code.MC_code)
-          })
-        })
-      
-      console.log('Auth status options loaded:', authStatusOptions.value)
-      console.log('Auth status mapping created:', authStatusMapping.value)
-    }
-  } catch (error) {
-    console.error('Error loading auth status options:', error)
-    // Fallback to default options if API fails
-    authStatusOptions.value = [
-      { value: 'U', text: 'ລໍຖ້າອະນຸມັດ' },
-      { value: 'A', text: 'ອະນຸມັດແລ້ວ' },
-      { value: 'R', text: 'ປະຕິເສດ' },
-      { value: 'P', text: 'ຖ້າເແກ້ໄຂ' }
-    ]
-  } finally {
-    loadingAuthStatus.value = false
-  }
-}
-
-// Helper function to determine status color based on code
-const getStatusColorFromCode = (code) => {
-  switch(code) {
-    case 'A': return 'success'
-    case 'R': return 'error'
-    case 'U': return 'warning'
-    case 'P': return 'info'
-    default: return 'grey'
-  }
-}
-
-// Helper function to determine status icon based on code
-const getStatusIconFromCode = (code) => {
-  switch(code) {
-    case 'A': return 'mdi-check-circle'
-    case 'R': return 'mdi-close-circle'
-    case 'U': return 'mdi-clock-outline'
-    case 'P': return 'mdi-pencil-circle'
-    default: return 'mdi-help-circle'
-  }
-}
-
-// Methods
-const formatNumber = (num, decimals = 2) => {
-  if (!num) return '0.00'
-  return new Intl.NumberFormat('en-US', {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals
-  }).format(num)
-}
-
-const formatDate = (date) => {
-  if (!date) return '-'
-  return new Date(date).toLocaleDateString('lo-LA')
-}
-
-const formatDateTime = (date) => {
-  if (!date) return '-'
-  return new Date(date).toLocaleString('lo-LA')
-}
-
-const getStatusColor = (status) => {
-  // Use dynamic mapping if available, otherwise fallback to hardcoded
-  if (authStatusMapping.value.has(status)) {
-    return authStatusMapping.value.get(status).color
-  }
-  // Fallback for backward compatibility
-  switch(status) {
-    case 'A': return 'success'
-    case 'R': return 'error'
-    case 'U': return 'warning'
-    case 'P': return 'info'
-    default: return 'grey'
-  }
-}
-
-const getStatusIcon = (status) => {
-  // Use dynamic mapping if available, otherwise fallback to hardcoded
-  if (authStatusMapping.value.has(status)) {
-    return authStatusMapping.value.get(status).icon
-  }
-  // Fallback for backward compatibility
-  switch(status) {
-    case 'A': return 'mdi-check-circle'
-    case 'R': return 'mdi-close-circle'
-    case 'U': return 'mdi-clock-outline'
-    case 'P': return 'mdi-pencil-circle'
-    default: return 'mdi-help-circle'
-  }
-}
-
-const getStatusText = (status) => {
-  // Use dynamic mapping if available, otherwise fallback to hardcoded
-  if (authStatusMapping.value.has(status)) {
-    return authStatusMapping.value.get(status).text
-  }
-  // Fallback for backward compatibility
-  switch(status) {
-    case 'A': return 'ອະນຸມັດແລ້ວ'
-    case 'R': return 'ປະຕິເສດ'
-    case 'U': return 'ລໍຖ້າອະນຸມັດ'
-    case 'P': return 'ຖ້າເແກ້ໄຂ'
-    default: return 'ບໍ່ຮູ້'
-  }
-}
-
-const getModuleName = (moduleId) => {
-  if (!moduleId) return '-'
-  const module = modules.value.find(m => m.module_Id === moduleId)
-  return module ? module.module_name_la : moduleId
-}
-
+// Build Date Parameters
 const buildDateParams = () => {
   const params = {}
   
@@ -1007,7 +1024,6 @@ const buildDateParams = () => {
     
     case 'month':
       if (filters.selectedMonth && filters.selectedYear) {
-        // Get first and last day of the month
         const firstDay = new Date(filters.selectedYear, filters.selectedMonth - 1, 1)
         const lastDay = new Date(filters.selectedYear, filters.selectedMonth, 0)
         
@@ -1025,21 +1041,27 @@ const buildDateParams = () => {
     
     case 'all':
     default:
-      // No date filtering
       break
   }
   
   return params
 }
 
-const loadData = async () => {
+// OPTIMIZED: Single API call for all data
+const loadData = async (resetPage = true) => {
   try {
+    performanceTracker.start()
     loading.value = true
+    
+    if (resetPage) {
+      pagination.currentPage = 1
+    }
     
     // Build query params
     const params = {
-      // **KEY ADDITION**: Add permission-based filtering
-      show_all: canAuthorize.value ? 'true' : 'false'
+      show_all: canAuthorize.value ? 'true' : 'false',
+      page: pagination.currentPage,
+      page_size: pagination.pageSize
     }
     
     // Add filter params
@@ -1054,27 +1076,49 @@ const loadData = async () => {
     
     // Exclude soft deleted
     params.delete_stat__ne = 'D'
-    params.ordering = '-Auth_Status' // Order by newest first
+    params.ordering = '-Maker_DT_Stamp'
     
-    console.log('Loading data with params:', params)
-    console.log('Date filter type:', filters.dateFilterType)
-    console.log('Date parameters:', dateParams)
+    console.log('🚀 Loading data with params:', params)
     
-    const response = await axios.get('/api/journal-log-master/', {
+    const response = await axios.get('/api/journal-log-master/init-data/', {
       params,
       ...getAuthHeaders()
     })
     
-    items.value = response.data.results || response.data || []
-
-    console.log(`Loaded ${items.value.length} items`)
-    console.log(`Permission level: ${canAuthorize.value ? 'ALL RECORDS' : 'OWN RECORDS ONLY'}`)
+    const data = response.data
+    // Update all data at once
+    items.value = response.data.results
+    Object.assign(summary, response.data.summary)
+    pagination.totalItems = response.data.count
+    pagination.totalPages = response.data.page_info.total_pages
+    // Update main data
+    items.value = data.results || []
+    
+    // Update pagination
+    pagination.totalItems = data.count || 0
+    pagination.totalPages = data.page_info?.total_pages || 1
     
     // Update summary
-    updateSummary()
+    if (data.summary) {
+      Object.assign(summary, data.summary)
+    }
+    
+    // Update reference data if available
+    if (data.reference_data) {
+      modules.value = data.reference_data.modules || []
+      currencies.value = data.reference_data.currencies || []
+      authStatusOptions.value = data.reference_data.auth_status_options || []
+      
+      // Cache reference data
+      setCachedData('reference_data', data.reference_data)
+    }
+    
+    console.log(`✅ Loaded ${items.value.length} items (Page ${pagination.currentPage}/${pagination.totalPages})`)
+    
+    performanceTracker.end('Data Loading')
     
   } catch (error) {
-    console.error('Error loading data:', error)
+    console.error('❌ Error loading data:', error)
     Swal.fire({
       icon: 'error',
       title: 'ຂໍ້ຜິດພາດ',
@@ -1086,34 +1130,90 @@ const loadData = async () => {
   }
 }
 
-const updateSummary = () => {
-  summary.total = items.value.length
-  summary.pending = items.value.filter(i => i.Auth_Status === 'U').length
-  summary.approved = items.value.filter(i => i.Auth_Status === 'A').length
-  summary.rejected = items.value.filter(i => i.Auth_Status === 'R').length
-  summary.correction = items.value.filter(i => i.Auth_Status === 'P').length
+// Load Reference Data (with caching)
+const loadReferenceData = async () => {
+  const cached = getCachedData('reference_data')
+  if (cached) {
+    modules.value = cached.modules || []
+    currencies.value = cached.currencies || []
+    authStatusOptions.value = cached.auth_status_options || []
+    console.log('📦 Using cached reference data')
+    return
+  }
+  
+  // If no cache, loadData will fetch reference data
+  console.log('🔄 Reference data will be loaded with main data')
 }
 
-const loadModules = async () => {
-  try {
-    const response = await axios.get('/api/modules/', getAuthHeaders())
-    modules.value = response.data.results || response.data || []
-  } catch (error) {
-    console.error('Error loading modules:', error)
+// Status Helper Functions
+const getStatusColor = (status) => {
+  switch (status) {
+    case 'A': return 'success'
+    case 'R': return 'error'
+    case 'U': return 'warning'
+    case 'P': return 'info'
+    default: return 'grey'
   }
 }
 
-const loadCurrencies = async () => {
-  try {
-    const response = await axios.get('/api/currencies/', getAuthHeaders())
-    currencies.value = response.data.results || response.data || []
-  } catch (error) {
-    console.error('Error loading currencies:', error)
+const getStatusIcon = (status) => {
+  switch (status) {
+    case 'A': return 'mdi-check-circle'
+    case 'R': return 'mdi-close-circle'
+    case 'U': return 'mdi-clock-outline'
+    case 'P': return 'mdi-pencil-circle'
+    default: return 'mdi-help-circle'
   }
 }
 
+const getStatusText = (status) => {
+  switch (status) {
+    case 'A': return 'ອະນຸມັດແລ້ວ'
+    case 'R': return 'ປະຕິເສດ'
+    case 'U': return 'ລໍຖ້າອະນຸມັດ'
+    case 'P': return 'ຖ້າເແກ້ໄຂ'
+    default: return 'ບໍ່ຮູ້'
+  }
+}
+
+// Utility Functions
+const formatNumber = (num, decimals = 2) => {
+  if (!num) return '0.00'
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals
+  }).format(num)
+}
+
+const formatDate = (date) => {
+  if (!date) return '-'
+  return new Date(date).toLocaleDateString('lo-LA')
+}
+
+// Filter Change Handlers
+const setAuthStatusFilter = (status) => {
+  filters.Auth_Status = status
+  loadData()
+}
+
+const handleFilterChange = () => {
+  loadData()
+}
+
+// Pagination Handlers
+const onPageChange = (page) => {
+  pagination.currentPage = page
+  loadData(false) // Don't reset page
+}
+
+const onPageSizeChange = (newSize) => {
+  pagination.pageSize = newSize
+  pagination.currentPage = 1
+  loadData(false)
+}
+
+// Delete Item
 const deleteItem = async (item) => {
-  // Check if user can delete this specific item
   const canDeleteItem = canDelete.value && (canAuthorize.value || item.Maker_Id === currentUser.value?.user_id)
   
   if (!canDeleteItem) {
@@ -1149,7 +1249,7 @@ const deleteItem = async (item) => {
         showConfirmButton: false
       })
       
-      loadData()
+      loadData(false) // Don't reset page
       
     } catch (error) {
       console.error('Error deleting item:', error)
@@ -1164,7 +1264,6 @@ const deleteItem = async (item) => {
 }
 
 const exportData = () => {
-  // Implement export functionality
   Swal.fire({
     icon: 'info',
     title: 'ກຳລັງພັດທະນາ',
@@ -1175,18 +1274,17 @@ const exportData = () => {
 
 // Search with debounce
 const searchDebounced = debounce(() => {
-  loadData()
+  handleFilterChange()
 }, 500)
 
 // Lifecycle
 onMounted(async () => {
-  console.log('Journal list page mounted')
+  console.log('📄 Journal list page mounted')
   
   // Initialize permissions first
   await initializeRole()
   
-  // Debug permissions
-  console.log('Permissions initialized:', {
+  console.log('🔐 Permissions initialized:', {
     canView: canView.value,
     canEdit: canEdit.value,
     canDelete: canDelete.value,
@@ -1194,12 +1292,8 @@ onMounted(async () => {
     permissions: permissions.value
   })
   
-  // Load reference data concurrently
-  await Promise.all([
-    loadAuthStatusOptions(),
-    loadModules(),
-    loadCurrencies()
-  ])
+  // Load cached reference data first
+  await loadReferenceData()
   
   // Load main data (only if user has view permission)
   if (canView.value) {
@@ -1209,6 +1303,7 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* All existing styles from the original component... */
 .gl-approved-master {
   padding: 16px;
 }
@@ -1337,6 +1432,24 @@ onMounted(async () => {
 
 .summary-card-thin:hover {
   transform: translateY(-1px);
+}
+
+/* Active filter state for summary cards */
+.summary-card-thin.active-filter {
+  border: 2px solid #1976d2 !important;
+  background: linear-gradient(135deg, rgba(25, 118, 210, 0.05) 0%, rgba(25, 118, 210, 0.1) 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.2) !important;
+}
+
+.summary-card-thin.active-filter .summary-value-thin {
+  color: #1976d2;
+  font-weight: 700;
+}
+
+.summary-card-thin.active-filter .summary-label-thin {
+  color: #1976d2;
+  font-weight: 600;
 }
 
 .summary-value-thin {
