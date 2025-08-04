@@ -250,6 +250,29 @@ export const useFassetLidtDescription = defineStore("fassetlistdecription", {
         this.isLoading = false;
       }
     },
+    async getDataTotal() {
+      this.isLoading = true;
+      try {
+        const res = await axios.get(`/api/asset_list_dpca_main/`, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("access")}`,
+          },
+          
+        });
+        if (res.status === 200) {
+          this.respons_data_driscription_main = res.data;
+        }
+      } catch (error) {
+        CallSwal({
+          icon: "error",
+          title: "ຜຶດພາດ",
+          text: "ບໍ່ສາມາດດືງຂໍ້ມູນໄດ້",
+        });
+      } finally {
+        this.isLoading = false;
+      }
+    },
     async getDataDetail(id: number) {
       this.isLoading = true;
       try {

@@ -336,6 +336,7 @@ defineExpose({
       :items="filterAssetType || []"
       :headers="headers"
       class="text-no-wrap"
+      :loading="faassetStore.isLoading"
     >
       <!-- Header templates (ເກັບແບບເດີມ) -->
       <template v-slot:header.asset_list_id="{ column }">

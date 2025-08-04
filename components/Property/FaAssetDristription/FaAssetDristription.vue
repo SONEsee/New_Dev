@@ -44,13 +44,42 @@ const formatNumber = (num: number) => {
 const headers = [
   { title: "ຂໍ້ມູນປະຈຳເດືອນ", key: "month_name", sortable: true },
 ];
+const tab = ref("monthly");
 
+const totaldata = computed(() => {
+  const data = depreciationStore.respons_data_driscription_main;
+  if (Array.isArray(data)) {
+    return data.filter((item) => item?.Auth_Status === "R"); // ເພີ່ມ filter
+  }
+  if (data && typeof data === "object") {
+    return data.Auth_Status === "R" ? [data] : [];
+  }
+  return [];
+});
+
+const notificationCount = ref(0);
+
+watch(
+  totaldata,
+  (newData) => {
+    notificationCount.value = newData.length;
+  },
+  { immediate: true }
+);
+
+const updateNotificationCount = () => {
+  notificationCount.value = totaldata.value.length;
+};
 onMounted(() => {
   accountStore.GetAccountMethodList();
   depreciationStore.getdataCalculated();
   depreciationStore.getDataHistory();
+  depreciationStore.getDataTotal();
 });
-const tab = ref("monthly");
+
+const handleNotificationClick = () => {
+  goPath(`/property/autoriz/reject`);
+};
 </script>
 
 <template>
@@ -180,9 +209,33 @@ const tab = ref("monthly");
 
           <v-card class="mt-3">
             <div>
-              <v-card-title class="bg-primary">
-                <h3>ປະຫວັດການຫັກຄ່າຫຼູ້ຍຫ້ຽນ</h3></v-card-title
+              <v-card-title
+                class="bg-primary d-flex justify-space-between align-center"
               >
+                <h3>ປະຫວັດການຫັກຄ່າຫຼູ້ຍຫ້ຽນ</h3>
+
+                <div class="position-relative">
+                  <v-icon
+                    color="white"
+                    icon="mdi-bell"
+                    size="small"
+                    @click="handleNotificationClick"
+                    class="cursor-pointer"
+                  ></v-icon>
+                  <v-chip
+                    variant="flat"
+                    v-if="notificationCount > 0"
+                    class="notification-badge"
+                    color="error"
+                    size="x-small"
+                    :text="
+                      notificationCount > 99
+                        ? '99+'
+                        : notificationCount.toString()
+                    "
+                  />
+                </div>
+              </v-card-title>
               <v-chip color="primary" class="mt-3"
                 ><p>
                   ທັງໝົດ: <b>{{ history?.length }}</b> ລາຍການ
@@ -241,7 +294,19 @@ const tab = ref("monthly");
 .text-h3 {
   font-weight: bold;
 }
-
+.notification-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: bold;
+}
 .v-card {
   transition: transform 0.2s, box-shadow 0.2s;
 }

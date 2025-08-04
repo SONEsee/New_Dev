@@ -92,6 +92,7 @@ onMounted(() => {
     :headers="headers"
     show-select
     item-value="mapping_id"
+    :loading="mainStore.isLoading"
   >
     <template v-slot:header.asset_id="{ column }">
       <b style="color: blue">{{ column.title }}</b>

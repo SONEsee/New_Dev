@@ -19,6 +19,7 @@ export interface FaAssetListDistcritionRespons {
   asset_list_id: string;
   Maker_Id: string;
   Checker_Id: null;
+  Auth_Status:string;
 }
 
 export interface AssetListIDDetail {
@@ -27,6 +28,7 @@ export interface AssetListIDDetail {
   asset_list_code: string;
   asset_serial_no: string;
   asset_tag: string;
+  Auth_Status:string;
 }
 
 export interface DepreciationRespons {
@@ -34,6 +36,7 @@ export interface DepreciationRespons {
   action: string;
   data: Data;
   timestamp: Date;
+  Auth_Status:string;
 }
 
 export interface Data {
@@ -44,6 +47,7 @@ export interface Data {
   due_items: AllItemsNeedingAttention[];
   up_to_date_items: any[];
   all_items_needing_attention: AllItemsNeedingAttention[];
+  Auth_Status:string;
 }
 
 export interface AllItemsNeedingAttention {
@@ -62,6 +66,7 @@ export interface AllItemsNeedingAttention {
   due_month_year: string;
   completion_percentage: number;
   status_message: string;
+  Auth_Status:string;
 }
 
 export interface Summary {
@@ -69,6 +74,7 @@ export interface Summary {
   total_overdue: number;
   total_up_to_date: number;
   total_checked: number;
+  Auth_Status:string;
 }
 
 export interface TargetPeriod {
@@ -76,6 +82,7 @@ export interface TargetPeriod {
   year: number;
   month_name_la: string;
   period: string;
+  Auth_Status:string;
 }
 
 export interface ListFaDeptriptoinRespons {
@@ -96,6 +103,7 @@ export interface ListFaDeptriptoinRespons {
   asset_list_id: string;
   Maker_Id: string;
   Checker_Id: null;
+  Auth_Status:string;
 }
 
 export enum RecordStatus {
@@ -125,6 +133,7 @@ export interface HistoryFaDeptriptoinRespons {
     Checker_DT_Stamp: Date;
     Maker_Id:         string;
     Checker_Id:       string;
+     Auth_Status:string;
 }
 
 
@@ -141,6 +150,7 @@ export interface ArrearsDeptriptoinRespons {
     action:    string;
     data:      Data;
     timestamp: Date;
+    Auth_Status:string;
 }
 
 export interface Data {
@@ -169,6 +179,7 @@ export interface OverdueItem_arrears {
     urgency_level:          string;
     urgency_message:        string;
     urgency_color:          string;
+    Auth_Status:string;
 }
 
 export interface Summary {
@@ -178,6 +189,7 @@ export interface Summary {
     breakdown:           Breakdown;
     generated_date:      string;
     urgency_legend:      UrgencyLegend;
+    Auth_Status:string;
 }
 
 export interface Breakdown {
@@ -185,6 +197,7 @@ export interface Breakdown {
     high:     number;
     medium:   number;
     low:      number;
+    Auth_Status:string;
 }
 
 export interface UrgencyLegend {
@@ -193,4 +206,5 @@ export interface UrgencyLegend {
     medium:   string;
     low:      string;
     warning:  string;
+    Auth_Status:string;
 }

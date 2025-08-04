@@ -142,7 +142,7 @@ const updateAccounts = () => {
                 request.amount_end = selectedAssetList.asset_value_remainLast;
               }
               if (selectedAssetList.asset_value !== undefined) {
-                request.amount = selectedAssetList.asset_value;
+                request.amount = selectedAssetList.asset_value_remainMonth;
               }
             }
           }
