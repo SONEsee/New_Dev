@@ -231,6 +231,7 @@
       </v-expansion-panels>
     </v-card-text>
     
+    <!-- UPdater Dialog -->
     <!-- Dialog Actions -->
     <v-card-actions class="pa-4 bg-grey-lighten-5">
       <v-spacer />
