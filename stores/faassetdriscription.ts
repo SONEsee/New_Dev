@@ -18,10 +18,11 @@ export const useFassetLidtDescription = defineStore("fassetlistdecription", {
         action: "bulk_confirm",
         aldm_ids: [] as number[],
         status: "R",
-       "reason": "ຂໍ້ມູນຄ່າເສື່ອມບໍ່ຖືກຕ້ອງ ຕ້ອງແກ້ໄຂຄຳນວນໃໝ່",
+        reason: "ຂໍ້ມູນຄ່າເສື່ອມບໍ່ຖືກຕ້ອງ ຕ້ອງແກ້ໄຂຄຳນວນໃໝ່",
       },
       requres_data_post: {
         action: "bulk_process",
+        create_journal: true,
         mapping_ids: [],
       },
       response_data_get_overdue:
@@ -38,6 +39,7 @@ export const useFassetLidtDescription = defineStore("fassetlistdecription", {
       },
       postdata: {
         action: "bulk_process_all",
+        create_journal: true,
       },
       filter_data_assetlist: {
         assetlist: {
@@ -75,7 +77,7 @@ export const useFassetLidtDescription = defineStore("fassetlistdecription", {
 
         if (notification.isConfirmed) {
           const req = await axios.post(
-            `/api/depreciation/`,
+            `/api/depreciation-with-journal/`,
             this.requres_data_post,
             {
               headers: {
@@ -121,7 +123,7 @@ export const useFassetLidtDescription = defineStore("fassetlistdecription", {
 
         if (notification.isConfirmed) {
           const req = await axios.post(
-            `/api/depreciation/`,
+            `/api/depreciation-with-journal/`,
             this.confirm_form_mark,
             {
               headers: {
@@ -138,9 +140,10 @@ export const useFassetLidtDescription = defineStore("fassetlistdecription", {
               text: "ທ່ານສຳເລັດການຫັກຄ່າເສື່ອມແລ້ວ",
               timer: 1000,
             });
+            setTimeout(() => {
+              goPath("/property/autoriz/");
+            }, 1000);
             this.getArrears();
-
-            
           }
         }
       } catch (error) {
@@ -185,8 +188,6 @@ export const useFassetLidtDescription = defineStore("fassetlistdecription", {
               timer: 1000,
             });
             this.getArrears();
-
-            
           }
         }
       } catch (error) {
@@ -258,7 +259,6 @@ export const useFassetLidtDescription = defineStore("fassetlistdecription", {
             "Content-Type": "application/json",
             Authorization: `Bearer ${localStorage.getItem("access")}`,
           },
-          
         });
         if (res.status === 200) {
           this.respons_data_driscription_main = res.data;

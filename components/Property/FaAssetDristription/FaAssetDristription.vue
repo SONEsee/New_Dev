@@ -84,6 +84,7 @@ const handleNotificationClick = () => {
 
 <template>
   <v-container fluid>
+   <!-- <pre>{{ responseData }}</pre>  -->
     <div color="#E3F2FD" class="rounded-lg pa-4" style="border: 1px solid blue">
       <v-row v-if="isLoading">
         <v-col cols="12" class="text-center">
@@ -166,7 +167,7 @@ const handleNotificationClick = () => {
                               <div class="text-h5 text-info font-weight-bold">
                                 {{
                                   formatNumber(
-                                    responseData.data.summary.total_due
+                                    responseData.data.summary.total_up_to_date
                                   )
                                 }}
                               </div>
@@ -176,7 +177,7 @@ const handleNotificationClick = () => {
                             </td>
                             <td class="pa-4">
                               <div class="text-h5 text-error font-weight-bold">
-                                {{ total(responseData.data.due_items) }} ₭
+                                {{ total(responseData.data.up_to_date_items) }} ₭
                               </div>
                               <div class="text-body-2 text-grey-600">
                                 ລາຍການທີ່ຕ້ອງຫັກ
