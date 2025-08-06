@@ -1,61 +1,98 @@
 <template>
   <v-container fluid class="pa-6">
     <v-card class="mx-auto" max-width="1400" elevation="0" style="border: 1px solid #e0e0e0;">
-      <!-- Header Section -->
-      <v-card-title class="px-6 py-4 d-flex align-center" style="background: linear-gradient(135deg, #1976D2 0%, #1565C0 100%); color: white;">
-        <v-icon start size="24">mdi-scale-balance</v-icon>
-        <span class="text-h6 font-weight-medium">ລາຍງານໃບສົມດຸນ (Balance Sheet)</span>
+      <!-- Header -->
+      <v-card-title class="px-6 py-4 d-flex align-center" style="background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%); color: white;">
+        <v-icon start size="24">mdi-file-document-outline</v-icon>
+        <span class="text-h6 font-weight-medium">
+          ລາຍງານໃບສົມທົບ (Balance Sheet) - 
+          {{ selectedSegment }} {{ selectedCurrency }}
+        </span>
       </v-card-title>
       
       <v-card-text class="px-6 py-4">
         <!-- Filter Form -->
         <v-form @submit.prevent="fetchBalanceSheet" class="mb-4">
           <v-row no-gutters class="mb-4">
+            <!-- Segment Selection -->
             <v-col cols="12" md="4" class="pe-md-2 mb-3 mb-md-0">
-              <v-text-field
-                v-model="filters.date_start"
-                label="ວັນທີເລີ່ມຕົ້ນ"
-                type="date"
+              <v-select
+                v-model="selectedSegment"
+                :items="segmentOptions"
+                label="ເລືອກປະເພດ (Segment)"
                 variant="outlined"
                 density="compact"
-                prepend-inner-icon="mdi-calendar-start"
+                prepend-inner-icon="mdi-tag"
                 hide-details="auto"
-              />
+                @update:model-value="onSegmentChange"
+              >
+                <template #item="{ props, item }">
+                  <v-list-item v-bind="props">
+                    <template #prepend>
+                      <v-icon :icon="item.raw.icon" size="20" />
+                    </template>
+                    <v-list-item-subtitle>{{ item.raw.subtitle }}</v-list-item-subtitle>
+                  </v-list-item>
+                </template>
+              </v-select>
             </v-col>
             
-            <v-col cols="12" md="4" class="px-md-2 mb-3 mb-md-0">
-              <v-text-field
-                v-model="filters.date_end"
-                label="ວັນທີສິ້ນສຸດ"
-                type="date"
+            <!-- Currency Selection -->
+            <v-col cols="12" md="4" class="px-md-1 mb-3 mb-md-0">
+              <v-select
+                v-model="selectedCurrency"
+                :items="currencyOptions"
+                label="ເລືອກສະກຸນເງິນ (Currency)"
                 variant="outlined"
                 density="compact"
-                prepend-inner-icon="mdi-calendar-end"
+                prepend-inner-icon="mdi-currency-usd"
                 hide-details="auto"
-              />
+                :disabled="!selectedSegment"
+              >
+                <template #item="{ props, item }">
+                  <v-list-item v-bind="props">
+                    <template #prepend>
+                      <v-icon :icon="item.raw.icon" size="20" />
+                    </template>
+                    <v-list-item-subtitle>{{ item.raw.subtitle }}</v-list-item-subtitle>
+                  </v-list-item>
+                </template>
+              </v-select>
             </v-col>
 
-            <v-col cols="12" md="4" class="ps-md-2 d-flex gap-2">
+            <!-- Action Buttons -->
+            <v-col cols="12" md="4" class="ps-md-2 d-flex gap-1">
               <v-btn
                 type="submit"
                 color="primary"
                 prepend-icon="mdi-magnify"
                 :loading="loading"
+                :disabled="!selectedSegment || !selectedCurrency"
                 class="flex-grow-1"
                 density="compact"
                 style="height: 40px;"
               >
-                ຄົ້ນຫາຂໍ້ມູນ
+                ດຶງຂໍ້ມູນ
               </v-btn>
               <v-btn
                 color="success"
                 prepend-icon="mdi-microsoft-excel"
-                :disabled="!results.length || loading"
+                :disabled="!balanceSheetData.length || loading"
                 @click="exportToExcel"
                 density="compact"
                 style="height: 40px;"
               >
                 Excel
+              </v-btn>
+              <v-btn
+                color="info"
+                prepend-icon="mdi-compare"
+                :disabled="selectedSegment !== 'FCY' || loading"
+                @click="compareSegments"
+                density="compact"
+                style="height: 40px;"
+              >
+                Compare
               </v-btn>
             </v-col>
           </v-row>
@@ -63,521 +100,340 @@
 
         <v-divider class="mb-4" thickness="1" color="grey-lighten-3" />
 
-        <!-- Summary Cards -->
-        <v-row v-if="summaryStats.totalAssets > 0" class="mb-4">
-          <v-col cols="12" md="4">
-            <v-card class="text-center" elevation="2" color="blue-lighten-5">
-              <v-card-text class="py-3">
-                <div class="text-h6 text-blue-darken-2 font-weight-bold">ຊັບສິນລວມ</div>
-                <div class="text-h5 text-blue-darken-3">{{ formatCurrency(summaryStats.totalAssets) }}</div>
-              </v-card-text>
-            </v-card>
-          </v-col>
-          <v-col cols="12" md="4">
-            <v-card class="text-center" elevation="2" color="orange-lighten-5">
-              <v-card-text class="py-3">
-                <div class="text-h6 text-orange-darken-2 font-weight-bold">ໜີ້ສິນລວມ</div>
-                <div class="text-h5 text-orange-darken-3">{{ formatCurrency(summaryStats.totalLiabilities) }}</div>
-              </v-card-text>
-            </v-card>
-          </v-col>
-          <v-col cols="12" md="4">
-            <v-card class="text-center" elevation="2" color="green-lighten-5">
-              <v-card-text class="py-3">
-                <div class="text-h6 text-green-darken-2 font-weight-bold">ທຶນລວມ</div>
-                <div class="text-h5 text-green-darken-3">{{ formatCurrency(summaryStats.totalEquity) }}</div>
-              </v-card-text>
-            </v-card>
-          </v-col>
-        </v-row>
-
-        <!-- Balance Sheet Table -->
-        <v-card elevation="0" class="balance-sheet-table">
-          <v-card-title class="px-4 py-3 bg-grey-lighten-5">
-            <div class="d-flex justify-space-between align-center w-100">
+        <!-- Data Table -->
+        <v-data-table
+          :headers="headers"
+          :items="balanceSheetData"
+          :items-per-page="25"
+          :loading="loading"
+          class="elevation-0 professional-table"
+          density="compact"
+          hover
+          show-current-page
+        >
+          <!-- Loading State -->
+          <template #loading>
+            <v-skeleton-loader type="table-row@10" />
+          </template>
+          
+          <!-- Table Top Actions -->
+          <template #top>
+            <div class="d-flex justify-space-between align-center pa-4 bg-grey-lighten-5">
               <div class="text-h6 font-weight-medium">
-                ລາຍງານໃບສົມດຸນ - {{ results.length }} ລາຍການ
+                ຜົນການຄົ້ນຫາ: {{ balanceSheetData.length }} ລາຍການ
+                <v-chip size="small" :color="chipColor" variant="tonal" class="ml-2">
+                  {{ chipText }}
+                </v-chip>
               </div>
-              <v-text-field
-                v-model="searchText"
-                label="ຄົ້ນຫາ"
-                prepend-inner-icon="mdi-magnify"
-                variant="outlined"
-                density="compact"
-                style="max-width: 250px;"
-                hide-details
-                clearable
-              />
             </div>
-          </v-card-title>
-
-          <v-card-text class="pa-0">
-            <v-data-table
-              :headers="headers"
-              :items="filteredResults"
-              :loading="loading"
-              class="balance-sheet-data-table"
-              density="compact"
-              disable-pagination
-              hide-default-footer
-              :search="searchText"
-            >
-              <!-- Loading State -->
-              <template #loading>
-                <v-skeleton-loader type="table-row@15" />
-              </template>
+          </template>
+          
+          <!-- Custom Row Template -->
+          <template #item="{ item }">
+            <tr class="table-row">
+              <td class="text-center">{{ item.no }}</td>
+              <!-- <td class="font-weight-medium text-primary">{{ item.report_number }}</td> -->
+              <td class="text-truncate" :title="item.description">
+                {{ item.description }}
+              </td>
               
-              <!-- Custom Row Template -->
-              <template #item="{ item }">
-                <tr :class="getRowClass(item)">
-                  <td class="text-center">
-                    <span class="text-body-2">{{ item.rno }}</span>
-                  </td>
-                  <td class="text-start">
-                    <span :class="getTextClass(item)">{{ item.r_no }}</span>
-                  </td>
-                  <td class="text-start" style="white-space: pre;">
-                    <span :class="getTextClass(item)">{{ item._desc }}</span>
-                  </td>
-                  <td class="text-end font-mono">
-                    <span :class="getAmountClass(item)">
-                      {{ formatCurrency(item.PM) }}
-                    </span>
-                  </td>
-                </tr>
-              </template>
+              <td class="text-end font-mono">
+                <span class="amount-cell" :class="getNetAmountClass(item.net_amount)">
+                  {{ formatCurrency(item.net_amount) }}
+                </span>
+              </td>
+              <td class="text-end font-mono">
+                <span class="amount-cell positive">{{ formatCurrency(item.currency_display) }}</span>
+              </td>
+            </tr>
+          </template>
 
-              <!-- Empty State -->
-              <template #no-data>
-                <div class="text-center pa-8">
-                  <v-icon size="64" color="grey-lighten-2" class="mb-4">mdi-scale-balance</v-icon>
-                  <div class="text-h6 text-grey-darken-1 mb-2">ບໍ່ມີຂໍ້ມູນ</div>
-                  <div class="text-body-2 text-grey">ກະລຸນາປັບປຸງເງື່ອນໄຂການຄົ້ນຫາແລ້ວລອງໃໝ່</div>
-                </div>
-              </template>
-            </v-data-table>
-          </v-card-text>
-        </v-card>
+          <!-- Empty State -->
+          <template #no-data>
+            <div class="text-center pa-8">
+              <v-icon size="64" color="grey-lighten-2" class="mb-4">mdi-file-document-off</v-icon>
+              <div class="text-h6 text-grey-darken-1 mb-2">ບໍ່ມີຂໍ້ມູນ</div>
+              <div class="text-body-2 text-grey">ກະລຸນາເລືອກ segment ແລະ currency ແລ້ວກົດດຶງຂໍ້ມູນ</div>
+            </div>
+          </template>
+        </v-data-table>
       </v-card-text>
     </v-card>
 
-    <!-- Notification Snackbar -->
+    <!-- Snackbar for notifications -->
     <v-snackbar
       v-model="snackbar.show"
       :color="snackbar.color"
       :timeout="5000"
       location="top"
-      elevation="6"
     >
-      <div class="d-flex align-center">
-        <v-icon start :icon="snackbar.icon" />
-        {{ snackbar.message }}
-      </div>
-      <template #actions>
-        <v-btn 
-          variant="text" 
-          @click="snackbar.show = false"
-          icon="mdi-close"
-          size="small"
-        />
-      </template>
+      {{ snackbar.message }}
     </v-snackbar>
   </v-container>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import axios from '@/helpers/axios'
 import * as XLSX from 'xlsx'
 
-// Authentication helper function
-const getAuthHeaders = () => ({
-  headers: {
-    Authorization: `Bearer ${localStorage.getItem("token")}`,
-    'Content-Type': 'application/json'
+// Types
+interface BalanceSheetItem {
+  no: number
+  report_number: string
+  description: string
+  debit_amount: number
+  credit_amount: number
+  net_amount: number
+  currency_display: string
+  segment_type: string
+}
+
+// Authentication helper
+const getAuthHeaders = () => {
+  const token = localStorage.getItem("token")
+  if (!token) throw new Error('Authentication token not found')
+  return {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
   }
-})
+}
 
 // Reactive state
 const loading = ref(false)
-const searchText = ref('')
-
-const filters = ref({
-  date_start: new Date().toISOString().split('T')[0],
-  date_end: new Date().toISOString().split('T')[0]
-})
-
-const results = ref([])
+const selectedSegment = ref('')
+const selectedCurrency = ref('')
+const balanceSheetData = ref<BalanceSheetItem[]>([])
+const supportedOptions = ref<any>(null)
 
 const snackbar = ref({
   show: false,
   message: '',
-  color: 'success',
-  icon: 'mdi-check-circle'
+  color: 'success'
+})
+
+// Segment options
+const segmentOptions = [
+  {
+    title: 'Foreign Currency (FCY)',
+    value: 'FCY',
+    subtitle: 'ສະກຸນເງິນຕ່າງປະເທດ',
+    icon: 'mdi-currency-usd'
+  },
+  {
+    title: 'Local Currency Equivalent (LCY)',
+    value: 'LCY', 
+    subtitle: 'ທຽບເທົ່າກີບລາວ',
+    icon: 'mdi-currency-kzt'
+  }
+]
+
+// Dynamic currency options based on segment
+const currencyOptions = computed(() => {
+  if (!selectedSegment.value || !supportedOptions.value) return []
+  
+  const segment = supportedOptions.value.segments.find(s => s.value === selectedSegment.value)
+  if (!segment) return []
+  
+  return segment.currencies.map(currency => ({
+    title: supportedOptions.value.currencies[currency] || currency,
+    value: currency,
+    subtitle: currency,
+    icon: currency === 'LAK' ? 'mdi-currency-kzt' : 'mdi-currency-usd'
+  }))
+})
+
+// Dynamic chip display
+const chipColor = computed(() => {
+  if (selectedSegment.value === 'FCY') return 'info'
+  if (selectedSegment.value === 'LCY') return 'success'
+  return 'primary'
+})
+
+const chipText = computed(() => {
+  if (!selectedSegment.value || !selectedCurrency.value) return 'ເລືອກຕົວເລືອກ'
+  return `${selectedSegment.value} - ${selectedCurrency.value}`
 })
 
 // Table headers
 const headers = [
-  { 
-    title: 'ລຳດັບ', 
-    key: 'rno', 
-    width: '80px',
-    sortable: false
-  },
-  { 
-    title: 'ລະຫັດ', 
-    key: 'r_no', 
-    width: '120px',
-    sortable: false
-  },
-  { 
-    title: 'ລາຍລະອຽດ', 
-    key: '_desc', 
-    width: '500px',
-    sortable: false
-  },
-  { 
-    title: 'ຈຳນວນເງິນ (LAK)', 
-    key: 'PM', 
-    width: '200px', 
-    align: 'end',
-    sortable: false
-  }
+  { title: 'ລຳດັບ', key: 'no', width: '80px', sortable: true, align: 'center' },
+  // { title: 'ເລກລາຍງານ', key: 'report_number', width: '120px', sortable: true },
+  { title: 'ລາຍລະອຽດ', key: 'description', width: '300px', sortable: true },
+  // { title: 'ຍອດເດບິດ', key: 'debit_amount', width: '150px', align: 'end', sortable: true },
+  // { title: 'ຍອດເຄຣດິດ', key: 'credit_amount', width: '150px', align: 'end', sortable: true },
+  { title: 'ຍອດສຸດທິ', key: 'net_amount', width: '150px', align: 'center', sortable: true },
+  {title: 'ສະກຸນເງິນ', key: 'currency_display', width: '100px', align: 'center', sortable: true },
 ]
 
-// Computed properties for filtering and summary
-const filteredResults = computed(() => {
-  if (!searchText.value) return results.value
-  
-  return results.value.filter(item => 
-    item._desc?.toLowerCase().includes(searchText.value.toLowerCase()) ||
-    item.r_no?.toLowerCase().includes(searchText.value.toLowerCase())
-  )
-})
-
-const summaryStats = computed(() => {
-  // Calculate summary statistics
-  const assets = results.value.find(item => item.r_no === '1')
-  const liabilitiesAndEquity = results.value.find(item => item.r_no === '2')
-  
-  // Find equity items (usually items with r_no starting with "2.6")
-  const equityItems = results.value.filter(item => 
-    item.r_no && item.r_no.startsWith('2.6')
-  )
-  const totalEquity = equityItems.reduce((sum, item) => sum + (item.PM || 0), 0)
-  
-  return {
-    totalAssets: assets?.PM || 0,
-    totalLiabilities: (liabilitiesAndEquity?.PM || 0) - totalEquity,
-    totalEquity: totalEquity
-  }
-})
-
-// Helper functions for styling
-const getRowClass = (item: any): string => {
-  const rNo = item.r_no || ''
-  if (rNo === '1' || rNo === '2') {
-    return 'main-category-row'
-  } else if (rNo.includes('.') && rNo.split('.').length === 2) {
-    return 'sub-category-row'
-  }
-  return 'detail-row'
-}
-
-const getTextClass = (item: any): string => {
-  const rNo = item.r_no || ''
-  if (rNo === '1' || rNo === '2') {
-    return 'text-subtitle-1 font-weight-bold text-primary'
-  } else if (rNo.includes('.') && rNo.split('.').length === 2) {
-    return 'text-body-1 font-weight-medium text-blue-darken-1'
-  }
-  return 'text-body-2'
-}
-
-const getAmountClass = (item: any): string => {
-  const rNo = item.r_no || ''
-  const amount = item.PM || 0
-  
-  if (rNo === '1' || rNo === '2') {
-    return 'text-subtitle-1 font-weight-bold text-primary amount-cell-main'
-  } else if (rNo.includes('.') && rNo.split('.').length === 2) {
-    return 'text-body-1 font-weight-medium amount-cell-sub'
-  } else if (amount < 0) {
-    return 'text-body-2 text-red amount-cell-negative'
-  }
-  return 'text-body-2 amount-cell'
-}
-
-// Methods
+// API calls
 const fetchBalanceSheet = async () => {
+  if (!selectedSegment.value || !selectedCurrency.value) {
+    showSnackbar('ກະລຸນາເລືອກ segment ແລະ currency', 'warning')
+    return
+  }
+
   try {
     loading.value = true
     
-    // Validate token exists
-    const token = localStorage.getItem("token")
-    if (!token) {
-      showSnackbar('ກະລຸນາເຂົ້າສູ່ລະບົບກ່ອນ', 'error', 'mdi-alert-circle')
-      return
-    }
-
-    // Validate form data
-    if (!filters.value.date_start || !filters.value.date_end) {
-      showSnackbar('ກະລຸນາຕື່ມຂໍ້ມູນວັນທີໃຫ້ຄົບຖ້ວນ', 'warning', 'mdi-alert')
-      return
-    }
-
-    const payload = {
-      date_start: filters.value.date_start,
-      date_end: filters.value.date_end
-    }
+    const response = await axios.post('/api/balance-sheet/', {
+      segment: selectedSegment.value,
+      currency: selectedCurrency.value,
+      ordering: 'no'
+    }, getAuthHeaders())
     
-    const { data } = await axios.post('/api/balance-sheet/', payload, getAuthHeaders())
-    
-    results.value = data.data || []
+    balanceSheetData.value = response.data.data
     
     showSnackbar(
-      `ດຶງຂໍ້ມູນໃບສົມດຸນສຳເລັດ - ພົບ ${results.value.length} ລາຍການ`, 
-      'success', 
-      'mdi-check-circle'
+      `✅ ດຶງຂໍ້ມູນໃບສົມທົບສຳເລັດ - ${response.data.display_currency} (${balanceSheetData.value.length} ລາຍການ)`,
+      'success'
     )
     
-  } catch (error) {
-    console.error('Error fetching balance sheet:', error)
+  } catch (error: any) {
+    console.error('Balance Sheet Error:', error)
     
-    let errorMessage = 'ເກີດຂໍ້ຜິດພາດໃນການດຶງຂໍ້ມູນ'
-    let errorIcon = 'mdi-alert-circle'
-    
-    if (error?.response?.status === 401) {
-      errorMessage = 'ໂທເຄນໝົດອາຍຸ ກະລຸນາເຂົ້າສູ່ລະບົບໃໝ່'
-      errorIcon = 'mdi-account-alert'
-    } else if (error?.response?.status === 403) {
-      errorMessage = 'ທ່ານບໍ່ມີສິດໃນການເຂົ້າເຖິງຂໍ້ມູນນີ້'
-      errorIcon = 'mdi-lock-alert'
-    } else if (error?.response?.data?.message) {
+    let errorMessage = 'ເກີດຂໍ້ຜິດພາດໃນການດຶງຂໍ້ມູນໃບສົມທົບ'
+    if (error?.response?.data?.message) {
       errorMessage = error.response.data.message
-    } else if (error?.response?.data?.detail) {
-      errorMessage = error.response.data.detail
-    } else if (error?.message) {
-      errorMessage = error.message
     }
     
-    showSnackbar(errorMessage, 'error', errorIcon)
-    results.value = []
-    
+    showSnackbar(errorMessage, 'error')
+    balanceSheetData.value = []
   } finally {
     loading.value = false
   }
 }
 
-const formatCurrency = (value: number | string): string => {
-  const numValue = Number(value || 0)
+const loadSupportedOptions = async () => {
+  try {
+    const response = await axios.get('/api/balance-sheet/supported_segments/', getAuthHeaders())
+    supportedOptions.value = response.data.data
+  } catch (error) {
+    console.error('Error loading supported options:', error)
+  }
+}
+
+const compareSegments = async () => {
+  if (!selectedCurrency.value || selectedSegment.value !== 'FCY') return
   
-  return numValue.toLocaleString('en-US', { 
+  try {
+    loading.value = true
+    
+    const response = await axios.post('/api/balance-sheet/compare/', {
+      currency: selectedCurrency.value
+    }, getAuthHeaders())
+    
+    console.log('Comparison data:', response.data)
+    showSnackbar(
+      `✅ ສົມທຽບຂໍ້ມູນ FCY ແລະ LCY ສຳລັບ ${selectedCurrency.value} ສຳເລັດ`,
+      'success'
+    )
+    
+  } catch (error) {
+    console.error('Compare error:', error)
+    showSnackbar('ເກີດຂໍ້ຜິດພາດໃນການສົມທຽບຂໍ້ມູນ', 'error')
+  } finally {
+    loading.value = false
+  }
+}
+
+// Event handlers
+const onSegmentChange = () => {
+  selectedCurrency.value = ''
+  balanceSheetData.value = []
+}
+
+// Utility functions
+const formatCurrency = (value: number): string => {
+  if (!value || value === 0) return '-'
+  return value.toLocaleString('en-US', { 
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   })
 }
 
-const showSnackbar = (message: string, color: string = 'success', icon: string = 'mdi-check-circle') => {
-  snackbar.value = {
-    show: true,
-    message,
-    color,
-    icon
-  }
+const getNetAmountClass = (amount: number) => {
+  if (amount > 0) return 'text-success font-weight-bold'
+  if (amount < 0) return 'text-error font-weight-bold'
+  return 'text-grey'
+}
+
+const showSnackbar = (message: string, color: string = 'success') => {
+  snackbar.value = { show: true, message, color }
 }
 
 const exportToExcel = () => {
-  try {
-    if (!results.value.length) {
-      showSnackbar('ບໍ່ມີຂໍ້ມູນໃຫ້ສົ່ງອອກ', 'warning', 'mdi-alert')
-      return
-    }
+  if (!balanceSheetData.value.length) {
+    showSnackbar('ບໍ່ມີຂໍ້ມູນໃຫ້ສົ່ງອອກ', 'warning')
+    return
+  }
 
-    // Prepare data for export
-    const exportData = results.value.map(item => ({
-      'ລຳດັບ': item.rno,
-      'ລະຫັດ': item.r_no,
-      'ລາຍລະອຽດ': item._desc,
-      'ຈຳນວນເງິນ (LAK)': Number(item.PM || 0)
+  try {
+    const exportData = balanceSheetData.value.map(item => ({
+      'ລຳດັບ': item.no,
+      // 'ເລກລາຍງານ': item.report_number,
+      'ລາຍລະອຽດ': item.description,
+      // 'ຍອດເດບິດ': item.debit_amount,
+      // 'ຍອດເຄຣດິດ': item.credit_amount,
+      'ຍອດສຸດທິ': item.net_amount,
+      'ສະກຸນເງິນ': item.currency_display
     }))
 
-    // Create workbook
     const wb = XLSX.utils.book_new()
     const ws = XLSX.utils.json_to_sheet(exportData)
-
-    // Auto-width columns
-    const colWidths = [
-      { wch: 8 },  // ລຳດັບ
-      { wch: 15 }, // ລະຫັດ
-      { wch: 60 }, // ລາຍລະອຽດ  
-      { wch: 20 }  // ຈຳນວນເງິນ
+    
+    ws['!cols'] = [
+      { wch: 8 }, { wch: 15 }, { wch: 40 }, { wch: 15 }, { wch: 15 }, { wch: 15 }
     ]
-    ws['!cols'] = colWidths
 
-    // Add title rows
-    XLSX.utils.sheet_add_aoa(ws, [
-      [`ລາຍງານໃບສົມດຸນ (Balance Sheet)`],
-      [`ວັນທີ: ${filters.value.date_start} ຫາ ${filters.value.date_end}`],
-      [`ຊັບສິນລວມ: ${formatCurrency(summaryStats.value.totalAssets)}`],
-      [`ໜີ້ສິນລວມ: ${formatCurrency(summaryStats.value.totalLiabilities)}`],
-      [`ທຶນລວມ: ${formatCurrency(summaryStats.value.totalEquity)}`],
-      [''] // Empty row
-    ], { origin: 'A1' })
-
-    // Adjust data range
-    XLSX.utils.sheet_add_json(ws, exportData, { origin: 'A7' })
-
-    // Add to workbook
     XLSX.utils.book_append_sheet(wb, ws, 'Balance Sheet')
 
-    // Generate filename
-    const currentDate = new Date().toISOString().split('T')[0]
-    const filename = `Balance_Sheet_${currentDate}.xlsx`
-
-    // Save file
+    const filename = `Balance_Sheet_${selectedSegment.value}_${selectedCurrency.value}_${new Date().toISOString().split('T')[0]}.xlsx`
     XLSX.writeFile(wb, filename)
 
-    showSnackbar(
-      `ສົ່ງອອກຂໍ້ມູນສຳເລັດ - ${results.value.length} ລາຍການ`, 
-      'success', 
-      'mdi-download'
-    )
-
+    showSnackbar(`📊 ສົ່ງອອກສຳເລັດ - ${balanceSheetData.value.length} ລາຍການ`, 'success')
   } catch (error) {
-    console.error('Export error:', error)
-    showSnackbar('ເກີດຂໍ້ຜິດພາດໃນການສົ່ງອອກຂໍ້ມູນ', 'error', 'mdi-alert-circle')
+    showSnackbar('❌ ເກີດຂໍ້ຜິດພາດໃນການສົ່ງອອກ', 'error')
   }
 }
 
-// Initialize component
-onMounted(() => {
-  // Auto-load data if token exists
-  const token = localStorage.getItem("token")
-  if (token) {
-    fetchBalanceSheet()
-  } else {
-    showSnackbar('ກະລຸນາເຂົ້າສູ່ລະບົບເພື່ອເຂົ້າເຖິງຂໍ້ມູນ', 'warning', 'mdi-account-alert')
-  }
+// Initialize
+onMounted(async () => {
+  await loadSupportedOptions()
+  
+  // Set defaults
+  selectedSegment.value = 'LCY'
+  selectedCurrency.value = 'LAK'
 })
 </script>
 
 <style scoped>
-/* Professional styling */
-.balance-sheet-table {
+.professional-table {
   border: 1px solid #e0e0e0;
   border-radius: 8px;
   overflow: hidden;
 }
 
-.balance-sheet-data-table {
-  background: white;
-}
-
-/* Row styling based on hierarchy */
-.main-category-row {
-  background: #f5f5f5 !important;
-  border-top: 2px solid #1976D2;
-  border-bottom: 1px solid #1976D2;
-}
-
-.sub-category-row {
-  background: #fafafa !important;
-  border-left: 3px solid #1976D2;
-}
-
-.detail-row {
-  background: white;
-  transition: background-color 0.2s ease;
-}
-
-.detail-row:hover {
-  background: #f8f9fa !important;
-}
-
-/* Amount cell styling */
-.amount-cell-main {
-  background: #e3f2fd;
+.amount-cell {
   padding: 4px 8px;
   border-radius: 4px;
-  border: 1px solid #1976D2;
-  font-weight: bold !important;
-}
-
-.amount-cell-sub {
-  background: #f3e5f5;
-  padding: 3px 6px;
-  border-radius: 3px;
-  border: 1px solid #7b1fa2;
-  font-weight: 500 !important;
-}
-
-.amount-cell {
-  padding: 2px 4px;
-  border-radius: 2px;
-  background: rgba(0,0,0,0.02);
-  border: 1px solid rgba(0,0,0,0.05);
-}
-
-.amount-cell-negative {
-  background: #ffebee;
-  border: 1px solid #d32f2f;
-  color: #d32f2f !important;
-  font-weight: 500 !important;
-}
-
-/* Table styling */
-.balance-sheet-data-table :deep(.v-data-table__td) {
-  padding: 8px 12px !important;
-  border-bottom: 1px solid #f0f0f0;
-  vertical-align: middle;
-  font-size: 0.875rem;
-}
-
-.balance-sheet-data-table :deep(.v-data-table-header__content) {
-  font-weight: 600;
-  color: #37474f;
   font-size: 0.85rem;
+  font-weight: 500;
 }
 
-.balance-sheet-data-table :deep(.v-data-table__thead > tr > th) {
-  background-color: #fafafa;
-  border-bottom: 2px solid #e0e0e0;
-  padding: 12px !important;
-  height: 50px !important;
+.amount-cell.positive {
+  background: rgba(76, 175, 80, 0.1);
+  color: #388e3c;
 }
 
-/* Font styling */
+.amount-cell.negative {
+  background: rgba(244, 67, 54, 0.1);
+  color: #d32f2f;
+}
+
 .font-mono {
-  font-family: 'Roboto Mono', 'SF Mono', Monaco, 'Cascadia Code', 'Ubuntu Mono', monospace;
-}
-
-/* Responsive design */
-@media (max-width: 960px) {
-  .balance-sheet-data-table :deep(.v-data-table__td) {
-    padding: 6px 8px !important;
-    font-size: 0.8rem;
-  }
-
-  .balance-sheet-data-table :deep(.v-data-table__thead > tr > th) {
-    padding: 8px !important;
-    height: 40px !important;
-  }
-}
-
-/* Animation for loading */
-.v-skeleton-loader {
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: loading 1.5s infinite;
-}
-
-@keyframes loading {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
+  font-family: 'Roboto Mono', 'Consolas', monospace;
 }
 </style>
