@@ -137,12 +137,12 @@ const computedEndDate = computed(() => {
   if (startDate && usefulLife) {
     try {
       // ✅ ໃຊ້ dayjs ເພື່ອຄິດໄລ່ວັນທີ່ສິ້ນສຸດ
-      const endDate = dayjs(startDate).add(usefulLife, 'year');
-      
+      const endDate = dayjs(startDate).add(usefulLife, "year");
+
       // ✅ Format ເປັນ YYYY-MM-DD ສຳລັບ date input
-      return endDate.format('YYYY-MM-DD');
+      return endDate.format("YYYY-MM-DD");
     } catch (error) {
-      console.error('Error calculating end date with dayjs:', error);
+      console.error("Error calculating end date with dayjs:", error);
       return null;
     }
   }
@@ -152,21 +152,21 @@ const formattedEndDate = computed(() => {
   const startDate = displayStartDate.value;
   const usefulLife = response.value?.asset_useful_life;
 
-  if (!startDate || !usefulLife) return '';
+  if (!startDate || !usefulLife) return "";
 
   try {
     // ✅ ໃຊ້ dayjs ຄິດໄລ່ແລະ format
-    const endDate = dayjs(startDate).add(usefulLife, 'year');
-    
+    const endDate = dayjs(startDate).add(usefulLife, "year");
+
     // ✅ ກວດສອບວ່າວັນທີ່ຖືກຕ້ອງ
     if (!endDate.isValid()) {
-      return '';
+      return "";
     }
 
-    return endDate.format('YYYY-MM-DD');
+    return endDate.format("YYYY-MM-DD");
   } catch (error) {
-    console.error('Error with dayjs formatting:', error);
-    return '';
+    console.error("Error with dayjs formatting:", error);
+    return "";
   }
 });
 
@@ -1391,7 +1391,7 @@ watch(
       request.asset_accu_dpca_value = req.asset_accu_dpca_value
         ? Number(req.asset_accu_dpca_value)
         : 0;
-      request.acc_no = req.acc_no || "";
+      
       request.asset_disposal_date = req.asset_disposal_date;
       request.asset_latest_date_dpca = req.asset_latest_date_dpca;
       request.asset_value_remain = req.asset_value_remain
@@ -1810,22 +1810,26 @@ const confirmDate = () => {
                             </v-icon>
                           </template>
                         </v-text-field> -->
-  <v-text-field
-  :value="computedEndDate ? $dayjs(computedEndDate).format('YYYY-MM-DD') : ''"
-  type="text"
-  density="compact"
-  variant="outlined"
-  hide-details="auto"
-  readonly
-  class="mt-3"
-  hint="ຄິດໄລ່ອັດຕະໂນມັດຈາກວັນທີ່ເລີ່ມແລະອາຍຸການໃຊ້ງານ"
->
-  <template v-slot:append-inner>
-    <v-icon color="success" size="small">
-      mdi-calendar-clock
-    </v-icon>
-  </template>
-</v-text-field>
+                        <v-text-field
+                          :value="
+                            computedEndDate
+                              ? $dayjs(computedEndDate).format('YYYY-MM-DD')
+                              : ''
+                          "
+                          type="text"
+                          density="compact"
+                          variant="outlined"
+                          hide-details="auto"
+                          readonly
+                          class="mt-3"
+                          hint="ຄິດໄລ່ອັດຕະໂນມັດຈາກວັນທີ່ເລີ່ມແລະອາຍຸການໃຊ້ງານ"
+                        >
+                          <template v-slot:append-inner>
+                            <v-icon color="success" size="small">
+                              mdi-calendar-clock
+                            </v-icon>
+                          </template>
+                        </v-text-field>
                       </v-col>
 
                       <v-col cols="12" md="3">

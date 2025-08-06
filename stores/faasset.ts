@@ -23,7 +23,7 @@ export const faAssetStore = defineStore("faAsset", {
         dpca_end_date: null as Date | null | string,
         asset_disposal_date: null as Date | null,
         asset_latest_date_dpca: null as Date | null,
-        acc_no: "",
+        // acc_no: "",
         asset_status: "AC"
       },
       form_create_fa_asset: {
@@ -94,41 +94,19 @@ export const faAssetStore = defineStore("faAsset", {
       },
 
       form_update_fa_asset: {
-        asset_type_id: null as number | null,
-        asset_serial_no: "",
-        asset_list_code: "",
-        asset_value_remainMonth: 0,
-        asset_value_remainBegin: 0,
-        asset_value_remainLast: 0,
-        type_of_pay: "",
-        acc_no: "",
-        asset_tag: "",
-        MC_detail: "",
-        MC_name_la: "",
-        asset_location_id: null as number | null,
-        asset_spec: "",
-        asset_date: null as Date | null,
-        asset_currency: "LAK",
-        asset_value: 0,
-        warranty_end_date: null as Date | null,
-        supplier_id: null as number | null,
-        dpca_type: "",
-        dpca_percentage: "",
-        asset_useful_life: null as number | null,
-        asset_salvage_value: "",
-        dpca_start_date: null as Date | null,
-        dpca_end_date: null as Date | null,
-        asset_accu_dpca_value: "",
-        asset_value_remain: "",
-        asset_latest_date_dpca: null as Date | null,
-        asset_disposal_date: null as Date | null,
-        asset_ac_yesno: "N" as "Y" | "N",
-        asset_ac_date: null as Date | null,
-        asset_ac_datetime: null as Date | null,
-        aaset_ac_by: null as string | null,
-
-        asset_status: "UC" as "UC" | "AC" | "IA" | "MT" | "DS" | "DM",
-        has_depreciation: "Y" as "Y" | "N",
+       asset_spec:"",
+       asset_value:0,
+       asset_currency:"",
+       asset_date:"",
+       supplier_id:0,
+       asset_salvage_value:0,
+       asset_useful_life:0,
+       asset_value_remainMonth:0,
+       dpca_percentage:0,
+       dpca_type: "",
+       type_of_pay: "",
+       asset_location_id: null as number | null,
+       
       },
     };
   },
@@ -166,7 +144,7 @@ export const faAssetStore = defineStore("faAsset", {
                 .split("T")[0]
             : null,
 
-          acc_no: this.form_create_realizthe_property.acc_no || "", 
+          // acc_no: this.form_create_realizthe_property.acc_no || "", 
           asset_value_remainLast:
             this.form_create_realizthe_property.asset_value_remainLast || "", 
           asset_value_remainBegin:
@@ -675,69 +653,11 @@ export const faAssetStore = defineStore("faAsset", {
     async UpdateFaAsset(id: string) {
       this.isLoading = true;
       try {
-        const formData = {
-          ...this.form_update_fa_asset,
-          asset_date: this.form_update_fa_asset.asset_date
-            ? new Date(this.form_update_fa_asset.asset_date)
-                .toISOString()
-                .split("T")[0]
-            : null,
-         
-          asset_type_id: this.form_update_fa_asset.asset_type_id || null,
-          warranty_end_date: this.form_update_fa_asset.warranty_end_date
-            ? new Date(this.form_update_fa_asset.warranty_end_date)
-                .toISOString()
-                .split("T")[0]
-            : null,
+        
 
-          dpca_start_date: this.form_update_fa_asset.dpca_start_date
-            ? new Date(this.form_update_fa_asset.dpca_start_date)
-                .toISOString()
-                .split("T")[0]
-            : null,
-          dpca_end_date: this.form_update_fa_asset.dpca_end_date
-            ? new Date(this.form_update_fa_asset.dpca_end_date)
-                .toISOString()
-                .split("T")[0]
-            : null,
-          asset_latest_date_dpca: this.form_update_fa_asset
-            .asset_latest_date_dpca
-            ? new Date(this.form_update_fa_asset.asset_latest_date_dpca)
-                .toISOString()
-                .split("T")[0]
-            : null,
-          asset_disposal_date: this.form_update_fa_asset.asset_disposal_date
-            ? new Date(this.form_update_fa_asset.asset_disposal_date)
-                .toISOString()
-                .split("T")[0]
-            : null,
-          asset_ac_date: this.form_update_fa_asset.asset_ac_date
-            ? new Date(this.form_update_fa_asset.asset_ac_date)
-                .toISOString()
-                .split("T")[0]
-            : null,
-          asset_list_code: this.form_update_fa_asset.asset_list_code || "",
-
-          asset_ac_datetime: this.form_update_fa_asset.asset_ac_datetime
-            ? new Date(
-                this.form_update_fa_asset.asset_ac_datetime
-              ).toISOString()
-            : null,
-          acc_no: this.form_update_fa_asset.acc_no || "",
-          asset_value_remainLast:
-            this.form_update_fa_asset.asset_value_remainLast || 0,
-          asset_value_remainBegin:
-            this.form_update_fa_asset.asset_value_remainBegin || 0,
-          asset_value_remainMonth:
-            this.form_update_fa_asset.asset_value_remainMonth || 0,
-
-          dpca_type: this.form_update_fa_asset.dpca_type || null,
-          aaset_ac_by: this.form_update_fa_asset.aaset_ac_by || null,
-        };
-
-        const res = await axios.put<FaAssetModel.FaAsset>(
-          `/api/asset_list/${id}/`,
-          formData,
+        const res = await axios.patch<FaAssetModel.FaAsset>(
+          `/api/asset_list/${id}/`,this.form_update_fa_asset
+          ,
           {
             headers: {
               "Content-Type": "application/json",
@@ -754,7 +674,7 @@ export const faAssetStore = defineStore("faAsset", {
             showConfirmButton: false,
           });
           setTimeout(() => {
-            goPath("/fa-assets");
+            goPath("/property/faasset/");
           }, 1500);
         }
       } catch (error: any) {
