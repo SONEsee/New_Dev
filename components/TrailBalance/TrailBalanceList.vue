@@ -32,8 +32,8 @@
                     <template #prepend>
                       <v-icon :icon="item.raw.icon" size="20" />
                     </template>
-                    <v-list-item-title>{{ item.raw.title }}</v-list-item-title>
-                    <v-list-item-subtitle>{{ item.raw.subtitle }}</v-list-item-subtitle>
+                    <!-- <v-list-item-title>{{ item.raw.title }}</v-list-item-title>
+                    <v-list-item-subtitle>{{ item.raw.subtitle }}</v-list-item-subtitle> -->
                   </v-list-item>
                 </template>
               </v-select>
@@ -439,6 +439,12 @@ const snackbar = ref({
 
 // Currency options configuration
 const currencyOptions = [
+    {
+    title: 'ທຽບເທົ່າກັບ (LCY)',
+    value: 'LCY',
+    subtitle: 'Local Consolidated',
+    icon: 'mdi-currency-kzt'
+  },
   {
     title: 'ກີບລາວ (LAK)',
     value: 'LAK',
@@ -768,7 +774,7 @@ const fetchTrialBalance = async () => {
     }
 
     // Determine which API to call based on currency selection
-    const isConsolidated = !selectedCurrency.value
+    const isConsolidated = !selectedCurrency.value || selectedCurrency.value === 'LCY'
     let response: ApiResponse
     let normalizedData: TrialBalanceItem[]
 
