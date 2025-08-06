@@ -39,7 +39,7 @@ const processBulkItems = async () => {
 
   selectedItems.value = [];
 };
-const title = "ຫັກຄ່າຫຼູຍຫ້ຽນຍອ້ນຫຼັງ"
+const title = "ຫັກຄ່າຫຼູຍຫ້ຽນຍອ້ນຫຼັງ";
 onMounted(() => {
   mainStore.getArrears();
 });
@@ -51,7 +51,6 @@ onMounted(() => {
     class="mb-4 pa-3"
     style="background-color: #e3f2fd; border-radius: 8px"
   >
-  
     <div class="d-flex align-center justify-space-between">
       <span>
         📋 ເລືອກແລ້ວ: <strong>{{ selectedItems.length }}</strong> ລາຍການ
