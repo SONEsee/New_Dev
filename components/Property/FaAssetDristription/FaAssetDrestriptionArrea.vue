@@ -17,7 +17,7 @@ const res = computed(() => {
 const headers = [
   { title: "ລະຫັດຊັບສິນ", key: "asset_id" },
   { title: "ຊື່ຊັບສິນ", key: "asset_name" },
-  { title: "ມູນຄ່າ", key: "asset_value" },
+  { title: "ມູນຄ່າ", key: "expected_depreciation" },
   { title: "ຄືບໜ້າ", key: "completion_percentage" },
   { title: "ງວດທີ່ຈະຫັກ", key: "due_end_date" },
   //   { title: "ຄ່າເສື່ອມທີ່ຄວນຫັກ", key: "expected_depreciation" },
@@ -100,7 +100,7 @@ onMounted(() => {
     <template v-slot:header.asset_name="{ column }">
       <b style="color: blue">{{ column.title }}</b>
     </template>
-    <template v-slot:header.asset_value="{ column }">
+    <template v-slot:header.expected_depreciation="{ column }">
       <b style="color: blue">{{ column.title }}</b>
     </template>
     <template v-slot:header.completion_percentage="{ column }">
