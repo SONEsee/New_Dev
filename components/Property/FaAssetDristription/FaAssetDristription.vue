@@ -49,7 +49,7 @@ const tab = ref("monthly");
 const totaldata = computed(() => {
   const data = depreciationStore.respons_data_driscription_main;
   if (Array.isArray(data)) {
-    return data.filter((item) => item?.Auth_Status === "R"); // ເພີ່ມ filter
+    return data.filter((item) => item?.Auth_Status === "R"); 
   }
   if (data && typeof data === "object") {
     return data.Auth_Status === "R" ? [data] : [];
