@@ -2,9 +2,9 @@
   <v-container fluid class="pa-6">
     <v-card class="mx-auto" max-width="1400" elevation="0" style="border: 1px solid #e0e0e0;">
       <!-- Header Section -->
-      <v-card-title class="px-6 py-4 d-flex align-center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+      <v-card-title class="px-6 py-4 d-flex align-center" style="background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%); color: white;">
         <v-icon start size="24">mdi-chart-box-outline</v-icon>
-        <span class="text-h6 font-weight-medium">
+        <span class="text-h6 font-weight-medium text-styles">
           ລາຍງານໃບສົມທົບ - 
           {{ selectedCurrency ? `${selectedCurrency} (FCY)` : 'LCY Consolidated' }}
         </span>
