@@ -5,7 +5,7 @@
       <v-card-title class="px-6 py-4 d-flex align-center" style="background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%); color: white;">
         <v-icon start size="24">mdi-file-chart</v-icon>
         <span class="text-h6 font-weight-medium text-styles">
-          ລາຍງານຖານະການເງິນ (Income Statement) - 
+          ລາຍງານຜົນການດໍາເນີນງານ (Income Statement) - 
           {{ selectedTab.toUpperCase() }} {{ selectedSegment }} {{ selectedCurrency }}
         </span>
       </v-card-title>
@@ -162,18 +162,46 @@
           
           <!-- Custom Row Template -->
           <template #item="{ item }">
-            <tr class="table-row">
+                <tr class="table-row"
+                :class="[
+                    // Blue for special Lao descriptions
+                    (item.description === 'ຄ. ລາຍຮັບ ແລະ ລາຍຈ່າຍພິເສດ(ບັງເອີນ)' ||
+                    item.description === 'ຂ. ລາຍຮັບ ແລະ ລາຍຈ່າຍປົກກະຕິ' ||
+                    item.description === 'ກ. ລາຍຮັບ ແລະ ລາຍຈ່າຍໃນການທຸລະກິດ')
+                    ? 'highlight-grey-row'
+                    : (
+                        // Grey for Roman numerals I-XX (but not if it's a special Lao description)
+                        /\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/.test(item.description)
+                        ? 'highlight-blue-row'
+                        : ''
+                    )
+                ]"
+                >
               <!-- <td class="text-center">{{ item.no }}</td>
               <td class="font-weight-medium text-primary">{{ item.report_number }}</td> -->
-              <td class="description-cell" :title="item.description">
+              <td class="description-cell" 
+                :title="item.description"
+                :class="[
+                  (
+                    item.description === 'ລາຍການໜີ້ສິນ ແລະທືນ' ||
+                    item.description === 'ລວມຍອດຊັບສິນ' ||
+                    // /(^|[^A-Z])I($|[^A-Z])|III|IV/.test(item.description)
+                    /\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/.test(item.description)
+                    ||
+                    /\b([1-9]|1[0-9]|2[0-9]|30)\)/.test(item.description)
+                  )
+                    ? 'font-weight-bold'
+                    : ''
+                ]">
+                
                 {{ item.description }}
               </td>
-                <td class="text-end font-mono">
+                <td class="text-center font-mono">
                     <span class="amount-cell" :class="getNetAmountClass(item.net_amount)">
                         {{ formatCurrency(item.net_amount) }}
                     </span>
               </td>
-              <td class="text-end font-mono">
+              <td class="text-center font-mono">
                 <span class="amount-cell positive">{{ formatCurrency(item.currency_display) }}</span>
               </td>
               <td class="text-end font-mono">
@@ -742,5 +770,15 @@ onMounted(async () => {
     max-width: 200px;
     min-width: 120px;
   }
+}
+
+.highlight-blue-row {
+  background : linear-gradient(135deg, #59b4ff 0%, #e3f2fd 100%);
+  font-weight: bold;
+}
+
+.highlight-grey-row {
+  background : linear-gradient(135deg, #ffb25a 0%, #e7e7e7 100%);
+  font-weight: bold;
 }
 </style>
