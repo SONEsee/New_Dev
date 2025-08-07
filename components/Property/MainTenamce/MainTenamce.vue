@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { useBarcode } from '~/composables/useBarcode';
+import { useBarcode } from "~/composables/useBarcode";
 const title = "ບໍາລຸງຮັກສາຊັບສິນ";
 const faAssetStoreInstance = faAssetStore();
 
-const { generateBarcode, generateBarcodeBase64, generateBarcodeSVG } = useBarcode();
+const { generateBarcode, generateBarcodeBase64, generateBarcodeSVG } =
+  useBarcode();
 
 const showBarcodeDialog = ref(false);
 const selectedAsset = ref<Asset | null>(null);
@@ -19,11 +20,15 @@ const barcodeElement = ref<HTMLElement>();
 //   }
 //   return [];
 // });
-const FaAassetData = computed(() => { 
+const FaAassetData = computed(() => {
   const data = faAssetStoreInstance.response_fa_asset_list;
-  const dataArray = Array.isArray(data) ? data : (data && typeof data === "object") ? [data] : [];
-  
-  return dataArray.filter(item => item.asset_status === "AC");
+  const dataArray = Array.isArray(data)
+    ? data
+    : data && typeof data === "object"
+    ? [data]
+    : [];
+
+  return dataArray.filter((item) => item.asset_status === "AC");
 });
 onMounted(() => {
   faAssetStoreInstance.GetFaAssetList();
@@ -35,13 +40,11 @@ const header = [
   { title: "ຊື່ຊັບສົມບັດ", value: "asset_spec" },
   { title: "ສະຖານທີ່", value: "location_detail.location_name_la" },
   { title: "ວັນທີຊື້ຊັບສົມບັດ", value: "asset_date" },
-  { title: "ການກະທຳ", value: "actions", sortable: false }
+  { title: "ການກະທຳ", value: "actions", sortable: false },
 ];
-
 
 const page = ref(1);
 const itemsPerPage = ref(10);
-
 
 const getGlobalIndex = (localIndex: number) => {
   return (page.value - 1) * itemsPerPage.value + localIndex + 1;
@@ -68,36 +71,32 @@ interface Asset {
   [key: string]: any;
 }
 
-
 const barcodeRefs = ref({});
-
 
 const generateInlineBarcode = (assetTag: string) => {
   return generateBarcodeSVG(assetTag, {
     height: 40,
     width: 0.9,
     margin: 2,
-    fontSize: 10
+    fontSize: 10,
   });
 };
 
 const showBarcode = (asset: Asset) => {
   selectedAsset.value = asset;
   showBarcodeDialog.value = true;
-  
+
   nextTick(() => {
     if (barcodeElement.value && asset.asset_tag) {
-      
-      barcodeElement.value.innerHTML = '';
-      
-    
+      barcodeElement.value.innerHTML = "";
+
       const barcodeHTML = generateBarcodeSVG(asset.asset_tag, {
         height: 60,
         width: 1,
         margin: 5,
-        fontSize: 12
+        fontSize: 12,
       });
-      
+
       barcodeElement.value.innerHTML = barcodeHTML;
     }
   });
@@ -109,10 +108,10 @@ const printBarcode = () => {
   const barcodeHTML = generateBarcodeSVG(selectedAsset.value.asset_tag, {
     height: 100,
     width: 2,
-    margin: 10
+    margin: 10,
   });
-  
-  const printWindow = window.open('', '_blank');
+
+  const printWindow = window.open("", "_blank");
   printWindow?.document.write(`
     <html>
       <head>
@@ -138,12 +137,14 @@ const printBarcode = () => {
           <h3>${selectedAsset.value?.asset_spec}</h3>
           ${barcodeHTML}
           <p>Asset Tag: ${selectedAsset.value?.asset_tag}</p>
-          <p>Location: ${selectedAsset.value?.location_detail?.location_name_la || '-'}</p>
+          <p>Location: ${
+            selectedAsset.value?.location_detail?.location_name_la || "-"
+          }</p>
         </div>
       </body>
     </html>
   `);
-  
+
   printWindow?.document.close();
   setTimeout(() => {
     printWindow?.print();
@@ -156,11 +157,11 @@ const downloadBarcode = () => {
   const base64Image = generateBarcodeBase64(selectedAsset.value.asset_tag, {
     height: 100,
     width: 2,
-    margin: 10
+    margin: 10,
   });
 
   if (base64Image) {
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.download = `barcode-${selectedAsset.value.asset_tag}.png`;
     link.href = base64Image;
     link.click();
@@ -171,7 +172,7 @@ const downloadBarcode = () => {
 <template>
   <div class="pa-4">
     <GlobalTextTitleLine :title="title" />
-    
+
     <v-data-table
       :headers="header"
       :items="FaAassetData"
@@ -179,25 +180,21 @@ const downloadBarcode = () => {
       :items-per-page="itemsPerPage"
       v-model:page="page"
     >
-    
-      
       <template #item.index="{ index }">
         {{ getGlobalIndex(index) }}
       </template>
 
-     
       <template #item.asset_tag="{ item }">
-        <div 
+        <div
           class="inline-barcode-container"
           @click="showBarcode(item)"
-          style="cursor: pointer;"
+          style="cursor: pointer"
         >
           <div v-html="generateInlineBarcode(item.asset_tag)"></div>
           <!-- <div class="barcode-text">{{ item.asset_tag }}</div> -->
         </div>
       </template>
 
-     
       <template #item.actions="{ item }">
         <v-btn
           icon="mdi-qrcode"
@@ -209,12 +206,7 @@ const downloadBarcode = () => {
       </template>
     </v-data-table>
 
-   
-    <v-dialog 
-      v-model="showBarcodeDialog" 
-      max-width="600px"
-      persistent
-    >
+    <v-dialog v-model="showBarcodeDialog" max-width="600px" persistent>
       <v-card>
         <v-card-title class="d-flex align-center justify-space-between">
           <span>ບາໂຄດຊັບສິນ</span>
@@ -224,31 +216,29 @@ const downloadBarcode = () => {
             @click="showBarcodeDialog = false"
           />
         </v-card-title>
-        
+
         <v-card-text v-if="selectedAsset">
           <div class="text-center">
             <h4 class="mb-4">{{ selectedAsset.asset_spec }}</h4>
-            
-           
-            <div class="barcode-container mb-4" ref="barcodeElement">
-            </div>
-            
+
+            <div class="barcode-container mb-4" ref="barcodeElement"></div>
+
             <v-chip color="info" variant="outlined" class="mb-3">
               {{ selectedAsset.asset_tag }}
             </v-chip>
-            
+
             <div class="text-body-2 text-grey">
-              <strong>ສະຖານທີ່:</strong> 
-              {{ selectedAsset.location_detail?.location_name_la || '-' }}
+              <strong>ສະຖານທີ່:</strong>
+              {{ selectedAsset.location_detail?.location_name_la || "-" }}
             </div>
-            
+
             <div class="text-body-2 text-grey mt-1">
-              <strong>ວັນທີຊື້:</strong> 
-              {{ selectedAsset.asset_date || '-' }}
+              <strong>ວັນທີຊື້:</strong>
+              {{ selectedAsset.asset_date || "-" }}
             </div>
           </div>
         </v-card-text>
-        
+
         <v-card-actions class="justify-center">
           <v-btn
             color="primary"
@@ -257,7 +247,7 @@ const downloadBarcode = () => {
           >
             ພິມບາໂຄດ
           </v-btn>
-          
+
           <v-btn
             color="success"
             prepend-icon="mdi-download"
@@ -265,11 +255,8 @@ const downloadBarcode = () => {
           >
             ດາວໂຫຼດ
           </v-btn>
-          
-          <v-btn
-            variant="outlined"
-            @click="showBarcodeDialog = false"
-          >
+
+          <v-btn variant="outlined" @click="showBarcodeDialog = false">
             ປິດ
           </v-btn>
         </v-card-actions>
