@@ -147,7 +147,8 @@
                   (
                     item.description === 'ລາຍການໜີ້ສິນ ແລະທືນ' ||
                     item.description === 'ລວມຍອດຊັບສິນ' ||
-                    /(^|[^A-Z])I($|[^A-Z])|III|IV/.test(item.description)
+                    // /(^|[^A-Z])I($|[^A-Z])|III|IV/.test(item.description)
+                    /\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/.test(item.description)
                   )
                     ? 'font-weight-bold'
                     : ''

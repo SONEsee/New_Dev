@@ -1,7 +1,6 @@
 <template>
     <div>
-        test main trail balance
-        
+        <MainTrailBalance />
     </div>
 </template>
 
