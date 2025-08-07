@@ -47,7 +47,7 @@ export const useBarcode = () => {
     }
   }
 
-  // ຟັງຊັນສ້າງ barcode ເປັນ SVG string
+ 
   const generateBarcodeSVG = (value: string, options = {}) => {
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg")
     const defaultOptions = {

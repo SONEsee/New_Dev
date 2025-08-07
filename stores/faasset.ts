@@ -16,7 +16,7 @@ export const faAssetStore = defineStore("faAsset", {
       form_create_realizthe_property: {
         asset_value_remainBegin: "",
         asset_value_remainLast: "",
-        accu_dpca_value_total:0,
+        accu_dpca_value_total: 0,
         asset_value_remain: 0,
         asset_accu_dpca_value: 0 as number | null,
         dpca_start_date: null as Date | null,
@@ -24,7 +24,7 @@ export const faAssetStore = defineStore("faAsset", {
         asset_disposal_date: null as Date | null,
         asset_latest_date_dpca: null as Date | null,
         // acc_no: "",
-        asset_status: "AC"
+        asset_status: "AC",
       },
       form_create_fa_asset: {
         asset_type_id: null as number | null,
@@ -92,32 +92,62 @@ export const faAssetStore = defineStore("faAsset", {
           },
         ],
       },
-
+      filterBarcode: {
+        request: {
+          asset_tag: "",
+        },
+        isLoading: true,
+      },
       form_update_fa_asset: {
-       asset_spec:"",
-       asset_value:0,
-       asset_currency:"",
-       asset_date:"",
-       supplier_id:0,
-       asset_salvage_value:0,
-       asset_useful_life:0,
-       asset_value_remainMonth:0,
-       dpca_percentage:0,
-       dpca_type: "",
-       type_of_pay: "",
-       asset_location_id: null as number | null,
-       
+        asset_spec: "",
+        asset_value: 0,
+        asset_currency: "",
+        asset_date: "",
+        supplier_id: 0,
+        asset_salvage_value: 0,
+        asset_useful_life: 0,
+        asset_value_remainMonth: 0,
+        dpca_percentage: 0,
+        dpca_type: "",
+        type_of_pay: "",
+        asset_location_id: null as number | null,
       },
     };
   },
 
   actions: {
+    async getDataBarcode() {
+      this.filterBarcode.isLoading = true;
+      this.isLoading = true;
+      try {
+        const res = await axios.get<FaAssetModel.FaAsset>(`/api/asset_list/`, {
+          params: {
+            ...this.filterBarcode.request,
+          },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+        if (res.status === 200) {
+          this.response_fa_asset_detail = res.data;
+        }
+      } catch (error: any) {
+        CallSwal({
+          title: "Error",
+          icon: "error",
+          text: error.message,
+        });
+      } finally {
+        this.filterBarcode.isLoading = false;
+        this.isLoading = false;
+      }
+    },
     async Update(id: string) {
       this.isLoading = true;
       try {
         const formData = {
           ...this.form_create_realizthe_property,
-         
 
           asset_accu_dpca_value:
             this.form_create_realizthe_property.asset_accu_dpca_value || 0,
@@ -134,29 +164,31 @@ export const faAssetStore = defineStore("faAsset", {
             : null,
           asset_latest_date_dpca: this.form_create_realizthe_property
             .asset_latest_date_dpca
-            ? new Date(this.form_create_realizthe_property.asset_latest_date_dpca)
+            ? new Date(
+                this.form_create_realizthe_property.asset_latest_date_dpca
+              )
                 .toISOString()
                 .split("T")[0]
             : null,
-          asset_disposal_date: this.form_create_realizthe_property.asset_disposal_date
+          asset_disposal_date: this.form_create_realizthe_property
+            .asset_disposal_date
             ? new Date(this.form_create_realizthe_property.asset_disposal_date)
                 .toISOString()
                 .split("T")[0]
             : null,
 
-          // acc_no: this.form_create_realizthe_property.acc_no || "", 
+          // acc_no: this.form_create_realizthe_property.acc_no || "",
           asset_value_remainLast:
-            this.form_create_realizthe_property.asset_value_remainLast || "", 
+            this.form_create_realizthe_property.asset_value_remainLast || "",
           asset_value_remainBegin:
-            this.form_create_realizthe_property.asset_value_remainBegin || "", 
+            this.form_create_realizthe_property.asset_value_remainBegin || "",
 
           asset_value_remain:
             this.form_create_realizthe_property.accu_dpca_value_total || 0,
 
-            accu_dpca_value_total: this.form_create_realizthe_property.accu_dpca_value_total || 0,
-           
+          accu_dpca_value_total:
+            this.form_create_realizthe_property.accu_dpca_value_total || 0,
         };
-        
 
         const res = await axios.patch<FaAssetModel.FaAsset>(
           `/api/asset_list/${id}/`,
@@ -227,7 +259,6 @@ export const faAssetStore = defineStore("faAsset", {
             });
           }
 
-          
           this.resetJournalForm();
           return res.data;
         }
@@ -262,8 +293,6 @@ export const faAssetStore = defineStore("faAsset", {
           })),
         };
 
-        
-
         const res = await axios.post(`journal/process-v2/`, formData, {
           headers: {
             "Content-Type": "application/json",
@@ -282,7 +311,6 @@ export const faAssetStore = defineStore("faAsset", {
             });
           }
 
-          
           this.resetJournalForm();
           return res.data;
         }
@@ -653,11 +681,9 @@ export const faAssetStore = defineStore("faAsset", {
     async UpdateFaAsset(id: string) {
       this.isLoading = true;
       try {
-        
-
         const res = await axios.patch<FaAssetModel.FaAsset>(
-          `/api/asset_list/${id}/`,this.form_update_fa_asset
-          ,
+          `/api/asset_list/${id}/`,
+          this.form_update_fa_asset,
           {
             headers: {
               "Content-Type": "application/json",
