@@ -4,8 +4,8 @@
       <!-- Header -->
       <v-card-title class="px-6 py-4 d-flex align-center" style="background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%); color: white;">
         <v-icon start size="24">mdi-file-document-outline</v-icon>
-        <span class="text-h6 font-weight-medium">
-          ລາຍງານໃບສົມທົບ (Balance Sheet) - 
+        <span class="text-h6 font-weight-medium text-styles">
+          ລາຍງານໃບລາຍງານຖານະການເງິນ (Balance Sheet) - 
           {{ selectedSegment }} {{ selectedCurrency }}
         </span>
       </v-card-title>
@@ -119,7 +119,7 @@
           <!-- Table Top Actions -->
           <template #top>
             <div class="d-flex justify-space-between align-center pa-4 bg-grey-lighten-5">
-              <div class="text-h6 font-weight-medium">
+              <div class="text-h6 font-weight-medium text-styles">
                 ຜົນການຄົ້ນຫາ: {{ balanceSheetData.length }} ລາຍການ
                 <v-chip size="small" :color="chipColor" variant="tonal" class="ml-2">
                   {{ chipText }}
@@ -131,9 +131,17 @@
           <!-- Custom Row Template -->
           <template #item="{ item }">
             <tr class="table-row">
-              <td class="text-center">{{ item.no }}</td>
+              <!-- <td class="text-center">{{ item.no }}</td> -->
               <!-- <td class="font-weight-medium text-primary">{{ item.report_number }}</td> -->
-              <td class="text-truncate" :title="item.description">
+              <td 
+              class="text-truncate"
+              :title="item.description"
+              :class="[
+                (item.description === 'ລາຍການໜີ້ສິນ ແລະທືນ' || item.description === 'ລວມຍອດຊັບສິນ')
+                  ? 'font-weight-bold'
+                  : ''
+              ]"
+              >
                 {{ item.description }}
               </td>
               
@@ -259,7 +267,7 @@ const chipText = computed(() => {
 
 // Table headers
 const headers = [
-  { title: 'ລຳດັບ', key: 'no', width: '80px', sortable: true, align: 'center' },
+  // { title: 'ລຳດັບ', key: 'no', width: '80px', sortable: true, align: 'center' },
   // { title: 'ເລກລາຍງານ', key: 'report_number', width: '120px', sortable: true },
   { title: 'ລາຍລະອຽດ', key: 'description', width: '300px', sortable: true },
   // { title: 'ຍອດເດບິດ', key: 'debit_amount', width: '150px', align: 'end', sortable: true },
