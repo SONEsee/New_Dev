@@ -130,17 +130,28 @@
           
           <!-- Custom Row Template -->
           <template #item="{ item }">
-            <tr class="table-row">
-              <!-- <td class="text-center">{{ item.no }}</td> -->
-              <!-- <td class="font-weight-medium text-primary">{{ item.report_number }}</td> -->
-              <td 
-              class="text-truncate"
-              :title="item.description"
+            <tr
+              class="table-row"
               :class="[
                 (item.description === 'ລາຍການໜີ້ສິນ ແລະທືນ' || item.description === 'ລວມຍອດຊັບສິນ')
-                  ? 'font-weight-bold'
+                  ? 'highlight-blue-row'
                   : ''
               ]"
+            >
+              <!-- <td class="text-center">{{ item.no }}</td> -->
+              <!-- <td class="font-weight-medium text-primary">{{ item.report_number }}</td> -->
+              <td
+                class="text-truncate"
+                :title="item.description"
+                :class="[
+                  (
+                    item.description === 'ລາຍການໜີ້ສິນ ແລະທືນ' ||
+                    item.description === 'ລວມຍອດຊັບສິນ' ||
+                    /(^|[^A-Z])I($|[^A-Z])|III|IV/.test(item.description)
+                  )
+                    ? 'font-weight-bold'
+                    : ''
+                ]"
               >
                 {{ item.description }}
               </td>
@@ -443,5 +454,11 @@ onMounted(async () => {
 
 .font-mono {
   font-family: 'Roboto Mono', 'Consolas', monospace;
+}
+
+.highlight-blue-row {
+  /* background: #e3f2fd !important; */
+  background : linear-gradient(135deg, #59b4ff 0%, #e3f2fd 100%)
+  /* background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%); */
 }
 </style>
