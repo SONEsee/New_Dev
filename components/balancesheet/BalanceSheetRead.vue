@@ -5,7 +5,7 @@
       <v-card-title class="px-6 py-4 d-flex align-center" style="background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%); color: white;">
         <v-icon start size="24">mdi-file-chart</v-icon>
         <span class="text-h6 font-weight-medium text-styles">
-          ລາຍງານຜົນການດໍາເນີນງານ (Income Statement) - 
+          ລາຍງານຖານະການເງິນ (Balance Sheet) - 
           {{ selectedTab.toUpperCase() }} {{ selectedSegment }} {{ selectedCurrency }}
         </span>
       </v-card-title>
@@ -190,7 +190,7 @@
                 ]">
                 {{ item.description }}
               </td>
-                <td class="text-center font-mono">
+                <td class="text-end font-mono">
                     <span class="amount-cell" :class="getNetAmountClass(item.net_amount)">
                         {{ formatCurrency(item.net_amount) }}
                     </span>

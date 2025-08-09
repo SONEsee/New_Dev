@@ -421,8 +421,8 @@ const authStatusOptions = ref([
 
 // Table headers
 const headers = ref([
-  { title: 'EOC ID', key: 'eoc_id', sortable: true, width: '100px' },
-  { title: 'ລໍາດັບ', key: 'eoc_seq_no', sortable: true, align: 'center', width: '80px' },
+  // { title: 'EOC ID', key: 'eoc_id', sortable: true, width: '100px' },
+  // { title: 'ລໍາດັບ', key: 'eoc_seq_no', sortable: true, align: 'center', width: '80px' },
   { title: 'ປະເພດ EOC', key: 'eoc_type', sortable: true, align: 'center', width: '100px' },
   { title: 'Module', key: 'module_id', sortable: false, align: 'center', width: '100px' },
   { title: 'Function', key: 'function_name', sortable: false, width: '120px' },
