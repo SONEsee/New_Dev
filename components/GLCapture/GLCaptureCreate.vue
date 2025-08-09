@@ -1197,19 +1197,19 @@ const onMainCurrencyChange = async () => {
       loading.exchangeRate = true
       const url = `/api/exc-rate/?ccy_code=${journalData.Ccy_cd}`
       const response = await axios.get(url, getAuthHeaders())
-      let saleRate = 1
+      let buyRate = 1
 
       if (response.data) {
         if (response.data.results && Array.isArray(response.data.results) && response.data.results.length > 0) {
-          saleRate = parseFloat(response.data.results[0].Sale_Rate || response.data.results[0].sale_rate || 1)
-        } else if (response.data.Sale_Rate || response.data.sale_rate) {
-          saleRate = parseFloat(response.data.Sale_Rate || response.data.sale_rate || 1)
+          buyRate = parseFloat(response.data.results[0].Buy_Rate || response.data.results[0].buy_rate || 1)
+        } else if (response.data.Buy_Rate || response.data.buy_rate) {
+          buyRate = parseFloat(response.data.Buy_Rate || response.data.buy_rate || 1)
         } else if (Array.isArray(response.data) && response.data.length > 0) {
-          saleRate = parseFloat(response.data[0].Sale_Rate || response.data[0].sale_rate || 1)
+          buyRate = parseFloat(response.data[0].Buy_Rate || response.data[0].buy_rate || 1)
         }
       }
 
-      exchangeRate.value = saleRate
+      exchangeRate.value = buyRate
     } catch (error) {
       console.error('Error fetching exchange rate:', error)
       exchangeRate.value = 1
