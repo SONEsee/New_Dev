@@ -3,6 +3,17 @@ import { ref, onMounted, computed } from "vue";
 import { CallSwal } from "#build/imports";
 import { useRoute } from "vue-router";
 import dayjs from "#build/dayjs.imports.mjs";
+const mainTypeStore = assetStore()
+const mainType = computed(()=>{
+  const data = mainTypeStore.response_asset_types;
+  if(Array.isArray(data)){
+    return data
+  }
+  if(data && typeof data === "object"){
+    return [data]
+  }
+  return []
+})
 const route = useRoute();
 const sub_menu_id = route.query.sub_menu_id as string;
 console.log("sub_menu_id:", sub_menu_id);
@@ -23,6 +34,20 @@ const detailassetlis = computed(()=>{
   }
   return []
 })
+const dataFilter = ref([
+  {
+    title: "ທັງໝົດ",
+    value: "all",
+  },
+  {
+    title: "ເປີດໃຊ້ງານ",
+    value: "O",
+  },
+  {
+    title: "ປຶດໃຊ້ງານ",
+    value: "C",
+  },
+])
 const accountMethodStoreInstance = accountMethodStore();
 const mockData = computed(() => {
   return accountMethodStoreInstance.response_account_method_list || [];
@@ -73,6 +98,7 @@ const showError = ref(false);
 const successMessage = ref("");
 const errorMessage = ref("");
 const selectedAccType = ref("all");
+const selectedStatus = ref("all");
 
 const {
   canEdit,
@@ -100,15 +126,15 @@ const accTypes = [
 ];
 
 const headers = computed(() => [
-  {
-    title: "Mapping ID",
-    value: "mapping_id",
-    align: "start",
-    sortable: true,
-    filterable: true,
-    width: "120px",
-    class: "text-primary font-weight-bold",
-  },
+  // {
+  //   title: "Mapping ID",
+  //   value: "mapping_id",
+  //   align: "start",
+  //   sortable: true,
+  //   filterable: true,
+  //   width: "120px",
+  //   class: "text-primary font-weight-bold",
+  // },
   {
     title: "Ref ID",
     value: "ref_id",
@@ -235,88 +261,22 @@ const headers = computed(() => [
     : []),
 ]);
 
-// const mockData = ref([
-//   {
-//     mapping_id: 1,
-//     ref_id: 2024001,
-//     acc_type: "ASSET",
-//     asset_id: 1,
-//     debit_account_id: "1441001",
-//     credit_account_id: "1101100",
-//     amount: 15000000,
-//     transaction_date: new Date("2025-06-15T10:00:00+07:00"),
-//     description: "ການຊື້ຄອມພິວເຕີ Dell",
-//     journal_entry_id: "JE-2024-001",
-//     record_stat: "O",
-//   },
-//   {
-//     mapping_id: 2,
-//     ref_id: 2024002,
-//     acc_type: "DEPRECIATION",
-//     asset_id: 1,
-//     debit_account_id: "5551001",
-//     credit_account_id: "1442001",
-//     amount: 1250000,
-//     transaction_date: new Date("2025-06-30T15:30:00+07:00"),
-//     description: "ການຄິດເສື່ອມລາຄາປະຈຳເດືອນ",
-//     journal_entry_id: "JE-2024-002",
-//     record_stat: "O",
-//   },
-//   {
-//     mapping_id: 3,
-//     ref_id: 2024003,
-//     acc_type: "ASSET",
-//     asset_id: 2,
-//     debit_account_id: "1441001",
-//     credit_account_id: "2100000",
-//     amount: 50000000,
-//     transaction_date: new Date("2025-06-10T09:15:00+07:00"),
-//     description: "ການຊື້ເຄື່ອງຈັກຜະລິດແບບຜ່ອນຊຳລະ",
-//     journal_entry_id: null,
-//     record_stat: "O",
-//   },
-//   {
-//     mapping_id: 4,
-//     ref_id: 2024004,
-//     acc_type: "DISPOSAL",
-//     asset_id: 3,
-//     debit_account_id: "1101100",
-//     credit_account_id: "1441001",
-//     amount: 80000000,
-//     transaction_date: new Date("2025-06-20T14:45:00+07:00"),
-//     description: "ການຂາຍລົດໃຫ້ບໍລິການ",
-//     journal_entry_id: "JE-2024-004",
-//     record_stat: "C",
-//   },
-//   {
-//     mapping_id: 5,
-//     ref_id: 2024005,
-//     acc_type: "DEPRECIATION",
-//     asset_id: 2,
-//     debit_account_id: "5551001",
-//     credit_account_id: "1442001",
-//     amount: 4166667,
-//     transaction_date: new Date("2025-06-30T16:00:00+07:00"),
-//     description: "ການຄິດເສື່ອມລາຄາເຄື່ອງຈັກ",
-//     journal_entry_id: null,
-//     record_stat: "O",
-//   },
-// ]);
+
 const mappedData = computed(() => {
   const accountMethods = mockData.value || [];
   const assetDetails = detailassetlis.value || [];
   
   return accountMethods.map(method => {
-    // ຊອກຫາ asset detail ທີ່ກົງກັບ ref_id
+   
     const matchedAsset = assetDetails.find(asset => 
       asset.asset_list_id === method.ref_id
     );
     
     return {
       ...method,
-      // ເພີ່ມຂໍ້ມູນ asset detail
+     
       asset_detail: matchedAsset || null,
-      // ເພີ່ມຂໍ້ມູນທີ່ຈຳເປັນສຳລັບການສະແດງຜົນ
+      
       asset_name: matchedAsset?.asset_id_detail?.asset_name_la || '-',
       asset_code: matchedAsset?.asset_id_detail?.asset_code || '-',
       asset_spec: matchedAsset?.asset_spec || '-',
@@ -328,12 +288,15 @@ const mappedData = computed(() => {
   });
 });
 
-// ອັບເດດ filteredData ເພື່ອໃຊ້ mappedData
+
 const filteredData = computed(() => {
   let data = mappedData.value;
   
   if (selectedAccType.value !== "all") {
-    data = data.filter((item) => item.ref_id === selectedAccType.value);
+    data = data.filter((item) => item.asset_detail.asset_id_detail.asset_code === selectedAccType.value);
+  }
+  if (selectedStatus.value !== "all") {
+    data = data.filter((item) => item.Record_Status === selectedStatus.value);
   }
 
   if (search.value) {
@@ -468,6 +431,7 @@ const statistics = computed(() => {
 
 onMounted(async () => {
   accountMethodStoreInstance.GetAccountMethodList();
+  mainTypeStore.GetAssetTypes();
  
   loading.value = true;
   try {
@@ -490,10 +454,14 @@ onMounted(async () => {
     <GlobalTextTitleLine :title="title" />
 
     <v-col cols="12">
-     
-
       <v-row>
-        <v-col cols="12" md="3">
+        <!-- <v-col cols="6"><pre>{{ filteredData }}</pre></v-col> -->
+        <!-- <v-col cols="6"><pre>{{ mainType }}</pre></v-col> -->
+      </v-row>
+     
+ 
+      <v-row>
+        <v-col cols="12" md="2">
           <div class="d-flex">
             <v-btn
               color="primary"
@@ -512,9 +480,9 @@ onMounted(async () => {
         <v-col cols="12" md="3" class="text-no-wrap">
           <v-select
             v-model="selectedAccType"
-            :items="assetlist"
-            item-title="asset_spec"
-            item-value="asset_list_id"
+            :items="mainType"
+            item-title="asset_name_la"
+            item-value="asset_code"
             label="ປະເພດທຸລະກຳ"
             variant="outlined"
             density="compact"
@@ -523,8 +491,22 @@ onMounted(async () => {
             :loading="loading"
           ></v-select>
         </v-col>
+        <v-col cols="12" md="3" class="text-no-wrap">
+          <v-select
+            v-model="selectedStatus"
+            :items="dataFilter"
+            item-title="title"
+            item-value="value"
+            label="ສະຖານະ"
+            variant="outlined"
+            density="compact"
+            clearable
+            placeholder="ເລືອກສະຖານະ"
+            :loading="loading"
+          ></v-select>
+        </v-col>
 
-        <v-col cols="12" md="4">
+        <v-col cols="12" md="2">
           <v-text-field
             v-model="search"
             label="ຄົ້ນຫາ"
@@ -550,7 +532,7 @@ onMounted(async () => {
         </v-col>
       </v-row>
 <!-- <pre>{{ detailassetlis }}</pre> -->
- <pre>{{  }}</pre>
+ <!-- <pre>{{  }}</pre> -->
       
       <v-data-table
         :headers="headers"
