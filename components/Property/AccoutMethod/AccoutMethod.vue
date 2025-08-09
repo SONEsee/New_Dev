@@ -418,6 +418,7 @@ const confirmDelete = async (item: any) => {
 
 const clearFilters = async () => {
   selectedAccType.value = "all";
+  selectedStatus.value = "all";
   search.value = "";
 };
 
