@@ -49,7 +49,7 @@ async createMantenance(cleanedData = null) {
     
     console.log('Sending to API:', dataToSend); // Debug log
     
-    const req = await axios.post(`/api/AnnualAssetAudit/`, dataToSend, {
+    const req = await axios.post(`/api/asset_audit/`, dataToSend, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${localStorage.getItem("token")}`,

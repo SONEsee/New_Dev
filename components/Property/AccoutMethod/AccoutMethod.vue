@@ -16,7 +16,7 @@ const mainType = computed(()=>{
 })
 const route = useRoute();
 const sub_menu_id = route.query.sub_menu_id as string;
-console.log("sub_menu_id:", sub_menu_id);
+
 const assetListStore = faAssetStore();
 const assetlist = computed(() => {
   const data = assetListStore.response_fa_asset_list || [];
