@@ -53,21 +53,13 @@ export const UseCategoryStore = defineStore("category", {
       div_id: "",
       division_name_la: "",
       division_name_en: "",
-      // record_Status: "",
-      // Maker_Id: "",
-      // Checker_Id: "",
-      // Auth_Status: "",
-      // Once_Auth: "",
+      
     },
     form_update_data: {
       div_id: "",
       division_name_la: "",
       division_name_en: "",
-      // record_Status: "",
-      // Maker_Id: "",
-      // Checker_Id: "",
-      // Auth_Status: "",
-      // Once_Auth: "",
+     
     },
     response_detail_query_data: [],
     categories: [],

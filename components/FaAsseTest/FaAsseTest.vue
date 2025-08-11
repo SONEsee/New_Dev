@@ -2,7 +2,6 @@
 const assetListStore = faAssetStore();
 const mainTypeStore = assetStore();
 
-// ຂໍ້ມູນປະເພດຊັບສິນ
 const mainType = computed(() => {
   const data = mainTypeStore.response_asset_types;
   if (Array.isArray(data)) {
@@ -14,14 +13,14 @@ const mainType = computed(() => {
   return [];
 });
 
-// ຟິວເຕີ້
-const filterStatus = ref('all'); // all, active, completed, pending
-const filterAssetType = ref('all'); // all, asset_type_id
+
+const filterStatus = ref("all"); 
+const filterAssetType = ref("all"); 
 
 const res = computed(() => {
   const data = assetListStore.response_fa_asset_list;
-  let processedData;
-  
+  let processedData : unknown[] = [];
+
   if (Array.isArray(data)) {
     processedData = data;
   } else if (data && typeof data === "object") {
@@ -30,76 +29,81 @@ const res = computed(() => {
     processedData = [];
   }
 
-  // ເພີ່ມການຄຳນວນເດືອນທີ່ຫັກແລ້ວ ແລະ ສະຖານະ
-  return processedData.map(item => {
+
+  return processedData.map((item:any) => {
     const totalMonths = (item.asset_useful_life || 0) * 12;
     const usedMonths = parseInt(item.C_dpac || 0);
-    
-    let status = '';
+
+    let status = "";
     if (usedMonths >= totalMonths) {
-      status = 'ຫັກສຳເລັດ';
+      status = "ຫັກສຳເລັດ";
     } else if (usedMonths > 0) {
-      status = 'ກຳລັງຫັກ';
+      status = "ກຳລັງຫັກ";
     } else {
-      status = 'ຍັງບໍ່ທັນໄດ້ຫັກ';
+      status = "ຍັງບໍ່ທັນໄດ້ຫັກ";
     }
-    
+
     return {
       ...item,
       depreciated_months: usedMonths,
-      depreciation_status: status
+      depreciation_status: status,
     };
   });
 });
 
-// ຂໍ້ມູນທີ່ຜ່ານການກັ່ນຕອງ
+
 const filteredRes = computed(() => {
   let filtered = res.value;
-  
-  // ກັ່ນຕອງຕາມສະຖານະ
-  if (filterStatus.value !== 'all') {
-    filtered = filtered.filter(item => {
+
+ 
+  if (filterStatus.value !== "all") {
+    filtered = filtered.filter((item) => {
       switch (filterStatus.value) {
-        case 'active':
-          return item.depreciation_status === 'ກຳລັງຫັກ';
-        case 'completed':
-          return item.depreciation_status === 'ຫັກສຳເລັດ';
-        case 'pending':
-          return item.depreciation_status === 'ຍັງບໍ່ທັນໄດ້ຫັກ';
+        case "active":
+          return item.depreciation_status === "ກຳລັງຫັກ";
+        case "completed":
+          return item.depreciation_status === "ຫັກສຳເລັດ";
+        case "pending":
+          return item.depreciation_status === "ຍັງບໍ່ທັນໄດ້ຫັກ";
         default:
           return true;
       }
     });
   }
-  
-  // ກັ່ນຕອງຕາມປະເພດຊັບສິນ
-  if (filterAssetType.value !== 'all') {
-    filtered = filtered.filter(item => {
-      return item.asset_id_detail?.asset_code?.startsWith(filterAssetType.value);
+
+
+  if (filterAssetType.value !== "all") {
+    filtered = filtered.filter((item) => {
+      return item.asset_id_detail?.asset_code?.startsWith(
+        filterAssetType.value
+      );
     });
   }
-  
+
   return filtered;
 });
 
-// ລາຍການປະເພດຊັບສິນສຳລັບ filter
+
 const assetTypeOptions = computed(() => {
-  const types = mainType.value.map(type => ({
+  const types = mainType.value.map((type) => ({
     value: type.asset_type_detail.type_code,
-    title: `${type.asset_type_detail.type_code} - ${type.asset_type_detail.type_name_la}`
+    title: `${type.asset_type_detail.type_code} - ${type.asset_type_detail.type_name_la}`,
   }));
-  
-  return [
-    { value: 'all', title: 'ທຸກປະເພດ' },
-    ...types
-  ];
+
+  return [{ value: "all", title: "ທຸກປະເພດ" }, ...types];
 });
 const statistics = computed(() => {
   const total = res.value.length;
-  const active = res.value.filter(item => item.depreciation_status === 'ກຳລັງຫັກ').length;
-  const completed = res.value.filter(item => item.depreciation_status === 'ຫັກສຳເລັດ').length;
-  const pending = res.value.filter(item => item.depreciation_status === 'ຍັງບໍ່ທັນໄດ້ຫັກ').length;
-  
+  const active = res.value.filter(
+    (item) => item.depreciation_status === "ກຳລັງຫັກ"
+  ).length;
+  const completed = res.value.filter(
+    (item) => item.depreciation_status === "ຫັກສຳເລັດ"
+  ).length;
+  const pending = res.value.filter(
+    (item) => item.depreciation_status === "ຍັງບໍ່ທັນໄດ້ຫັກ"
+  ).length;
+
   return { total, active, completed, pending };
 });
 
@@ -110,7 +114,7 @@ onMounted(() => {
 
 const header = [
   { title: "ລະຫັດ", value: "asset_list_id" },
-  { title: "ປະເພດ", value: "asset_type" },
+  // { title: "ປະເພດ", value: "asset_type" },
   { title: "ຊື່ຊັບສິນ", value: "asset_spec" },
   { title: "ມູນຄ່າທັງໝົດ", value: "asset_value" },
   {
@@ -121,27 +125,27 @@ const header = [
   { title: "ມຸນຄ່າຄົງເຫຼືອ", value: "asset_value_remain" },
   { title: "ວັນທີ່ຫັກຄັ້ງສຸດທ້າຍ", value: "dpca_end_date" },
   { title: "ຫັກແລ້ວ (ເດືອນ)", value: "depreciated_months" },
-  { title: "ສະຖານະການຫັກ", value: "depreciation_status" }
+  { title: "ສະຖານະການຫັກ", value: "depreciation_status" },
+  { title: "ລາຍລະອຽດ", value: "detail" },
 ];
 
-// ຟັງຊັນສຳລັບສີຂອງ status chip
-const getStatusColor = (status) => {
+const getStatusColor = (status:any) => {
   switch (status) {
-    case 'ກຳລັງຫັກ':
-      return 'warning';
-    case 'ຫັກສຳເລັດ':
-      return 'success';
-    case 'ຍັງບໍ່ທັນໄດ້ຫັກ':
-      return 'info';
+    case "ກຳລັງຫັກ":
+      return "warning";
+    case "ຫັກສຳເລັດ":
+      return "success";
+    case "ຍັງບໍ່ທັນໄດ້ຫັກ":
+      return "info";
     default:
-      return 'default';
+      return "default";
   }
 };
 </script>
 
 <template>
   <div class="pa-4">
-    <!-- ສະຖິຕິການ -->
+
     <v-row class="mb-4">
       <v-col cols="12" md="3">
         <v-card color="primary" variant="tonal">
@@ -162,7 +166,9 @@ const getStatusColor = (status) => {
       <v-col cols="12" md="3">
         <v-card color="success" variant="tonal">
           <v-card-text class="text-center">
-            <div class="text-h4 font-weight-bold">{{ statistics.completed }}</div>
+            <div class="text-h4 font-weight-bold">
+              {{ statistics.completed }}
+            </div>
             <div class="text-subtitle-1">ຫັກແລ້ວ</div>
           </v-card-text>
         </v-card>
@@ -177,7 +183,7 @@ const getStatusColor = (status) => {
       </v-col>
     </v-row>
 
-    <!-- ການກັ່ນຕອງ -->
+ 
     <v-row class="mb-4">
       <v-col cols="12" md="4">
         <v-select
@@ -186,7 +192,7 @@ const getStatusColor = (status) => {
             { value: 'all', title: 'ທັງໝົດ' },
             { value: 'active', title: 'ກຳລັງຫັກ' },
             { value: 'completed', title: 'ຫັກສຳເລັດ' },
-            { value: 'pending', title: 'ຍັງບໍ່ທັນໄດ້ຫັກ' }
+            { value: 'pending', title: 'ຍັງບໍ່ທັນໄດ້ຫັກ' },
           ]"
           label="ກັ່ນຕອງຕາມສະຖານະ"
           variant="outlined"
@@ -203,10 +209,13 @@ const getStatusColor = (status) => {
         ></v-select>
       </v-col>
       <v-col cols="12" md="4">
-        <v-btn 
-          color="primary" 
+        <v-btn
+          color="primary"
           variant="outlined"
-          @click="filterStatus = 'all'; filterAssetType = 'all'"
+          @click="
+            filterStatus = 'all';
+            filterAssetType = 'all';
+          "
           block
         >
           <v-icon start>mdi-refresh</v-icon>
@@ -215,45 +224,45 @@ const getStatusColor = (status) => {
       </v-col>
     </v-row>
 
-    <!-- ຕາຕະລາງ -->
-    <v-data-table 
-      :items="filteredRes" 
+
+    <v-data-table
+      :items="filteredRes"
       :headers="header"
       :items-per-page="10"
       class="elevation-1"
     >
-      <!-- ຫົວຕາຕະລາງ -->
-      <template v-slot:header.asset_list_id="{column}">
-        <b style="color: blue;">{{ column.title }}</b>
+    
+      <template v-slot:header.asset_list_id="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
       </template>
-      <template v-slot:header.asset_type="{column}">
-        <b style="color: blue;">{{ column.title }}</b>
+      <template v-slot:header.asset_type="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
       </template>
-      <template v-slot:header.asset_spec="{column}">
-        <b style="color: blue;">{{ column.title }}</b>
+      <template v-slot:header.asset_spec="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
       </template>
-      <template v-slot:header.asset_value="{column}">
-        <b style="color: blue;">{{ column.title }}</b>
+      <template v-slot:header.asset_value="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
       </template>
-      <template v-slot:header.accu_dpca_value_total="{column}">
-        <b style="color: blue;">{{ column.title }}</b>
+      <template v-slot:header.accu_dpca_value_total="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
       </template>
-      <template v-slot:header.asset_accu_dpca_value="{column}">
-        <b style="color: blue;">{{ column.title }}</b>
+      <template v-slot:header.asset_accu_dpca_value="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
       </template>
-      <template v-slot:header.asset_value_remain="{column}">
-        <b style="color: blue;">{{ column.title }}</b>
+      <template v-slot:header.asset_value_remain="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
       </template>
-      <template v-slot:header.dpca_end_date="{column}">
-        <b style="color: blue;">{{ column.title }}</b>
+      <template v-slot:header.dpca_end_date="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
       </template>
-      <template v-slot:header.depreciated_months="{column}">
-        <b style="color: blue;">{{ column.title }}</b>
+      <template v-slot:header.depreciated_months="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
       </template>
-      <template v-slot:header.depreciation_status="{column}">
-        <b style="color: blue;">{{ column.title }}</b>
+      <template v-slot:header.depreciation_status="{ column }">
+        <b style="color: blue">{{ column.title }}</b>
       </template>
-   
+
       <!-- ເນື້ອໃນຕາຕະລາງ -->
       <template v-slot:item.asset_list_id="{ item }">
         <div class="pa-2">
@@ -265,16 +274,24 @@ const getStatusColor = (status) => {
 
       <template v-slot:item.asset_type="{ item }">
         <div class="text-center">
-          <v-chip 
-            variant="flat" 
+          <v-chip
+            variant="flat"
             size="small"
-            :color="item.asset_id_detail?.asset_code?.startsWith('FIX') ? 'purple' : 
-                   item.asset_id_detail?.asset_code?.startsWith('OEQ') ? 'orange' : 
-                   item.asset_id_detail?.asset_code?.startsWith('VEH') ? 'teal' : 
-                   item.asset_id_detail?.asset_code?.startsWith('SFT') ? 'indigo' : 
-                   item.asset_id_detail?.asset_code?.startsWith('OFF') ? 'brown' : 'grey'"
+            :color="
+              item.asset_id_detail?.asset_code?.startsWith('FIX')
+                ? 'purple'
+                : item.asset_id_detail?.asset_code?.startsWith('OEQ')
+                ? 'orange'
+                : item.asset_id_detail?.asset_code?.startsWith('VEH')
+                ? 'teal'
+                : item.asset_id_detail?.asset_code?.startsWith('SFT')
+                ? 'indigo'
+                : item.asset_id_detail?.asset_code?.startsWith('OFF')
+                ? 'brown'
+                : 'grey'
+            "
           >
-            {{ item.asset_id_detail?.asset_code?.split('-')[0] || 'N/A' }}
+            {{ item.asset_id_detail?.asset_code?.split("-")[0] || "N/A" }}
           </v-chip>
         </div>
       </template>
@@ -305,20 +322,26 @@ const getStatusColor = (status) => {
 
       <template v-slot:item.depreciated_months="{ item }">
         <div class="text-center">
-          <v-chip 
-            :color="item.depreciation_status === 'ຫັກສຳເລັດ' ? 'success' : 
-                   item.depreciation_status === 'ກຳລັງຫັກ' ? 'warning' : 'info'"
+          <v-chip
+            :color="
+              item.depreciation_status === 'ຫັກສຳເລັດ'
+                ? 'success'
+                : item.depreciation_status === 'ກຳລັງຫັກ'
+                ? 'warning'
+                : 'info'
+            "
             variant="flat"
             size="small"
           >
-            {{ item.depreciated_months || 0 }} / {{ (item.asset_useful_life || 0) * 12 }}
+            {{ item.depreciated_months || 0 }} /
+            {{ (item.asset_useful_life || 0) * 12 }}
           </v-chip>
         </div>
       </template>
 
       <template v-slot:item.depreciation_status="{ item }">
         <div class="text-center">
-          <v-chip 
+          <v-chip
             :color="getStatusColor(item.depreciation_status)"
             variant="flat"
             size="small"
@@ -330,8 +353,25 @@ const getStatusColor = (status) => {
 
       <template v-slot:item.dpca_end_date="{ item }">
         <div class="text-center">
-          {{ item.dpca_end_date || '-' }}
+          {{ item.dpca_end_date || "-" }}
         </div>
+      </template>
+      <template v-slot:item.detail="{ item }">
+        <v-tooltip :text="`ເບິ່ງປະຫວັດການຫັກຄ່າຫຼູຍຫຽ້ນ: ${item.asset_spec}`">
+          <template v-slot:activator="{ props }">
+            <v-btn
+              flat
+              v-bind="props"
+              @click="
+                goPath(
+                  `/property/faassetdetription/history?id_assetlist=${item.asset_list_id}`
+                )
+              "
+            >
+              <v-icon icon="mdi-history"></v-icon>
+            </v-btn>
+          </template>
+        </v-tooltip>
       </template>
     </v-data-table>
   </div>

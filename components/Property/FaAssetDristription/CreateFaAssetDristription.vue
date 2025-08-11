@@ -2,8 +2,9 @@
 const accoutStore = accountMethodStore();
 const dreptriptionStore = useFassetLidtDescription();
 
+
 const respontest = computed(() => {
-  return dreptriptionStore.respons_data_calculated;
+  return dreptriptionStore.response_data_get_overdue;
 });
 
 const res = computed(() => {
@@ -75,7 +76,7 @@ const formatCurrency = (value: number) => {
 const getCategoryColor = (category: string) => {
   switch (category) {
     case "ຄ້າງຫັກ":
-      return "red";
+      return "blue";
     case "ຕ້ອງຫັກ":
       return "orange";
     case "ອັບເດດແລ້ວ":
@@ -100,6 +101,7 @@ const handelSubmit = async () => {
 onMounted(() => {
   accoutStore.GetAccountMethodList();
   dreptriptionStore.getdataCalculated();
+  dreptriptionStore.getArrears();
 });
 </script>
 
@@ -108,9 +110,9 @@ onMounted(() => {
     <!-- Debug ຂໍ້ມູນ (ລຶບອອກເມື່ອໃຊ້ງານຈິງ) -->
     <!-- <details>
       <summary>Debug Data</summary>
-      <pre>{{ respontest }}</pre>
+     
     </details> -->
-
+ <!-- <pre>{{ respontest }}</pre> -->
     <v-row v-if="dreptriptionStore.isLoading">
       <v-col cols="12" class="text-center">
         <v-progress-circular
@@ -138,13 +140,18 @@ onMounted(() => {
       <v-row>
         <v-col cols="12">
           <v-card class="pa-2">
-            <v-btn color="primary" @click="handelSubmit">
-              ຫັກຄ່າຫຼູຍຫ້ຽນທັງໝົດ
-            </v-btn>
-            <v-card-title>
+            <v-row>
+              <v-col cols="12" md="6"> <v-card-title>
               <v-icon left>mdi-table</v-icon>
               ລາຍລະອຽດທຸກລາຍການ
-            </v-card-title>
+            </v-card-title> </v-col>
+              <v-col cols="12" md="6"><div class="d-flex mb-2 justify-end"><v-btn color="primary" @click="handelSubmit" >
+              ຫັກຄ່າຫຼູຍຫ້ຽນ
+            </v-btn></div></v-col>
+            </v-row>
+           
+            
+           
 
             <v-data-table
               :headers="headers"
