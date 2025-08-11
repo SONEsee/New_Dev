@@ -5,7 +5,7 @@
       <v-card-title class="px-6 py-4 d-flex align-center" style="background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%); color: white;">
         <v-icon start size="24">mdi-file-chart</v-icon>
         <span class="text-h6 font-weight-medium text-styles">
-          ລາຍງານຖານະການເງິນ (Balance Sheet) - 
+          ລາຍງານຜົນການດໍາເນີນງານ (Income Statement) - 
           {{ selectedTab.toUpperCase() }} {{ selectedSegment }} {{ selectedCurrency }}
         </span>
       </v-card-title>
@@ -43,6 +43,7 @@
                     <template #prepend>
                       <v-icon :icon="item.raw.icon" size="20" />
                     </template>
+                    <!-- <v-list-item-title>{{ item.raw.title }}</v-list-item-title> -->
                     <v-list-item-subtitle>{{ item.raw.subtitle }}</v-list-item-subtitle>
                   </v-list-item>
                 </template>
@@ -66,6 +67,7 @@
                     <template #prepend>
                       <v-icon :icon="item.raw.icon" size="20" />
                     </template>
+                    <!-- <v-list-item-title>{{ item.raw.title }}</v-list-item-title> -->
                     <v-list-item-subtitle>{{ item.raw.subtitle }}</v-list-item-subtitle>
                   </v-list-item>
                 </template>
@@ -175,12 +177,15 @@
                     )
                 ]"
                 >
+              <!-- <td class="text-center">{{ item.no }}</td>
+              <td class="font-weight-medium text-primary">{{ item.report_number }}</td> -->
               <td class="description-cell" 
                 :title="item.description"
                 :class="[
                   (
                     item.description === 'ລາຍການໜີ້ສິນ ແລະທືນ' ||
                     item.description === 'ລວມຍອດຊັບສິນ' ||
+                    // /(^|[^A-Z])I($|[^A-Z])|III|IV/.test(item.description)
                     /\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/.test(item.description)
                     ||
                     /\b([1-9]|1[0-9]|2[0-9]|30)\)/.test(item.description)
@@ -188,9 +193,10 @@
                     ? 'font-weight-bold'
                     : ''
                 ]">
+                
                 {{ item.description }}
               </td>
-                <td class="text-end font-mono">
+                <td class="text-center font-mono">
                     <span class="amount-cell" :class="getNetAmountClass(item.net_amount)">
                         {{ formatCurrency(item.net_amount) }}
                     </span>
@@ -201,6 +207,7 @@
               <td class="text-end font-mono">
                 <span class="amount-cell negative">{{ formatCurrency(item.segment_type) }}</span>
               </td>
+
             </tr>
           </template>
 
@@ -292,8 +299,10 @@
     </v-snackbar>
   </v-container>
 </template>
+
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import axios from '@/helpers/axios'
 import * as XLSX from 'xlsx'
 
 // Page Meta
@@ -322,6 +331,20 @@ interface ApiResponse {
   type?: string
   count?: number
   data: IncomeStatementItem[]
+}
+
+// Authentication helper
+const getAuthHeaders = () => {
+  const token = localStorage.getItem("token")
+  if (!token) {
+    throw new Error('Authentication token not found')
+  }
+  return {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  }
 }
 
 // Reactive state
@@ -365,7 +388,7 @@ const currencyOptions = computed(() => {
     ]
   } else if (selectedSegment.value === 'FCY') {
     return [
-      { title: 'ກີບລາວ (LAK)', value: 'LAK', subtitle: 'Lao Kip', icon: 'mdi-currency-kzt' },
+    { title: 'ກີບລາວ (LAK)', value: 'LAK', subtitle: 'Lao Kip', icon: 'mdi-currency-kzt' },
       { title: 'ໂດລາສະຫະລັດ (USD)', value: 'USD', subtitle: 'US Dollar', icon: 'mdi-currency-usd' },
       { title: 'ບາດໄທ (THB)', value: 'THB', subtitle: 'Thai Baht', icon: 'mdi-currency-jpy' },
     ]
@@ -401,13 +424,17 @@ const filteredData = computed(() => {
 
 // Table headers
 const headers = [
+//   { title: 'ລຳດັບ', key: 'no', width: '80px', sortable: true, align: 'center' },
+//   { title: 'ເລກລາຍງານ', key: 'report_number', width: '120px', sortable: true },
   { title: 'ລາຍລະອຽດ', key: 'description', width: '400px', sortable: true },
+//   { title: 'ຍອດເດບິດ', key: 'debit_amount', width: '150px', align: 'end', sortable: true },
+//   { title: 'ຍອດເຄຣດິດ', key: 'credit_amount', width: '150px', align: 'end', sortable: true },
   { title: 'ຍອດສຸດທິ', key: 'net_amount', width: '150px', align: 'end', sortable: true },
   { title: 'ສະກຸນເງິນ', key: 'currency_display', width: '100px', align: 'center', sortable: true },
   { title: 'ປະເພດ', key: 'segment_type', width: '100px', align: 'center', sortable: true }
 ]
 
-// Fixed API call function using axios
+// API calls
 const fetchIncomeStatementData = async () => {
   if (!selectedSegment.value || !selectedCurrency.value) {
     showSnackbar('ກະລຸນາເລືອກ segment ແລະ currency', 'warning', 'mdi-alert')
@@ -418,63 +445,40 @@ const fetchIncomeStatementData = async () => {
     loading.value = true
     
     const endpoint = selectedTab.value === 'acc' 
-      ? '/api/balance-sheet/acc/' 
-      : '/api/balance-sheet/mfi/'
+      ? '/api/income-statement/acc/' 
+      : '/api/income-statement/mfi/'
     
     console.log(`🔄 Calling ${selectedTab.value.toUpperCase()} API: ${endpoint}`)
     
-    // Import axios
-    const axios = (await import('@/helpers/axios')).default
-    
-    const requestData = {
+    const response = await axios.post(endpoint, {
       segment: selectedSegment.value,
       currency: selectedCurrency.value
-    }
+    }, getAuthHeaders())
     
-    console.log('📤 Request data:', requestData)
-    
-    // Make API call using axios
-    const response = await axios.post(endpoint, requestData)
-    
-    console.log('✅ Raw Response:', response)
-    console.log('✅ Response Data:', response.data)
-    
-    // With axios, the actual API response is in response.data
-    const apiResponse = response.data
-    
-    if (apiResponse.status === 'success') {
-      incomeStatementData.value = apiResponse.data || []
+    if (response.data.status === 'success') {
+      incomeStatementData.value = response.data.data || []
       
       showSnackbar(
-        `✅ ດຶງຂໍ້ມູນງົບກຳໄລຂາດທຸນ ${selectedTab.value.toUpperCase()} ສຳເລັດ (${incomeStatementData.value.length} ລາຍການ)`,
+        `✅ ດຶງຂໍ້ມູນງົບກຳໄລຂາດທຸນ ${selectedTab.value.toUpperCase()} ສຳເລັດ - ${response.data.display_currency} (${incomeStatementData.value.length} ລາຍການ)`,
         'success',
         'mdi-check-circle'
       )
       
       console.log(`✅ Data loaded successfully: ${incomeStatementData.value.length} records`)
-      console.log('📊 First few records:', incomeStatementData.value.slice(0, 3))
     } else {
-      throw new Error(apiResponse.message || 'Unknown error occurred')
+      throw new Error(response.data.message || 'Unknown error occurred')
     }
     
   } catch (error: any) {
     console.error('❌ Error fetching income statement data:', error)
-    console.error('❌ Error details:', {
-      message: error.message,
-      response: error.response,
-      status: error.response?.status,
-      data: error.response?.data
-    })
     
     let errorMessage = 'ເກີດຂໍ້ຜິດພາດໃນການດຶງຂໍ້ມູນງົບກຳໄລຂາດທຸນ'
     let errorIcon = 'mdi-alert-circle'
     
-    // Enhanced error handling for axios
+    // Handle specific errors
     if (error?.response?.status === 401) {
       errorMessage = '🔐 ໂທເຄນໝົດອາຍຸ ກະລຸນາເຂົ້າສູ່ລະບົບໃໝ່'
       errorIcon = 'mdi-account-alert'
-      // Redirect to login
-      await navigateTo('/auth/login')
     } else if (error?.response?.status === 403) {
       errorMessage = '🚫 ທ່ານບໍ່ມີສິດໃນການເຂົ້າເຖິງຂໍ້ມູນນີ້'
       errorIcon = 'mdi-lock-alert'
@@ -489,13 +493,9 @@ const fetchIncomeStatementData = async () => {
     } else if (error?.message === 'Authentication token not found') {
       errorMessage = '🔑 ກະລຸນາເຂົ້າສູ່ລະບົບກ່ອນ'
       errorIcon = 'mdi-account-alert'
-      await navigateTo('/auth/login')
     } else if (error?.message?.includes('Network Error')) {
       errorMessage = '🌐 ບໍ່ສາມາດເຊື່ອມຕໍ່ກັບເຊີຟເວີໄດ້'
       errorIcon = 'mdi-wifi-off'
-    } else if (error?.userMessage) {
-      // Use the user-friendly message from axios interceptor
-      errorMessage = error.userMessage
     }
     
     showSnackbar(errorMessage, 'error', errorIcon)
@@ -506,7 +506,6 @@ const fetchIncomeStatementData = async () => {
   }
 }
 
-// Fixed compare function using axios
 const compareAccMfi = async () => {
   if (!selectedSegment.value || !selectedCurrency.value) {
     showSnackbar('ກະລຸນາເລືອກ segment ແລະ currency ເພື່ອສົມທຽບ', 'warning', 'mdi-alert')
@@ -516,39 +515,27 @@ const compareAccMfi = async () => {
   try {
     loading.value = true
     
-    // Import axios
-    const axios = (await import('@/helpers/axios')).default
-    
-    const requestData = {
+    const response = await axios.post('/api/income-statement/compare_acc_mfi/', {
       segment: selectedSegment.value,
       currency: selectedCurrency.value
-    }
+    }, getAuthHeaders())
     
-    console.log('📤 Compare request data:', requestData)
-    
-    const response = await axios.post('/api/income-statement/compare_acc_mfi/', requestData)
-    
-    console.log('✅ Compare Response:', response.data)
-    
-    // With axios, the actual API response is in response.data
-    const apiResponse = response.data
-    
-    if (apiResponse.status === 'success') {
-      compareResults.value = apiResponse.data
+    if (response.data.status === 'success') {
+      compareResults.value = response.data.data
       showCompareDialog.value = true
       showSnackbar(
-        `✅ ສົມທຽບຂໍ້ມູນ ACC ແລະ MFI ສຳເລັດ`,
+        `✅ ສົມທຽບຂໍ້ມູນ ACC ແລະ MFI ສຳລັບ ${response.data.display_currency} ສຳເລັດ`,
         'success',
         'mdi-check-circle'
       )
     } else {
-      throw new Error(apiResponse.message || 'Comparison failed')
+      throw new Error(response.data.message || 'Comparison failed')
     }
     
   } catch (error: any) {
     console.error('❌ Error comparing ACC and MFI:', error)
     showSnackbar(
-      error?.response?.data?.message || error?.userMessage || 'ເກີດຂໍ້ຜິດພາດໃນການສົມທຽບຂໍ້ມູນ ACC ແລະ MFI',
+      error?.response?.data?.message || 'ເກີດຂໍ້ຜິດພາດໃນການສົມທຽບຂໍ້ມູນ ACC ແລະ MFI',
       'error',
       'mdi-alert-circle'
     )
@@ -593,53 +580,6 @@ const showSnackbar = (message: string, color: string = 'success', icon: string =
   snackbar.value = { show: true, message, color, icon }
 }
 
-// Debug function - you can call this in browser console: window.testApi()
-const testApiCall = async () => {
-  console.log('🧪 Testing API call manually...')
-  
-  try {
-    const axios = (await import('@/helpers/axios')).default
-    console.log('✅ Axios imported:', axios)
-    
-    const testData = {
-      segment: 'FCY',
-      currency: 'USD'
-    }
-    
-    console.log('📤 Test request data:', testData)
-    
-    const response = await axios.post('/api/income-statement/acc/', testData)
-    
-    console.log('✅ Test response status:', response.status)
-    console.log('✅ Test response data:', response.data)
-    
-    if (response.data.status === 'success') {
-      console.log('🎉 API call successful!')
-      console.log('📊 Data count:', response.data.count)
-      console.log('📋 First item:', response.data.data[0])
-    } else {
-      console.log('❌ API returned error:', response.data.message)
-    }
-    
-    return response.data
-    
-  } catch (error) {
-    console.error('❌ Test API call failed:', error)
-    console.error('❌ Error details:', {
-      message: error.message,
-      response: error.response,
-      status: error.response?.status,
-      data: error.response?.data
-    })
-    throw error
-  }
-}
-
-// Expose test function to global scope for debugging
-if (process.client) {
-  (window as any).testApi = testApiCall
-}
-
 // Export to Excel function
 const exportToExcel = () => {
   try {
@@ -650,10 +590,14 @@ const exportToExcel = () => {
 
     // Prepare export data
     const exportData = incomeStatementData.value.map(item => ({
+    //   'ລຳດັບ': item.no,
+    //   'ເລກລາຍງານ': item.report_number,
       'ລາຍລະອຽດ': item.description,
+    //   'ຍອດເດບິດ': item.debit_amount,
+    //   'ຍອດເຄຣດິດ': item.credit_amount,
       'ຍອດສຸດທິ': item.net_amount,
       'ສະກຸນເງິນ': item.currency_display,
-      'ປະເພດ': item.segment_type
+        'ປະເພດ': item.segment_type
     }))
 
     // Create and save Excel file
@@ -662,10 +606,12 @@ const exportToExcel = () => {
     
     // Set column widths
     const colWidths = [
+      { wch: 8 }, // ລຳດັບ
+      { wch: 15 }, // ເລກລາຍງານ
       { wch: 40 }, // ລາຍລະອຽດ
-      { wch: 15 }, // ຍອດສຸດທິ
-      { wch: 15 }, // ສະກຸນເງິນ
-      { wch: 15 }  // ປະເພດ
+      { wch: 15 }, // ຍອດເດບິດ
+      { wch: 15 }, // ຍອດເຄຣດິດ
+      { wch: 15 }  // ຍອດສຸດທິ
     ]
     ws['!cols'] = colWidths
 
@@ -689,7 +635,7 @@ const exportToExcel = () => {
   }
 }
 
-// Watch for tab changes - Fixed watch import
+// Watch for tab changes
 watch(selectedTab, () => {
   incomeStatementData.value = []
   console.log(`🔄 Tab changed to: ${selectedTab.value.toUpperCase()}`)
@@ -698,26 +644,14 @@ watch(selectedTab, () => {
 // Initialize component
 onMounted(async () => {
   try {
-    if (process.client) {
-      const token = localStorage.getItem("token")
-      if (token) {
-        console.log('🚀 Income Statement component mounted with token')
-        // Set default values
-        selectedSegment.value = 'LCY'
-        selectedCurrency.value = 'LAK'
-        
-        // Test axios import
-        try {
-          const axios = (await import('@/helpers/axios')).default
-          console.log('✅ Axios imported successfully:', axios)
-        } catch (axiosError) {
-          console.error('❌ Failed to import axios:', axiosError)
-          showSnackbar('⚠️ ບໍ່ສາມາດໂຫຼດ axios helper ໄດ້', 'warning', 'mdi-alert')
-        }
-      } else {
-        showSnackbar('🔑 ກະລຸນາເຂົ້າສູ່ລະບົບເພື່ອເຂົ້າເຖິງຂໍ້ມູນ', 'warning', 'mdi-account-alert')
-        await navigateTo('/auth/login')
-      }
+    const token = localStorage.getItem("token")
+    if (token) {
+      console.log('🚀 Income Statement component mounted')
+      // Set default values
+      selectedSegment.value = 'LCY'
+      selectedCurrency.value = 'LAK'
+    } else {
+      showSnackbar('🔑 ກະລຸນາເຂົ້າສູ່ລະບົບເພື່ອເຂົ້າເຖິງຂໍ້ມູນ', 'warning', 'mdi-account-alert')
     }
   } catch (error) {
     console.error('Initialization error:', error)

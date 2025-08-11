@@ -1,9 +1,8 @@
 <template>
     <div>
-        <MainTrailBalance />
+        <IncomeStatement />
     </div>
 </template>
-
 <script setup lang="ts">
 
 </script>
