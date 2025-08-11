@@ -1,101 +1,8 @@
-<script setup lang="ts">
-import { ref, computed, onMounted, nextTick } from "vue";
-import { useMentenance } from "@/stores/mantenaces";
-
-const validate = ref();
-const form = ref();
-const isFormValid = ref(false);
-const faAssetStoreInstance = faAssetStore();
-const mantanances = useMentenance();
-const Dapremen = DevisionStore()
-const searchBarcode = ref("");
-const isSearching = ref(false);
-const responsdevice = computed(()=>{
-    const data =  Dapremen.respons_detail_query_data;
-    if(Array.isArray(data)){
-        return data
-    }
-    if(data && typeof data==="object"){
-        return [data]
-    }
-    return []
-})
-const rules = {
-  required: (value: any) => !!value || "ກະລຸນາກຳນົດຄ່າ",
-};
-
-const dataSearch = async () => {
-  if (searchBarcode.value.trim() && !isSearching.value) {
-    isSearching.value = true;
-    try {
-      faAssetStoreInstance.filterBarcode.request.asset_tag =
-        searchBarcode.value;
-      await faAssetStoreInstance.getDataBarcode();
-
-      if (dataFasset.value.length > 0 && dataFasset.value[0]?.asset_list_id) {
-        mantanances.form_creat_mantenance.asset_list_id =
-          dataFasset.value[0].asset_list_id;
-        mantanances.form_creat_mantenance.book_value =
-          dataFasset.value[0]?.asset_value || "";
-      }
-    } catch (error) {
-      console.error("Error searching:", error);
-    } finally {
-      isSearching.value = false;
-    }
-  }
-};
-
-const handlePaste = async (event: ClipboardEvent) => {
-  await nextTick();
-  if (searchBarcode.value.trim()) {
-    setTimeout(() => {
-      dataSearch();
-    }, 100);
-  }
-};
-
-const dataFasset = computed(() => {
-  const data = faAssetStoreInstance.response_fa_asset_detail;
-  if (Array.isArray(data)) {
-    return data;
-  }
-  if (data && typeof data === "object") {
-    return [data];
-  }
-  return [];
-});
-
-const formatCurrency = (value: any): string => {
-  if (!value || isNaN(Number(value))) {
-    return "ບໍ່ມີຂໍ້ມູນ";
-  }
-  return (
-    new Intl.NumberFormat("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(Number(value)) + " ກີບ"
-  );
-};
-
-const SubmitDataMentenance = async () => {
-  const validation = await form.value.validate();
-  if (validation.valid) {
-    await mantanances.createMantenance();
-  }
-};
-
-onMounted(() => {
-  mantanances.form_creat_mantenance.audit_year = new Date().getFullYear();
-
-});
-
-const title = "ບຳລູງຮັກສາຊັບສຶນ";
-</script>
 <template>
   <div class="pa-4">
     <GlobalTextTitleLine :title="title" />
-
+    
+    <!-- Asset Search Section -->
     <v-col cols="12">
       <v-row>
         <v-col cols="12" md="4">
@@ -123,6 +30,7 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
       </v-row>
     </v-col>
 
+    <!-- Asset Information Card -->
     <v-card flat style="border: solid 1px #64b5f6" class="mb-4">
       <v-card-title style="background-color: #64b5f6">
         ຂໍ້ມູນພື້ນຖານຊັບສິນ
@@ -136,16 +44,8 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
             />
             <GlobalCardTitle
               :title="'ມູນຄ່າທັງໝົດ'"
-              :text="
-                formatCurrency(dataFasset[0]?.asset_value) || 'ບໍ່ມີຂໍ້ມູນ'
-              "
+              :text="formatCurrency(dataFasset[0]?.asset_value) || 'ບໍ່ມີຂໍ້ມູນ'"
             />
-            <!-- <GlobalCardTitle
-              :title="'ມູນຄ່າທັງໝົດ'"
-              :text="
-                formatCurrency(dataFasset[0]?.) || 'ບໍ່ມີຂໍ້ມູນ'
-              "
-            /> -->
           </v-col>
           <v-col cols="12" md="3">
             <GlobalCardTitle
@@ -160,9 +60,7 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
           <v-col cols="12" md="3">
             <GlobalCardTitle
               :title="'ສະຖານທີ່ຕັ້ງ'"
-              :text="
-                dataFasset[0]?.location_detail.location_name_la || 'ບໍ່ມີຂໍ້ມູນ'
-              "
+              :text="dataFasset[0]?.location_detail.location_name_la || 'ບໍ່ມີຂໍ້ມູນ'"
             />
             <GlobalCardTitle
               :title="'ມື້ຊື້'"
@@ -172,22 +70,21 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
           <v-col cols="12" md="3">
             <GlobalCardTitle
               :title="'ຜູ້ສະໜອງ'"
-              :text="
-                dataFasset[0]?.supplier_detail.supplier_name || 'ບໍ່ມີຂໍ້ມູນ'
-              "
+              :text="dataFasset[0]?.supplier_detail.supplier_name || 'ບໍ່ມີຂໍ້ມູນ'"
             />
             <GlobalCardTitle
               :title="'ສະຖານະໃຊ້ງານ'"
-              :text="
-                dataFasset[0]?.asset_status_detail.MC_name_la || 'ບໍ່ມີຂໍ້ມູນ'
-              "
+              :text="dataFasset[0]?.asset_status_detail.MC_name_la || 'ບໍ່ມີຂໍ້ມູນ'"
             />
           </v-col>
         </v-row>
       </v-col>
     </v-card>
 
+    <!-- Maintenance Form -->
     <v-form ref="form" v-model="isFormValid">
+      
+      <!-- Audit Basic Information -->
       <v-card style="border: 1px solid #bbdefb" class="mb-4">
         <v-card-title style="background-color: #bbdefb">
           ຂໍ້ມູນການກວດສອບ
@@ -205,21 +102,13 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
               ></v-text-field>
             </v-col>
             <v-col cols="12" md="3">
-              <v-select
-                v-model="mantanances.form_creat_mantenance.audit_period"
-                label="ໄລຍະການກວດສອບ"
-                :items="['ປະຈຳປີ', 'ປະຈຳໄຕມາດ', 'ປະຈຳເດືອນ']"
-                variant="outlined"
-                density="compact"
-                :rules="[rules.required]"
-              ></v-select>
-              <!-- <v-text-field
+              <v-text-field
                 v-model="mantanances.form_creat_mantenance.audit_period"
                 label="ໄລຍະການກວດສອບ"
                 variant="outlined"
                 density="compact"
                 :rules="[rules.required]"
-              ></v-text-field> -->
+              ></v-text-field>
             </v-col>
             <v-col cols="12" md="3">
               <v-text-field
@@ -244,6 +133,7 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
         </v-card-text>
       </v-card>
 
+      <!-- Physical Status -->
       <v-card style="border: 1px solid #c8e6c9" class="mb-4">
         <v-card-title style="background-color: #c8e6c9">
           ສະຖານະທາງກາຍະພາບ
@@ -264,11 +154,7 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
               <v-select
                 v-model="mantanances.form_creat_mantenance.condition_status"
                 label="ສະພາບການທຳງານ"
-                :items="[
-                  'ໃຊ້ງານໄດ້ປົກກະຕິ',
-                  'ໃຊ້ງານໄດ້ບາງສ່ວນ',
-                  'ບໍ່ສາມາດໃຊ້ງານໄດ້',
-                ]"
+                :items="['ໃຊ້ງານໄດ້ປົກກະຕິ', 'ໃຊ້ງານໄດ້ບາງສ່ວນ', 'ບໍ່ສາມາດໃຊ້ງານໄດ້']"
                 variant="outlined"
                 density="compact"
                 :rules="[rules.required]"
@@ -296,6 +182,7 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
         </v-card-text>
       </v-card>
 
+      <!-- Financial Information -->
       <v-card style="border: 1px solid #fff9c4" class="mb-4">
         <v-card-title style="background-color: #fff9c4">
           ຂໍ້ມູນມູນຄ່າ ແລະ ຄ່າເສື່ອມລາຄາ
@@ -334,9 +221,7 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
             </v-col>
             <v-col cols="12" md="3">
               <v-text-field
-                v-model="
-                  mantanances.form_creat_mantenance.accumulated_depreciation
-                "
+                v-model="mantanances.form_creat_mantenance.accumulated_depreciation"
                 label="ຄ່າເສື່ອມລາຄາສະສົມ"
                 variant="outlined"
                 density="compact"
@@ -346,9 +231,7 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
             </v-col>
             <v-col cols="12" md="3">
               <v-text-field
-                v-model="
-                  mantanances.form_creat_mantenance.remaining_useful_life
-                "
+                v-model="mantanances.form_creat_mantenance.remaining_useful_life"
                 label="ອາຍຸໃຊ້ງານເຫຼືອ"
                 variant="outlined"
                 density="compact"
@@ -360,6 +243,7 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
         </v-card-text>
       </v-card>
 
+      <!-- Verification Section -->
       <v-card style="border: 1px solid #ffcdd2" class="mb-4">
         <v-card-title style="background-color: #ffcdd2">
           ການຢັ້ງຢືນຂໍ້ມູນ
@@ -368,9 +252,7 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
           <v-row>
             <v-col cols="12" md="3">
               <v-select
-                v-model="
-                  mantanances.form_creat_mantenance.serial_number_verified
-                "
+                v-model="mantanances.form_creat_mantenance.serial_number_verified"
                 label="Serial Number ຖືກຕ້ອງ?"
                 :items="['ຖືກຕ້ອງ', 'ບໍ່ຖືກຕ້ອງ', 'ບໍ່ມີ']"
                 variant="outlined"
@@ -408,6 +290,7 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
         </v-card-text>
       </v-card>
 
+      <!-- Maintenance Recommendations -->
       <v-card style="border: 1px solid #f3e5f5" class="mb-4">
         <v-card-title style="background-color: #f3e5f5">
           ຄຳແນະນຳ ແລະ ການບຳລຸງຮັກສາ
@@ -425,9 +308,7 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
             </v-col>
             <v-col cols="12" md="4">
               <v-select
-                v-model="
-                  mantanances.form_creat_mantenance.replacement_recommended
-                "
+                v-model="mantanances.form_creat_mantenance.replacement_recommended"
                 label="ແນະນຳໃຫ້ປ່ຽນແທນ?"
                 :items="['ແນະນຳ', 'ບໍ່ແນະນຳ', 'ຍັງໃຊ້ໄດ້']"
                 variant="outlined"
@@ -447,6 +328,7 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
         </v-card-text>
       </v-card>
 
+      <!-- Findings and Recommendations -->
       <v-card style="border: 1px solid #e1f5fe" class="mb-4">
         <v-card-title style="background-color: #e1f5fe">
           ຜົນການກວດສອບ ແລະ ຄຳແນະນຳ
@@ -507,10 +389,7 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
                 variant="outlined"
                 density="compact"
                 type="date"
-                :disabled="
-                  mantanances.form_creat_mantenance.follow_up_required !==
-                  'ຕ້ອງການ'
-                "
+                :disabled="mantanances.form_creat_mantenance.follow_up_required !== 'ຕ້ອງການ'"
               ></v-text-field>
             </v-col>
             <v-col cols="12" md="3">
@@ -527,6 +406,7 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
         </v-card-text>
       </v-card>
 
+      <!-- Approval Section -->
       <v-card style="border: 1px solid #e8f5e8" class="mb-4">
         <v-card-title style="background-color: #e8f5e8">
           ການອະນຸມັດ
@@ -571,6 +451,7 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
         </v-card-text>
       </v-card>
 
+      <!-- Photo Upload Section -->
       <v-card style="border: 1px solid #fff3e0" class="mb-4">
         <v-card-title style="background-color: #fff3e0">
           ເອກະສານແນບ
@@ -607,11 +488,128 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
           >
             ບັນທຶກຂໍ້ມູນ
           </v-btn>
-          <v-btn color="error" variant="outlined" size="large" class="mx-2">
+          <v-btn
+            color="error"
+            variant="outlined"
+            size="large"
+            @click="resetForm"
+            class="mx-2"
+          >
             ຍົກເລີກ
           </v-btn>
         </v-col>
       </v-row>
+
     </v-form>
   </div>
 </template>
+
+<script setup lang="ts">
+import { ref, computed, onMounted, nextTick } from "vue";
+import { useMentenance } from '@/stores/mantenaces';
+
+const validate = ref()
+const form = ref()
+const isFormValid = ref(false)
+const faAssetStoreInstance = faAssetStore();
+const mantanances = useMentenance();
+const searchBarcode = ref("");
+const isSearching = ref(false);
+
+// Form validation rules
+const rules = {
+  required: (value: any) => !!value || 'ກະລຸນາກຳນົດຄ່າ',
+};
+
+const dataSearch = async () => {
+  if (searchBarcode.value.trim() && !isSearching.value) {
+    isSearching.value = true;
+    try {
+      faAssetStoreInstance.filterBarcode.request.asset_tag = searchBarcode.value;
+      await faAssetStoreInstance.getDataBarcode();
+      // Auto-populate asset_list_id when asset is found
+      if (dataFasset.value.length > 0 && dataFasset.value[0]?.asset_list_id) {
+        mantanances.form_creat_mantenance.asset_list_id = dataFasset.value[0].asset_list_id;
+        mantanances.form_creat_mantenance.book_value = dataFasset.value[0]?.asset_value || "";
+      }
+    } catch (error) {
+      console.error("Error searching:", error);
+    } finally {
+      isSearching.value = false;
+    }
+  }
+};
+
+const handlePaste = async (event: ClipboardEvent) => {
+  await nextTick();
+  if (searchBarcode.value.trim()) {
+    setTimeout(() => {
+      dataSearch();
+    }, 100);
+  }
+};
+
+const dataFasset = computed(() => {
+  const data = faAssetStoreInstance.response_fa_asset_detail;
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (data && typeof data === "object") {
+    return [data];
+  }
+  return [];
+});
+
+const formatCurrency = (value: any): string => {
+  if (!value || isNaN(Number(value))) {
+    return "ບໍ່ມີຂໍ້ມູນ";
+  }
+  return (
+    new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(Number(value)) + " ກີບ"
+  );
+};
+
+const SubmitDataMentenance = async () => {
+  const validation = await form.value.validate();
+  if (validation.valid) {
+    try {
+      await mantanances.createMantenance();
+      // Optional: Redirect or refresh data after successful submission
+    } catch (error) {
+      console.error("Submission error:", error);
+    }
+  } else {
+    CallSwal({
+      title: "ກະລຸນາກວດສອບຂໍ້ມູນ",
+      text: "ມີຟິວທີ່ບໍ່ຖືກຕ້ອງ ຫຼື ຍັງບໍ່ໄດ້ເຕີມ",
+      icon: "warning",
+    });
+  }
+};
+
+const resetForm = () => {
+  if (form.value) {
+    form.value.reset();
+  }
+  Object.keys(mantanances.form_creat_mantenance).forEach((key: string) => {
+    const typedKey = key as keyof typeof mantanances.form_creat_mantenance;
+    if (key === 'audit_year') {
+      (mantanances.form_creat_mantenance as any)[typedKey] = new Date().getFullYear();
+    } else if (typeof mantanances.form_creat_mantenance[typedKey] === 'number') {
+      (mantanances.form_creat_mantenance as any)[typedKey] = 0;
+    } else {
+      (mantanances.form_creat_mantenance as any)[typedKey] = "";
+    }
+  });
+};
+
+onMounted(() => {
+  // Set current year as default
+  mantanances.form_creat_mantenance.audit_year = new Date().getFullYear();
+});
+
+const title = "ບຳລູງຮັກສາຊັບສຶນ";
+</script>
