@@ -84,7 +84,7 @@ const handleNotificationClick = () => {
 
 <template>
   <v-container fluid>
-   <!-- <pre>{{ responseData }}</pre>  -->
+   
     <div color="#E3F2FD" class="rounded-lg pa-4" style="border: 1px solid blue">
       <v-row v-if="isLoading">
         <v-col cols="12" class="text-center">
@@ -100,14 +100,14 @@ const handleNotificationClick = () => {
       <v-row v-else-if="responseData && responseData.data">
         <v-col cols="12">
           <v-card align-tabs="center">
-            <v-tabs align-tabs="center" v-model="tab" bg-color="primary">
+            <v-tabs align-tabs="center" v-model="tab" color="#0D47A1" bg-color="#BBDEFB">
               <v-tab value="one"
                 >ຫັກຄ່າຫຼູ້ຍຫ້ຽນປະຈຳເດືອນ -
                 {{ responseData.data.target_period.month_name_la }}
                 {{ responseData.data.target_period.year }}
               </v-tab>
               <v-tab value="two">ຫັກຄ່າຫຼູ້ຍຫ້ຽນຍອ້ນຫຼັງ</v-tab>
-              <!-- <v-tab value="three">Item Three</v-tab> -->
+           
             </v-tabs>
 
             <v-card-text>

@@ -25,6 +25,13 @@ export const useFassetLidtDescription = defineStore("fassetlistdecription", {
         create_journal: true,
         mapping_ids: [],
       },
+      total_caculate: {
+        action: "bulk_process",
+        mapping_ids: [] ,
+        
+        create_journal: true,
+        target_date: "",
+      },
       response_data_get_overdue:
         null as AssetListDrisTionModel.ArrearsDeptriptoinRespons | null,
       respons_data_driscription_main:
@@ -77,8 +84,8 @@ export const useFassetLidtDescription = defineStore("fassetlistdecription", {
 
         if (notification.isConfirmed) {
           const req = await axios.post(
-            `/api/depreciation-with-journal/`,
-            this.requres_data_post,
+            `/api/retroactive/`,
+            this.total_caculate,
             {
               headers: {
                 "Content-Type": "application/json",
@@ -109,6 +116,51 @@ export const useFassetLidtDescription = defineStore("fassetlistdecription", {
         this.isLoading = false;
       }
     },
+    // async postArreat() {
+    //   this.isLoading = true;
+    //   try {
+    //     const notification = await CallSwal({
+    //       icon: "warning",
+    //       title: "ຄຳເຕືອນ",
+    //       text: "ທ່ານຕ້ອງການຫັກຄ່າເສື່ອມຫຼາຍລາຍການທີ່ເລືອກນີ້ແທ້ບໍ",
+    //       confirmButtonText: "ຕົກລົງ",
+    //       cancelButtonText: "ຍົກເລີກ",
+    //     });
+
+    //     if (notification.isConfirmed) {
+    //       const req = await axios.post(
+    //         `/api/depreciation-with-journal/`,
+    //         this.requres_data_post,
+    //         {
+    //           headers: {
+    //             "Content-Type": "application/json",
+    //             Authorization: `Bearer ${localStorage.getItem("access")}`,
+    //           },
+    //         }
+    //       );
+
+    //       if (req.status === 200) {
+    //         CallSwal({
+    //           icon: "success",
+    //           title: "ສຳເລັດ",
+    //           text: "ທ່ານສຳເລັດການຫັກຄ່າເສື່ອມແລ້ວ",
+    //           timer: 1000,
+    //         });
+    //         this.getArrears();
+
+    //         this.getArrears();
+    //       }
+    //     }
+    //   } catch (error) {
+    //     CallSwal({
+    //       icon: "error",
+    //       title: "ລົ້ມເຫຼວ",
+    //       text: "ບໍ່ສາມາດຫັກຄ່າເສື່ອມໄດ້",
+    //     });
+    //   } finally {
+    //     this.isLoading = false;
+    //   }
+    // },
     async postConfirm() {
       this.isLoading = true;
       try {
