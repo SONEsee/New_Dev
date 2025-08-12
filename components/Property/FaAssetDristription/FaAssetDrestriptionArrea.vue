@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import dayjs from "dayjs";
 const mainStore = useFassetLidtDescription();
 
 const selectedItems = ref([]);
@@ -31,9 +32,13 @@ const formatNumber = (num: any) => {
 };
 
 const processBulkItems = async () => {
-  mainStore.requres_data_post.mapping_ids = selectedItems.value;
+  mainStore.total_caculate.mapping_ids = selectedItems.value;
 
-  console.log("Bulk process data:", mainStore.requres_data_post);
+  mainStore.total_caculate.target_date = dayjs()
+    .tz("Asia/Bangkok")
+    .format("YYYY-MM-DD");
+
+  console.log("Bulk process data:", mainStore.total_caculate);
 
   await mainStore.postArreat();
 
