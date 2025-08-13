@@ -1,8 +1,8 @@
 <template>
-  <v-container fluid class="pa-6">
-    <v-card class="mx-auto" max-width="1400" elevation="0" style="border: 1px solid #e0e0e0;">
+  <v-container fluid class="pa-2">
+    <v-card class="mx-auto" elevation="0" style="border: 1px solid #e0e0e0;">
       <!-- Header Section -->
-      <v-card-title class="px-6 py-4 d-flex align-center" style="background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%); color: white;">
+      <v-card-title class="px-4 py-3 d-flex align-center" style="background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%); color: white;">
         <v-icon start size="24">mdi-chart-box-outline</v-icon>
         <span class="text-h6 font-weight-medium text-styles">
           ລາຍງານໃບສົມທົບ - 
@@ -10,12 +10,12 @@
         </span>
       </v-card-title>
       
-      <v-card-text class="px-6 py-4">
+      <v-card-text class="px-4 py-3">
         <!-- Filter Form -->
-        <v-form @submit.prevent="fetchTrialBalance" class="mb-4">
-          <v-row no-gutters class="mb-4">
+        <v-form @submit.prevent="fetchTrialBalance" class="mb-3">
+          <v-row no-gutters class="mb-3">
             <!-- Currency Selection -->
-            <v-col cols="12" md="3" class="pe-md-2 mb-3 mb-md-0">
+            <v-col cols="12" md="3" class="pe-md-2 mb-2 mb-md-0">
               <v-select
                 v-model="filters.currency"
                 :items="currencyOptions"
@@ -32,14 +32,12 @@
                     <template #prepend>
                       <v-icon :icon="item.raw.icon" size="20" />
                     </template>
-                    <!-- <v-list-item-title>{{ item.raw.title }}</v-list-item-title>
-                    <v-list-item-subtitle>{{ item.raw.subtitle }}</v-list-item-subtitle> -->
                   </v-list-item>
                 </template>
               </v-select>
             </v-col>
             
-            <v-col cols="12" md="3" class="px-md-1 mb-3 mb-md-0">
+            <v-col cols="12" md="3" class="px-md-1 mb-2 mb-md-0">
               <v-text-field
                 v-model="filters.date_start"
                 label="ວັນທີເລີ່ມຕົ້ນ"
@@ -52,7 +50,7 @@
               />
             </v-col>
             
-            <v-col cols="12" md="3" class="px-md-1 mb-3 mb-md-0">
+            <v-col cols="12" md="3" class="px-md-1 mb-2 mb-md-0">
               <v-text-field
                 v-model="filters.date_end"
                 label="ວັນທີສິ້ນສຸດ"
@@ -65,284 +63,281 @@
               />
             </v-col>
 
-            <!-- Updated Button Section with Bulk Insert Button -->
-              <v-col cols="12" md="3" class="ps-md-2 d-flex gap-1">
-                <!-- Search Button -->
-                <v-btn
-                  type="submit"
-                  color="primary"
-                  prepend-icon="mdi-magnify"
-                  :loading="loading"
-                  class="flex-grow-1"
-                  density="compact"
-                  style="height: 40px;"
-                >
-                  ຄົ້ນຫາ
-                </v-btn>
+            <!-- Updated Button Section -->
+            <v-col cols="12" md="3" class="ps-md-2 d-flex gap-1">
+              <!-- Search Button -->
+              <v-btn
+                type="submit"
+                color="primary"
+                prepend-icon="mdi-magnify"
+                :loading="loading"
+                class="flex-grow-1"
+                density="compact"
+                style="height: 40px;"
+              >
+                ຄົ້ນຫາ
+              </v-btn>
 
-                <!-- Excel Export Button -->
-                <v-btn
-                  color="success"
-                  prepend-icon="mdi-microsoft-excel"
-                  :disabled="!results.length || loading"
-                  @click="exportToExcel"
-                  density="compact"
-                  style="height: 40px;"
-                >
-                  Excel
-                </v-btn>
+              <!-- Excel Export Button -->
+              <v-btn
+                color="success"
+                prepend-icon="mdi-microsoft-excel"
+                :disabled="!results.length || loading"
+                @click="exportToExcel"
+                density="compact"
+                style="height: 40px;"
+              >
+                Excel
+              </v-btn>
 
-                <!-- NEW: Bulk Insert Button -->
-                <v-btn
-                  color="warning"
-                  prepend-icon="mdi-database-import"
-                  :loading="bulkInsertLoading"
-                  :disabled="loading || !filters.date_start || !filters.date_end"
-                  @click="showBulkInsertDialog = true"
-                  density="compact"
-                  style="height: 40px;"
-                  class="text-white"
-                >
-                  <span class="d-none d-sm-inline">Bulk</span>
-                  <v-icon class="d-sm-none">mdi-database-import</v-icon>
-                </v-btn>
-              </v-col>
+              <!-- Bulk Insert Button -->
+              <v-btn
+                color="warning"
+                prepend-icon="mdi-database-import"
+                :loading="bulkInsertLoading"
+                :disabled="loading || !filters.date_start || !filters.date_end"
+                @click="showBulkInsertDialog = true"
+                density="compact"
+                style="height: 40px;"
+                class="text-white"
+              >
+                <span class="d-none d-sm-inline">Bulk</span>
+                <v-icon class="d-sm-none">mdi-database-import</v-icon>
+              </v-btn>
+            </v-col>
           </v-row>
         </v-form>
 
-<!-- Dialog Insert Dairy Report  -->
-
-<!-- ADD THIS DIALOG AFTER YOUR MAIN v-card ENDS -->
-<!-- Bulk Insert Confirmation Dialog -->
-<v-dialog v-model="showBulkInsertDialog" max-width="600" persistent>
-  <v-card elevation="8">
-    <!-- Dialog Header -->
-    <v-card-title class="d-flex align-center pa-4" style="background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); color: white;">
-      <v-icon start size="24">mdi-database-import</v-icon>
-      <span class="text-h6">ການນຳເຂົ້າຂໍ້ມູນທັງໝົດ (Bulk Insert)</span>
-    </v-card-title>
-    
-    <v-card-text class="pa-4">
-      <!-- Warning Alert -->
-      <v-alert type="warning" variant="tonal" class="mb-4" border="start">
-        <template #prepend>
-          <v-icon>mdi-alert-circle</v-icon>
-        </template>
-        <v-alert-title class="text-h6 mb-2">⚠️ ການເຮັດວຽກທີ່ສຳຄັນ</v-alert-title>
-        <div class="text-body-2">
-          <strong>ການດຳເນີນງານນີ້ຈະ:</strong><br>
-          • ລຶບຂໍ້ມູນເກົ່າທັງໝົດໃນ Dairy_Report<br>
-          • ນຳເຂົ້າຂໍ້ມູນໃໝ່ຈາກ 2 stored procedures<br>
-          • <span class="text-red font-weight-bold">ບໍ່ສາມາດຍົກເລີກການດຳເນີນງານໄດ້</span>
-        </div>
-      </v-alert>
-      
-      <v-divider class="my-4" />
-      
-      <!-- Operation Details -->
-      <div class="text-body-1 font-weight-medium mb-3">
-        📋 ລາຍລະອຽດການດຳເນີນງານ:
-      </div>
-      
-      <v-card variant="outlined" class="mb-4">
-        <v-list density="compact" class="pa-0">
-          <v-list-item>
-            <template #prepend>
-              <v-icon color="primary">mdi-calendar-range</v-icon>
-            </template>
-            <v-list-item-title class="font-weight-medium">ໄລຍະວັນທີ</v-list-item-title>
-            <v-list-item-subtitle class="text-primary">
-              {{ filters.date_start }} ຫາ {{ filters.date_end }}
-            </v-list-item-subtitle>
-          </v-list-item>
-          
-          <v-divider />
-          
-          <v-list-item>
-            <template #prepend>
-              <v-icon color="info">mdi-currency-usd</v-icon>
-            </template>
-            <v-list-item-title class="font-weight-medium">FCY Procedure</v-list-item-title>
-            <v-list-item-subtitle class="font-mono">
-              Somtop_Trail_Balance_All_Currency_fcy
-            </v-list-item-subtitle>
-          </v-list-item>
-          
-          <v-divider />
-          
-          <v-list-item>
-            <template #prepend>
-              <v-icon color="success">mdi-currency-kzt</v-icon>
-            </template>
-            <v-list-item-title class="font-weight-medium">LCY Procedure</v-list-item-title>
-            <v-list-item-subtitle class="font-mono">
-              Somtop_Trail_Balance_All_Currency_Consolidated_lcy
-            </v-list-item-subtitle>
-          </v-list-item>
-        </v-list>
-      </v-card>
-      
-      <!-- Optional Settings -->
-      <v-expansion-panels variant="accordion" class="mt-4">
-        <v-expansion-panel>
-          <v-expansion-panel-title>
-            <template #default>
-              <div class="d-flex align-center">
-                <v-icon start>mdi-cog</v-icon>
-                <span>ການຕັ້ງຄ່າເພີ່ມເຕີມ (Optional Settings)</span>
+        <!-- Bulk Insert Confirmation Dialog -->
+        <v-dialog v-model="showBulkInsertDialog" max-width="600" persistent>
+          <v-card elevation="8">
+            <!-- Dialog Header -->
+            <v-card-title class="d-flex align-center pa-4" style="background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); color: white;">
+              <v-icon start size="24">mdi-database-import</v-icon>
+              <span class="text-h6">ການນຳເຂົ້າຂໍ້ມູນທັງໝົດ (Bulk Insert)</span>
+            </v-card-title>
+            
+            <v-card-text class="pa-4">
+              <!-- Warning Alert -->
+              <v-alert type="warning" variant="tonal" class="mb-4" border="start">
+                <template #prepend>
+                  <v-icon>mdi-alert-circle</v-icon>
+                </template>
+                <v-alert-title class="text-h6 mb-2">⚠️ ການເຮັດວຽກທີ່ສຳຄັນ</v-alert-title>
+                <div class="text-body-2">
+                  <strong>ການດຳເນີນງານນີ້ຈະ:</strong><br>
+                  • ລຶບຂໍ້ມູນເກົ່າທັງໝົດໃນ Dairy_Report<br>
+                  • ນຳເຂົ້າຂໍ້ມູນໃໝ່ຈາກ 2 stored procedures<br>
+                  • <span class="text-red font-weight-bold">ບໍ່ສາມາດຍົກເລີກການດຳເນີນງານໄດ້</span>
+                </div>
+              </v-alert>
+              
+              <v-divider class="my-4" />
+              
+              <!-- Operation Details -->
+              <div class="text-body-1 font-weight-medium mb-3">
+                📋 ລາຍລະອຽດການດຳເນີນງານ:
               </div>
-            </template>
-          </v-expansion-panel-title>
-          <v-expansion-panel-text class="pt-4">
-            <v-row>
-              <v-col cols="12" md="6">
-                <v-text-field
-                  v-model="bulkInsertOptions.fin_year"
-                  label="ປີງົບປະມານ"
-                  density="compact"
-                  variant="outlined"
-                  placeholder="2025"
-                  prepend-inner-icon="mdi-calendar"
-                />
-              </v-col>
-              <v-col cols="12" md="6">
-                <v-text-field
-                  v-model="bulkInsertOptions.period_code"
-                  label="ລະຫັດໄລຍະ"
-                  density="compact"
-                  variant="outlined"
-                  placeholder="Optional"
-                  prepend-inner-icon="mdi-timeline"
-                />
-              </v-col>
-              <v-col cols="12">
-                <v-text-field
-                  v-model="bulkInsertOptions.category"
-                  label="ໝວດໝູ່"
-                  density="compact"
-                  variant="outlined"
-                  placeholder="TRIAL_BALANCE"
-                  prepend-inner-icon="mdi-tag"
-                />
-              </v-col>
-            </v-row>
-          </v-expansion-panel-text>
-        </v-expansion-panel>
-      </v-expansion-panels>
-    </v-card-text>
-    
-    <!-- UPdater Dialog -->
-    <!-- Dialog Actions -->
-    <v-card-actions class="pa-4 bg-grey-lighten-5">
-      <v-spacer />
-      <v-btn 
-        color="grey-darken-1"
-        variant="outlined"
-        @click="showBulkInsertDialog = false"
-        :disabled="bulkInsertLoading"
-        prepend-icon="mdi-close"
-      >
-        ຍົກເລີກ
-      </v-btn>
-      <v-btn 
-        color="warning"
-        variant="elevated"
-        prepend-icon="mdi-database-import"
-        :loading="bulkInsertLoading"
-        @click="executeBulkInsert"
-        class="text-white ml-2"
-      >
-        <span v-if="!bulkInsertLoading">ດຳເນີນການ</span>
-        <span v-else>ກຳລັງປະມວນຜົນ...</span>
-      </v-btn>
-    </v-card-actions>
-  </v-card>
-</v-dialog>
-
-
-        <v-divider class="mb-4" thickness="1" color="grey-lighten-3" />
-
-        <!-- Data Table -->
-        <v-data-table
-          :headers="dynamicHeaders"
-          :items="results"
-          :items-per-page="20"
-          :loading="loading"
-          class="elevation-0 professional-table"
-          density="compact"
-          hover
-          show-current-page
-          :search="searchText"
-        >
-          <!-- Loading State -->
-          <template #loading>
-            <v-skeleton-loader type="table-row@10" />
-          </template>
-          
-          <!-- Table Top Actions -->
-          <template #top>
-            <div class="d-flex justify-space-between align-center pa-4 bg-grey-lighten-5">
-              <div class="text-h6 font-weight-medium">
-                ຜົນການຄົ້ນຫາ: {{ results.length }} ລາຍການ
-                <v-chip size="small" :color="chipColor" variant="tonal" class="ml-2">
-                  {{ chipText }}
-                </v-chip>
-              </div>
-              <v-text-field
-                v-model="searchText"
-                label="ຄົ້ນຫາໃນຕາຕະລາງ"
-                prepend-inner-icon="mdi-magnify"
+              
+              <v-card variant="outlined" class="mb-4">
+                <v-list density="compact" class="pa-0">
+                  <v-list-item>
+                    <template #prepend>
+                      <v-icon color="primary">mdi-calendar-range</v-icon>
+                    </template>
+                    <v-list-item-title class="font-weight-medium">ໄລຍະວັນທີ</v-list-item-title>
+                    <v-list-item-subtitle class="text-primary">
+                      {{ filters.date_start }} ຫາ {{ filters.date_end }}
+                    </v-list-item-subtitle>
+                  </v-list-item>
+                  
+                  <v-divider />
+                  
+                  <v-list-item>
+                    <template #prepend>
+                      <v-icon color="info">mdi-currency-usd</v-icon>
+                    </template>
+                    <v-list-item-title class="font-weight-medium">FCY Procedure</v-list-item-title>
+                    <v-list-item-subtitle class="font-mono">
+                      Somtop_Trail_Balance_All_Currency_fcy_After_EOC
+                    </v-list-item-subtitle>
+                  </v-list-item>
+                  
+                  <v-divider />
+                  
+                  <v-list-item>
+                    <template #prepend>
+                      <v-icon color="success">mdi-currency-kzt</v-icon>
+                    </template>
+                    <v-list-item-title class="font-weight-medium">LCY Procedure</v-list-item-title>
+                    <v-list-item-subtitle class="font-mono">
+                      Somtop_Trail_Balance_All_Currency_Consolidated_lcy_After_EOC
+                    </v-list-item-subtitle>
+                  </v-list-item>
+                </v-list>
+              </v-card>
+              
+              <!-- Optional Settings -->
+              <v-expansion-panels variant="accordion" class="mt-4">
+                <v-expansion-panel>
+                  <v-expansion-panel-title>
+                    <template #default>
+                      <div class="d-flex align-center">
+                        <v-icon start>mdi-cog</v-icon>
+                        <span>ການຕັ້ງຄ່າເພີ່ມເຕີມ (Optional Settings)</span>
+                      </div>
+                    </template>
+                  </v-expansion-panel-title>
+                  <v-expansion-panel-text class="pt-4">
+                    <v-row>
+                      <v-col cols="12" md="6">
+                        <v-text-field
+                          v-model="bulkInsertOptions.fin_year"
+                          label="ປີງົບປະມານ"
+                          density="compact"
+                          variant="outlined"
+                          placeholder="2025"
+                          prepend-inner-icon="mdi-calendar"
+                        />
+                      </v-col>
+                      <v-col cols="12" md="6">
+                        <v-text-field
+                          v-model="bulkInsertOptions.period_code"
+                          label="ລະຫັດໄລຍະ"
+                          density="compact"
+                          variant="outlined"
+                          placeholder="Optional"
+                          prepend-inner-icon="mdi-timeline"
+                        />
+                      </v-col>
+                      <v-col cols="12">
+                        <v-text-field
+                          v-model="bulkInsertOptions.category"
+                          label="ໝວດໝູ່"
+                          density="compact"
+                          variant="outlined"
+                          placeholder="TRIAL_BALANCE"
+                          prepend-inner-icon="mdi-tag"
+                        />
+                      </v-col>
+                    </v-row>
+                  </v-expansion-panel-text>
+                </v-expansion-panel>
+              </v-expansion-panels>
+            </v-card-text>
+            
+            <!-- Dialog Actions -->
+            <v-card-actions class="pa-4 bg-grey-lighten-5">
+              <v-spacer />
+              <v-btn 
+                color="grey-darken-1"
                 variant="outlined"
-                density="compact"
-                style="max-width: 300px;"
-                hide-details
-                clearable
-              />
-            </div>
-          </template>
-          
-          <!-- Custom Row Template -->
-          <template #item="{ item, index }">
-            <tr class="table-row">
-              <td class="font-weight-medium text-primary">{{ item.GL_Code }}</td>
-              <td class="text-truncate" :title="item.Description">
-                {{ item.Description }}
-              </td>
-              <!-- Amount columns - dynamic based on currency -->
-              <td class="text-end font-mono">
-                <span class="amount-cell">{{ formatCurrency(item.Opening_Dr) }}</span>
-              </td>
-              <td class="text-end font-mono">
-                <span class="amount-cell">{{ formatCurrency(item.Opening_Cr) }}</span>
-              </td>
-              <td class="text-end font-mono">
-                <span class="amount-cell">{{ formatCurrency(item.Flow_Dr) }}</span>
-              </td>
-              <td class="text-end font-mono">
-                <span class="amount-cell">{{ formatCurrency(item.Flow_Cr) }}</span>
-              </td>
-              <td class="text-end font-mono">
-                <span class="amount-cell text-success font-weight-medium">
-                  {{ formatCurrency(item.Closing_Dr) }}
-                </span>
-              </td>
-              <td class="text-end font-mono">
-                <span class="amount-cell text-error font-weight-medium">
-                  {{ formatCurrency(item.Closing_Cr) }}
-                </span>
-              </td>
-            </tr>
-          </template>
+                @click="showBulkInsertDialog = false"
+                :disabled="bulkInsertLoading"
+                prepend-icon="mdi-close"
+              >
+                ຍົກເລີກ
+              </v-btn>
+              <v-btn 
+                color="warning"
+                variant="elevated"
+                prepend-icon="mdi-database-import"
+                :loading="bulkInsertLoading"
+                @click="executeBulkInsert"
+                class="text-white ml-2"
+              >
+                <span v-if="!bulkInsertLoading">ດຳເນີນການ</span>
+                <span v-else>ກຳລັງປະມວນຜົນ...</span>
+              </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
 
-          <!-- Empty State -->
-          <template #no-data>
-            <div class="text-center pa-8">
-              <v-icon size="64" color="grey-lighten-2" class="mb-4">mdi-table-off</v-icon>
-              <div class="text-h6 text-grey-darken-1 mb-2">ບໍ່ມີຂໍ້ມູນ</div>
-              <div class="text-body-2 text-grey">ກະລຸນາປັບປຸງເງື່ອນໄຂການຄົ້ນຫາແລ້ວລອງໃໝ່</div>
-            </div>
-          </template>
-        </v-data-table>
+        <v-divider class="mb-3" thickness="1" color="grey-lighten-3" />
+
+        <!-- Table Header with Search -->
+        <div class="d-flex justify-space-between align-center mb-3 pa-3 bg-grey-lighten-5 rounded">
+          <div class="text-h6 font-weight-medium">
+            ຜົນການຄົ້ນຫາ: {{ results.length }} ລາຍການ
+            <v-chip size="small" :color="chipColor" variant="tonal" class="ml-2">
+              {{ chipText }}
+            </v-chip>
+          </div>
+          <v-text-field
+            v-model="searchText"
+            label="ຄົ້ນຫາໃນຕາຕະລາງ"
+            prepend-inner-icon="mdi-magnify"
+            variant="outlined"
+            density="compact"
+            style="max-width: 300px;"
+            hide-details
+            clearable
+          />
+        </div>
+
+        <!-- Full Width Data Table -->
+        <div class="table-container">
+          <v-data-table
+            :headers="dynamicHeaders"
+            :items="results"
+            :items-per-page="25"
+            :loading="loading"
+            class="elevation-1 full-width-table"
+            density="compact"
+            hover
+            show-current-page
+            :search="searchText"
+            fixed-header
+            height="70vh"
+          >
+            <!-- Loading State -->
+            <template #loading>
+              <v-skeleton-loader type="table-row@10" />
+            </template>
+            
+            <!-- Custom Row Template -->
+            <template #item="{ item, index }">
+              <tr class="table-row">
+                <td class="font-weight-medium text-primary sticky-col">{{ item.GL_Code }}</td>
+                <td class="text-truncate description-col" :title="item.Description">
+                  {{ item.Description }}
+                </td>
+                <!-- Amount columns - dynamic based on currency -->
+                <td class="text-end font-mono">
+                  <span class="amount-cell">{{ formatCurrency(item.Opening_Dr) }}</span>
+                </td>
+                <td class="text-end font-mono">
+                  <span class="amount-cell">{{ formatCurrency(item.Opening_Cr) }}</span>
+                </td>
+                <td class="text-end font-mono">
+                  <span class="amount-cell">{{ formatCurrency(item.Flow_Dr) }}</span>
+                </td>
+                <td class="text-end font-mono">
+                  <span class="amount-cell">{{ formatCurrency(item.Flow_Cr) }}</span>
+                </td>
+                <td class="text-end font-mono">
+                  <span class="amount-cell text-success font-weight-medium">
+                    {{ formatCurrency(item.Closing_Dr) }}
+                  </span>
+                </td>
+                <td class="text-end font-mono">
+                  <span class="amount-cell text-error font-weight-medium">
+                    {{ formatCurrency(item.Closing_Cr) }}
+                  </span>
+                </td>
+              </tr>
+            </template>
+
+            <!-- Empty State -->
+            <template #no-data>
+              <div class="text-center pa-8">
+                <v-icon size="64" color="grey-lighten-2" class="mb-4">mdi-table-off</v-icon>
+                <div class="text-h6 text-grey-darken-1 mb-2">ບໍ່ມີຂໍ້ມູນ</div>
+                <div class="text-body-2 text-grey">ກະລຸນາປັບປຸງເງື່ອນໄຂການຄົ້ນຫາແລ້ວລອງໃໝ່</div>
+              </div>
+            </template>
+          </v-data-table>
+        </div>
       </v-card-text>
     </v-card>
 
@@ -483,7 +478,7 @@ const chipText = computed(() => {
   return `${selectedCurrency.value} (FCY)`
 })
 
-// Dynamic headers based on currency selection
+// Dynamic headers based on currency selection - Updated for full width
 const dynamicHeaders = computed(() => {
   const currencyCode = selectedCurrency.value || 'LAK'
   
@@ -491,54 +486,54 @@ const dynamicHeaders = computed(() => {
     { 
       title: 'ເລກບັນຊີ', 
       key: 'GL_Code', 
-      width: '120px',
-      sortable: true
+      width: '100px',
+      sortable: true,
+      fixed: true
     },
     { 
       title: 'ລາຍລະອຽດ', 
       key: 'Description', 
-      width: '300px',
       sortable: true
     },
     { 
       title: `Opening Dr (${currencyCode})`, 
       key: 'Opening_Dr', 
-      width: '140px', 
+      width: '160px', 
       align: 'end', 
       sortable: true 
     },
     { 
       title: `Opening Cr (${currencyCode})`, 
       key: 'Opening_Cr', 
-      width: '140px', 
+      width: '160px', 
       align: 'end', 
       sortable: true 
     },
     { 
       title: `Flow Dr (${currencyCode})`, 
       key: 'Flow_Dr', 
-      width: '140px', 
+      width: '160px', 
       align: 'end', 
       sortable: true 
     },
     { 
       title: `Flow Cr (${currencyCode})`, 
       key: 'Flow_Cr', 
-      width: '140px', 
+      width: '160px', 
       align: 'end', 
       sortable: true 
     },
     { 
       title: `Closing Dr (${currencyCode})`, 
       key: 'Closing_Dr', 
-      width: '140px', 
+      width: '160px', 
       align: 'end', 
       sortable: true 
     },
     { 
       title: `Closing Cr (${currencyCode})`, 
       key: 'Closing_Cr', 
-      width: '140px', 
+      width: '160px', 
       align: 'end', 
       sortable: true 
     }
@@ -577,7 +572,8 @@ const apiService = {
   },
   async bulkInsertDairyReports(payload) {
     try {
-      const endpoint = '/api/dairy-reports/bulk-insert/'
+      // const endpoint = '/api/dairy-reports/bulk-insert/'
+      const endpoint = '/api/somtop_trail_balance-report/bulk-insert/'
       
       console.log(`🔄 Bulk Insert to: ${endpoint}`, payload)
       
@@ -655,7 +651,7 @@ const normalizeTrialBalanceData = (apiResponse: ApiResponse, isConsolidated: boo
   })
 }
 
-// ADD THIS BULK INSERT FUNCTION
+// Bulk Insert Function
 const executeBulkInsert = async () => {
   try {
     bulkInsertLoading.value = true
@@ -964,10 +960,42 @@ onMounted(async () => {
   font-size: 0.875rem;
 }
 
-.professional-table {
+/* Full Width Table Styles */
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.full-width-table {
+  width: 100% !important;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
   overflow: hidden;
+}
+
+.full-width-table :deep(.v-table__wrapper) {
+  width: 100% !important;
+}
+
+.full-width-table :deep(.v-data-table) {
+  width: 100% !important;
+}
+
+/* Sticky first column for horizontal scrolling */
+.sticky-col {
+  position: sticky;
+  left: 0;
+  background-color: white;
+  z-index: 1;
+  border-right: 1px solid #e0e0e0;
+}
+
+.description-col {
+  min-width: 250px;
+  max-width: 300px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .table-row {
@@ -980,6 +1008,10 @@ onMounted(async () => {
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
+.table-row:hover .sticky-col {
+  background-color: #f8f9fa !important;
+}
+
 .amount-cell {
   padding: 4px 8px;
   border-radius: 4px;
@@ -987,37 +1019,89 @@ onMounted(async () => {
   border: 1px solid rgba(0,0,0,0.05);
   font-size: 0.85rem;
   font-weight: 500;
+  min-width: 80px;
+  display: inline-block;
 }
 
-.professional-table :deep(.v-data-table__td) {
+.full-width-table :deep(.v-data-table__td) {
   padding: 8px 12px !important;
   border-bottom: 1px solid #f0f0f0;
   font-size: 0.875rem;
+  white-space: nowrap;
 }
 
-.professional-table :deep(.v-data-table-header__content) {
+.full-width-table :deep(.v-data-table-header__content) {
   font-weight: 600;
   color: #37474f;
   font-size: 0.85rem;
 }
 
-.professional-table :deep(.v-data-table__thead > tr > th) {
+.full-width-table :deep(.v-data-table__thead > tr > th) {
   background-color: #fafafa;
   border-bottom: 2px solid #e0e0e0;
   padding: 12px !important;
+  white-space: nowrap;
+}
+
+/* Fixed header styling */
+.full-width-table :deep(.v-data-table--fixed-header > .v-table__wrapper > table > thead > tr > th) {
+  background-color: #fafafa !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Responsive design */
+@media (max-width: 1200px) {
+  .amount-cell {
+    font-size: 0.75rem;
+    padding: 2px 6px;
+    min-width: 70px;
+  }
+  
+  .full-width-table :deep(.v-data-table__td) {
+    padding: 6px 8px !important;
+    font-size: 0.8rem;
+  }
 }
 
 @media (max-width: 960px) {
-  .font-mono { font-size: 0.75rem; }
-  .amount-cell { padding: 2px 4px; font-size: 0.75rem; }
-  .professional-table :deep(.v-data-table__td) { padding: 6px 8px !important; }
+  .font-mono { 
+    font-size: 0.75rem; 
+  }
+  
+  .amount-cell { 
+    padding: 2px 4px; 
+    font-size: 0.7rem;
+    min-width: 60px;
+  }
+  
+  .full-width-table :deep(.v-data-table__td) { 
+    padding: 4px 6px !important; 
+    font-size: 0.75rem;
+  }
+  
+  .description-col {
+    min-width: 200px;
+    max-width: 250px;
+  }
 }
 
-.font-mono {
-  font-family: 'Roboto Mono', 'Consolas', monospace;
-  font-size: 0.8rem;
+@media (max-width: 600px) {
+  .table-container {
+    overflow-x: scroll;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .full-width-table {
+    min-width: 800px;
+  }
+  
+  .description-col {
+    min-width: 150px;
+    max-width: 200px;
+  }
 }
 
+/* Dialog responsive styling */
 .v-expansion-panel-text :deep(.v-expansion-panel-text__wrapper) {
   padding-top: 0;
 }
