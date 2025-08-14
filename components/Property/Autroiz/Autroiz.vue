@@ -470,7 +470,7 @@ const clearAllFilters = () => {
 };
 
 const viewDetails = (item) => {
-  const detailUrl = `/glcapture/detail?Reference_No=${item.Reference_No}&sub_menu_id=${submenu_id}`;
+  const detailUrl = `/test1?Reference_No=${item.Reference_No}&sub_menu_id=${submenu_id}`;
   router.push(detailUrl);
 };
 
@@ -1348,7 +1348,7 @@ onMounted(async () => {
       <v-card elevation="1" class="data-table-card-thin">
         <v-card-title class="d-flex justify-space-between align-center pa-3">
           <span class="text-h6">
-            ລາຍການບັນທຶກບັນຊີ
+            ລາຍການບັນທຶກບັນຊີຊັບສິນ
             <v-chip
               size="small"
               color="primary"
