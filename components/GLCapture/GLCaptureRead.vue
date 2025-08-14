@@ -466,7 +466,7 @@ const navigateToCreate = () => {
   router.push(createUrl)
 }
 
-// NEW: Load summary data (without Auth_Status filter)
+// ALSO FIX: loadSummaryData method
 const loadSummaryData = async () => {
   try {
     console.log('Loading summary data...')
@@ -482,7 +482,7 @@ const loadSummaryData = async () => {
     if (filters.Ccy_cd) params.Ccy_cd = filters.Ccy_cd
     if (filters.date) params.Value_date = filters.date
 
-    // Exclude soft deleted
+    // Exclude soft deleted (backend already excludes ARD)
     params.delete_stat__ne = 'D'
 
     console.log('Loading summary with params:', params)
@@ -492,14 +492,18 @@ const loadSummaryData = async () => {
       ...getAuthHeaders()
     })
 
+    // FIXED: Properly define allItems first
     const allItems = response.data.results || response.data || []
     
-    // Update summary with all records
-    summary.total = allItems.length
-    summary.pending = allItems.filter(i => i.Auth_Status === 'U').length
-    summary.approved = allItems.filter(i => i.Auth_Status === 'A').length
-    summary.rejected = allItems.filter(i => i.Auth_Status === 'R').length
-    summary.correction = allItems.filter(i => i.Auth_Status === 'P').length
+    // Client-side safety: filter out any ARD records that might slip through
+    const filteredItems = allItems.filter(item => item.Txn_code !== 'ARD')
+    
+    // Update summary with filtered records
+    summary.total = filteredItems.length
+    summary.pending = filteredItems.filter(i => i.Auth_Status === 'U').length
+    summary.approved = filteredItems.filter(i => i.Auth_Status === 'A').length
+    summary.rejected = filteredItems.filter(i => i.Auth_Status === 'R').length
+    summary.correction = filteredItems.filter(i => i.Auth_Status === 'P').length
 
     console.log('Summary updated:', {
       total: summary.total,
@@ -651,8 +655,7 @@ const getModuleName = (moduleId) => {
   const module = modules.value.find(m => m.module_Id === moduleId)
   return module ? module.module_name_la : moduleId
 }
-
-// MODIFIED: Load filtered data for table
+// FIXED: Load filtered data for table (ARD already excluded by backend)
 const loadData = async () => {
   try {
     loading.value = true
@@ -669,12 +672,12 @@ const loadData = async () => {
     if (filters.search) params.search = filters.search
     if (filters.module_id) params.module_id = filters.module_id
     if (filters.Ccy_cd) params.Ccy_cd = filters.Ccy_cd
-    if (filters.Auth_Status) params.Auth_Status = filters.Auth_Status // This is the key difference
+    if (filters.Auth_Status) params.Auth_Status = filters.Auth_Status
     if (filters.date) params.Value_date = filters.date
 
-    // Exclude soft deleted
+    // Exclude soft deleted (backend already handles ARD exclusion)
     params.delete_stat__ne = 'D'
-    params.ordering = '-Auth_Status'
+    params.ordering = '-Maker_DT_Stamp'
 
     console.log('Loading table data with params:', params)
     console.log('User permissions:', {
@@ -691,9 +694,13 @@ const loadData = async () => {
       ...getAuthHeaders()
     })
 
-    items.value = response.data.results || response.data || []
+    // FIXED: Properly define rawItems first
+    const rawItems = response.data.results || response.data || []
+    
+    // Client-side safety: filter out any ARD records that might slip through
+    items.value = rawItems.filter(item => item.Txn_code !== 'ARD')
 
-    console.log(`Loaded ${items.value.length} filtered items for table`)
+    console.log(`Loaded ${items.value.length} filtered items for table (ARD excluded)`)
     console.log(`Auth_Status filter: ${filters.Auth_Status || 'none'}`)
 
   } catch (error) {
@@ -774,7 +781,15 @@ const deleteItem = async (item) => {
     })
     return
   }
-
+  if (item.Txn_code === 'ARD') {
+  Swal.fire({
+    icon: 'warning',
+    title: 'ບໍ່ສາມາດລຶບໄດ້',
+    text: 'ບໍ່ສາມາດລຶບລາຍການປະເພດ ARD ໄດ້',
+    confirmButtonText: 'ຕົກລົງ'
+  })
+  return
+}
   const result = await Swal.fire({
     icon: 'warning',
     title: 'ຢືນຢັນການລຶບ',
