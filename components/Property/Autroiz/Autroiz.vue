@@ -242,7 +242,7 @@ const toggleSelectAll = () => {
   }
 };
 
-// ອັບເດດສະຖານະເລືອກທັງໝົດ
+
 const updateSelectAllState = () => {
   const selectableAldmIds = selectableItems.value
     .map(item => getMatchedAldmId(item))
@@ -257,7 +257,7 @@ const updateSelectAllState = () => {
   }
 };
 
-// ລ້າງການເລືອກ
+
 const clearSelection = () => {
   selectedItems.value = [];
   selectAll.value = false;
@@ -470,7 +470,7 @@ const clearAllFilters = () => {
 };
 
 const viewDetails = (item) => {
-  const detailUrl = `/test1?Reference_No=${item.Reference_No}&sub_menu_id=${submenu_id}`;
+  const detailUrl = `/property/autoriz/oneaddprove?Reference_No=${item.Reference_No}&sub_menu_id=${submenu_id}`;
   router.push(detailUrl);
 };
 
