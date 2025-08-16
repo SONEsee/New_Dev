@@ -80,90 +80,133 @@
 
         <v-divider class="mb-4" thickness="1" color="grey-lighten-3" />
 
-        <!-- Data Table -->
-        <v-data-table
-          :headers="headers"
-          :items="filteredData"
-          :items-per-page="25"
-          :loading="loading"
-          class="elevation-0 professional-table"
-          density="compact"
-          hover
-          show-current-page
-          fixed-header
-          height="600"
-        >
-          <!-- Loading State -->
-          <template #loading>
-            <v-skeleton-loader type="table-row@10" />
-          </template>
-          
-          <!-- Table Top Actions -->
-          <template #top>
-            <div class="d-flex justify-space-between align-center pa-4 bg-grey-lighten-5">
-              <div class="text-h6 font-weight-medium text-styles">
-                ຜົນການຄົ້ນຫາ: {{ filteredData.length }} ລາຍການ
-                <v-chip size="small" :color="chipColor" variant="tonal" class="ml-2">
-                  {{ chipText }}
-                </v-chip>
-              </div>
-              <div class="text-caption text-grey-darken-1">
-                API: {{ selectedCurrency === 'all' ? 'all-currencies' : 'by-currency' }}
-              </div>
+        <!-- Data Table with Grouped Headers -->
+        <div class="table-container">
+          <!-- Top Actions Bar -->
+          <div class="d-flex justify-space-between align-center pa-4 bg-grey-lighten-5 table-top-bar">
+            <div class="text-h6 font-weight-medium text-styles">
+              ຜົນການຄົ້ນຫາ: {{ filteredData.length }} ລາຍການ
+              <v-chip size="small" :color="chipColor" variant="tonal" class="ml-2">
+                {{ chipText }}
+              </v-chip>
             </div>
-          </template>
-          
-          <!-- Custom Row Template -->
-          <template #item="{ item }">
-            <tr class="table-row">
-              <td class="font-weight-medium text-primary">{{ item.gl_code }}</td>
-              <td class="description-cell" :title="item.Desc">
-                {{ item.Desc }}
-              </td>
-              <td class="text-end font-mono">
-                <span class="amount-cell">{{ formatCurrency(item.OP_DR) }}</span>
-              </td>
-              <td class="text-end font-mono">
-                <span class="amount-cell">{{ formatCurrency(item.OP_CR) }}</span>
-              </td>
-              <td class="text-end font-mono">
-                <span class="amount-cell">{{ formatCurrency(item.Mo_DR) }}</span>
-              </td>
-              <td class="text-end font-mono">
-                <span class="amount-cell">{{ formatCurrency(item.Mo_Cr) }}</span>
-              </td>
-              <td class="text-end font-mono">
-                <span class="amount-cell text-success font-weight-medium">
-                  {{ formatCurrency(item.C1_DR) }}
-                </span>
-              </td>
-              <td class="text-end font-mono">
-                <span class="amount-cell text-error font-weight-medium">
-                  {{ formatCurrency(item.C1_CR) }}
-                </span>
-              </td>
-              <td class="text-center">
-                <v-chip size="small" :color="getCurrencyColor(item.CCy_Code_id)" variant="tonal">
-                  {{ item.CCy_Code_id }}
-                </v-chip>
-              </td>
-              <td class="text-center">
-                <v-chip size="small" color="info" variant="outlined">
-                  {{ item.Category }}
-                </v-chip>
-              </td>
-            </tr>
-          </template>
+            <div class="text-caption text-grey-darken-1">
+              API: {{ selectedCurrency === 'all' ? 'all-currencies' : 'by-currency' }}
+            </div>
+          </div>
 
-          <!-- Empty State -->
-          <template #no-data>
-            <div class="text-center pa-8">
-              <v-icon size="64" color="grey-lighten-2" class="mb-4">mdi-chart-line-variant</v-icon>
-              <div class="text-h6 text-grey-darken-1 mb-2">ບໍ່ມີຂໍ້ມູນ</div>
-              <div class="text-body-2 text-grey">ກະລຸນາກົດປຸ່ມດຶງຂໍ້ມູນເພື່ອໂຫຼດຂໍ້ມູນ</div>
-            </div>
-          </template>
-        </v-data-table>
+          <!-- Group Headers Row -->
+          <div class="group-headers-wrapper">
+            <table class="group-headers-table">
+              <thead>
+                <tr class="group-header-row">
+                  <th class="group-header-cell sticky-col text-left">
+                    <span class="text-subtitle-2 font-weight-bold">GL Code</span>
+                  </th>
+                  <th class="group-header-cell text-left">
+                    <span class="text-subtitle-2 font-weight-bold">ລາຍລະອຽດ</span>
+                  </th>
+                  <th class="group-header-cell text-center" colspan="2">
+                    <div class="header-content">
+                      <v-icon start size="16" color="success">mdi-arrow-up-circle</v-icon>
+                      <span class="text-subtitle-1 font-weight-bold text-success">ຍອດຍົກ</span>
+                    </div>
+                  </th>
+                  <th class="group-header-cell text-center" colspan="2">
+                    <div class="header-content">
+                      <v-icon start size="16" color="info">mdi-swap-horizontal-circle</v-icon>
+                      <span class="text-subtitle-1 font-weight-bold text-info">ຍອດເຄື່ອນ</span>
+                    </div>
+                  </th>
+                  <th class="group-header-cell text-center" colspan="2">
+                    <div class="header-content">
+                      <v-icon start size="16" color="warning">mdi-arrow-down-circle</v-icon>
+                      <span class="text-subtitle-1 font-weight-bold text-warning">ຍອດເຫຼືອ</span>
+                    </div>
+                  </th>
+                  <th class="group-header-cell text-center">
+                    <span class="text-subtitle-2 font-weight-bold">Currency</span>
+                  </th>
+                  <th class="group-header-cell text-center">
+                    <span class="text-subtitle-2 font-weight-bold">Category</span>
+                  </th>
+                </tr>
+              </thead>
+            </table>
+          </div>
+
+          <!-- Main Data Table -->
+          <v-data-table
+            :headers="customHeaders"
+            :items="filteredData"
+            :items-per-page="25"
+            :loading="loading"
+            class="elevation-0 professional-table"
+            density="compact"
+            hover
+            show-current-page
+            fixed-header
+            height="550"
+          >
+            <!-- Loading State -->
+            <template #loading>
+              <v-skeleton-loader type="table-row@10" />
+            </template>
+            
+            <!-- Custom Row Template -->
+            <template #item="{ item }">
+              <tr class="table-row">
+                <td class="font-weight-medium text-primary sticky-col">
+                  {{ item.gl_code }}
+                </td>
+                <td class="description-cell">
+                  <span :title="item.Desc">{{ item.Desc }}</span>
+                </td>
+                <td class="text-right font-mono amount-column">
+                  <span class="amount-cell">{{ formatCurrency(item.OP_DR) }}</span>
+                </td>
+                <td class="text-right font-mono amount-column">
+                  <span class="amount-cell">{{ formatCurrency(item.OP_CR) }}</span>
+                </td>
+                <td class="text-right font-mono amount-column">
+                  <span class="amount-cell">{{ formatCurrency(item.Mo_DR) }}</span>
+                </td>
+                <td class="text-right font-mono amount-column">
+                  <span class="amount-cell">{{ formatCurrency(item.Mo_Cr) }}</span>
+                </td>
+                <td class="text-right font-mono amount-column">
+                  <span class="amount-cell text-success font-weight-medium">
+                    {{ formatCurrency(item.C1_DR) }}
+                  </span>
+                </td>
+                <td class="text-right font-mono amount-column">
+                  <span class="amount-cell text-error font-weight-medium">
+                    {{ formatCurrency(item.C1_CR) }}
+                  </span>
+                </td>
+                <td class="text-center currency-column">
+                  <v-chip size="small" :color="getCurrencyColor(item.CCy_Code_id)" variant="tonal">
+                    {{ item.CCy_Code_id }}
+                  </v-chip>
+                </td>
+                <td class="text-center category-column">
+                  <v-chip size="small" color="info" variant="outlined">
+                    {{ item.Category }}
+                  </v-chip>
+                </td>
+              </tr>
+            </template>
+
+            <!-- Empty State -->
+            <template #no-data>
+              <div class="text-center pa-8">
+                <v-icon size="64" color="grey-lighten-2" class="mb-4">mdi-chart-line-variant</v-icon>
+                <div class="text-h6 text-grey-darken-1 mb-2">ບໍ່ມີຂໍ້ມູນ</div>
+                <div class="text-body-2 text-grey">ກະລຸນາກົດປຸ່ມດຶງຂໍ້ມູນເພື່ອໂຫຼດຂໍ້ມູນ</div>
+              </div>
+            </template>
+          </v-data-table>
+        </div>
       </v-card-text>
     </v-card>
 
@@ -192,7 +235,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, nextTick } from 'vue'
 import axios from '@/helpers/axios'
 import * as XLSX from 'xlsx'
 
@@ -309,18 +352,88 @@ const filteredData = computed(() => {
   )
 })
 
-// Table headers
-const headers = [
-  { title: 'GL Code', key: 'gl_code', width: '120px', sortable: true },
-  { title: 'ລາຍລະອຽດ', key: 'Desc', width: '250px', sortable: true },
-  { title: 'Opening Dr', key: 'OP_DR', width: '120px', align: 'end', sortable: true },
-  { title: 'Opening Cr', key: 'OP_CR', width: '120px', align: 'end', sortable: true },
-  { title: 'Movement Dr', key: 'Mo_DR', width: '120px', align: 'end', sortable: true },
-  { title: 'Movement Cr', key: 'Mo_Cr', width: '120px', align: 'end', sortable: true },
-  { title: 'Closing Dr', key: 'C1_DR', width: '120px', align: 'end', sortable: true },
-  { title: 'Closing Cr', key: 'C1_CR', width: '120px', align: 'end', sortable: true },
-  { title: 'Currency', key: 'CCy_Code_id', width: '100px', align: 'center', sortable: true },
-  { title: 'Category', key: 'Category', width: '100px', align: 'center', sortable: true }
+// Table headers for the grouped display
+const customHeaders = [
+  { 
+    title: '', 
+    key: 'gl_code', 
+    width: '120px', 
+    sortable: true, 
+    align: 'start',
+    class: 'sticky-col text-left'
+  },
+  { 
+    title: '', 
+    key: 'Desc', 
+    width: '250px', 
+    sortable: true, 
+    align: 'start',
+    class: 'description-col text-left'
+  },
+  { 
+    title: 'Dr', 
+    key: 'OP_DR', 
+    width: '120px', 
+    align: 'end', 
+    sortable: true, 
+    class: 'amount-col text-center'
+  },
+  { 
+    title: 'Cr', 
+    key: 'OP_CR', 
+    width: '120px', 
+    align: 'end', 
+    sortable: true, 
+    class: 'amount-col text-center'
+  },
+  { 
+    title: 'Dr', 
+    key: 'Mo_DR', 
+    width: '120px', 
+    align: 'end', 
+    sortable: true, 
+    class: 'amount-col text-center'
+  },
+  { 
+    title: 'Cr', 
+    key: 'Mo_Cr', 
+    width: '120px', 
+    align: 'end', 
+    sortable: true, 
+    class: 'amount-col text-center'
+  },
+  { 
+    title: 'Dr', 
+    key: 'C1_DR', 
+    width: '120px', 
+    align: 'end', 
+    sortable: true, 
+    class: 'amount-col text-center'
+  },
+  { 
+    title: 'Cr', 
+    key: 'C1_CR', 
+    width: '120px', 
+    align: 'end', 
+    sortable: true, 
+    class: 'amount-col text-center'
+  },
+  { 
+    title: '', 
+    key: 'CCy_Code_id', 
+    width: '100px', 
+    align: 'center', 
+    sortable: true,
+    class: 'text-center'
+  },
+  { 
+    title: '', 
+    key: 'Category', 
+    width: '100px', 
+    align: 'center', 
+    sortable: true,
+    class: 'text-center'
+  }
 ]
 
 // API calls
@@ -512,16 +625,242 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* Table Container and Base Styles */
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+/* 
+  NOTE: Borders are added for alignment debugging and visual clarity.
+  To remove borders for a cleaner look, you can:
+  1. Change border-collapse: collapse to border-collapse: separate
+  2. Remove border declarations from .group-header-cell and .professional-table :deep() selectors
+  3. Keep only border-right: 2px solid #dee2e6 for sticky columns
+*/
+
+.table-top-bar {
+  border-bottom: 1px solid #e0e0e0;
+  border-radius: 8px 8px 0 0;
+}
+
+/* Group Headers Styling */
+.group-headers-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border-bottom: none;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.group-headers-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  min-width: 1200px;
+}
+
+.group-header-row {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.group-header-cell {
+  padding: 12px 8px !important;
+  border: 1px solid #dee2e6;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  vertical-align: middle;
+  font-weight: 600;
+  color: #37474f;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+/* Exact width matching with data table columns - with borders */
+.group-header-cell:nth-child(1) {
+  width: 120px;
+  position: sticky;
+  left: 0;
+  z-index: 15;
+  border-right: 2px solid #dee2e6;
+  text-align: left;
+  padding-left: 12px !important;
+}
+
+.group-header-cell:nth-child(2) {
+  width: 250px;
+  text-align: left;
+  padding-left: 12px !important;
+}
+
+.group-header-cell:nth-child(3) {
+  width: 241px; /* 120px + 120px + 1px border */
+  text-align: center;
+}
+
+.group-header-cell:nth-child(4) {
+  width: 241px; /* 120px + 120px + 1px border */
+  text-align: center;
+}
+
+.group-header-cell:nth-child(5) {
+  width: 241px; /* 120px + 120px + 1px border */
+  text-align: center;
+}
+
+.group-header-cell:nth-child(6) {
+  width: 100px;
+  text-align: center;
+}
+
+.group-header-cell:nth-child(7) {
+  width: 100px;
+  text-align: center;
+  border-right: none;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+/* Adjust main table to align with group headers */
+.professional-table {
+  border-radius: 0 0 8px 8px !important;
+  border-top: none !important;
+  border: 1px solid #dee2e6 !important;
+  border-top: none !important;
+  width: 100%;
+  min-width: 1200px;
+}
+
+.professional-table :deep(.v-data-table__wrapper) {
+  border-collapse: collapse;
+}
+
+.professional-table :deep(.v-data-table__wrapper table) {
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.professional-table :deep(.v-data-table__thead > tr > th) {
+  background-color: #ffffff !important;
+  border-top: none;
+  padding: 8px 12px !important;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid #dee2e6;
+  box-sizing: border-box;
+}
+
+/* Exact column width and alignment matching */
+.professional-table :deep(.v-data-table__thead > tr > th:nth-child(1)) {
+  width: 120px !important;
+  min-width: 120px !important;
+  max-width: 120px !important;
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  border-right: 2px solid #dee2e6;
+  background-color: #ffffff !important;
+  text-align: left !important;
+}
+
+.professional-table :deep(.v-data-table__thead > tr > th:nth-child(2)) {
+  width: 250px !important;
+  min-width: 250px !important;
+  max-width: 250px !important;
+  text-align: left !important;
+}
+
+.professional-table :deep(.v-data-table__thead > tr > th:nth-child(3)),
+.professional-table :deep(.v-data-table__thead > tr > th:nth-child(4)) {
+  width: 120px !important;
+  min-width: 120px !important;
+  max-width: 120px !important;
+  text-align: center !important;
+}
+
+.professional-table :deep(.v-data-table__thead > tr > th:nth-child(5)),
+.professional-table :deep(.v-data-table__thead > tr > th:nth-child(6)) {
+  width: 120px !important;
+  min-width: 120px !important;
+  max-width: 120px !important;
+  text-align: center !important;
+}
+
+.professional-table :deep(.v-data-table__thead > tr > th:nth-child(7)),
+.professional-table :deep(.v-data-table__thead > tr > th:nth-child(8)) {
+  width: 120px !important;
+  min-width: 120px !important;
+  max-width: 120px !important;
+  text-align: center !important;
+}
+
+.professional-table :deep(.v-data-table__thead > tr > th:nth-child(9)),
+.professional-table :deep(.v-data-table__thead > tr > th:nth-child(10)) {
+  width: 100px !important;
+  min-width: 100px !important;
+  max-width: 100px !important;
+  text-align: center !important;
+}
+
+.professional-table :deep(.v-data-table__thead > tr > th:nth-child(10)) {
+  border-right: none;
+}
+
+/* Data cell alignment with borders */
+.professional-table :deep(.v-data-table__td) {
+  padding: 8px 12px !important;
+  border: 1px solid #f0f0f0;
+  font-size: 0.875rem;
+  vertical-align: middle;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.professional-table :deep(.v-data-table__td:nth-child(1)) {
+  width: 120px !important;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  border-right: 2px solid #dee2e6;
+  background-color: white !important;
+  text-align: left !important;
+  font-weight: 500;
+}
+
+.professional-table :deep(.v-data-table__td:nth-child(2)) {
+  width: 250px !important;
+  text-align: left !important;
+}
+
+.professional-table :deep(.v-data-table__td:nth-child(3)),
+.professional-table :deep(.v-data-table__td:nth-child(4)),
+.professional-table :deep(.v-data-table__td:nth-child(5)),
+.professional-table :deep(.v-data-table__td:nth-child(6)),
+.professional-table :deep(.v-data-table__td:nth-child(7)),
+.professional-table :deep(.v-data-table__td:nth-child(8)) {
+  width: 120px !important;
+  text-align: right !important;
+}
+
+.professional-table :deep(.v-data-table__td:nth-child(9)),
+.professional-table :deep(.v-data-table__td:nth-child(10)) {
+  width: 100px !important;
+  text-align: center !important;
+}
+
+.professional-table :deep(.v-data-table__td:nth-child(10)) {
+  border-right: none;
+}
+
 .font-mono {
   font-family: 'Roboto Mono', 'Consolas', monospace;
   font-size: 0.875rem;
-}
-
-.professional-table {
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  overflow: hidden;
-  width: 100%;
 }
 
 .table-row {
@@ -534,6 +873,14 @@ onMounted(async () => {
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
+.table-row:hover .sticky-col {
+  background-color: #f8f9fa !important;
+}
+
+.table-row:hover .description-cell {
+  background-color: #f8f9fa !important;
+}
+
 .amount-cell {
   padding: 4px 8px;
   border-radius: 4px;
@@ -541,16 +888,52 @@ onMounted(async () => {
   border: 1px solid rgba(0,0,0,0.05);
   font-size: 0.85rem;
   font-weight: 500;
+  min-width: 80px;
+  display: inline-block;
 }
 
 .description-cell {
-  max-width: 300px;
-  min-width: 200px;
+  width: 250px !important;
+  min-width: 250px !important;
+  max-width: 250px !important;
   padding: 8px 12px !important;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  position: relative;
+  text-align: left !important;
+}
+
+.description-cell span {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.amount-column {
+  width: 120px !important;
+  min-width: 120px !important;
+  max-width: 120px !important;
+}
+
+.currency-column,
+.category-column {
+  width: 100px !important;
+  min-width: 100px !important;
+  max-width: 100px !important;
+}
+
+.sticky-col {
+  position: sticky !important;
+  left: 0 !important;
+  background-color: white !important;
+  z-index: 1 !important;
+  border-right: 2px solid #dee2e6 !important;
+  width: 120px !important;
+  min-width: 120px !important;
+  max-width: 120px !important;
+  text-align: left !important;
 }
 
 .professional-table :deep(.v-data-table__td) {
@@ -558,61 +941,250 @@ onMounted(async () => {
   border-bottom: 1px solid #f0f0f0;
   font-size: 0.875rem;
   vertical-align: middle;
-}
-
-.professional-table :deep(.v-data-table-header__content) {
-  font-weight: 600;
-  color: #37474f;
-  font-size: 0.85rem;
-}
-
-.professional-table :deep(.v-data-table__thead > tr > th) {
-  background-color: #fafafa;
-  border-bottom: 2px solid #e0e0e0;
-  padding: 12px !important;
+  white-space: nowrap;
+  border-right: 1px solid #f0f0f0;
 }
 
 .professional-table :deep(.v-data-table__wrapper) {
   overflow-x: auto;
 }
 
-.professional-table :deep(table) {
-  table-layout: auto;
-  width: 100%;
-  min-width: 1200px;
-}
-
+/* Responsive design */
 @media (max-width: 1200px) {
-  .professional-table :deep(table) {
+  .amount-cell {
+    font-size: 0.75rem;
+    padding: 2px 6px;
+    min-width: 70px;
+  }
+  
+  .professional-table :deep(.v-data-table__td) {
+    padding: 6px 8px !important;
+    font-size: 0.8rem;
+  }
+  
+  .group-headers-table {
     min-width: 1000px;
   }
   
-  .description-cell {
-    max-width: 250px;
-    min-width: 180px;
+  .professional-table {
+    min-width: 1000px;
+  }
+  
+  /* Maintain exact column alignment with borders */
+  .group-header-cell:nth-child(3),
+  .group-header-cell:nth-child(4),
+  .group-header-cell:nth-child(5) {
+    width: 201px; /* 100px + 100px + 1px border */
+  }
+  
+  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(3)),
+  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(4)),
+  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(5)),
+  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(6)),
+  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(7)),
+  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(8)) {
+    width: 100px !important;
+    min-width: 100px !important;
+    max-width: 100px !important;
+  }
+  
+  .professional-table :deep(.v-data-table__td:nth-child(3)),
+  .professional-table :deep(.v-data-table__td:nth-child(4)),
+  .professional-table :deep(.v-data-table__td:nth-child(5)),
+  .professional-table :deep(.v-data-table__td:nth-child(6)),
+  .professional-table :deep(.v-data-table__td:nth-child(7)),
+  .professional-table :deep(.v-data-table__td:nth-child(8)) {
+    width: 100px !important;
+  }
+  
+  .amount-column {
+    width: 100px !important;
+    min-width: 100px !important;
+    max-width: 100px !important;
+  }
+  
+  .group-header-cell {
+    padding: 10px 6px !important;
+    font-size: 0.85rem;
   }
 }
 
 @media (max-width: 960px) {
-  .font-mono { font-size: 0.75rem; }
-  .amount-cell { padding: 2px 4px; font-size: 0.75rem; }
-  .professional-table :deep(.v-data-table__td) { padding: 6px 8px !important; }
+  .font-mono { 
+    font-size: 0.75rem; 
+  }
+  
+  .amount-cell { 
+    padding: 2px 4px; 
+    font-size: 0.7rem;
+    min-width: 60px;
+  }
+  
+  .professional-table :deep(.v-data-table__td) { 
+    padding: 4px 6px !important; 
+    font-size: 0.75rem;
+  }
   
   .description-cell {
-    max-width: 200px;
-    min-width: 150px;
+    width: 200px !important;
+    min-width: 200px !important;
+    max-width: 200px !important;
+  }
+  
+  .group-header-cell:nth-child(2) {
+    width: 200px;
+  }
+  
+  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(2)) {
+    width: 200px !important;
+    min-width: 200px !important;
+    max-width: 200px !important;
+  }
+  
+  .professional-table :deep(.v-data-table__td:nth-child(2)) {
+    width: 200px !important;
+  }
+  
+  .group-header-cell:nth-child(3),
+  .group-header-cell:nth-child(4),
+  .group-header-cell:nth-child(5) {
+    width: 181px; /* 90px + 90px + 1px border */
+  }
+  
+  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(3)),
+  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(4)),
+  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(5)),
+  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(6)),
+  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(7)),
+  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(8)) {
+    width: 90px !important;
+    min-width: 90px !important;
+    max-width: 90px !important;
+  }
+  
+  .professional-table :deep(.v-data-table__td:nth-child(3)),
+  .professional-table :deep(.v-data-table__td:nth-child(4)),
+  .professional-table :deep(.v-data-table__td:nth-child(5)),
+  .professional-table :deep(.v-data-table__td:nth-child(6)),
+  .professional-table :deep(.v-data-table__td:nth-child(7)),
+  .professional-table :deep(.v-data-table__td:nth-child(8)) {
+    width: 90px !important;
+  }
+  
+  .amount-column {
+    width: 90px !important;
+    min-width: 90px !important;
+    max-width: 90px !important;
+  }
+  
+  .group-header-cell {
+    padding: 8px 4px !important;
     font-size: 0.8rem;
+  }
+  
+  .header-content {
+    font-size: 0.75rem;
   }
 }
 
-@media (max-width: 768px) {
-  .professional-table :deep(table) {
+@media (max-width: 600px) {
+  .table-container {
+    overflow-x: scroll;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .group-headers-table {
+    min-width: 800px;
+  }
+  
+  .professional-table {
     min-width: 800px;
   }
   
   .description-cell {
-    max-width: 180px;
-    min-width: 120px;
+    width: 180px !important;
+    min-width: 180px !important;
+    max-width: 180px !important;
+  }
+  
+  .group-header-cell:nth-child(2) {
+    width: 180px;
+  }
+  
+  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(2)) {
+    width: 180px !important;
+    min-width: 180px !important;
+    max-width: 180px !important;
+  }
+  
+  .professional-table :deep(.v-data-table__td:nth-child(2)) {
+    width: 180px !important;
+  }
+  
+  .group-header-cell:nth-child(3),
+  .group-header-cell:nth-child(4),
+  .group-header-cell:nth-child(5) {
+    width: 161px; /* 80px + 80px + 1px border */
+  }
+  
+  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(3)),
+  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(4)),
+  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(5)),
+  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(6)),
+  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(7)),
+  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(8)) {
+    width: 80px !important;
+    min-width: 80px !important;
+    max-width: 80px !important;
+  }
+  
+  .professional-table :deep(.v-data-table__td:nth-child(3)),
+  .professional-table :deep(.v-data-table__td:nth-child(4)),
+  .professional-table :deep(.v-data-table__td:nth-child(5)),
+  .professional-table :deep(.v-data-table__td:nth-child(6)),
+  .professional-table :deep(.v-data-table__td:nth-child(7)),
+  .professional-table :deep(.v-data-table__td:nth-child(8)) {
+    width: 80px !important;
+  }
+  
+  .amount-column {
+    width: 80px !important;
+    min-width: 80px !important;
+    max-width: 80px !important;
+  }
+  
+  .group-header-cell {
+    padding: 6px 3px !important;
+    font-size: 0.75rem;
+  }
+  
+  .header-content {
+    font-size: 0.7rem;
+  }
+  
+  .group-header-cell .header-content {
+    flex-direction: column;
+    gap: 2px;
+  }
+  
+  .currency-column,
+  .category-column {
+    width: 80px !important;
+    min-width: 80px !important;
+    max-width: 80px !important;
+  }
+  
+  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(9)),
+  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(10)) {
+    width: 80px !important;
+    min-width: 80px !important;
+    max-width: 80px !important;
+    font-size: 0.7rem;
+  }
+  
+  .professional-table :deep(.v-data-table__td:nth-child(9)),
+  .professional-table :deep(.v-data-table__td:nth-child(10)) {
+    width: 80px !important;
   }
 }
 </style>

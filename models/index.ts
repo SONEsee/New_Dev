@@ -41,6 +41,7 @@ import * as SupplierModel from "./suppliers";
 import * as MasterModel from "./master";
 import * as EmployeeModel from "./employee";
 import * as AssetListDrisTionModel from "./faassetlistdiscription";
+import * as jernalModel from "./devjernal";
 export {
   UserModel,
   UsermeModel,
@@ -81,5 +82,7 @@ export {
   EmployeeModel,
   TransactionLogModel,
   AssetListDrisTionModel,
+  jernalModel,
+  
   // RoleMasterModel
 };

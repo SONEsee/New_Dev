@@ -1257,7 +1257,7 @@ const fixRejectedEntry = async () => {
 
     console.log("API Response:", response.data);
 
-    // Success notification
+
     let successDetails = [
       "• ອັດເດດສະຖານະຈາກ 'P' ເປັນ 'U'",
       "• ບັນທຶກເຫດຜົນການແກ້ໄຂແລ້ວ",
@@ -1591,7 +1591,7 @@ watch(
             <v-icon color="primary" size="24" class="mr-3"
               >mdi-book-open</v-icon
             >
-            ລາຍລະອຽດບັນທຶກບັນຊີ
+            ລາຍລະອຽດບັນທຶກບັນຊີຊັບສິນ
           </h1>
           <div v-if="referenceNo" class="page-subtitle">
             <v-chip
@@ -1612,7 +1612,7 @@ watch(
           </div>
         </div>
         <div class="header-actions">
-          <pre>{{ journalEntries }}</pre>
+          <!-- <pre>{{ journalEntries }}</pre> -->
 
           <div class="permission-indicators" v-if="permissions">
             <v-tooltip text="ສິດເຂົ້າເຖິງຂອງທ່ານ" location="bottom">

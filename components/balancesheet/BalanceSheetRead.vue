@@ -1,10 +1,10 @@
 <template>
   <v-container fluid class="pa-6">
-    <v-card elevation="0" style="border: 1px solid #e0e0e0; width: 100%;">
+    <v-card elevation="0" class="main-card">
       <!-- Header Section -->
-      <v-card-title class="px-6 py-4 d-flex align-center" style="background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%); color: white;">
+      <v-card-title class="header-gradient px-6 py-4 d-flex align-center">
         <v-icon start size="24">mdi-file-chart</v-icon>
-        <span class="text-h6 font-weight-medium text-styles">
+        <span class="text-h6 font-weight-medium">
           ລາຍງານຖານະການເງິນ (Balance Sheet) - 
           {{ selectedTab.toUpperCase() }} {{ selectedSegment }} {{ selectedCurrency }}
         </span>
@@ -24,7 +24,7 @@
         </v-tabs>
 
         <!-- Filter Form -->
-        <v-form @submit.prevent="fetchIncomeStatementData" class="mb-4">
+        <v-form @submit.prevent="fetchBalanceSheetData" class="mb-4">
           <v-row no-gutters class="mb-4">
             <!-- Segment Selection -->
             <v-col cols="12" md="3" class="pe-md-2 mb-3 mb-md-0">
@@ -37,6 +37,7 @@
                 prepend-inner-icon="mdi-tag"
                 hide-details="auto"
                 @update:model-value="onSegmentChange"
+                :rules="[v => !!v || 'ກະລຸນາເລືອກປະເພດ']"
               >
                 <template #item="{ props, item }">
                   <v-list-item v-bind="props">
@@ -60,6 +61,7 @@
                 prepend-inner-icon="mdi-currency-usd"
                 hide-details="auto"
                 :disabled="!selectedSegment"
+                :rules="[v => !!v || 'ກະລຸນາເລືອກສະກຸນເງິນ']"
               >
                 <template #item="{ props, item }">
                   <v-list-item v-bind="props">
@@ -72,8 +74,61 @@
               </v-select>
             </v-col>
 
-            <!-- Search Field -->
+            <!-- Flexible Period Selection -->
             <v-col cols="12" md="3" class="px-md-1 mb-3 mb-md-0">
+              <div class="period-input-container">
+                <v-text-field
+                  v-model="periodInput"
+                  label="ເດືອນ/ປີ (MM/YYYY)"
+                  variant="outlined"
+                  density="compact"
+                  prepend-inner-icon="mdi-calendar-month"
+                  hide-details="auto"
+                  placeholder="08/2025"
+                  :rules="periodRules"
+                  @input="onPeriodInputChange"
+                  @blur="validateAndFormatPeriod"
+                  clearable
+                  @click:clear="clearPeriod"
+                >
+                  <template #append-inner>
+                    <v-menu
+                      v-model="monthMenu"
+                      :close-on-content-click="false"
+                      transition="scale-transition"
+                      offset-y
+                      max-width="290px"
+                      min-width="290px"
+                    >
+                      <template #activator="{ props }">
+                        <v-btn
+                          v-bind="props"
+                          icon="mdi-calendar"
+                          variant="text"
+                          size="small"
+                          color="primary"
+                          @click="openCalendar"
+                        />
+                      </template>
+                      <!-- <v-date-picker
+                        v-model="calendarDate"
+                        type="month"
+                        color="primary"
+                        @update:model-value="onCalendarChange"
+                        title="ເລືອກເດືອນ"
+                        :max="maxMonth"
+                      /> -->
+                    </v-menu>
+                  </template>
+                </v-text-field>
+                <div v-if="periodCodeId" class="text-caption text-success mt-1">
+                  ✓ Period Code: {{ periodCodeId }}
+                </div>
+              </div>
+            </v-col>
+
+            <!-- Search Field -->
+            <v-col cols="12" md="3" class="ps-md-2 mb-3 mb-md-0">
               <v-text-field
                 v-model="searchText"
                 label="ຄົ້ນຫາໃນຕາຕະລາງ"
@@ -84,38 +139,40 @@
                 clearable
               />
             </v-col>
+          </v-row>
 
-            <!-- Action Buttons -->
-            <v-col cols="12" md="3" class="ps-md-2 d-flex gap-1">
+          <!-- Action Buttons -->
+          <v-row no-gutters>
+            <v-col cols="12" class="d-flex gap-2 flex-wrap">
               <v-btn
                 type="submit"
                 color="primary"
                 prepend-icon="mdi-refresh"
                 :loading="loading"
-                :disabled="!selectedSegment || !selectedCurrency"
-                class="flex-grow-1"
+                :disabled="!isFormValid"
+                class="flex-grow-1 flex-md-grow-0"
                 density="compact"
-                style="height: 40px;"
+                min-width="120"
               >
                 ດຶງຂໍ້ມູນ
               </v-btn>
               <v-btn
                 color="success"
                 prepend-icon="mdi-microsoft-excel"
-                :disabled="!incomeStatementData.length || loading"
+                :disabled="!balanceSheetData.length || loading"
                 @click="exportToExcel"
                 density="compact"
-                style="height: 40px;"
+                min-width="100"
               >
                 Excel
               </v-btn>
               <v-btn
                 color="info"
                 prepend-icon="mdi-compare"
-                :disabled="!selectedSegment || !selectedCurrency || loading"
+                :disabled="!isFormValid || loading"
                 @click="compareAccMfi"
                 density="compact"
-                style="height: 40px;"
+                min-width="100"
               >
                 Compare
               </v-btn>
@@ -145,61 +202,40 @@
           
           <!-- Table Top Actions -->
           <template #top>
-            <div class="d-flex justify-space-between align-center pa-4 bg-grey-lighten-5">
-              <div class="text-h6 font-weight-medium text-styles">
+            <div class="table-header pa-4">
+              <div class="text-h6 font-weight-medium">
                 ຜົນການຄົ້ນຫາ: {{ filteredData.length }} ລາຍການ
                 <v-chip size="small" :color="chipColor" variant="tonal" class="ml-2">
                   {{ chipText }}
                 </v-chip>
               </div>
               <div class="text-caption text-grey-darken-1">
-                API: {{ selectedTab.toUpperCase() }} - {{ selectedSegment }} {{ selectedCurrency }}
+                API: {{ selectedTab.toUpperCase() }} - {{ selectedSegment }} {{ selectedCurrency }} {{ periodCodeId }}
               </div>
             </div>
           </template>
           
           <!-- Custom Row Template -->
           <template #item="{ item }">
-                <tr class="table-row"
-                :class="[
-                    // Blue for special Lao descriptions
-                    (item.description === 'ຄ. ລາຍຮັບ ແລະ ລາຍຈ່າຍພິເສດ(ບັງເອີນ)' ||
-                    item.description === 'ຂ. ລາຍຮັບ ແລະ ລາຍຈ່າຍປົກກະຕິ' ||
-                    item.description === 'ກ. ລາຍຮັບ ແລະ ລາຍຈ່າຍໃນການທຸລະກິດ')
-                    ? 'highlight-grey-row'
-                    : (
-                        // Grey for Roman numerals I-XX (but not if it's a special Lao description)
-                        /\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/.test(item.description)
-                        ? 'highlight-blue-row'
-                        : ''
-                    )
-                ]"
-                >
-              <td class="description-cell" 
-                :title="item.description"
-                :class="[
-                  (
-                    item.description === 'ລາຍການໜີ້ສິນ ແລະທືນ' ||
-                    item.description === 'ລວມຍອດຊັບສິນ' ||
-                    /\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/.test(item.description)
-                    ||
-                    /\b([1-9]|1[0-9]|2[0-9]|30)\)/.test(item.description)
-                  )
-                    ? 'font-weight-bold'
-                    : ''
-                ]">
+            <tr class="table-row" :class="getRowClass(item.description)">
+              <td class="description-cell" :title="item.description" :class="getDescriptionClass(item.description)">
                 {{ item.description }}
               </td>
-                <td class="text-end font-mono">
-                    <span class="amount-cell" :class="getNetAmountClass(item.net_amount)">
-                        {{ formatCurrency(item.net_amount) }}
-                    </span>
-              </td>
-              <td class="text-center font-mono">
-                <span class="amount-cell positive">{{ formatCurrency(item.currency_display) }}</span>
+              <td class="text-end font-mono">
+                <span class="amount-cell" :class="getNetAmountClass(item.total_debit_amount)">
+                  {{ formatCurrency(item.total_debit_amount) }}
+                </span>
               </td>
               <td class="text-end font-mono">
-                <span class="amount-cell negative">{{ formatCurrency(item.segment_type) }}</span>
+                <span class="amount-cell" :class="getNetAmountClass(item.total_credit_amount)">
+                  {{ formatCurrency(item.total_credit_amount) }}
+                </span>
+              </td>
+              <td class="text-center font-mono">
+                <span class="amount-cell positive">{{ item.currency_display || selectedCurrency }}</span>
+              </td>
+              <td class="text-center font-mono">
+                <span class="amount-cell neutral">{{ item.segment_type || selectedSegment }}</span>
               </td>
             </tr>
           </template>
@@ -210,7 +246,7 @@
               <v-icon size="64" color="grey-lighten-2" class="mb-4">mdi-file-chart-outline</v-icon>
               <div class="text-h6 text-grey-darken-1 mb-2">ບໍ່ມີຂໍ້ມູນ</div>
               <div class="text-body-2 text-grey">
-                ກະລຸນາເລືອກ segment ແລະ currency ແລ້ວກົດດຶງຂໍ້ມູນ
+                ກະລຸນາເລືອກ segment, currency ແລະ period ແລ້ວກົດດຶງຂໍ້ມູນ
               </div>
             </div>
           </template>
@@ -238,7 +274,10 @@
                   <div class="text-h4 text-primary">{{ compareResults?.acc?.count || 0 }}</div>
                   <div class="text-caption">ລາຍການ</div>
                   <div class="mt-2 text-body-2">
-                    ລວມ Net Amount: {{ calculateTotalNet(compareResults?.acc?.data) }}
+                    ລວມ Total Debit: {{ calculateTotalAmount(compareResults?.acc?.data, 'total_debit_amount') }}
+                  </div>
+                  <div class="text-body-2">
+                    ລວມ Total Credit: {{ calculateTotalAmount(compareResults?.acc?.data, 'total_credit_amount') }}
                   </div>
                 </v-card-text>
               </v-card>
@@ -254,7 +293,10 @@
                   <div class="text-h4 text-success">{{ compareResults?.mfi?.count || 0 }}</div>
                   <div class="text-caption">ລາຍການ</div>
                   <div class="mt-2 text-body-2">
-                    ລວມ Net Amount: {{ calculateTotalNet(compareResults?.mfi?.data) }}
+                    ລວມ Total Debit: {{ calculateTotalAmount(compareResults?.mfi?.data, 'total_debit_amount') }}
+                  </div>
+                  <div class="text-body-2">
+                    ລວມ Total Credit: {{ calculateTotalAmount(compareResults?.mfi?.data, 'total_credit_amount') }}
                   </div>
                 </v-card-text>
               </v-card>
@@ -292,23 +334,24 @@
     </v-snackbar>
   </v-container>
 </template>
+
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
 import * as XLSX from 'xlsx'
 
 // Page Meta
 definePageMeta({
-  title: 'Income Statement',
+  title: 'Balance Sheet',
   layout: 'default'
 })
 
 // Types
-interface IncomeStatementItem {
+interface BalanceSheetItem {
   no: number
   report_number: string
   description: string
-  debit_amount: number
-  credit_amount: number
+  total_credit_amount: number
+  total_debit_amount: number
   net_amount: number
   currency_display: string
   segment_type: string
@@ -321,20 +364,42 @@ interface ApiResponse {
   currency?: string
   type?: string
   count?: number
-  data: IncomeStatementItem[]
+  data: BalanceSheetItem[]
+}
+
+interface CompareResults {
+  acc?: { count: number; data: BalanceSheetItem[] }
+  mfi?: { count: number; data: BalanceSheetItem[] }
+}
+
+interface SnackbarState {
+  show: boolean
+  message: string
+  color: string
+  icon: string
 }
 
 // Reactive state
 const loading = ref(false)
 const searchText = ref('')
-const selectedTab = ref('acc') // Default to ACC tab
+const selectedTab = ref('acc')
 const selectedSegment = ref('')
 const selectedCurrency = ref('')
-const incomeStatementData = ref<IncomeStatementItem[]>([])
+const periodInput = ref('')
+const periodCodeId = ref('')
+const calendarDate = ref<string | null>(null)
+const balanceSheetData = ref<BalanceSheetItem[]>([])
 const showCompareDialog = ref(false)
-const compareResults = ref<any>(null)
+const compareResults = ref<CompareResults | null>(null)
+const monthMenu = ref(false)
 
-const snackbar = ref({
+// Get current date for max month limit
+const maxMonth = computed(() => {
+  const now = new Date()
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+})
+
+const snackbar = ref<SnackbarState>({
   show: false,
   message: '',
   color: 'success',
@@ -373,7 +438,28 @@ const currencyOptions = computed(() => {
   return []
 })
 
+// Period validation rules
+const periodRules = [
+  (v: string) => !!v || 'ກະລຸນາເລືອກເດືອນ',
+  (v: string) => {
+    if (!v) return true
+    const pattern = /^(0[1-9]|1[0-2])\/\d{4}$/
+    return pattern.test(v) || 'ຮູບແບບບໍ່ຖືກຕ້ອງ (MM/YYYY)'
+  },
+  (v: string) => {
+    if (!v) return true
+    const [month, year] = v.split('/')
+    const inputDate = new Date(parseInt(year), parseInt(month) - 1)
+    const maxDate = new Date()
+    return inputDate <= maxDate || 'ບໍ່ສາມາດເລືອກເດືອນອະນາຄົດໄດ້'
+  }
+]
+
 // Computed properties
+const isFormValid = computed(() => {
+  return !!(selectedSegment.value && selectedCurrency.value && periodCodeId.value)
+})
+
 const chipColor = computed(() => {
   if (selectedTab.value === 'acc') return 'primary'
   if (selectedTab.value === 'mfi') return 'success'
@@ -384,15 +470,16 @@ const chipText = computed(() => {
   const tab = selectedTab.value.toUpperCase()
   const segment = selectedSegment.value || '...'
   const currency = selectedCurrency.value || '...'
-  return `${tab} - ${segment} ${currency}`
+  const period = periodCodeId.value || '...'
+  return `${tab} - ${segment} ${currency} ${period}`
 })
 
 // Filter data based on search text
 const filteredData = computed(() => {
-  if (!searchText.value) return incomeStatementData.value
+  if (!searchText.value) return balanceSheetData.value
   
   const search = searchText.value.toLowerCase()
-  return incomeStatementData.value.filter(item => 
+  return balanceSheetData.value.filter(item => 
     item.report_number?.toLowerCase().includes(search) ||
     item.description?.toLowerCase().includes(search) ||
     item.no?.toString().includes(search)
@@ -402,15 +489,118 @@ const filteredData = computed(() => {
 // Table headers
 const headers = [
   { title: 'ລາຍລະອຽດ', key: 'description', width: '400px', sortable: true },
-  { title: 'ຍອດສຸດທິ', key: 'net_amount', width: '150px', align: 'end', sortable: true },
+  { title: 'ຍອດ Debit', key: 'total_debit_amount', width: '150px', align: 'end', sortable: true },
+  { title: 'ຍອດ Credit', key: 'total_credit_amount', width: '150px', align: 'end', sortable: true },
   { title: 'ສະກຸນເງິນ', key: 'currency_display', width: '100px', align: 'center', sortable: true },
   { title: 'ປະເພດ', key: 'segment_type', width: '100px', align: 'center', sortable: true }
 ]
 
-// Fixed API call function using axios
-const fetchIncomeStatementData = async () => {
-  if (!selectedSegment.value || !selectedCurrency.value) {
-    showSnackbar('ກະລຸນາເລືອກ segment ແລະ currency', 'warning', 'mdi-alert')
+// Period handling functions
+const formatPeriodInput = (input: string): string => {
+  // Remove all non-numeric characters except /
+  let cleaned = input.replace(/[^\d\/]/g, '')
+  
+  // Auto-format as MM/YYYY
+  if (cleaned.length >= 2 && !cleaned.includes('/')) {
+    cleaned = cleaned.substring(0, 2) + '/' + cleaned.substring(2)
+  }
+  
+  // Limit to MM/YYYY format
+  if (cleaned.length > 7) {
+    cleaned = cleaned.substring(0, 7)
+  }
+  
+  return cleaned
+}
+
+const convertToApiFormat = (mmyyyy: string): string => {
+  if (!mmyyyy || !mmyyyy.includes('/')) return ''
+  const [month, year] = mmyyyy.split('/')
+  if (month && year && month.length === 2 && year.length === 4) {
+    return `${year}${month}` // YYYYMM format
+  }
+  return ''
+}
+
+const convertFromApiFormat = (yyyymm: string): string => {
+  if (!yyyymm || yyyymm.length !== 6) return ''
+  const year = yyyymm.substring(0, 4)
+  const month = yyyymm.substring(4, 6)
+  return `${month}/${year}` // MM/YYYY format
+}
+
+const onPeriodInputChange = () => {
+  const formatted = formatPeriodInput(periodInput.value)
+  periodInput.value = formatted
+  
+  // Convert to API format if valid
+  const apiFormat = convertToApiFormat(formatted)
+  if (apiFormat) {
+    periodCodeId.value = apiFormat
+    console.log(`📅 Period input: ${formatted} -> API: ${apiFormat}`)
+  } else {
+    periodCodeId.value = ''
+  }
+}
+
+const validateAndFormatPeriod = () => {
+  if (periodInput.value) {
+    const formatted = formatPeriodInput(periodInput.value)
+    periodInput.value = formatted
+    
+    // Validate the format
+    const pattern = /^(0[1-9]|1[0-2])\/\d{4}$/
+    if (pattern.test(formatted)) {
+      periodCodeId.value = convertToApiFormat(formatted)
+    } else {
+      showSnackbar('ຮູບແບບເດືອນບໍ່ຖືກຕ້ອງ (MM/YYYY)', 'warning', 'mdi-alert')
+      periodCodeId.value = ''
+    }
+  }
+}
+
+const onCalendarChange = (val: string | null) => {
+  if (val) {
+    calendarDate.value = val
+    const [year, month] = val.split('-')
+    periodInput.value = `${month}/${year}`
+    periodCodeId.value = `${year}${month}`
+    monthMenu.value = false
+    console.log(`📅 Calendar selected: ${periodInput.value} -> API: ${periodCodeId.value}`)
+  }
+}
+
+const openCalendar = () => {
+  if (periodCodeId.value && periodCodeId.value.length === 6) {
+    const year = periodCodeId.value.substring(0, 4)
+    const month = periodCodeId.value.substring(4, 6)
+    calendarDate.value = `${year}-${month}`
+  }
+  monthMenu.value = true
+}
+
+const clearPeriod = () => {
+  periodInput.value = ''
+  periodCodeId.value = ''
+  calendarDate.value = null
+  console.log('🗑️ Period cleared')
+}
+
+// Initialize with current month
+const initializeDefaultPeriod = () => {
+  const now = new Date()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const year = now.getFullYear().toString()
+  periodInput.value = `${month}/${year}`
+  periodCodeId.value = `${year}${month}`
+  calendarDate.value = `${year}-${month}`
+  console.log(`🎯 Default period initialized: ${periodInput.value} -> API: ${periodCodeId.value}`)
+}
+
+// API call function
+const fetchBalanceSheetData = async () => {
+  if (!isFormValid.value) {
+    showSnackbar('ກະລຸນາເລືອກ segment, currency ແລະ period', 'warning', 'mdi-alert')
     return
   }
 
@@ -423,57 +613,44 @@ const fetchIncomeStatementData = async () => {
     
     console.log(`🔄 Calling ${selectedTab.value.toUpperCase()} API: ${endpoint}`)
     
-    // Import axios
     const axios = (await import('@/helpers/axios')).default
     
     const requestData = {
       segment: selectedSegment.value,
-      currency: selectedCurrency.value
+      currency: selectedCurrency.value,
+      period_code_id: periodCodeId.value
     }
     
     console.log('📤 Request data:', requestData)
     
-    // Make API call using axios
     const response = await axios.post(endpoint, requestData)
+    const apiResponse: ApiResponse = response.data
     
-    console.log('✅ Raw Response:', response)
-    console.log('✅ Response Data:', response.data)
-    
-    // With axios, the actual API response is in response.data
-    const apiResponse = response.data
+    console.log('✅ API Response:', apiResponse)
     
     if (apiResponse.status === 'success') {
-      incomeStatementData.value = apiResponse.data || []
+      balanceSheetData.value = apiResponse.data || []
       
       showSnackbar(
-        `✅ ດຶງຂໍ້ມູນງົບກຳໄລຂາດທຸນ ${selectedTab.value.toUpperCase()} ສຳເລັດ (${incomeStatementData.value.length} ລາຍການ)`,
+        `✅ ດຶງຂໍ້ມູນງົບຖານະການເງິນ ${selectedTab.value.toUpperCase()} ສຳເລັດ (${balanceSheetData.value.length} ລາຍການ)`,
         'success',
         'mdi-check-circle'
       )
       
-      console.log(`✅ Data loaded successfully: ${incomeStatementData.value.length} records`)
-      console.log('📊 First few records:', incomeStatementData.value.slice(0, 3))
+      console.log(`✅ Data loaded successfully: ${balanceSheetData.value.length} records`)
     } else {
       throw new Error(apiResponse.message || 'Unknown error occurred')
     }
     
   } catch (error: any) {
-    console.error('❌ Error fetching income statement data:', error)
-    console.error('❌ Error details:', {
-      message: error.message,
-      response: error.response,
-      status: error.response?.status,
-      data: error.response?.data
-    })
+    console.error('❌ Error fetching balance sheet data:', error)
     
-    let errorMessage = 'ເກີດຂໍ້ຜິດພາດໃນການດຶງຂໍ້ມູນງົບກຳໄລຂາດທຸນ'
+    let errorMessage = 'ເກີດຂໍ້ຜິດພາດໃນການດຶງຂໍ້ມູນງົບຖານະການເງິນ'
     let errorIcon = 'mdi-alert-circle'
     
-    // Enhanced error handling for axios
     if (error?.response?.status === 401) {
       errorMessage = '🔐 ໂທເຄນໝົດອາຍຸ ກະລຸນາເຂົ້າສູ່ລະບົບໃໝ່'
       errorIcon = 'mdi-account-alert'
-      // Redirect to login
       await navigateTo('/auth/login')
     } else if (error?.response?.status === 403) {
       errorMessage = '🚫 ທ່ານບໍ່ມີສິດໃນການເຂົ້າເຖິງຂໍ້ມູນນີ້'
@@ -486,61 +663,48 @@ const fetchIncomeStatementData = async () => {
       errorIcon = 'mdi-server-network-off'
     } else if (error?.response?.data?.message) {
       errorMessage = error.response.data.message
-    } else if (error?.message === 'Authentication token not found') {
-      errorMessage = '🔑 ກະລຸນາເຂົ້າສູ່ລະບົບກ່ອນ'
-      errorIcon = 'mdi-account-alert'
-      await navigateTo('/auth/login')
     } else if (error?.message?.includes('Network Error')) {
       errorMessage = '🌐 ບໍ່ສາມາດເຊື່ອມຕໍ່ກັບເຊີຟເວີໄດ້'
       errorIcon = 'mdi-wifi-off'
-    } else if (error?.userMessage) {
-      // Use the user-friendly message from axios interceptor
-      errorMessage = error.userMessage
     }
     
     showSnackbar(errorMessage, 'error', errorIcon)
-    incomeStatementData.value = []
+    balanceSheetData.value = []
     
   } finally {
     loading.value = false
   }
 }
 
-// Fixed compare function using axios
+// Compare function
 const compareAccMfi = async () => {
-  if (!selectedSegment.value || !selectedCurrency.value) {
-    showSnackbar('ກະລຸນາເລືອກ segment ແລະ currency ເພື່ອສົມທຽບ', 'warning', 'mdi-alert')
+  if (!isFormValid.value) {
+    showSnackbar('ກະລຸນາເລືອກ segment, currency ແລະ period ເພື່ອສົມທຽບ', 'warning', 'mdi-alert')
     return
   }
 
   try {
     loading.value = true
     
-    // Import axios
     const axios = (await import('@/helpers/axios')).default
     
     const requestData = {
       segment: selectedSegment.value,
-      currency: selectedCurrency.value
+      currency: selectedCurrency.value,
+      period_code_id: periodCodeId.value
     }
     
     console.log('📤 Compare request data:', requestData)
     
-    const response = await axios.post('/api/income-statement/compare_acc_mfi/', requestData)
-    
-    console.log('✅ Compare Response:', response.data)
-    
-    // With axios, the actual API response is in response.data
+    const response = await axios.post('/api/balance-sheet/compare_acc_mfi/', requestData)
     const apiResponse = response.data
+    
+    console.log('✅ Compare Response:', apiResponse)
     
     if (apiResponse.status === 'success') {
       compareResults.value = apiResponse.data
       showCompareDialog.value = true
-      showSnackbar(
-        `✅ ສົມທຽບຂໍ້ມູນ ACC ແລະ MFI ສຳເລັດ`,
-        'success',
-        'mdi-check-circle'
-      )
+      showSnackbar('✅ ສົມທຽບຂໍ້ມູນ ACC ແລະ MFI ສຳເລັດ', 'success', 'mdi-check-circle')
     } else {
       throw new Error(apiResponse.message || 'Comparison failed')
     }
@@ -548,7 +712,7 @@ const compareAccMfi = async () => {
   } catch (error: any) {
     console.error('❌ Error comparing ACC and MFI:', error)
     showSnackbar(
-      error?.response?.data?.message || error?.userMessage || 'ເກີດຂໍ້ຜິດພາດໃນການສົມທຽບຂໍ້ມູນ ACC ແລະ MFI',
+      error?.response?.data?.message || 'ເກີດຂໍ້ຜິດພາດໃນການສົມທຽບຂໍ້ມູນ ACC ແລະ MFI',
       'error',
       'mdi-alert-circle'
     )
@@ -560,7 +724,7 @@ const compareAccMfi = async () => {
 // Event handlers
 const onSegmentChange = () => {
   selectedCurrency.value = ''
-  incomeStatementData.value = []
+  balanceSheetData.value = []
   
   // Auto-select LAK for LCY
   if (selectedSegment.value === 'LCY') {
@@ -583,9 +747,35 @@ const getNetAmountClass = (amount: number) => {
   return 'text-grey'
 }
 
-const calculateTotalNet = (data: any[]) => {
+const getRowClass = (description: string) => {
+  // Blue for special Lao descriptions
+  if (description === 'ຄ. ລາຍຮັບ ແລະ ລາຍຈ່າຍພິເສດ(ບັງເອີນ)' ||
+      description === 'ຂ. ລາຍຮັບ ແລະ ລາຍຈ່າຍປົກກະຕິ' ||
+      description === 'ກ. ລາຍຮັບ ແລະ ລາຍຈ່າຍໃນການທຸລະກິດ') {
+    return 'highlight-grey-row'
+  }
+  
+  // Grey for Roman numerals I-XX
+  if (/\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/.test(description)) {
+    return 'highlight-blue-row'
+  }
+  
+  return ''
+}
+
+const getDescriptionClass = (description: string) => {
+  if (description === 'ລາຍການໜີ້ສິນ ແລະທືນ' ||
+      description === 'ລວມຍອດຊັບສິນ' ||
+      /\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/.test(description) ||
+      /\b([1-9]|1[0-9]|2[0-9]|30)\)/.test(description)) {
+    return 'font-weight-bold'
+  }
+  return ''
+}
+
+const calculateTotalAmount = (data: BalanceSheetItem[], field: 'total_debit_amount' | 'total_credit_amount') => {
   if (!data || !Array.isArray(data)) return '0.00'
-  const total = data.reduce((sum, item) => sum + (item.net_amount || 0), 0)
+  const total = data.reduce((sum, item) => sum + (item[field] || 0), 0)
   return formatCurrency(total)
 }
 
@@ -593,92 +783,53 @@ const showSnackbar = (message: string, color: string = 'success', icon: string =
   snackbar.value = { show: true, message, color, icon }
 }
 
-// Debug function - you can call this in browser console: window.testApi()
-const testApiCall = async () => {
-  console.log('🧪 Testing API call manually...')
-  
-  try {
-    const axios = (await import('@/helpers/axios')).default
-    console.log('✅ Axios imported:', axios)
-    
-    const testData = {
-      segment: 'FCY',
-      currency: 'USD'
-    }
-    
-    console.log('📤 Test request data:', testData)
-    
-    const response = await axios.post('/api/income-statement/acc/', testData)
-    
-    console.log('✅ Test response status:', response.status)
-    console.log('✅ Test response data:', response.data)
-    
-    if (response.data.status === 'success') {
-      console.log('🎉 API call successful!')
-      console.log('📊 Data count:', response.data.count)
-      console.log('📋 First item:', response.data.data[0])
-    } else {
-      console.log('❌ API returned error:', response.data.message)
-    }
-    
-    return response.data
-    
-  } catch (error) {
-    console.error('❌ Test API call failed:', error)
-    console.error('❌ Error details:', {
-      message: error.message,
-      response: error.response,
-      status: error.response?.status,
-      data: error.response?.data
-    })
-    throw error
-  }
-}
-
-// Expose test function to global scope for debugging
-if (process.client) {
-  (window as any).testApi = testApiCall
-}
-
-// Export to Excel function
+// Export to Excel function with security considerations
 const exportToExcel = () => {
   try {
-    if (!incomeStatementData.value.length) {
+    if (!balanceSheetData.value.length) {
       showSnackbar('ບໍ່ມີຂໍ້ມູນໃຫ້ສົ່ງອອກ', 'warning', 'mdi-alert')
       return
     }
 
-    // Prepare export data
-    const exportData = incomeStatementData.value.map(item => ({
-      'ລາຍລະອຽດ': item.description,
-      'ຍອດສຸດທິ': item.net_amount,
-      'ສະກຸນເງິນ': item.currency_display,
-      'ປະເພດ': item.segment_type
+    // Sanitize data for export (remove any potential malicious content)
+    const sanitizeString = (str: any): string => {
+      if (typeof str !== 'string') return String(str || '')
+      // Remove potentially dangerous characters
+      return str.replace(/[<>"/\\&\x00-\x1f\x7f-\x9f]/g, '')
+    }
+
+    const exportData = balanceSheetData.value.map(item => ({
+      'ລາຍລະອຽດ': sanitizeString(item.description),
+      'ຍອດ Debit': Number(item.total_debit_amount) || 0,
+      'ຍອດ Credit': Number(item.total_credit_amount) || 0,
+      'ສະກຸນເງິນ': sanitizeString(item.currency_display || selectedCurrency.value),
+      'ປະເພດ': sanitizeString(item.segment_type || selectedSegment.value)
     }))
 
-    // Create and save Excel file
     const wb = XLSX.utils.book_new()
     const ws = XLSX.utils.json_to_sheet(exportData)
     
     // Set column widths
     const colWidths = [
       { wch: 40 }, // ລາຍລະອຽດ
-      { wch: 15 }, // ຍອດສຸດທິ
+      { wch: 15 }, // ຍອດ Debit
+      { wch: 15 }, // ຍອດ Credit
       { wch: 15 }, // ສະກຸນເງິນ
       { wch: 15 }  // ປະເພດ
     ]
     ws['!cols'] = colWidths
 
-    XLSX.utils.book_append_sheet(wb, ws, `Income Statement ${selectedTab.value.toUpperCase()}`)
+    XLSX.utils.book_append_sheet(wb, ws, `Balance_Sheet_${selectedTab.value.toUpperCase()}`)
 
-    // Generate secure filename
+    // Generate secure filename with timestamp
     const currentDate = new Date().toISOString().split('T')[0]
-    const filename = `Income_Statement_${selectedTab.value.toUpperCase()}_${selectedSegment.value}_${selectedCurrency.value}_${currentDate}.xlsx`
+    const timestamp = new Date().getTime()
+    const filename = `Balance_Sheet_${selectedTab.value.toUpperCase()}_${selectedSegment.value}_${selectedCurrency.value}_${periodCodeId.value}_${currentDate}_${timestamp}.xlsx`
 
     XLSX.writeFile(wb, filename)
 
     showSnackbar(
-      `📊 ສົ່ງອອກສຳເລັດ (${selectedTab.value.toUpperCase()} ${selectedSegment.value} ${selectedCurrency.value}) - ${incomeStatementData.value.length} ລາຍການ`, 
+      `📊 ສົ່ງອອກສຳເລັດ (${chipText.value}) - ${balanceSheetData.value.length} ລາຍການ`, 
       'success', 
       'mdi-download'
     )
@@ -689,9 +840,9 @@ const exportToExcel = () => {
   }
 }
 
-// Watch for tab changes - Fixed watch import
+// Watch for tab changes
 watch(selectedTab, () => {
-  incomeStatementData.value = []
+  balanceSheetData.value = []
   console.log(`🔄 Tab changed to: ${selectedTab.value.toUpperCase()}`)
 })
 
@@ -701,19 +852,19 @@ onMounted(async () => {
     if (process.client) {
       const token = localStorage.getItem("token")
       if (token) {
-        console.log('🚀 Income Statement component mounted with token')
+        console.log('🚀 Balance Sheet component mounted with token')
+        
         // Set default values
         selectedSegment.value = 'LCY'
         selectedCurrency.value = 'LAK'
+        initializeDefaultPeriod()
         
-        // Test axios import
-        try {
-          const axios = (await import('@/helpers/axios')).default
-          console.log('✅ Axios imported successfully:', axios)
-        } catch (axiosError) {
-          console.error('❌ Failed to import axios:', axiosError)
-          showSnackbar('⚠️ ບໍ່ສາມາດໂຫຼດ axios helper ໄດ້', 'warning', 'mdi-alert')
-        }
+        console.log('✅ Component initialized with defaults:', {
+          segment: selectedSegment.value,
+          currency: selectedCurrency.value,
+          period: periodInput.value,
+          periodCode: periodCodeId.value
+        })
       } else {
         showSnackbar('🔑 ກະລຸນາເຂົ້າສູ່ລະບົບເພື່ອເຂົ້າເຖິງຂໍ້ມູນ', 'warning', 'mdi-account-alert')
         await navigateTo('/auth/login')
@@ -721,11 +872,33 @@ onMounted(async () => {
     }
   } catch (error) {
     console.error('Initialization error:', error)
+    showSnackbar('❌ ເກີດຂໍ້ຜິດພາດໃນການເລີ່ມຕົ້ນ', 'error', 'mdi-alert-circle')
   }
 })
 </script>
 
 <style scoped>
+.main-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.header-gradient {
+  background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+  color: white;
+}
+
+.table-header {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-bottom: 1px solid #dee2e6;
+}
+
+.period-input-container {
+  position: relative;
+}
+
 .font-mono {
   font-family: 'Roboto Mono', 'Consolas', monospace;
   font-size: 0.875rem;
@@ -765,6 +938,11 @@ onMounted(async () => {
   color: #d32f2f;
 }
 
+.amount-cell.neutral {
+  background: rgba(96, 125, 139, 0.1);
+  color: #546e7a;
+}
+
 .description-cell {
   max-width: 400px;
   min-width: 250px;
@@ -773,6 +951,16 @@ onMounted(async () => {
   white-space: nowrap;
   text-overflow: ellipsis;
   position: relative;
+}
+
+.highlight-blue-row {
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  font-weight: bold;
+}
+
+.highlight-grey-row {
+  background: linear-gradient(135deg, #f5f5f5 0%, #eeeeee 100%);
+  font-weight: bold;
 }
 
 .professional-table :deep(.v-data-table__td) {
@@ -794,21 +982,8 @@ onMounted(async () => {
   padding: 12px !important;
 }
 
-.professional-table :deep(.v-data-table__wrapper) {
-  overflow-x: auto;
-}
-
-.professional-table :deep(table) {
-  table-layout: auto;
-  width: 100%;
-  min-width: 1000px;
-}
-
+/* Responsive Design */
 @media (max-width: 1200px) {
-  .professional-table :deep(table) {
-    min-width: 900px;
-  }
-  
   .description-cell {
     max-width: 300px;
     min-width: 200px;
@@ -816,10 +991,16 @@ onMounted(async () => {
 }
 
 @media (max-width: 960px) {
-  .font-mono { font-size: 0.75rem; }
-  .amount-cell { padding: 2px 4px; font-size: 0.75rem; }
-  .professional-table :deep(.v-data-table__td) { padding: 6px 8px !important; }
-  
+  .font-mono { 
+    font-size: 0.75rem; 
+  }
+  .amount-cell { 
+    padding: 2px 4px; 
+    font-size: 0.75rem; 
+  }
+  .professional-table :deep(.v-data-table__td) { 
+    padding: 6px 8px !important; 
+  }
   .description-cell {
     max-width: 250px;
     min-width: 150px;
@@ -828,23 +1009,26 @@ onMounted(async () => {
 }
 
 @media (max-width: 768px) {
-  .professional-table :deep(table) {
-    min-width: 700px;
-  }
-  
   .description-cell {
     max-width: 200px;
     min-width: 120px;
   }
 }
 
-.highlight-blue-row {
-  background : linear-gradient(135deg, #59b4ff 0%, #e3f2fd 100%);
-  font-weight: bold;
+/* Security: Prevent content injection */
+.description-cell, .amount-cell {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.highlight-grey-row {
-  background : linear-gradient(135deg, #ffb25a 0%, #e7e7e7 100%);
-  font-weight: bold;
+/* Accessibility improvements */
+.v-btn:focus {
+  outline: 2px solid #2196f3;
+  outline-offset: 2px;
+}
+
+.v-text-field:focus-within {
+  outline: 1px solid #2196f3;
 }
 </style>
