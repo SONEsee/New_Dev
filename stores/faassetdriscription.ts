@@ -88,6 +88,7 @@ export const useFassetLidtDescription = defineStore("fassetlistdecription", {
           icon: "warning",
           title: "ຄຳເຕືອນ",
           text: "ທ່ານຕ້ອງການຫັກຄ່າເສື່ອມຫຼາຍລາຍການທີ່ເລືອກນີ້ແທ້ບໍ",
+        showCancelButton: true,
           confirmButtonText: "ຕົກລົງ",
           cancelButtonText: "ຍົກເລີກ",
         });

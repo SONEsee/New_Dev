@@ -72,7 +72,7 @@ const headers = [
   { title: "ຈຳນວນເງິນທີ່ຈະຫັກ", key: "calculated_overdue_amount" },
   { title: "ຄືບໜ້າ", key: "completion_percentage" },
   { title: "ງວດທີ່ຈະຫັກ", key: "due_end_date" },
-  { title: "ປະຫວັດ", key: "action" },
+  // { title: "ປະຫວັດ", key: "action" },
 ];
 
 const formatNumber = (num: any) => {
@@ -121,12 +121,12 @@ onMounted(() => {
       </span>
       <div>
         <v-btn
-          color="primary"
+          color="error"
           size="small"
           class="mr-2"
           @click="processBulkItems"
         >
-          ຫັກຄ່າຫຼູ້ຍຫຽ້ນ ({{ selectedItems.length }})
+          ຢືນຢັນການຫັກຄ່າຫຼູຍຫ້ຽນ ({{ selectedItems.length }})
         </v-btn>
         <v-btn
           color="secondary"
@@ -231,21 +231,21 @@ onMounted(() => {
       <b style="color: blue">{{ column.title }}</b>
     </template>
 
-    <!-- ສະແດງມູນຄ່າເຫຼືອຕໍ່ເດືອນ -->
+   
     <template v-slot:item.asset_value_remainMonth="{ item }">
       <span style="color: #2196f3; font-weight: 500">
         {{ formatNumber(item.asset_value_remainMonth || 0) }} ກີບ/ເດືອນ
       </span>
     </template>
 
-    <!-- ສະແດງຄ່າເສື່ອມຕໍ່ມື້ -->
+   
     <template v-slot:item.daily_depreciation="{ item }">
       <span style="color: #ff9800; font-weight: 500">
         {{ formatNumber(Math.round(item.daily_depreciation || 0)) }} ກີບ/ມື້
       </span>
     </template>
 
-    <!-- ສະແດງຈຳນວນທີ່ຄິດໄລ່ໄດ້ -->
+    
     <template v-slot:item.calculated_overdue_amount="{ item }">
       <strong style="color: #f44336; font-size: 16px">
         {{ formatNumber(Math.round(item.calculated_overdue_amount || 0)) }} ກີບ
@@ -288,8 +288,8 @@ onMounted(() => {
 </template>
   </v-data-table>
 
-  <!-- ສະແດງລາຍລະອຽດການຄິດໄລ່ -->
-  <v-expansion-panels class="mt-4" v-if="mappedData.length > 0">
+ 
+  <!-- <v-expansion-panels class="mt-4" v-if="mappedData.length > 0">
     <v-expansion-panel>
       <v-expansion-panel-title>
         📊 ລາຍລະອຽດການຄິດໄລ່
@@ -305,5 +305,5 @@ onMounted(() => {
         <p v-if="mappedData.length > 3" class="text-center">... ແລະອີກ {{ mappedData.length - 3 }} ລາຍການ</p>
       </v-expansion-panel-text>
     </v-expansion-panel>
-  </v-expansion-panels>
+  </v-expansion-panels> -->
 </template>

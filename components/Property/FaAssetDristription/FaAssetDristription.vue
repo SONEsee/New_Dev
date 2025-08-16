@@ -100,15 +100,20 @@ const handleNotificationClick = () => {
       <v-row v-else-if="responseData && responseData.data">
         <v-col cols="12">
           <v-card align-tabs="center">
-            <v-tabs align-tabs="center" v-model="tab" color="#0D47A1" bg-color="#BBDEFB">
-              <v-tab value="one"
-                >ຫັກຄ່າຫຼູ້ຍຫ້ຽນປະຈຳເດືອນ -
-                {{ responseData.data.target_period.month_name_la }}
-                {{ responseData.data.target_period.year }}
-              </v-tab>
-              <v-tab value="two">ຫັກຄ່າຫຼູ້ຍຫ້ຽນຍອ້ນຫຼັງ</v-tab>
-           
-            </v-tabs>
+     <v-tabs 
+  align-tabs="center" 
+  v-model="tab" 
+  color="#0D47A1" 
+  bg-color="#BBDEFB"
+  selected-class="bg-primary text-white"
+>
+  <v-tab value="one">
+    ຫັກຄ່າຫຼູ້ຍຫ້ຽນປະຈຳເດືອນ -
+    {{ responseData.data.target_period.month_name_la }}
+    {{ responseData.data.target_period.year }}
+  </v-tab>
+  <v-tab value="two"> <v-icon>mdi-history</v-icon>ຫັກຄ່າຫຼູ້ຍຫ້ຽນຍອ້ນຫຼັງ</v-tab>
+</v-tabs>
 
             <v-card-text>
               <v-tabs-window v-model="tab">
