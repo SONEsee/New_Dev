@@ -174,6 +174,7 @@ export interface OverdueItem_arrears {
     last_depreciation_date: string;
     due_month_year:         string;
     completion_percentage:  number;
+   
     days_overdue:           number;
     overdue_months:         number;
     urgency_level:          string;

@@ -19,6 +19,16 @@ export const useFassetLidtDescription = defineStore("fassetlistdecription", {
         aldm_ids: [] as number[],
         status: "R",
         reason: "ຂໍ້ມູນຄ່າເສື່ອມບໍ່ຖືກຕ້ອງ ຕ້ອງແກ້ໄຂຄຳນວນໃໝ່",
+
+       
+      },
+      reject_form_mark_one: {
+        action: "confirm_depreciation",
+        aldm_id: 0,
+        status: "R",
+        reason: "ຂໍ້ມູນບໍ່ຖືກຕ້ອງ ຕ້ອງແກ້ໄຂ",
+
+       
       },
       requres_data_post: {
         action: "bulk_process",
@@ -27,8 +37,8 @@ export const useFassetLidtDescription = defineStore("fassetlistdecription", {
       },
       total_caculate: {
         action: "bulk_process",
-        mapping_ids: [] ,
-        
+        mapping_ids: [],
+
         create_journal: true,
         target_date: "",
       },
@@ -222,7 +232,7 @@ export const useFassetLidtDescription = defineStore("fassetlistdecription", {
 
         if (notification.isConfirmed) {
           const req = await axios.post(
-            `/api/depreciation/`,
+            `/api/depreciation-with-journal/`,
             this.reject_form_mark,
             {
               headers: {
@@ -239,6 +249,52 @@ export const useFassetLidtDescription = defineStore("fassetlistdecription", {
               text: "ທ່ານສຳເລັດການຫັກຄ່າເສື່ອມແລ້ວ",
               timer: 1000,
             });
+            this.getArrears();
+          }
+        }
+      } catch (error) {
+        CallSwal({
+          icon: "error",
+          title: "ລົ້ມເຫຼວ",
+          text: "ບໍ່ສາມາດຫັກຄ່າເສື່ອມໄດ້",
+        });
+      } finally {
+        this.isLoading = false;
+      }
+    },
+    async postRejectone() {
+      this.isLoading = true;
+      try {
+        const notification = await CallSwal({
+          icon: "warning",
+          title: "ຄຳເຕືອນ",
+          text: "ທ່ານຕອ້ງການຢືນຢັນການກວດສອບນີ້ແທ້ຫຼືບໍ",
+          confirmButtonText: "ຕົກລົງ",
+          cancelButtonText: "ຍົກເລີກ",
+          showCancelButton: true,
+        });
+
+        if (notification.isConfirmed) {
+          const req = await axios.post(
+            `/api/depreciation-with-journal/`,
+            this.reject_form_mark_one,
+            {
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem("access")}`,
+              },
+            }
+          );
+
+          if (req.status === 200) {
+            CallSwal({
+              icon: "success",
+              title: "ສຳເລັດ",
+              text: "ທ່ານສຳເລັດການຫັກຄ່າເສື່ອມແລ້ວ",
+              timer: 1000,
+            });setTimeout(() => {
+              goPath("/property/autoriz");
+            },1000);;
             this.getArrears();
           }
         }

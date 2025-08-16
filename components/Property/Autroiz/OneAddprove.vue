@@ -929,12 +929,7 @@ const rejectByPairAccount = async (referenceSubNo, item) => {
 
 
 const editByPairAccount = (entry) => {
-  console.log("=== EDIT FORM DEBUG ===");
-  console.log("Editing entry:", entry);
-  console.log("Entry account_code:", entry.account_code);
-  console.log("Entry Account:", entry.Account, "Type:", typeof entry.Account);
-  console.log("Entry Ac_relatives:", entry.Ac_relatives);
-  console.log("Entry Ccy_cd:", entry.Ccy_cd);
+  
 
   // Find the related entry (debit/credit pair)
   const relatedEntry = journalEntries.value.find(
@@ -991,11 +986,7 @@ const editByPairAccount = (entry) => {
     creditAccountCode = entry.account_code;
   }
 
-  console.log("Final account assignment:");
-  console.log("- debitAccountId (glsub_id):", debitAccountId);
-  console.log("- creditAccountId (relative_glsub_id):", creditAccountId);
-  console.log("- debitAccountCode:", debitAccountCode);
-  console.log("- creditAccountCode:", creditAccountCode);
+  
 
   // Set currency info
   editFormCurrency.value = getCurrencyInfo(entry.Ccy_cd);
@@ -1451,91 +1442,50 @@ const approveItem = async () => {
     
   }
 };
-
-// Reject function
-const rejectItem = async (item) => {
-  const result = await Swal.fire({
-    icon: "warning",
-    title: "ຢືນຢັນການປະຕິເສດ",
-    text: `ທ່ານຕ້ອງການປະຕິເສດລາຍການ ${item.Reference_No} ແທ້ບໍ?`,
-    input: "textarea",
-    inputLabel: "ເຫດຜົນໃນການປະຕິເສດ *",
-    inputPlaceholder: "ກະລຸນາໃສ່ເຫດຜົນ...",
-    inputAttributes: {
-      "aria-label": "Rejection reason",
-      rows: 3,
-      maxlength: 500,
-    },
-    inputValidator: (value) => {
-      if (!value || value.trim().length === 0) {
-        return "ກະລຸນາໃສ່ເຫດຜົນໃນການປະຕິເສດ";
-      }
-      if (value.trim().length < 1) {
-        return "ເຫດຜົນຕ້ອງມີຢ່າງນ້ອຍ 10 ຕົວອັກສອນ";
-      }
-    },
-    showCancelButton: true,
-    confirmButtonText: "ປະຕິເສດ",
-    cancelButtonText: "ຍົກເລີກ",
-    confirmButtonColor: "#f44336",
-    cancelButtonColor: "#9e9e9e",
-  });
-
-  if (result.isConfirmed) {
-    try {
-      const response = await axios.post(
-        "/api/journal-ard/reject-all/",
-        {
-          Reference_No: item.Reference_No,
-          rejection_reason: result.value.trim(),
-        },
-        getAuthHeaders()
-      );
-
-      if (item && item.Ac_relatives && item.Ac_relatives.trim() !== "") {
-        console.log("Calling reject-asset for:", item.Ac_relatives);
-        await axios.post(
-          "/api/journal-ard/reject-asset/",
-          {
-            Ac_relatives: item.Ac_relatives,
-            module_id: "AS",
-          },
-          getAuthHeaders()
-        );
-      }
-      console.log("Reject asset updated successfully");
-
-      Swal.fire({
-        icon: "success",
-        title: "ສຳເລັດ",
-        text: response.data.message || "ປະຕິເສດລາຍການສຳເລັດແລ້ວ",
-        timer: 2000,
-        showConfirmButton: false,
-      });
-
-      await loadData();
-    } catch (error) {
-      console.error("Error rejecting item:", error);
-
-      let errorMessage = "ບໍ່ສາມາດປະຕິເສດລາຍການໄດ້";
-
-      if (error.response?.data?.error) {
-        errorMessage = error.response.data.error;
-      } else if (error.response?.status === 404) {
-        errorMessage = "ບໍ່ພົບລາຍການທີ່ຕ້ອງການປະຕິເສດ";
-      } else if (error.response?.status === 400) {
-        errorMessage = error.response.data?.detail || "ຂໍ້ມູນບໍ່ຖືກຕ້ອງ";
-      }
-
-      Swal.fire({
-        icon: "error",
-        title: "ຂໍ້ຜິດພາດ",
-        text: errorMessage,
-        confirmButtonText: "ຕົກລົງ",
-      });
+const rejectItem = async () => {
+  try {
+    if (!journalEntries.value?.length) {
+      throw new Error('ບໍ່ມີ journal entries');
     }
+
+    const firstEntry = journalEntries.value[0];
+    console.log("🔍 Debug firstEntry:", firstEntry);
+    
+    if (!firstEntry.aldm_id || firstEntry.aldm_id.length === 0) {
+      throw new Error('ບໍ່ມີ aldm_id ໃຫ້ reject');
+    }
+
+    console.log("🔍 Rejecting item with aldm_id:", firstEntry.aldm_id);
+   
+    
+    
+    
+    mainStore.reject_form_mark_one.aldm_id = firstEntry.aldm_id;
+   
+    
+    console.log("🔍 Before postReject - confirm_form_mark:", mainStore.confirm_form_mark);
+    
+    
+    await mainStore.postRejectone();
+    
+    console.log("✅ Reject successful");
+    
+
+    firstEntry.aldm_id = [];
+    
+  } catch (error) {
+    console.error('❌ Error rejecting item:', error);
+  CallSwal({
+    icon: 'error',
+    title: 'ຂໍ້ຜິດພາດ',
+    text: error.message || 'ບໍ່ສາມາດປະຕິເສດ ຫຼື ອະນຸມັດ ບັນທຶກໄດ້',
+  })
+   
   }
 };
+
+// Reject function
+
 
 onMounted(async () => {
   console.log("Detail page mounted with query:", route.query);
@@ -1612,7 +1562,7 @@ watch(
           </div>
         </div>
         <div class="header-actions">
-          <!-- <pre>{{ journalEntries }}</pre> -->
+          <pre>{{ journalEntries }}</pre>
 
           <div class="permission-indicators" v-if="permissions">
             <v-tooltip text="ສິດເຂົ້າເຖິງຂອງທ່ານ" location="bottom">
@@ -2232,7 +2182,7 @@ watch(
                 v-if="selectedItem?.Auth_Status === 'U' && canAuthorize"
                 color="error"
                 variant="flat"
-                @click="rejectItem(selectedItem)"
+                @click="rejectItem"
                 prepend-icon="mdi-close-circle"
                 size="large"
                 class="primary-action-btn"

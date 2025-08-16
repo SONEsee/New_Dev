@@ -1,5 +1,6 @@
 export interface FaAsset{
    asset_list_id:           string;
+   mapping_id:           number;
     asset_id_detail:         AssetIDDetail;
     location_detail:         LocationDetail;
     supplier_detail:         SupplierDetail;
