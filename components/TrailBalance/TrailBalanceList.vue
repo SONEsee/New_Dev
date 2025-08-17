@@ -1,281 +1,688 @@
 <template>
   <v-container fluid class="pa-2">
-    <!-- Tabs Section -->
-    <v-tabs v-model="activeTab" bg-color="primary" dark class="mb-3">
+    <!-- Enhanced Tabs Section with 5 tabs -->
+    <v-tabs 
+      v-model="activeTab" 
+      bg-color="primary" 
+      dark 
+      class="mb-3"
+      show-arrows
+      slider-color="white"
+    >
+      <!-- Tab for the main table content -->
       <v-tab value="somtop_trial">
-        <v-icon start>mdi-scale-balance</v-icon>
-        SomTop Trial Balance
+        <v-icon start>mdi-account-balance</v-icon>
+        <span class="d-none d-md-inline">ລາຍງານໃບສົມທົບ</span>
+        <span class="d-md-none">ST</span>
       </v-tab>
-      <v-tab value="trial">
-        <v-icon start>mdi-scale-balance</v-icon>
-        Trial Balance
+      
+      <!-- Additional ACTB Tabs -->
+      <v-tab value="actb_somtop_trial">
+        <v-icon start>mdi-account-balance-wallet</v-icon>
+        <span class="d-none d-md-inline">DairyReport  ລາຍງານໃບສົມທົບ</span>
+        <span class="d-md-none">ACTB ST</span>
       </v-tab>
-      <v-tab value="balance">
-        <v-icon start>mdi-finance</v-icon>
-        Balance Sheet
+      <v-tab value="actb_trial">
+        <v-icon start>mdi-account-cash</v-icon>
+        <span class="d-none d-md-inline">DairyReport ລາຍງານໃບດຸ່ນດຽງ</span>
+        <span class="d-md-none">ACTB TB</span>
       </v-tab>
-      <v-tab value="income">
-        <v-icon start>mdi-file-chart</v-icon>
-        Income Statement
+      <v-tab value="actb_balance">
+        <v-icon start>mdi-bank</v-icon>
+        <span class="d-none d-md-inline">DairyReport ລາຍງານຖານະການເງິນ</span>
+        <span class="d-md-none">ACTB BS</span>
+      </v-tab>
+      <v-tab value="actb_income">
+        <v-icon start>mdi-chart-line</v-icon>
+        <span class="d-none d-md-inline">DairyReport ລາຍງານຜົນການດໍາເນີນງານ</span>
+        <span class="d-md-none">ACTB IS</span>
       </v-tab>
     </v-tabs>
 
-    <!-- Tab Content Window -->
-    <v-window v-model="activeTab">
-      <v-window-item value="somtop_trial">
-        <SomTop_Trail_Balance />
-      </v-window-item>
-      <v-window-item value="trial">
-        <Trail_Balance />
-      </v-window-item>
-      <v-window-item value="balance">
-        <Balance_Sheet />
-      </v-window-item>
-      <v-window-item value="income">
-        <IncomeStatement />
-      </v-window-item>
-    </v-window>
-
-    <v-card class="mx-auto" elevation="0" style="border: 1px solid #e0e0e0;">
-      <!-- Header Section -->
-      <v-card-title class="px-4 py-3 d-flex align-center" style="background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%); color: white;">
-        <v-icon start size="24">mdi-chart-box-outline</v-icon>
-        <span class="text-h6 font-weight-medium">
-          ລາຍງານໃບສົມທົບ - 
-          {{ selectedCurrency ? `${selectedCurrency} (FCY)` : 'LCY Consolidated' }}
-        </span>
-      </v-card-title>
-      
-      <v-card-text class="px-4 py-3">
-        <!-- Filter Form -->
-        <v-form @submit.prevent="fetchTrialBalance" class="mb-3">
-          <v-row no-gutters class="mb-3">
-            <!-- Currency Selection -->
-            <v-col cols="12" md="3" class="pe-md-2 mb-2 mb-md-0">
-              <v-select
-                v-model="filters.currency"
-                :items="currencyOptions"
-                label="ເລືອກສະກຸນເງິນ"
-                variant="outlined"
-                density="compact"
-                prepend-inner-icon="mdi-currency-usd"
-                hide-details="auto"
-                clearable
-                @update:model-value="onCurrencyChange"
-              >
-                <template #item="{ props, item }">
-                  <v-list-item v-bind="props">
-                    <template #prepend>
-                      <v-icon :icon="item.raw.icon" size="20" />
-                    </template>
-                  </v-list-item>
-                </template>
-              </v-select>
-            </v-col>
-            
-            <v-col cols="12" md="3" class="px-md-1 mb-2 mb-md-0">
-              <v-text-field
-                v-model="filters.date_start"
-                label="ວັນທີເລີ່ມຕົ້ນ"
-                type="date"
-                variant="outlined"
-                density="compact"
-                prepend-inner-icon="mdi-calendar-start"
-                hide-details="auto"
-              />
-            </v-col>
-            
-            <v-col cols="12" md="3" class="px-md-1 mb-2 mb-md-0">
-              <v-text-field
-                v-model="filters.date_end"
-                label="ວັນທີສິ້ນສຸດ"
-                type="date"
-                variant="outlined"
-                density="compact"
-                prepend-inner-icon="mdi-calendar-end"
-                hide-details="auto"
-              />
-            </v-col>
-
-            <v-col cols="12" md="3" class="ps-md-2 d-flex gap-1">
-              <v-btn
-                type="submit"
-                color="primary"
-                prepend-icon="mdi-magnify"
-                :loading="loading"
-                class="flex-grow-1"
-                density="compact"
-                style="height: 40px;"
-              >
-                ຄົ້ນຫາ
-              </v-btn>
-
-              <v-btn
-                color="success"
-                prepend-icon="mdi-microsoft-excel"
-                :disabled="!results.length || loading"
-                @click="exportToExcel"
-                density="compact"
-                style="height: 40px;"
-              >
-                Excel
-              </v-btn>
-            </v-col>
-          </v-row>
-
-          <!-- Additional Export Buttons Row -->
-          <v-row no-gutters>
-            <v-col cols="12" class="d-flex gap-2 justify-end">
-              <v-btn
-                color="warning"
-                prepend-icon="mdi-database-export"
-                :disabled="!results.length || loading"
-                @click="exportToDairyReport"
-                density="compact"
-                style="height: 40px;"
-              >
-                Dairy Report
-              </v-btn>
-
-              <v-btn
-                color="info"
-                prepend-icon="mdi-paperclip-outline"
-                :disabled="!results.length || loading"
-                @click="exportToSOmTopReport"
-                density="compact"
-                style="height: 40px;"
-              >
-                SomTop Report
-              </v-btn>
-            </v-col>
-          </v-row>
-        </v-form>
-
-        <v-divider class="mb-3" thickness="1" color="grey-lighten-3" />
-
-        <!-- Table Info Bar -->
-        <div class="d-flex justify-space-between align-center mb-3 pa-3 bg-grey-lighten-5 rounded">
-          <div class="text-h6 font-weight-medium">
-            ຜົນການຄົ້ນຫາ: {{ results.length }} ລາຍການ
-            <v-chip size="small" :color="chipColor" variant="tonal" class="ml-2">
-              {{ chipText }}
+    <!-- Tab Content Info Bar -->
+    <v-card class="mb-3" elevation="0" style="border: 1px solid #e0e0e0;">
+      <v-card-text class="py-2">
+        <div class="d-flex align-center justify-space-between">
+          <div class="d-flex align-center">
+            <v-chip 
+              :color="getTabColor(activeTab)" 
+              size="small" 
+              variant="tonal"
+              class="me-2"
+            >
+              <v-icon start size="16">{{ getTabIcon(activeTab) }}</v-icon>
+              {{ getTabTitle(activeTab) }}
             </v-chip>
+            <span class="text-body-2 text-grey-darken-1">
+              ກຳລັງສະແດງ: {{ getTabDescription(activeTab) }}
+            </span>
           </div>
-          <v-text-field
-            v-model="searchText"
-            label="ຄົ້ນຫາໃນຕາຕະລາງ"
-            prepend-inner-icon="mdi-magnify"
-            variant="outlined"
-            density="compact"
-            style="max-width: 300px;"
-            hide-details
-            clearable
-          />
-        </div>
-
-        <!-- Custom Table Implementation -->
-        <div class="custom-table-container">
-          <table class="custom-trial-balance-table">
-            <!-- Table Header -->
-            <thead>
-              <!-- Main Group Headers -->
-              <tr class="main-header-row">
-                <th rowspan="2" class="header-cell sticky-column account-code-header">
-                  <div class="header-content-center">ເລກບັນຊີ</div>
-                </th>
-                <th rowspan="2" class="header-cell description-header">
-                  <div class="header-content-left">ລາຍລະອຽດ</div>
-                </th>
-                <th colspan="2" class="header-cell group-header">
-                  <div class="group-header-content">
-                    <v-icon size="16" color="success">mdi-arrow-up-circle</v-icon>
-                    <span>ຍອດຍົກ</span>
-                  </div>
-                </th>
-                <th colspan="2" class="header-cell group-header">
-                  <div class="group-header-content">
-                    <v-icon size="16" color="info">mdi-swap-horizontal-circle</v-icon>
-                    <span>ຍອດເຄື່ອນ</span>
-                  </div>
-                </th>
-                <th colspan="2" class="header-cell group-header">
-                  <div class="group-header-content">
-                    <v-icon size="16" color="warning">mdi-arrow-down-circle</v-icon>
-                    <span>ຍອດເຫຼືອ</span>
-                  </div>
-                </th>
-              </tr>
-              <!-- Sub Headers -->
-              <tr class="sub-header-row">
-                <th class="header-cell sub-header">Dr ({{ currencyCode }})</th>
-                <th class="header-cell sub-header">Cr ({{ currencyCode }})</th>
-                <th class="header-cell sub-header">Dr ({{ currencyCode }})</th>
-                <th class="header-cell sub-header">Cr ({{ currencyCode }})</th>
-                <th class="header-cell sub-header">Dr ({{ currencyCode }})</th>
-                <th class="header-cell sub-header">Cr ({{ currencyCode }})</th>
-              </tr>
-            </thead>
-            
-            <!-- Table Body -->
-            <tbody>
-              <tr v-if="loading">
-                <td colspan="8" class="text-center pa-8">
-                  <v-progress-circular indeterminate color="primary" />
-                  <div class="mt-3">ກຳລັງໂຫຼດຂໍ້ມູນ...</div>
-                </td>
-              </tr>
-              
-              <tr v-else-if="!results.length">
-                <td colspan="8" class="text-center pa-8">
-                  <v-icon size="64" color="grey-lighten-2" class="mb-4">mdi-table-off</v-icon>
-                  <div class="text-h6 text-grey-darken-1 mb-2">ບໍ່ມີຂໍ້ມູນ</div>
-                  <div class="text-body-2 text-grey">ກະລຸນາປັບປຸງເງື່ອນໄຂການຄົ້ນຫາແລ້ວລອງໃໝ່</div>
-                </td>
-              </tr>
-              
-              <!-- Data Rows -->
-              <tr 
-                v-for="(item, index) in filteredResults" 
-                :key="index"
-                class="data-row"
-              >
-                <td class="data-cell sticky-column account-code-cell">
-                  <div class="gl-code-content">
-                    <span class="text-primary font-weight-medium">{{ item.GL_Code }}</span>
-                  </div>
-                </td>
-                <td class="data-cell description-cell">
-                  <div class="description-content" :title="item.Description">
-                    {{ item.Description }}
-                  </div>
-                </td>
-                <!-- Opening Dr/Cr -->
-                <td class="data-cell amount-cell">
-                  <span class="amount-value">{{ formatCurrency(item.Opening_Dr) }}</span>
-                </td>
-                <td class="data-cell amount-cell">
-                  <span class="amount-value">{{ formatCurrency(item.Opening_Cr) }}</span>
-                </td>
-                <!-- Flow Dr/Cr -->
-                <td class="data-cell amount-cell">
-                  <span class="amount-value">{{ formatCurrency(item.Flow_Dr) }}</span>
-                </td>
-                <td class="data-cell amount-cell">
-                  <span class="amount-value">{{ formatCurrency(item.Flow_Cr) }}</span>
-                </td>
-                <!-- Closing Dr/Cr -->
-                <td class="data-cell amount-cell">
-                  <span class="amount-value text-success">{{ formatCurrency(item.Closing_Dr) }}</span>
-                </td>
-                <td class="data-cell amount-cell">
-                  <span class="amount-value text-error">{{ formatCurrency(item.Closing_Cr) }}</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <v-btn-toggle 
+            v-model="viewMode" 
+            density="compact" 
+            class="d-none d-md-flex"
+          >
+            <v-btn value="table" size="small">
+              <v-icon>mdi-table</v-icon>
+            </v-btn>
+            <v-btn value="chart" size="small">
+              <v-icon>mdi-chart-bar</v-icon>
+            </v-btn>
+          </v-btn-toggle>
         </div>
       </v-card-text>
     </v-card>
+
+    <!-- Enhanced Tab Content Window - ALL CONTENT IS NOW INSIDE HERE -->
+    <v-window v-model="activeTab">
+      <!-- Main SomTop Trail Balance Tab with Table -->
+      <v-window-item value="somtop_trial">
+        <v-card class="mx-auto" elevation="0" style="border: 1px solid #e0e0e0;">
+          <!-- Header Section -->
+          <v-card-title class="px-4 py-3 d-flex align-center" style="background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%); color: white;">
+            <v-icon start size="24">mdi-chart-box-outline</v-icon>
+            <span class="text-h6 font-weight-medium">
+              ລາຍງານໃບສົມທົບ - 
+              {{ selectedCurrency ? `${selectedCurrency} (FCY)` : 'LCY Consolidated' }}
+            </span>
+            <v-spacer />
+            <v-chip 
+              color="white" 
+              text-color="primary" 
+              size="small" 
+              variant="outlined"
+            >
+              {{ getTabTitle(activeTab) }}
+            </v-chip>
+          </v-card-title>
+          
+          <v-card-text class="px-4 py-3">
+            <!-- Filter Form -->
+            <v-form @submit.prevent="fetchTrialBalance" class="mb-3">
+              <v-row no-gutters class="mb-3">
+                <!-- Currency Selection -->
+                <v-col cols="12" md="3" class="pe-md-2 mb-2 mb-md-0">
+                  <v-select
+                    v-model="filters.currency"
+                    :items="currencyOptions"
+                    label="ເລືອກສະກຸນເງິນ"
+                    variant="outlined"
+                    density="compact"
+                    prepend-inner-icon="mdi-currency-usd"
+                    hide-details="auto"
+                    clearable
+                    @update:model-value="onCurrencyChange"
+                  >
+                    <template #item="{ props, item }">
+                      <v-list-item v-bind="props">
+                        <template #prepend>
+                          <v-icon :icon="item.raw.icon" size="20" />
+                        </template>
+                      </v-list-item>
+                    </template>
+                  </v-select>
+                </v-col>
+                
+                <v-col cols="12" md="3" class="px-md-1 mb-2 mb-md-0">
+                  <v-text-field
+                    v-model="filters.date_start"
+                    label="ວັນທີເລີ່ມຕົ້ນ"
+                    type="date"
+                    variant="outlined"
+                    density="compact"
+                    prepend-inner-icon="mdi-calendar-start"
+                    hide-details="auto"
+                  />
+                </v-col>
+                
+                <v-col cols="12" md="3" class="px-md-1 mb-2 mb-md-0">
+                  <v-text-field
+                    v-model="filters.date_end"
+                    label="ວັນທີສິ້ນສຸດ"
+                    type="date"
+                    variant="outlined"
+                    density="compact"
+                    prepend-inner-icon="mdi-calendar-end"
+                    hide-details="auto"
+                  />
+                </v-col>
+
+                <v-col cols="12" md="3" class="ps-md-2 d-flex gap-1">
+                  <v-btn
+                    type="submit"
+                    color="primary"
+                    prepend-icon="mdi-magnify"
+                    :loading="loading"
+                    class="flex-grow-1"
+                    density="compact"
+                    style="height: 40px;"
+                  >
+                    ຄົ້ນຫາ
+                  </v-btn>
+
+                  <v-btn
+                    color="success"
+                    prepend-icon="mdi-microsoft-excel"
+                    :disabled="!results.length || loading"
+                    @click="exportToExcel"
+                    density="compact"
+                    style="height: 40px;"
+                  >
+                    Excel
+                  </v-btn>
+                </v-col>
+              </v-row>
+
+              <!-- Additional Export Buttons Row -->
+              <v-row no-gutters>
+                <v-col cols="12" class="d-flex gap-2 justify-end">
+                  <v-btn
+                    color="warning"
+                    prepend-icon="mdi-database-export"
+                    :disabled="!results.length || loading"
+                    @click="exportToDairyReport"
+                    density="compact"
+                    style="height: 40px;"
+                  >
+                    Dairy Report
+                  </v-btn>
+
+                  <v-btn
+                    color="info"
+                    prepend-icon="mdi-paperclip-outline"
+                    :disabled="!results.length || loading"
+                    @click="exportToSOmTopReport"
+                    density="compact"
+                    style="height: 40px;"
+                  >
+                    SomTop Report
+                  </v-btn>
+
+                  <!-- Conditional export based on active tab -->
+                  <v-btn
+                    v-if="isACTBTab(activeTab)"
+                    color="deep-purple"
+                    prepend-icon="mdi-file-export"
+                    :disabled="!results.length || loading"
+                    @click="exportToACTBReport"
+                    density="compact"
+                    style="height: 40px;"
+                  >
+                    ACTB Export
+                  </v-btn>
+                </v-col>
+              </v-row>
+            </v-form>
+
+            <v-divider class="mb-3" thickness="1" color="grey-lighten-3" />
+
+            <!-- Table Info Bar -->
+            <div class="d-flex justify-space-between align-center mb-3 pa-3 bg-grey-lighten-5 rounded">
+              <div class="text-h6 font-weight-medium">
+                ຜົນການຄົ້ນຫາ: {{ results.length }} ລາຍການ
+                <v-chip size="small" :color="chipColor" variant="tonal" class="ml-2">
+                  {{ chipText }}
+                </v-chip>
+              </div>
+              <v-text-field
+                v-model="searchText"
+                label="ຄົ້ນຫາໃນຕາຕະລາງ"
+                prepend-inner-icon="mdi-magnify"
+                variant="outlined"
+                density="compact"
+                style="max-width: 300px;"
+                hide-details
+                clearable
+              />
+            </div>
+
+            <!-- Custom Table Implementation -->
+            <div class="custom-table-container">
+              <table class="custom-trial-balance-table">
+                <!-- Table Header -->
+                <thead>
+                  <!-- Main Group Headers -->
+                  <tr class="main-header-row">
+                    <th rowspan="2" class="header-cell sticky-column account-code-header">
+                      <div class="header-content-center">ເລກບັນຊີ</div>
+                    </th>
+                    <th rowspan="2" class="header-cell description-header">
+                      <div class="header-content-left">ລາຍລະອຽດ</div>
+                    </th>
+                    <th colspan="2" class="header-cell group-header">
+                      <div class="group-header-content">
+                        <v-icon size="16" color="success">mdi-arrow-up-circle</v-icon>
+                        <span>ຍອດຍົກ</span>
+                      </div>
+                    </th>
+                    <th colspan="2" class="header-cell group-header">
+                      <div class="group-header-content">
+                        <v-icon size="16" color="info">mdi-swap-horizontal-circle</v-icon>
+                        <span>ຍອດເຄື່ອນ</span>
+                      </div>
+                    </th>
+                    <th colspan="2" class="header-cell group-header">
+                      <div class="group-header-content">
+                        <v-icon size="16" color="warning">mdi-arrow-down-circle</v-icon>
+                        <span>ຍອດເຫຼືອ</span>
+                      </div>
+                    </th>
+                  </tr>
+                  <!-- Sub Headers -->
+                  <tr class="sub-header-row">
+                    <th class="header-cell sub-header">Dr ({{ currencyCode }})</th>
+                    <th class="header-cell sub-header">Cr ({{ currencyCode }})</th>
+                    <th class="header-cell sub-header">Dr ({{ currencyCode }})</th>
+                    <th class="header-cell sub-header">Cr ({{ currencyCode }})</th>
+                    <th class="header-cell sub-header">Dr ({{ currencyCode }})</th>
+                    <th class="header-cell sub-header">Cr ({{ currencyCode }})</th>
+                  </tr>
+                </thead>
+                
+                <!-- Table Body -->
+                <tbody>
+                  <tr v-if="loading">
+                    <td colspan="8" class="text-center pa-8">
+                      <v-progress-circular indeterminate color="primary" />
+                      <div class="mt-3">ກຳລັງໂຫຼດຂໍ້ມູນ...</div>
+                    </td>
+                  </tr>
+                  
+                  <tr v-else-if="!results.length">
+                    <td colspan="8" class="text-center pa-8">
+                      <v-icon size="64" color="grey-lighten-2" class="mb-4">mdi-table-off</v-icon>
+                      <div class="text-h6 text-grey-darken-1 mb-2">ບໍ່ມີຂໍ້ມູນ</div>
+                      <div class="text-body-2 text-grey">ກະລຸນາປັບປຸງເງື່ອນໄຂການຄົ້ນຫາແລ້ວລອງໃໝ່</div>
+                    </td>
+                  </tr>
+                  
+                  <!-- Data Rows -->
+                  <tr 
+                    v-for="(item, index) in filteredResults" 
+                    :key="index"
+                    class="data-row"
+                  >
+                    <td class="data-cell sticky-column account-code-cell">
+                      <div class="gl-code-content">
+                        <span class="text-primary font-weight-medium">{{ item.GL_Code }}</span>
+                      </div>
+                    </td>
+                    <td class="data-cell description-cell">
+                      <div class="description-content" :title="item.Description">
+                        {{ item.Description }}
+                      </div>
+                    </td>
+                    <!-- Opening Dr/Cr -->
+                    <td class="data-cell amount-cell">
+                      <span class="amount-value">{{ formatCurrency(item.Opening_Dr) }}</span>
+                    </td>
+                    <td class="data-cell amount-cell">
+                      <span class="amount-value">{{ formatCurrency(item.Opening_Cr) }}</span>
+                    </td>
+                    <!-- Flow Dr/Cr -->
+                    <td class="data-cell amount-cell">
+                      <span class="amount-value">{{ formatCurrency(item.Flow_Dr) }}</span>
+                    </td>
+                    <td class="data-cell amount-cell">
+                      <span class="amount-value">{{ formatCurrency(item.Flow_Cr) }}</span>
+                    </td>
+                    <!-- Closing Dr/Cr -->
+                    <td class="data-cell amount-cell">
+                      <span class="amount-value text-success">{{ formatCurrency(item.Closing_Dr) }}</span>
+                    </td>
+                    <td class="data-cell amount-cell">
+                      <span class="amount-value text-error">{{ formatCurrency(item.Closing_Cr) }}</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-window-item>
+
+      <!-- ACTB SomTop Trial Balance Tab -->
+      <v-window-item value="actb_somtop_trial">
+        <v-card class="mx-auto" elevation="0" style="border: 1px solid #e0e0e0;">
+          <v-card-title class="px-4 py-3 d-flex align-center" style="background: linear-gradient(135deg, #673ab7 0%, #512da8 100%); color: white;">
+            <v-icon start size="24">mdi-account-balance-wallet</v-icon>
+            <span class="text-h6 font-weight-medium">ACTB SomTop Trial Balance</span>
+          </v-card-title>
+          <v-card-text class="px-4 py-3">
+            <ActbTrailBalance />
+          </v-card-text>
+        </v-card>
+      </v-window-item>
+
+      <!-- ACTB Trial Balance Tab -->
+      <v-window-item value="actb_trial">
+        <v-card class="mx-auto" elevation="0" style="border: 1px solid #e0e0e0;">
+          <v-card-title class="px-4 py-3 d-flex align-center" style="background: linear-gradient(135deg, #3f51b5 0%, #303f9f 100%); color: white;">
+            <v-icon start size="24">mdi-account-cash</v-icon>
+            <span class="text-h6 font-weight-medium">ACTB Trial Balance</span>
+          </v-card-title>
+          <v-card-text class="px-4 py-3">
+            <ActbMainTrialBalance />
+          </v-card-text>
+        </v-card>
+      </v-window-item>
+
+      <!-- ACTB Balance Sheet Tab -->
+      <v-window-item value="actb_balance">
+        <v-card class="mx-auto" elevation="0" style="border: 1px solid #e0e0e0;">
+          <v-card-title class="px-4 py-3 d-flex align-center" style="background: linear-gradient(135deg, #607d8b 0%, #455a64 100%); color: white;">
+            <v-icon start size="24">mdi-bank</v-icon>
+            <span class="text-h6 font-weight-medium">ACTB Balance Sheet</span>
+          </v-card-title>
+          <v-card-text class="px-4 py-3">
+            <ActbBalanceSheet />
+          </v-card-text>
+        </v-card>
+      </v-window-item>
+
+      <!-- ACTB Income Statement Tab -->
+      <v-window-item value="actb_income">
+        <v-card class="mx-auto" elevation="0" style="border: 1px solid #e0e0e0;">
+          <v-card-title class="px-4 py-3 d-flex align-center" style="background: linear-gradient(135deg, #009688 0%, #00695c 100%); color: white;">
+            <v-icon start size="24">mdi-chart-line</v-icon>
+            <span class="text-h6 font-weight-medium">ACTB Income Statement</span>
+          </v-card-title>
+          <v-card-text class="px-4 py-3">
+            <ActbIncomeStatement />
+          </v-card-text>
+        </v-card>
+      </v-window-item>
+    </v-window>
+
+    <!-- Dairy Report Export Dialog -->
+    <v-dialog v-model="showDairyReportDialog" max-width="600" persistent>
+      <v-card elevation="8">
+        <!-- Dialog Header -->
+        <v-card-title class="d-flex align-center pa-4" style="background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); color: white;">
+          <v-icon start size="24">mdi-database-export</v-icon>
+          <span class="text-h6">ການສົ່ງອອກ Dairy Report</span>
+        </v-card-title>
+        
+        <v-card-text class="pa-4">
+          <!-- Warning Alert -->
+          <v-alert type="warning" variant="tonal" class="mb-4" border="start">
+            <template #prepend>
+              <v-icon>mdi-alert-circle</v-icon>
+            </template>
+            <v-alert-title class="text-h6 mb-2">⚠️ ການເຮັດວຽກທີ່ສຳຄັນ</v-alert-title>
+            <div class="text-body-2">
+              <strong>ການດຳເນີນງານນີ້ຈະ:</strong><br>
+              • ສົ່ງອອກຂໍ້ມູນໄປ Dairy Report ລະບົບ<br>
+              • ນຳເຂົ້າຂໍ້ມູນຈາກ Trial Balance ປັດຈຸບັນ<br>
+              • <span class="text-red font-weight-bold">ກະລຸນາກວດສອບຂໍ້ມູນກ່ອນດຳເນີນການ</span>
+            </div>
+          </v-alert>
+          
+          <v-divider class="my-4" />
+          
+          <!-- Operation Details -->
+          <div class="text-body-1 font-weight-medium mb-3">
+            📋 ລາຍລະອຽດການດຳເນີນງານ:
+          </div>
+          
+          <v-card variant="outlined" class="mb-4">
+            <v-list density="compact" class="pa-0">
+              <v-list-item>
+                <template #prepend>
+                  <v-icon color="primary">mdi-calendar-range</v-icon>
+                </template>
+                <v-list-item-title class="font-weight-medium">ໄລຍະວັນທີ</v-list-item-title>
+                <v-list-item-subtitle class="text-primary">
+                  {{ filters.date_start }} ຫາ {{ filters.date_end }}
+                </v-list-item-subtitle>
+              </v-list-item>
+              
+              <v-divider />
+              
+              <v-list-item>
+                <template #prepend>
+                  <v-icon color="info">mdi-currency-usd</v-icon>
+                </template>
+                <v-list-item-title class="font-weight-medium">ສະກຸນເງິນ</v-list-item-title>
+                <v-list-item-subtitle>
+                  {{ selectedCurrency ? `${selectedCurrency} (FCY)` : 'LCY Consolidated' }}
+                </v-list-item-subtitle>
+              </v-list-item>
+              
+              <v-divider />
+              
+              <v-list-item>
+                <template #prepend>
+                  <v-icon color="success">mdi-database</v-icon>
+                </template>
+                <v-list-item-title class="font-weight-medium">API Endpoint</v-list-item-title>
+                <v-list-item-subtitle class="font-mono">
+                  /api/dairy-reports/bulk-insert/
+                </v-list-item-subtitle>
+              </v-list-item>
+            </v-list>
+          </v-card>
+          
+          <!-- Optional Settings -->
+          <v-expansion-panels variant="accordion" class="mt-4">
+            <v-expansion-panel>
+              <v-expansion-panel-title>
+                <template #default>
+                  <div class="d-flex align-center">
+                    <v-icon start>mdi-cog</v-icon>
+                    <span>ການຕັ້ງຄ່າເພີ່ມເຕີມ (Optional Settings)</span>
+                  </div>
+                </template>
+              </v-expansion-panel-title>
+              <v-expansion-panel-text class="pt-4">
+                <v-row>
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="dairyReportOptions.fin_year"
+                      label="ປີງົບປະມານ"
+                      density="compact"
+                      variant="outlined"
+                      placeholder="2025"
+                      prepend-inner-icon="mdi-calendar"
+                    />
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="dairyReportOptions.period_code"
+                      label="ລະຫັດໄລຍະ"
+                      density="compact"
+                      variant="outlined"
+                      placeholder="Optional"
+                      prepend-inner-icon="mdi-timeline"
+                    />
+                  </v-col>
+                  <v-col cols="12">
+                    <v-text-field
+                      v-model="dairyReportOptions.category"
+                      label="ໝວດໝູ່"
+                      density="compact"
+                      variant="outlined"
+                      placeholder="TRIAL_BALANCE"
+                      prepend-inner-icon="mdi-tag"
+                    />
+                  </v-col>
+                </v-row>
+              </v-expansion-panel-text>
+            </v-expansion-panel>
+          </v-expansion-panels>
+        </v-card-text>
+        
+        <!-- Dialog Actions -->
+        <v-card-actions class="pa-4 bg-grey-lighten-5">
+          <v-spacer />
+          <v-btn 
+            color="grey-darken-1"
+            variant="outlined"
+            @click="showDairyReportDialog = false"
+            :disabled="dairyReportLoading"
+            prepend-icon="mdi-close"
+          >
+            ຍົກເລີກ
+          </v-btn>
+          <v-btn 
+            color="warning"
+            variant="elevated"
+            prepend-icon="mdi-database-export"
+            :loading="dairyReportLoading"
+            @click="executeDairyReportExport"
+            class="text-white ml-2"
+          >
+            <span v-if="!dairyReportLoading">ສົ່ງອອກ</span>
+            <span v-else>ກຳລັງສົ່ງອອກ...</span>
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- SomTop Report Export Dialog -->
+    <v-dialog v-model="showSomTopReportDialog" max-width="600" persistent>
+      <v-card elevation="8">
+        <!-- Dialog Header -->
+        <v-card-title class="d-flex align-center pa-4" style="background: linear-gradient(135deg, #3f51b5 0%, #303f9f 100%); color: white;">
+          <v-icon start size="24">mdi-paperclip-outline</v-icon>
+          <span class="text-h6">ການສົ່ງອອກ SomTop Report</span>
+        </v-card-title>
+        
+        <v-card-text class="pa-4">
+          <!-- Warning Alert -->
+          <v-alert type="info" variant="tonal" class="mb-4" border="start">
+            <template #prepend>
+              <v-icon>mdi-information-outline</v-icon>
+            </template>
+            <v-alert-title class="text-h6 mb-2">📊 ການສົ່ງອອກລາຍງານ</v-alert-title>
+            <div class="text-body-2">
+              <strong>ການດຳເນີນງານນີ້ຈະ:</strong><br>
+              • ສົ່ງອອກຂໍ້ມູນໄປ SomTop Report ລະບົບ<br>
+              • ນຳເຂົ້າຂໍ້ມູນຈາກ Trial Balance ປັດຈຸບັນ<br>
+              • <span class="text-blue font-weight-bold">ໃຊ້ສຳລັບລາຍງານພິເສດ SomTop</span>
+            </div>
+          </v-alert>
+          
+          <v-divider class="my-4" />
+          
+          <!-- Operation Details -->
+          <div class="text-body-1 font-weight-medium mb-3">
+            📋 ລາຍລະອຽດການດຳເນີນງານ:
+          </div>
+          
+          <v-card variant="outlined" class="mb-4">
+            <v-list density="compact" class="pa-0">
+              <v-list-item>
+                <template #prepend>
+                  <v-icon color="primary">mdi-calendar-range</v-icon>
+                </template>
+                <v-list-item-title class="font-weight-medium">ໄລຍະວັນທີ</v-list-item-title>
+                <v-list-item-subtitle class="text-primary">
+                  {{ filters.date_start }} ຫາ {{ filters.date_end }}
+                </v-list-item-subtitle>
+              </v-list-item>
+              
+              <v-divider />
+              
+              <v-list-item>
+                <template #prepend>
+                  <v-icon color="info">mdi-currency-usd</v-icon>
+                </template>
+                <v-list-item-title class="font-weight-medium">ສະກຸນເງິນ</v-list-item-title>
+                <v-list-item-subtitle>
+                  {{ selectedCurrency ? `${selectedCurrency} (FCY)` : 'LCY Consolidated' }}
+                </v-list-item-subtitle>
+              </v-list-item>
+              
+              <v-divider />
+              
+              <v-list-item>
+                <template #prepend>
+                  <v-icon color="success">mdi-database</v-icon>
+                </template>
+                <v-list-item-title class="font-weight-medium">API Endpoint</v-list-item-title>
+                <v-list-item-subtitle class="font-mono">
+                  /api/somtop_trail_balance-report/bulk-insert/
+                </v-list-item-subtitle>
+              </v-list-item>
+            </v-list>
+          </v-card>
+          
+          <!-- Optional Settings -->
+          <v-expansion-panels variant="accordion" class="mt-4">
+            <v-expansion-panel>
+              <v-expansion-panel-title>
+                <template #default>
+                  <div class="d-flex align-center">
+                    <v-icon start>mdi-cog</v-icon>
+                    <span>ການຕັ້ງຄ່າເພີ່ມເຕີມ (Optional Settings)</span>
+                  </div>
+                </template>
+              </v-expansion-panel-title>
+              <v-expansion-panel-text class="pt-4">
+                <v-row>
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="somTopReportOptions.fin_year"
+                      label="ປີງົບປະມານ"
+                      density="compact"
+                      variant="outlined"
+                      placeholder="2025"
+                      prepend-inner-icon="mdi-calendar"
+                    />
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="somTopReportOptions.period_code"
+                      label="ລະຫັດໄລຍະ"
+                      density="compact"
+                      variant="outlined"
+                      placeholder="Optional"
+                      prepend-inner-icon="mdi-timeline"
+                    />
+                  </v-col>
+                  <v-col cols="12">
+                    <v-text-field
+                      v-model="somTopReportOptions.category"
+                      label="ໝວດໝູ່"
+                      density="compact"
+                      variant="outlined"
+                      placeholder="SOMTOP_TRIAL_BALANCE"
+                      prepend-inner-icon="mdi-tag"
+                    />
+                  </v-col>
+                </v-row>
+              </v-expansion-panel-text>
+            </v-expansion-panel>
+          </v-expansion-panels>
+        </v-card-text>
+        
+        <!-- Dialog Actions -->
+        <v-card-actions class="pa-4 bg-grey-lighten-5">
+          <v-spacer />
+          <v-btn 
+            color="grey-darken-1"
+            variant="outlined"
+            @click="showSomTopReportDialog = false"
+            :disabled="somTopReportLoading"
+            prepend-icon="mdi-close"
+          >
+            ຍົກເລີກ
+          </v-btn>
+          <v-btn 
+            color="info"
+            variant="elevated"
+            prepend-icon="mdi-paperclip-outline"
+            :loading="somTopReportLoading"
+            @click="executeSomTopReportExport"
+            class="text-white ml-2"
+          >
+            <span v-if="!somTopReportLoading">ສົ່ງອອກ</span>
+            <span v-else>ກຳລັງສົ່ງອອກ...</span>
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <!-- Snackbar for notifications -->
     <v-snackbar
@@ -302,11 +709,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import axios from '@/helpers/axios'
 import * as XLSX from 'xlsx'
 
-const activeTab = ref('somtop_trial')
+// Import existing components
+import ActbTrailBalance from './ActbTrailBalance.vue'
+import ActbMainTrialBalance from './ActbMainTrialBalance.vue'
+import ActbBalanceSheet from './ActbBalanceSheet.vue'
+import ActbIncomeStatement from './ActbIncomeStatement.vue'
+
+const activeTab = ref('somtop_trial') // Set default tab
+const viewMode = ref('table')
 
 // Type definitions
 interface TrialBalanceItem {
@@ -329,6 +743,25 @@ const filters = ref({
   currency: null as string | null,
   date_start: new Date().toISOString().split('T')[0],
   date_end: new Date().toISOString().split('T')[0]
+})
+
+// Dialog states
+const showDairyReportDialog = ref(false)
+const showSomTopReportDialog = ref(false)
+const dairyReportLoading = ref(false)
+const somTopReportLoading = ref(false)
+
+// Dialog options
+const dairyReportOptions = ref({
+  fin_year: new Date().getFullYear().toString(),
+  period_code: '',
+  category: 'TRIAL_BALANCE'
+})
+
+const somTopReportOptions = ref({
+  fin_year: new Date().getFullYear().toString(),
+  period_code: '',
+  category: 'SOMTOP_TRIAL_BALANCE'
 })
 
 const snackbar = ref({
@@ -362,6 +795,47 @@ const currencyOptions = [
   }
 ]
 
+// Tab management functions
+const tabConfig = {
+  somtop_trial: { 
+    title: 'SomTop Trail Balance', 
+    description: 'ລາຍງານໃບສົມທົບ SomTop',
+    icon: 'mdi-account-balance',
+    color: 'primary'
+  },
+  actb_somtop_trial: { 
+    title: 'ACTB SomTop TB', 
+    description: 'ລາຍງານ ACTB SomTop Trial Balance',
+    icon: 'mdi-account-balance-wallet',
+    color: 'deep-purple'
+  },
+  actb_trial: { 
+    title: 'ACTB Trial Balance', 
+    description: 'ລາຍງານ ACTB Trail Balance',
+    icon: 'mdi-account-cash',
+    color: 'indigo'
+  },
+  actb_balance: { 
+    title: 'ACTB Balance Sheet', 
+    description: 'ລາຍງານ ACTB Balance Sheet',
+    icon: 'mdi-bank',
+    color: 'blue-grey'
+  },
+  actb_income: { 
+    title: 'ACTB Income Statement', 
+    description: 'ລາຍງານ ACTB Income Statement',
+    icon: 'mdi-chart-line',
+    color: 'teal'
+  }
+}
+
+const getTabTitle = (tab: string) => tabConfig[tab]?.title || tab
+const getTabDescription = (tab: string) => tabConfig[tab]?.description || tab
+const getTabIcon = (tab: string) => tabConfig[tab]?.icon || 'mdi-file'
+const getTabColor = (tab: string) => tabConfig[tab]?.color || 'primary'
+
+const isACTBTab = (tab: string) => tab.startsWith('actb_')
+
 // Computed
 const selectedCurrency = computed(() => filters.value.currency)
 const currencyCode = computed(() => selectedCurrency.value || 'LAK')
@@ -389,6 +863,17 @@ const filteredResults = computed(() => {
     item.GL_Code.toLowerCase().includes(search) ||
     item.Description.toLowerCase().includes(search)
   )
+})
+
+// Watch for tab changes and clear data when switching away from somtop_trial
+watch(activeTab, (newTab, oldTab) => {
+  if (oldTab === 'somtop_trial' && newTab !== 'somtop_trial') {
+    // Clear table data when switching away from main tab
+    results.value = []
+  } else if (newTab === 'somtop_trial' && filters.value.date_start && filters.value.date_end) {
+    // Load data when switching to main tab
+    fetchTrialBalance()
+  }
 })
 
 // Helper functions
@@ -431,6 +916,9 @@ const normalizeTrialBalanceData = (data: any[], isConsolidated: boolean = false)
 }
 
 const fetchTrialBalance = async () => {
+  // Only fetch data for the main somtop_trial tab
+  if (activeTab.value !== 'somtop_trial') return
+
   try {
     loading.value = true
 
@@ -443,14 +931,14 @@ const fetchTrialBalance = async () => {
     let endpoint: string
     let payload: any
 
+    endpoint = getStandardEndpoint(isConsolidated)
+
     if (isConsolidated) {
-      endpoint = '/api/trial-balance/consolidated/'
       payload = {
         date_start: filters.value.date_start,
         date_end: filters.value.date_end
       }
     } else {
-      endpoint = '/api/trial-balance/fcy/'
       payload = {
         ac_ccy_id: selectedCurrency.value,
         date_start: filters.value.date_start,
@@ -489,10 +977,16 @@ const fetchTrialBalance = async () => {
   }
 }
 
+const getStandardEndpoint = (isConsolidated: boolean) => {
+  return isConsolidated ? '/api/trial-balance/consolidated/' : '/api/trial-balance/fcy/'
+}
+
 const onCurrencyChange = () => {
-  results.value = []
-  if (filters.value.date_start && filters.value.date_end) {
-    fetchTrialBalance()
+  if (activeTab.value === 'somtop_trial') {
+    results.value = []
+    if (filters.value.date_start && filters.value.date_end) {
+      fetchTrialBalance()
+    }
   }
 }
 
@@ -522,9 +1016,9 @@ const exportToExcel = () => {
       { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 18 }
     ]
 
-    XLSX.utils.book_append_sheet(wb, ws, `Trial Balance`)
+    XLSX.utils.book_append_sheet(wb, ws, getTabTitle(activeTab.value))
     
-    const filename = `Trial_Balance_${currencyCode.value}_${new Date().toISOString().split('T')[0]}.xlsx`
+    const filename = `${getTabTitle(activeTab.value)}_${currencyCode.value}_${new Date().toISOString().split('T')[0]}.xlsx`
     XLSX.writeFile(wb, filename)
 
     showSnackbar('📊 ສົ່ງອອກສຳເລັດ', 'success', 'mdi-download')
@@ -535,37 +1029,99 @@ const exportToExcel = () => {
   }
 }
 
-const exportToDairyReport = async () => {
-  try {
-    if (!filters.value.date_start || !filters.value.date_end) {
-      showSnackbar('ກະລຸນາເລືອກວັນທີເລີ່ມຕົ້ນ ແລະ ວັນທີສິ້ນສຸດ', 'warning', 'mdi-alert')
-      return
-    }
+// Show Dairy Report Dialog
+const exportToDairyReport = () => {
+  if (!filters.value.date_start || !filters.value.date_end) {
+    showSnackbar('ກະລຸນາເລືອກວັນທີເລີ່ມຕົ້ນ ແລະ ວັນທີສິ້ນສຸດ', 'warning', 'mdi-alert')
+    return
+  }
+  showDairyReportDialog.value = true
+}
 
-    const today = new Date()
-    const finYear = today.getFullYear().toString()
+// Show SomTop Report Dialog
+const exportToSOmTopReport = () => {
+  if (!filters.value.date_start || !filters.value.date_end) {
+    showSnackbar('ກະລຸນາເລືອກວັນທີເລີ່ມຕົ້ນ ແລະ ວັນທີສິ້ນສຸດ', 'warning', 'mdi-alert')
+    return
+  }
+  showSomTopReportDialog.value = true
+}
+
+// Execute Dairy Report Export
+const executeDairyReportExport = async () => {
+  try {
+    dairyReportLoading.value = true
+
     const payload = {
       date_start: filters.value.date_start,
       date_end: filters.value.date_end,
-      fin_year: finYear,
-      period_code: '',
-      category: 'TRIAL_BALANCE'
+      fin_year: dairyReportOptions.value.fin_year,
+      period_code: dairyReportOptions.value.period_code,
+      category: dairyReportOptions.value.category
     }
 
     const { data } = await axios.post('/api/dairy-reports/bulk-insert/', payload, getAuthHeaders())
 
     if (data.status === 'success') {
       showSnackbar('✅ ສົ່ງອອກ Dairy Report ສຳເລັດ', 'success', 'mdi-check-circle')
+      showDairyReportDialog.value = false
     } else {
       showSnackbar(data.message || 'ບໍ່ສາມາດສົ່ງອອກ Dairy Report', 'error', 'mdi-alert-circle')
     }
   } catch (error: any) {
     console.error('Export Dairy Report error:', error)
-    showSnackbar('❌ ເກີດຂໍ້ຜິດພາດໃນການ Export Dairy Report', 'error', 'mdi-alert-circle')
+    
+    let errorMessage = '❌ ເກີດຂໍ້ຜິດພາດໃນການ Export Dairy Report'
+    if (error?.response?.status === 401) {
+      errorMessage = '🔐 ໂທເຄນໝົດອາຍຸ ກະລຸນາເຂົ້າສູ່ລະບົບໃໝ່'
+    } else if (error?.response?.data?.message) {
+      errorMessage = error.response.data.message
+    }
+    
+    showSnackbar(errorMessage, 'error', 'mdi-alert-circle')
+  } finally {
+    dairyReportLoading.value = false
   }
 }
 
-const exportToSOmTopReport = async () => {
+// Execute SomTop Report Export
+const executeSomTopReportExport = async () => {
+  try {
+    somTopReportLoading.value = true
+
+    const payload = {
+      date_start: filters.value.date_start,
+      date_end: filters.value.date_end,
+      fin_year: somTopReportOptions.value.fin_year,
+      period_code: somTopReportOptions.value.period_code,
+      category: somTopReportOptions.value.category
+    }
+
+    const { data } = await axios.post('/api/somtop-trial-balance/bulk-insert/', payload, getAuthHeaders())
+
+    if (data.status === 'success') {
+      showSnackbar('✅ ສົ່ງອອກ SomTop Report ສຳເລັດ', 'success', 'mdi-check-circle')
+      showSomTopReportDialog.value = false
+    } else {
+      showSnackbar(data.message || 'ບໍ່ສາມາດສົ່ງອອກ SomTop Report', 'error', 'mdi-alert-circle')
+    }
+  } catch (error: any) {
+    console.error('Export SomTop Report error:', error)
+    
+    let errorMessage = '❌ ເກີດຂໍ້ຜິດພາດໃນການ Export SomTop Report'
+    if (error?.response?.status === 401) {
+      errorMessage = '🔐 ໂທເຄນໝົດອາຍຸ ກະລຸນາເຂົ້າສູ່ລະບົບໃໝ່'
+    } else if (error?.response?.data?.message) {
+      errorMessage = error.response.data.message
+    }
+    
+    showSnackbar(errorMessage, 'error', 'mdi-alert-circle')
+  } finally {
+    somTopReportLoading.value = false
+  }
+}
+
+const exportToACTBReport = async () => {
   try {
     if (!filters.value.date_start || !filters.value.date_end) {
       showSnackbar('ກະລຸນາເລືອກວັນທີເລີ່ມຕົ້ນ ແລະ ວັນທີສິ້ນສຸດ', 'warning', 'mdi-alert')
@@ -579,19 +1135,19 @@ const exportToSOmTopReport = async () => {
       date_end: filters.value.date_end,
       fin_year: finYear,
       period_code: '',
-      category: 'SOMTOP_TRIAL_BALANCE'
+      category: `ACTB_${activeTab.value.toUpperCase().replace('ACTB_', '')}`
     }
 
-    const { data } = await axios.post('/api/somtop_trail_balance-report/bulk-insert/', payload, getAuthHeaders())
+    const { data } = await axios.post('/api/actb-reports/bulk-insert/', payload, getAuthHeaders())
 
     if (data.status === 'success') {
-      showSnackbar('✅ ສົ່ງອອກ SomTop Report ສຳເລັດ', 'success', 'mdi-check-circle')
+      showSnackbar('✅ ສົ່ງອອກ ACTB Report ສຳເລັດ', 'success', 'mdi-check-circle')
     } else {
-      showSnackbar(data.message || 'ບໍ່ສາມາດສົ່ງອອກ SomTop Report', 'error', 'mdi-alert-circle')
+      showSnackbar(data.message || 'ບໍ່ສາມາດສົ່ງອອກ ACTB Report', 'error', 'mdi-alert-circle')
     }
   } catch (error: any) {
-    console.error('Export SomTop Report error:', error)
-    showSnackbar('❌ ເກີດຂໍ້ຜິດພາດໃນການ Export SomTop Report', 'error', 'mdi-alert-circle')
+    console.error('Export ACTB Report error:', error)
+    showSnackbar('❌ ເກີດຂໍ້ຜິດພາດໃນການ Export ACTB Report', 'error', 'mdi-alert-circle')
   }
 }
 
@@ -604,7 +1160,10 @@ onMounted(() => {
     filters.value.date_start = firstDay.toISOString().split('T')[0]
     filters.value.date_end = today.toISOString().split('T')[0]
     
-    fetchTrialBalance()
+    // Only fetch data if we're on the main tab
+    if (activeTab.value === 'somtop_trial') {
+      fetchTrialBalance()
+    }
   } else {
     showSnackbar('🔑 ກະລຸນາເຂົ້າສູ່ລະບົບ', 'warning', 'mdi-account-alert')
   }
@@ -612,6 +1171,22 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* Enhanced Tab Styling */
+.v-tab {
+  font-size: 0.875rem;
+  font-weight: 500;
+  min-width: 120px;
+}
+
+.v-tab--selected {
+  font-weight: 600;
+}
+
+/* Tab Content Transitions */
+.v-window-item {
+  min-height: 300px;
+}
+
 /* Custom Table Container */
 .custom-table-container {
   width: 100%;
@@ -886,6 +1461,11 @@ onMounted(() => {
     width: 130px;
     min-width: 130px;
   }
+  
+  .v-tab {
+    font-size: 0.8rem;
+    min-width: 100px;
+  }
 }
 
 @media (max-width: 960px) {
@@ -934,6 +1514,11 @@ onMounted(() => {
     min-width: 75px;
     padding: 1px 4px;
   }
+  
+  .v-tab {
+    font-size: 0.75rem;
+    min-width: 80px;
+  }
 }
 
 @media (max-width: 600px) {
@@ -973,6 +1558,11 @@ onMounted(() => {
   .amount-value {
     font-size: 0.7rem;
     min-width: 65px;
+  }
+  
+  .v-tab {
+    font-size: 0.7rem;
+    min-width: 60px;
   }
 }
 
