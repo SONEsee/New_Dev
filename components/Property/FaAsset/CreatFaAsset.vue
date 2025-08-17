@@ -151,23 +151,40 @@ const formattedAssetValueRemainBegin = computed(() => {
     faAssetStoreInstance.form_create_fa_asset.asset_value_remainBegin
   );
 });
-
 const formattedAssetValueRemainMonth = computed(() => {
   const assetValue = faAssetStoreInstance.form_create_fa_asset.asset_value;
-  const usefulLife =
-    faAssetStoreInstance.form_create_fa_asset.asset_useful_life;
+  const salvageValue = faAssetStoreInstance.form_create_fa_asset.asset_salvage_value;
+  const usefulLife = faAssetStoreInstance.form_create_fa_asset.asset_useful_life;
 
   if (assetValue && usefulLife && usefulLife > 0) {
-    const monthlyValue = assetValue / (usefulLife * 12);
+    // ຄຳນວນ: (ມູນຄ່າເລີ່ມຕົ້ນ - ມູນຄ່າຊາກ) ÷ (ອາຍຸການໃຊ້ງານ × 12)
+    const depreciableAmount = assetValue - (salvageValue || 0);
+    const monthlyValue = depreciableAmount / (usefulLife * 12);
     const roundedValue = Math.round(monthlyValue * 100) / 100;
-    faAssetStoreInstance.form_create_fa_asset.asset_value_remainMonth =
-      roundedValue;
+    
+    faAssetStoreInstance.form_create_fa_asset.asset_value_remainMonth = roundedValue;
     return formatNumber(roundedValue);
   }
 
   faAssetStoreInstance.form_create_fa_asset.asset_value_remainMonth = 0;
   return formatNumber(0);
 });
+// const formattedAssetValueRemainMonth = computed(() => {
+//   const assetValue = faAssetStoreInstance.form_create_fa_asset.asset_value;
+//   const usefulLife =
+//     faAssetStoreInstance.form_create_fa_asset.asset_useful_life;
+
+//   if (assetValue && usefulLife && usefulLife > 0) {
+//     const monthlyValue = assetValue / (usefulLife * 12);
+//     const roundedValue = Math.round(monthlyValue * 100) / 100;
+//     faAssetStoreInstance.form_create_fa_asset.asset_value_remainMonth =
+//       roundedValue;
+//     return formatNumber(roundedValue);
+//   }
+
+//   faAssetStoreInstance.form_create_fa_asset.asset_value_remainMonth = 0;
+//   return formatNumber(0);
+// });
 
 const formattedAssetValueRemainLast = computed(() => {
   return formatNumber(

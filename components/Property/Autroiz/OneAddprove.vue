@@ -1562,7 +1562,7 @@ watch(
           </div>
         </div>
         <div class="header-actions">
-          <pre>{{ journalEntries }}</pre>
+          <!-- <pre>{{ journalEntries }}</pre> -->
 
           <div class="permission-indicators" v-if="permissions">
             <v-tooltip text="ສິດເຂົ້າເຖິງຂອງທ່ານ" location="bottom">
@@ -1869,6 +1869,7 @@ watch(
                     <th class="th-actions">ການກະທຳ</th>
                   </tr>
                 </thead>
+              <!-- <pre>{{ journalEntries }}</pre> -->
                 <tbody>
                   <tr
                     v-for="(entry, index) in journalEntries"

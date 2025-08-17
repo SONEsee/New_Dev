@@ -26,6 +26,7 @@ const res = computed(() => {
 });
 
 // ສ້າງ computed ສຳລັບແມັບຂໍ້ມູນ
+// ປັບປຸງການຄິດໄລ່ໃນ computed mappedData
 const mappedData = computed(() => {
   return res.value.map(overdueItem => {
     // ຫາ asset ທີ່ກົງກັນໂດຍໃຊ້ asset_id
@@ -34,9 +35,38 @@ const mappedData = computed(() => {
     );
     
     if (matchedAsset) {
-      // ຄິດໄລ່ຄ່າທີ່ຕ້ອງການ: (asset_value_remainMonth / 30) * days_overdue
+      // ຄິດໄລ່ຄ່າທີ່ຕ້ອງການ: ການຄິດໄລ່ໃໝ່ຕາມເງື່ອນໄຂ
       const dailyDepreciation = parseFloat(matchedAsset.asset_value_remainMonth) / 30;
-      const calculatedAmount = dailyDepreciation * overdueItem.days_overdue;
+      let calculatedAmount = 0;
+      
+      // ເຊັກຄ່າ C_dpac
+      const cDpacValue = parseInt(matchedAsset.C_dpac) || 0;
+      const overdueMonthsFloor = Math.floor(overdueItem.overdue_months); // ບໍ່ນັບຫຼັງຈຸດ
+      const assetValueRemainMonth = parseFloat(matchedAsset.asset_value_remainMonth);
+      const assetValueRemainBegin = parseFloat(matchedAsset.asset_value_remainBegin);
+      const accuDpcaValueTotal = parseFloat(matchedAsset.accu_dpca_value_total);
+      const totalMonths = overdueItem.total_months;
+      
+      if (cDpacValue === 0) {
+        // C_dpac ຍັງບໍ່ມີຄ່າ (ເທົ່າກັບ 0)
+        if (overdueMonthsFloor >= totalMonths) {
+          // ຖ້າ overdue_months >= total_months ໃຫ້ໃຊ້ accu_dpca_value_total
+          calculatedAmount = accuDpcaValueTotal;
+        } else {
+          // ການຄິດໄລ່ປົກກະຕິ: (overdue_months - 1) * asset_value_remainMonth + asset_value_remainBegin
+          const adjustedMonths = Math.max(0, overdueMonthsFloor - 1);
+          calculatedAmount = (adjustedMonths * assetValueRemainMonth) + assetValueRemainBegin;
+        }
+      } else {
+        // C_dpac ມີຄ່າແລ້ວ (ບໍ່ເທົ່າກັບ 0)
+        if (overdueMonthsFloor >= totalMonths) {
+          // ຖ້າ overdue_months >= total_months ໃຫ້ໃຊ້ accu_dpca_value_total
+          calculatedAmount = accuDpcaValueTotal;
+        } else {
+          // ການຄິດໄລ່: overdue_months * asset_value_remainMonth
+          calculatedAmount = overdueMonthsFloor * assetValueRemainMonth;
+        }
+      }
       
       return {
         ...overdueItem,
@@ -48,7 +78,17 @@ const mappedData = computed(() => {
         // ເພີ່ມຂໍ້ມູນອື່ນໆ ທີ່ອາດຈະໃຊ້
         asset_full_name: matchedAsset.asset_id_detail?.asset_name_la || overdueItem.asset_name,
         location_name: matchedAsset.location_detail?.location_name_la,
-        supplier_name: matchedAsset.supplier_detail?.supplier_name
+        supplier_name: matchedAsset.supplier_detail?.supplier_name,
+        // ເພີ່ມຂໍ້ມູນສຳລັບ debug
+        debug_info: {
+          c_dpac: cDpacValue,
+          overdue_months_floor: overdueMonthsFloor,
+          total_months: totalMonths,
+          asset_value_remain_month: assetValueRemainMonth,
+          asset_value_remain_begin: assetValueRemainBegin,
+          accu_dpca_value_total: accuDpcaValueTotal,
+          calculation_method: cDpacValue === 0 ? 'C_dpac_zero' : 'C_dpac_has_value'
+        }
       };
     }
     
