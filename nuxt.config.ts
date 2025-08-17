@@ -1,6 +1,9 @@
 import vuetify, { transformAssetUrls } from "vite-plugin-vuetify";
 import { resolve } from "path";
 export default defineNuxtConfig({
+  devServer: {
+    https: true // Nuxt ຈະສ້າງ self-signed cert ໃຫ້ອັດຕະໂນມັດ
+  },
   //   devServer: {
   //   port: 8000,
   //   host: 'samcacc.com.la'  
