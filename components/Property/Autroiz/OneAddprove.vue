@@ -1562,7 +1562,7 @@ watch(
           </div>
         </div>
         <div class="header-actions">
-          <pre>{{ journalEntries }}</pre>
+          <!-- <pre>{{ journalEntries }}</pre> -->
 
           <div class="permission-indicators" v-if="permissions">
             <v-tooltip text="ສິດເຂົ້າເຖິງຂອງທ່ານ" location="bottom">
