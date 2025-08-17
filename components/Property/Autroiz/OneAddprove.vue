@@ -1562,7 +1562,7 @@ watch(
           </div>
         </div>
         <div class="header-actions">
-          <!-- <pre>{{ journalEntries }}</pre> -->
+          <pre>{{ journalEntries }}</pre>
 
           <div class="permission-indicators" v-if="permissions">
             <v-tooltip text="ສິດເຂົ້າເຖິງຂອງທ່ານ" location="bottom">
@@ -1897,7 +1897,7 @@ watch(
                     <td class="td-account">
                       <div class="account-info">
                         <div class="account-code">{{ entry.account_code }}</div>
-                        <div class="account-name">{{ entry.account_name }}</div>
+                        <div class="account-name">{{ entry.Addl_text }}</div>
                       </div>
                     </td>
 
