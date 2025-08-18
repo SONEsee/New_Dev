@@ -7,4 +7,5 @@ definePageMeta({
   middleware: ['auth'],
   requiresPermission: true,
   subMenuId: 5
-})</script>
+})
+</script>
