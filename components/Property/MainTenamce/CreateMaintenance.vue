@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick, onUnmounted } from "vue";
+import { ref, computed, onMounted, nextTick } from "vue";
 import { useMentenance } from "@/stores/mantenaces";
-
 
 const validate = ref();
 const form = ref();
@@ -13,19 +12,10 @@ const employee = useEmployeeStore();
 const searchBarcode = ref("");
 const isSearching = ref(false);
 
-
+// QR Scanner related
 const showScanner = ref(false);
-const isScanning = ref(false);
-const manualCode = ref('');
-const quickInput = ref('');
 const statusMessage = ref('');
 const statusType = ref<'success' | 'error' | 'warning' | 'info'>('info');
-const videoRef = ref<HTMLVideoElement>();
-const showManualInput = ref(false);
-const flashEnabled = ref(false);
-const hasMultipleCameras = ref(false);
-const currentCamera = ref('environment');
-let stream: MediaStream | null = null;
 
 // Computed properties
 const employees = computed(() => {
@@ -49,12 +39,10 @@ const dataFasset = computed(() => {
   return [];
 });
 
-
 const rules = {
   required: (value: any) => !!value || "ກະລຸນາກຳນົດຄ່າ",
   number: (value: any) => !isNaN(Number(value)) || "ກະລຸນາກຳນົດຕົວເລກ",
 };
-
 
 const auditPeriodOptions = [
   { value: 'ANNUAL', text: 'ປະຈຳປີ' },
@@ -89,15 +77,13 @@ const yesNoOptions = [
   { value: 'N', text: 'ບໍ່' }
 ];
 
-
+// Number formatting functions
 const formatNumberInput = (value: string): string => {
   if (!value || value === 'undefined' || value === 'null') return '';
   
-
   const stringValue = String(value);
   const numericValue = stringValue.replace(/[^\d.]/g, '');
   
- 
   if (!numericValue || numericValue === 'NaN' || isNaN(parseFloat(numericValue))) {
     return '';
   }
@@ -155,7 +141,7 @@ const updateEstimatedValue = (newValue: string) => {
   formattedEstimatedValue.value = formatNumberInput(newValue);
 };
 
-// Status management - Fixed
+// Status management
 const showStatus = (message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
   statusMessage.value = message;
   statusType.value = type;
@@ -164,358 +150,28 @@ const showStatus = (message: string, type: 'success' | 'error' | 'warning' | 'in
   }, 3000);
 };
 
-// Quick input processing - Fixed
-const processQuickInput = async () => {
-  if (!quickInput.value?.trim()) {
-    showStatus('⚠️ ກະລຸນາໃສ່ລະຫັດບາໂຄດ', 'warning');
-    return;
-  }
-  
-  searchBarcode.value = quickInput.value.trim();
-  quickInput.value = '';
-  await dataSearch();
+// QR Scanner methods
+const openScanner = () => {
+  showScanner.value = true;
 };
 
-// Manual input processing - Fixed
-const processManualCode = async () => {
-  if (!manualCode.value.trim()) {
-    showStatus('❌ ກະລຸນາໃສ່ລະຫັດບາໂຄດ', 'error');
-    return;
-  }
-  
-  showStatus('✅ ຮັບລະຫັດແລ້ວ: ' + manualCode.value, 'success');
-  searchBarcode.value = manualCode.value.trim();
+const closeScanner = () => {
+  showScanner.value = false;
+};
+
+const handleScanSuccess = async (data: { text: string; format: string }) => {
+  console.log('ສະແກນສຳເລັດ:', data);
+  searchBarcode.value = data.text;
+  showStatus('✅ ສະແກນສຳເລັດ: ' + data.text, 'success');
   closeScanner();
   
+  // Auto search after scan
   setTimeout(async () => {
     await dataSearch();
   }, 500);
 };
 
-// Camera functions - Fixed for Safari iOS
-const requestCameraDirectly = async () => {
-  showStatus('🔓 ກຳລັງຂໍອະນຸຍາດໃຊ້ກ້ອງ...', 'info');
-  
-  // Check for basic browser support
-  if (typeof navigator === 'undefined') {
-    showStatus('❌ Navigator ບໍ່ມີໃນ browser ນີ້', 'error');
-    return;
-  }
-  
-  // Check for HTTPS (required for camera on iOS)
-  if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-    showStatus('🔒 ຕ້ອງການ HTTPS ເພື່ອໃຊ້ກ້ອງ', 'error');
-    setTimeout(() => {
-      showStatus('💡 ໃຊ້ການພິມລະຫັດແທນ', 'info');
-    }, 2000);
-    return;
-  }
-  
-  // Check for MediaDevices API
-  if (!navigator.mediaDevices) {
-    showStatus('❌ Browser ນີ້ບໍ່ຮອງຮັບ MediaDevices', 'error');
-    setTimeout(() => {
-      showStatus('💡 ໃຊ້ການພິມລະຫັດແທນ', 'info');
-    }, 2000);
-    return;
-  }
-  
-  // Check for getUserMedia
-  if (!navigator.mediaDevices.getUserMedia) {
-    showStatus('❌ Browser ນີ້ບໍ່ຮອງຮັບ getUserMedia', 'error');
-    setTimeout(() => {
-      showStatus('💡 ໃຊ້ການພິມລະຫັດແທນ', 'info');
-    }, 2000);
-    return;
-  }
-  
-  try {
-    // Test camera permission
-    const testStream = await navigator.mediaDevices.getUserMedia({
-      video: { 
-        facingMode: 'environment',
-        width: { ideal: 640 },
-        height: { ideal: 480 }
-      }
-    });
-    
-    // Stop test stream immediately
-    testStream.getTracks().forEach(track => track.stop());
-    
-    showStatus('✅ ໄດ້ຮັບອະນຸຍາດແລ້ວ - ສາມາດໃຊ້ການສະແກນໄດ້', 'success');
-    
-    // Check for multiple cameras
-    try {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const videoDevices = devices.filter(device => device.kind === 'videoinput');
-      hasMultipleCameras.value = videoDevices.length > 1;
-    } catch (enumError) {
-      console.warn('Cannot enumerate devices:', enumError);
-      hasMultipleCameras.value = false;
-    }
-    
-  } catch (error) {
-    console.error('Permission error:', error);
-    handleCameraPermissionError(error);
-  }
-};
-
-const handleCameraPermissionError = (error: any) => {
-  let errorMessage = '❌ ບໍ່ໄດ້ຮັບອະນຸຍາດໃຊ້ກ້ອງ';
-  let suggestion = 'ໃຊ້ການພິມລະຫັດແທນ';
-  
-  if (error.name === 'NotAllowedError') {
-    errorMessage = '🚫 ຜູ້ໃຊ້ປະຕິເສດການໃຊ້ກ້ອງ';
-    suggestion = 'ໃຫ້ອະນຸຍາດໃນການຕັ້ງຄ່າ browser ແລ້ວລອງໃໝ່';
-  } else if (error.name === 'NotFoundError') {
-    errorMessage = '📷 ບໍ່ພົບກ້ອງໃນອຸປະກອນນີ້';
-  } else if (error.name === 'NotReadableError') {
-    errorMessage = '⚠️ ກ້ອງຖືກໃຊ້ງານໂດຍແອັບອື່ນ';
-    suggestion = 'ປິດແອັບອື່ນທີ່ໃຊ້ກ້ອງ';
-  } else if (error.name === 'NotSupportedError') {
-    errorMessage = '🔒 ຕ້ອງການ HTTPS';
-    suggestion = 'ເປີດໃນ https:// ຫຼື localhost';
-  } else if (error.name === 'SecurityError') {
-    errorMessage = '🔐 ບັນຫາຄວາມປອດໄພ';
-    suggestion = 'ຕ້ອງການ HTTPS ແລະອະນຸຍາດຂອງຜູ້ໃຊ້';
-  }
-  
-  showStatus(errorMessage, 'error');
-  setTimeout(() => {
-    showStatus(`💡 ${suggestion}`, 'info');
-  }, 2000);
-};
-
-const openScanner = async () => {
-  showScanner.value = true;
-  showManualInput.value = false;
-  showStatus('📷 ກຳລັງເປີດກ້ອງ...', 'info');
-  
-  // Check environment
-  if (typeof window === 'undefined' || typeof navigator === 'undefined') {
-    showStatus('❌ ບໍ່ສາມາດໃຊ້ກ້ອງໄດ້ໃນສະພາບແວດລ້ອມນີ້', 'error');
-    showManualInput.value = true;
-    return;
-  }
-  
-  // Check HTTPS requirement
-  if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-    showStatus('🔒 ຕ້ອງການ HTTPS ເພື່ອໃຊ້ກ້ອງ', 'error');
-    showManualInput.value = true;
-    return;
-  }
-  
-  // Check MediaDevices support
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    showStatus('❌ Browser ນີ້ບໍ່ຮອງຮັບກ້ອງ', 'error');
-    showManualInput.value = true;
-    return;
-  }
-  
-  try {
-    const constraints = {
-      video: { 
-        facingMode: currentCamera.value,
-        width: { ideal: 640, max: 1280 },
-        height: { ideal: 480, max: 720 },
-        frameRate: { ideal: 30, max: 30 }
-      }
-    };
-    
-    stream = await navigator.mediaDevices.getUserMedia(constraints);
-    
-    await nextTick();
-    
-    if (videoRef.value && stream) {
-      videoRef.value.srcObject = stream;
-      videoRef.value.setAttribute('playsinline', 'true');
-      videoRef.value.setAttribute('webkit-playsinline', 'true');
-      videoRef.value.setAttribute('muted', 'true');
-      videoRef.value.muted = true;
-      videoRef.value.autoplay = true;
-      
-      try {
-        await videoRef.value.play();
-        isScanning.value = true;
-        showStatus('✅ ກ້ອງພ້ອມໃຊ້ງານ', 'success');
-      } catch (playError) {
-        console.error('Video play error:', playError);
-        showStatus('⚠️ ກ້ອງເປີດແລ້ວແຕ່ບໍ່ສາມາດສະແດງໄດ້', 'warning');
-        showManualInput.value = true;
-      }
-    }
-    
-  } catch (error) {
-    console.error('Camera error:', error);
-    handleCameraError(error);
-  }
-};
-
-const handleCameraError = (error: any) => {
-  let errorMessage = '❌ ບໍ່ສາມາດເປີດກ້ອງໄດ້';
-  
-  if (error.name === 'NotAllowedError') {
-    errorMessage = '🚫 ບໍ່ໄດ້ຮັບອະນຸຍາດໃຊ້ກ້ອງ';
-  } else if (error.name === 'NotFoundError') {
-    errorMessage = '📷 ບໍ່ພົບກ້ອງໃນອຸປະກອນນີ້';
-  } else if (error.name === 'NotReadableError') {
-    errorMessage = '⚠️ ກ້ອງຖືກໃຊ້ງານໂດຍແອັບອື່ນ';
-  } else if (error.name === 'NotSupportedError') {
-    errorMessage = '🔒 ຕ້ອງການ HTTPS';
-  }
-  
-  showStatus(errorMessage, 'error');
-  showManualInput.value = true;
-};
-
-const toggleFlash = async () => {
-  if (!stream) return;
-  
-  try {
-    const track = stream.getVideoTracks()[0];
-    const capabilities = track.getCapabilities();
-    
-    if (capabilities.torch) {
-      await track.applyConstraints({
-        advanced: [{ torch: !flashEnabled.value }]
-      });
-      flashEnabled.value = !flashEnabled.value;
-      showStatus(flashEnabled.value ? '🔦 ເປີດໄຟແລ້ວ' : '🔦 ປິດໄຟແລ້ວ', 'info');
-    } else {
-      showStatus('❌ ອຸປະກອນນີ້ບໍ່ມີໄຟ', 'warning');
-    }
-  } catch (error) {
-    console.error('Flash error:', error);
-    showStatus('❌ ບໍ່ສາມາດຄວບຄຸມໄຟໄດ້', 'error');
-  }
-};
-
-const switchCamera = async () => {
-  if (!hasMultipleCameras.value) return;
-  
-  currentCamera.value = currentCamera.value === 'environment' ? 'user' : 'environment';
-  
-  if (isScanning.value) {
-    closeScanner();
-    setTimeout(() => {
-      openScanner();
-    }, 100);
-  }
-};
-
-const toggleManualInput = () => {
-  showManualInput.value = !showManualInput.value;
-  if (showManualInput.value) {
-    isScanning.value = false;
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-      stream = null;
-    }
-    showStatus('⌨️ ພິມລະຫັດບາໂຄດ', 'info');
-    
-    nextTick(() => {
-      const input = document.querySelector('#manual-barcode-input') as HTMLInputElement;
-      if (input) {
-        input.focus();
-      }
-    });
-  } else {
-    openScanner();
-  }
-};
-
-const openManualInput = () => {
-  showScanner.value = true;
-  showManualInput.value = true;
-  isScanning.value = false;
-  manualCode.value = '';
-  showStatus('⌨️ ພິມລະຫັດບາໂຄດ', 'info');
-  
-  setTimeout(() => {
-    const input = document.querySelector('#manual-barcode-input') as HTMLInputElement;
-    if (input) {
-      input.focus();
-      input.select();
-    }
-  }, 300);
-};
-
-const closeScanner = () => {
-  isScanning.value = false;
-  showScanner.value = false;
-  showManualInput.value = false;
-  manualCode.value = '';
-  statusMessage.value = '';
-  flashEnabled.value = false;
-  
-  if (stream) {
-    stream.getTracks().forEach(track => track.stop());
-    stream = null;
-  }
-  
-  if (videoRef.value) {
-    videoRef.value.srcObject = null;
-  }
-};
-
-// Debug function - Enhanced for iOS Safari
-const showDebugInfo = () => {
-  const debugInfo = {
-    'Environment': {
-      'Protocol': location.protocol,
-      'Hostname': location.hostname,
-      'Is HTTPS': location.protocol === 'https:',
-      'Is Localhost': location.hostname === 'localhost',
-      'User Agent': navigator.userAgent,
-      'Platform': navigator.platform || 'Unknown'
-    },
-    'Browser Support': {
-      'Navigator': typeof navigator !== 'undefined',
-      'MediaDevices': !!navigator?.mediaDevices,
-      'getUserMedia': !!navigator?.mediaDevices?.getUserMedia,
-      'enumerateDevices': !!navigator?.mediaDevices?.enumerateDevices,
-      'Screen Orientation': !!screen?.orientation,
-      'Device Motion': !!window.DeviceMotionEvent
-    },
-    'Current State': {
-      'Scanner Open': showScanner.value,
-      'Scanning': isScanning.value,
-      'Manual Input': showManualInput.value,
-      'Stream Active': !!stream,
-      'Search Barcode': searchBarcode.value,
-      'Flash Enabled': flashEnabled.value
-    },
-    'Camera Info': {
-      'Multiple Cameras': hasMultipleCameras.value,
-      'Current Camera': currentCamera.value,
-      'Video Element': !!videoRef.value,
-      'Video Source': videoRef.value?.srcObject ? 'Set' : 'Not Set'
-    },
-    'Form Data': {
-      'Asset ID': mantanances?.form_creat_mantenance?.asset_list_id || 'None',
-      'Book Value': formattedBookValue.value || 'None',
-      'Form Valid': isFormValid.value
-    }
-  };
-  
-  console.log('🔧 Complete Debug Info:', debugInfo);
-  
-  // Create readable summary for alert
-  const summary = `
-📱 Browser: ${navigator.userAgent.split(')')[0]})
-🔒 HTTPS: ${location.protocol === 'https:' ? 'Yes' : 'No'}
-📷 Camera Support: ${!!navigator?.mediaDevices?.getUserMedia ? 'Yes' : 'No'}
-🎯 Current Mode: ${showScanner.value ? (isScanning.value ? 'Scanning' : 'Manual') : 'Search'}
-`;
-  
-  alert('Debug info logged to console. Summary:' + summary);
-  
-  // Also show status
-  const supportLevel = !!navigator?.mediaDevices?.getUserMedia ? 'ຮອງຮັບ' : 'ບໍ່ຮອງຮັບ';
-  showStatus(`🔧 Camera: ${supportLevel}, HTTPS: ${location.protocol === 'https:' ? 'Yes' : 'No'}`, 'info');
-};
-
-// Main search function - Fixed
+// Search functionality
 const dataSearch = async () => {
   if (!searchBarcode.value.trim()) {
     showStatus('⚠️ ກະລຸນາໃສ່ລະຫັດບາໂຄດ', 'warning');
@@ -536,7 +192,7 @@ const dataSearch = async () => {
       
       mantanances.form_creat_mantenance.asset_list_id = dataFasset.value[0].asset_list_id;
       
-      // Update book value with NaN protection
+      // Update book value
       if (dataFasset.value[0]?.asset_value) {
         const bookValue = dataFasset.value[0].asset_value;
         const bookValueStr = String(bookValue);
@@ -546,7 +202,7 @@ const dataSearch = async () => {
         }
       }
       
-      
+      // Update accumulated depreciation
       if (dataFasset.value[0]?.asset_accu_dpca_value) {
         const accuValue = dataFasset.value[0].asset_accu_dpca_value;
         const accuValueStr = String(accuValue);
@@ -556,7 +212,7 @@ const dataSearch = async () => {
         }
       }
       
-     
+      // Update estimated value
       if (dataFasset.value[0]?.asset_value_remain) {
         const estimatedValue = dataFasset.value[0].asset_value_remain;
         const estimatedValueStr = String(estimatedValue);
@@ -566,12 +222,12 @@ const dataSearch = async () => {
         }
       }
       
-    
+      // Update location
       if (dataFasset.value[0]?.location_detail?.location_name_la) {
         mantanances.form_creat_mantenance.actual_location = dataFasset.value[0].location_detail.location_name_la;
       }
       
-  
+      // Calculate remaining useful life
       if (dataFasset.value[0]?.asset_useful_life && dataFasset.value[0]?.dpca_start_date) {
         const assetUsefulLife = parseInt(dataFasset.value[0].asset_useful_life);
         const dpcaStartDate = new Date(dataFasset.value[0].dpca_start_date);
@@ -622,7 +278,6 @@ const SubmitDataMentenance = async () => {
   const validation = await form.value.validate();
   
   if (!mantanances.form_creat_mantenance.asset_list_id) {
-    // Use showStatus instead of CallSwal
     showStatus('⚠️ ກະລຸນາເລືອກຊັບສິນກ່ອນບັນທຶກ (ສະແກນ Barcode)', 'warning');
     return;
   }
@@ -645,7 +300,6 @@ const SubmitDataMentenance = async () => {
         parseFloat(parseFormattedNumber(mantanances.form_creat_mantenance.accumulated_depreciation)) : null,
       remaining_useful_life: mantanances.form_creat_mantenance.remaining_useful_life ? 
         parseInt(mantanances.form_creat_mantenance.remaining_useful_life) : null,
-    //   photos_attached: mantanances.form_creat_mantenance.photos_attached || 'N',
       audit_date: mantanances.form_creat_mantenance.audit_date || null,
       follow_up_date: mantanances.form_creat_mantenance.follow_up_date || null,
       review_date: mantanances.form_creat_mantenance.review_date || null,
@@ -658,7 +312,7 @@ const SubmitDataMentenance = async () => {
       approver_name: mantanances.form_creat_mantenance.approver_name || null,
     };
     
-   
+    // Clean null values
     Object.keys(cleanedData).forEach(key => {
       if (cleanedData[key] === '') {
         cleanedData[key] = null;
@@ -683,12 +337,21 @@ const SubmitDataMentenance = async () => {
   }
 };
 
+const resetForm = () => {
+  mantanances.$reset();
+  searchBarcode.value = '';
+  formattedBookValue.value = '';
+  formattedAccumulatedDepreciation.value = '';
+  formattedEstimatedValue.value = '';
+  showStatus('🔄 ລິເຊັດຟອມສຳເລັດ', 'info');
+};
+
 onMounted(() => {
   Dapremen.GetListData();
   employee.GetEmployee();
   const today = new Date().toISOString().split('T')[0];
   
-  
+  // Set default values
   mantanances.form_creat_mantenance.audit_year = new Date().getFullYear().toString();
   mantanances.form_creat_mantenance.audit_date = today;
   mantanances.form_creat_mantenance.audit_status = 'DRAFT';
@@ -699,13 +362,9 @@ onMounted(() => {
   mantanances.form_creat_mantenance.maintenance_required = 'N';
   mantanances.form_creat_mantenance.replacement_recommended = 'N';
   mantanances.form_creat_mantenance.disposal_recommended = 'N';
-//   mantanances.form_creat_mantenance.photos_attached = 'N';
+  mantanances.form_creat_mantenance.photos_attached = 'N';
   mantanances.form_creat_mantenance.documents_verified = 'N';
   mantanances.form_creat_mantenance.follow_up_required = 'N';
-});
-
-onUnmounted(() => {
-  closeScanner();
 });
 
 const title = "ບຳລູງຮັກສາຊັບສຶນ";
@@ -717,7 +376,7 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
 
     <!-- Enhanced Search Section -->
     <v-row class="mb-4">
-      <v-col cols="12" md="3">
+      <v-col cols="12" md="4">
         <v-text-field
           v-model="searchBarcode"
           label="ຄົນຫາຕາມເລກ Barcode"
@@ -732,23 +391,10 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
       </v-col>
       <v-col cols="6" md="2">
         <v-btn
-          @click="requestCameraDirectly"
-          color="orange"
-          variant="outlined"
-          prepend-icon="mdi-camera-account"
-          size="large"
-          class="mr-1"
-        >
-          🔓 ຂໍອະນຸຍາດ
-        </v-btn>
-      </v-col>
-      <v-col cols="6" md="2">
-        <v-btn
           @click="openScanner"
           color="primary"
           variant="outlined"
-          prepend-icon="mdi-barcode-scan"
-          :disabled="isScanning"
+          prepend-icon="mdi-qrcode-scan"
           size="large"
           class="mr-1"
         >
@@ -767,32 +413,10 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
           🔍 ຄົ້ນຫາ
         </v-btn>
       </v-col>
-      <v-col cols="6" md="3">
-        <v-btn
-          @click="showDebugInfo"
-          color="info"
-          variant="outlined"
-          prepend-icon="mdi-bug"
-          size="small"
-          class="mr-1"
-        >
-          🔧 ກວດສອບ
-        </v-btn>
-        
-        <v-btn
-          @click="openManualInput"
-          color="secondary"
-          variant="outlined"
-          prepend-icon="mdi-keyboard"
-          size="small"
-        >
-          ⌨️ ພິມ
-        </v-btn>
-      </v-col>
     </v-row>
 
-    <!-- Status Message Display -->
-    <v-row v-if="statusMessage && !showScanner" class="mb-2">
+    <!-- Status Messages -->
+    <v-row v-if="statusMessage" class="mb-2">
       <v-col cols="12">
         <v-alert
           :type="statusType"
@@ -806,220 +430,13 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
       </v-col>
     </v-row>
 
-    <!-- Barcode Scanner Modal -->
-    <v-dialog 
-      v-model="showScanner" 
-      :fullscreen="$vuetify.display.mobile"
-      :max-width="$vuetify.display.mobile ? '100%' : '600px'" 
-      persistent
-    >
-      <v-card :class="$vuetify.display.mobile ? 'mobile-scanner' : ''">
-        <v-card-title class="d-flex justify-space-between align-center pa-2">
-          <span class="text-h6">📱 ສະແກນບາໂຄດ</span>
-          <v-btn
-            icon="mdi-close"
-            variant="text"
-            @click="closeScanner"
-            size="small"
-          ></v-btn>
-        </v-card-title>
-        
-        <v-card-text class="pa-0">
-          <!-- Camera Preview - Mobile Optimized -->
-          <div 
-            v-if="!showManualInput"
-            class="camera-container" 
-            :style="{
-              position: 'relative', 
-              height: $vuetify.display.mobile ? '60vh' : '400px', 
-              background: '#000',
-              minHeight: '300px'
-            }"
-          >
-            <video
-              ref="videoRef"
-              :style="{
-                width: '100%', 
-                height: '100%', 
-                objectFit: 'cover'
-              }"
-              autoplay
-              muted
-              playsinline
-              webkit-playsinline
-            ></video>
-            
-            <!-- Enhanced Scanning Overlay for Mobile -->
-            <div 
-              v-if="isScanning"
-              :style="{
-                position: 'absolute', 
-                top: '50%', 
-                left: '50%', 
-                transform: 'translate(-50%, -50%)', 
-                border: '3px solid #ff5722', 
-                width: $vuetify.display.mobile ? '80%' : '250px',
-                height: $vuetify.display.mobile ? '120px' : '100px',
-                maxWidth: '300px',
-                background: 'rgba(255, 87, 34, 0.1)',
-                borderRadius: '8px',
-                animation: 'pulse 2s infinite'
-              }"
-            >
-              <div 
-                :style="{
-                  position: 'absolute', 
-                  top: '-30px', 
-                  left: '0', 
-                  color: '#ff5722', 
-                  fontSize: $vuetify.display.mobile ? '16px' : '14px',
-                  fontWeight: 'bold',
-                  background: 'rgba(0,0,0,0.7)',
-                  padding: '4px 8px',
-                  borderRadius: '4px',
-                  whiteSpace: 'nowrap'
-                }"
-              >
-                📷 ວາງບາໂຄດໃນກອບນີ້
-              </div>
-              
-              <!-- Scanning line animation -->
-              <div 
-                :style="{
-                  position: 'absolute',
-                  top: '0',
-                  left: '0',
-                  right: '0',
-                  height: '2px',
-                  background: 'linear-gradient(90deg, transparent, #ff5722, transparent)',
-                  animation: 'scan-line 2s linear infinite'
-                }"
-              ></div>
-            </div>
-            
-            <!-- Mobile-friendly Control Buttons -->
-            <div 
-              :style="{
-                position: 'absolute', 
-                bottom: '15px', 
-                left: '50%',
-                transform: 'translateX(-50%)',
-                display: 'flex',
-                gap: '10px'
-              }"
-            >
-              <!-- Flash/Torch Button -->
-              <v-btn
-                v-if="$vuetify.display.mobile && isScanning"
-                @click="toggleFlash"
-                size="large"
-                color="white"
-                variant="outlined"
-                icon="mdi-flashlight"
-                :class="flashEnabled ? 'flash-on' : ''"
-              ></v-btn>
-              
-              <!-- Manual Input Toggle -->
-              <v-btn
-                @click="toggleManualInput"
-                size="large"
-                color="white"
-                variant="outlined"
-                :prepend-icon="showManualInput ? 'mdi-camera' : 'mdi-keyboard'"
-              >
-                {{ showManualInput ? 'ສະແກນ' : 'ພິມ' }}
-              </v-btn>
-              
-              <!-- Camera Switch Button -->
-              <v-btn
-                v-if="$vuetify.display.mobile && hasMultipleCameras && isScanning"
-                @click="switchCamera"
-                size="large"
-                color="white"
-                variant="outlined"
-                icon="mdi-camera-flip"
-              ></v-btn>
-            </div>
-            
-            <!-- Mobile Instructions -->
-            <div 
-              v-if="$vuetify.display.mobile && isScanning"
-              :style="{
-                position: 'absolute',
-                top: '20px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                background: 'rgba(0,0,0,0.8)',
-                color: 'white',
-                padding: '8px 16px',
-                borderRadius: '20px',
-                fontSize: '14px',
-                textAlign: 'center',
-                maxWidth: '90%'
-              }"
-            >
-              💡 ເຄື່ອນໄຫວມືຖືໃກ້ຫຼືໄກບາໂຄດເພື່ອໂຟກັສ
-            </div>
-          </div>
-          
-          <!-- Enhanced Manual Input -->
-          <div v-if="showManualInput" class="pa-4">
-            <v-text-field
-              id="manual-barcode-input"
-              v-model="manualCode"
-              label="🔢 ພິມບາໂຄດດ້ວຍມື"
-              variant="outlined"
-              density="comfortable"
-              @keyup.enter="processManualCode"
-              autofocus
-              clearable
-              :style="{ fontSize: $vuetify.display.mobile ? '18px' : '14px' }"
-            >
-              <template #prepend-inner>
-                <v-icon>mdi-barcode</v-icon>
-              </template>
-              <template #append>
-                <v-btn
-                  @click="processManualCode"
-                  color="primary"
-                  :size="$vuetify.display.mobile ? 'default' : 'small'"
-                  :disabled="!manualCode.trim()"
-                  variant="flat"
-                >
-                  ✓ ຢືນຢັນ
-                </v-btn>
-              </template>
-            </v-text-field>
-          </div>
-          
-          <!-- Enhanced Status Messages -->
-          <div v-if="statusMessage" class="pa-4">
-            <v-alert
-              :type="statusType"
-              variant="tonal"
-              :density="$vuetify.display.mobile ? 'comfortable' : 'compact'"
-              :style="{ fontSize: $vuetify.display.mobile ? '16px' : '14px' }"
-            >
-              <template #prepend>
-                <v-icon 
-                  :icon="statusType === 'success' ? 'mdi-check-circle' : 
-                        statusType === 'error' ? 'mdi-alert-circle' : 
-                        statusType === 'warning' ? 'mdi-alert' : 'mdi-information'"
-                ></v-icon>
-              </template>
-              {{ statusMessage }}
-            </v-alert>
-          </div>
-        </v-card-text>
-        
-        <v-card-actions v-if="!$vuetify.display.mobile" class="pa-4">
-          <v-spacer></v-spacer>
-          <v-btn @click="closeScanner" variant="outlined" size="large">
-            ❌ ປິດ
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <!-- QR Scanner Component -->
+    <QRScanner 
+      v-if="showScanner"
+      @scan-success="handleScanSuccess"
+      :auto-stop="true"
+      @close="closeScanner"
+    />
 
     <!-- Asset Information Card -->
     <v-card flat style="border: solid 1px #64b5f6" class="mb-4">
@@ -1400,7 +817,7 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
             :disabled="!isFormValid"
             class="mx-2"
           >
-            ບັນທຶກຂໍ້ມູນ
+            💾 ບັນທຶກຂໍ້ມູນ
           </v-btn>
           <v-btn
             color="error"
@@ -1409,7 +826,7 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
             @click="resetForm"
             class="mx-2"
           >
-            ຍົກເລີກ
+            🔄 ລິເຊັດ
           </v-btn>
         </v-col>
       </v-row>
@@ -1419,36 +836,13 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
 </template>
 
 <style scoped>
-.camera-container {
-  border-radius: 8px;
-  overflow: hidden;
-  touch-action: manipulation;
-}
-
+/* Keep existing styles if needed */
 .v-dialog .v-card {
   overflow: visible;
 }
 
-.mobile-scanner {
-  height: 100vh;
-  border-radius: 0 !important;
-}
-
-.flash-on {
-  background-color: #ffd700 !important;
-  color: #000 !important;
-}
-
 /* Mobile-specific styles */
 @media (max-width: 768px) {
-  .camera-container {
-    border-radius: 0;
-  }
-  
-  .mobile-scanner .v-card-text {
-    padding: 0 !important;
-  }
-  
   .v-btn {
     min-height: 48px !important;
     min-width: 48px !important;
@@ -1456,36 +850,6 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
   
   .v-text-field input {
     font-size: 16px !important;
-  }
-}
-
-/* Scanning animations */
-@keyframes pulse {
-  0% { opacity: 0.6; }
-  50% { opacity: 1; }
-  100% { opacity: 0.6; }
-}
-
-@keyframes scan-line {
-  0% { transform: translateY(0); }
-  100% { transform: translateY(100px); }
-}
-
-/* Prevent video from being selectable */
-video {
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-  pointer-events: none;
-}
-
-/* Ensure proper fullscreen display on mobile */
-@media screen and (max-device-width: 768px) {
-  .v-dialog--fullscreen {
-    margin: 0 !important;
-    max-height: 100vh !important;
-    max-width: 100vw !important;
   }
 }
 </style>

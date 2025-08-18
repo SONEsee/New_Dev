@@ -19,6 +19,7 @@
     "apexcharts": "^4.7.0",
     "axios": "^1.7.9",
     "jsbarcode": "^3.12.1",
+    "jsqr": "^1.4.0",
     "numeral": "^2.0.6",
     "nuxt": "^3.14.1592",
     "pinia": "^2.3.0",
@@ -41,7 +42,9 @@
     "nuxt-lodash": "^2.5.3",
     "open": "^10.2.0",
     "sass": "^1.83.0",
+    "typescript": "^5.9.2",
     "vite-plugin-vuetify": "^2.0.4",
+    "vue-tsc": "^3.0.5",
     "vuetify": "^3.7.6"
   },
   "packageManager": "yarn@1.22.19+sha1.4ba7fc5c6e704fce2066ecbfb0b0d8976fe62447"

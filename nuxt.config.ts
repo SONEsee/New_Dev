@@ -1,6 +1,13 @@
 import vuetify, { transformAssetUrls } from "vite-plugin-vuetify";
 import { resolve } from "path";
 export default defineNuxtConfig({
+<<<<<<< HEAD
+=======
+
+  typescript: {
+    typeCheck: false
+  },
+>>>>>>> 0186a008d79894b4c10d11a751a980410c186507
   // devServer: {
   //   https: true // Nuxt ຈະສ້າງ self-signed cert ໃຫ້ອັດຕະໂນມັດ
   // },
