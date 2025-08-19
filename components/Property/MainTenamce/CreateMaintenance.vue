@@ -12,12 +12,12 @@ const employee = useEmployeeStore();
 const searchBarcode = ref("");
 const isSearching = ref(false);
 
-// QR Scanner related
+
 const showScanner = ref(false);
 const statusMessage = ref('');
 const statusType = ref<'success' | 'error' | 'warning' | 'info'>('info');
 
-// Computed properties
+
 const employees = computed(() => {
   const data = employee.respose_data_employee;
   if (Array.isArray(data)) return data;
@@ -77,7 +77,7 @@ const yesNoOptions = [
   { value: 'N', text: 'ບໍ່' }
 ];
 
-// Number formatting functions
+
 const formatNumberInput = (value: string): string => {
   if (!value || value === 'undefined' || value === 'null') return '';
   
@@ -141,7 +141,7 @@ const updateEstimatedValue = (newValue: string) => {
   formattedEstimatedValue.value = formatNumberInput(newValue);
 };
 
-// Status management
+const route = useRoute()
 const showStatus = (message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
   statusMessage.value = message;
   statusType.value = type;
@@ -150,7 +150,11 @@ const showStatus = (message: string, type: 'success' | 'error' | 'warning' | 'in
   }, 3000);
 };
 
-// QR Scanner methods
+watch(() => route.query.mantanence_id, (newValue) => {
+  if (newValue) {
+    mantanances.form_creat_mantenance.audit_period = newValue as string
+  }
+}, { immediate: true })
 const openScanner = () => {
   showScanner.value = true;
 };
@@ -165,13 +169,13 @@ const handleScanSuccess = async (data: { text: string; format: string }) => {
   showStatus('✅ ສະແກນສຳເລັດ: ' + data.text, 'success');
   closeScanner();
   
-  // Auto search after scan
+ 
   setTimeout(async () => {
     await dataSearch();
   }, 500);
 };
 
-// Search functionality
+
 const dataSearch = async () => {
   if (!searchBarcode.value.trim()) {
     showStatus('⚠️ ກະລຸນາໃສ່ລະຫັດບາໂຄດ', 'warning');
@@ -192,7 +196,7 @@ const dataSearch = async () => {
       
       mantanances.form_creat_mantenance.asset_list_id = dataFasset.value[0].asset_list_id;
       
-      // Update book value
+     
       if (dataFasset.value[0]?.asset_value) {
         const bookValue = dataFasset.value[0].asset_value;
         const bookValueStr = String(bookValue);
@@ -202,7 +206,7 @@ const dataSearch = async () => {
         }
       }
       
-      // Update accumulated depreciation
+      
       if (dataFasset.value[0]?.asset_accu_dpca_value) {
         const accuValue = dataFasset.value[0].asset_accu_dpca_value;
         const accuValueStr = String(accuValue);
@@ -212,7 +216,7 @@ const dataSearch = async () => {
         }
       }
       
-      // Update estimated value
+    
       if (dataFasset.value[0]?.asset_value_remain) {
         const estimatedValue = dataFasset.value[0].asset_value_remain;
         const estimatedValueStr = String(estimatedValue);
@@ -415,7 +419,7 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
       </v-col>
     </v-row>
 
-    <!-- Status Messages -->
+  
     <v-row v-if="statusMessage" class="mb-2">
       <v-col cols="12">
         <v-alert
@@ -430,7 +434,7 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
       </v-col>
     </v-row>
 
-    <!-- QR Scanner Component -->
+  
     <QRScanner 
       v-if="showScanner"
       @scan-success="handleScanSuccess"
@@ -438,7 +442,7 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
       @close="closeScanner"
     />
 
-    <!-- Asset Information Card -->
+  
     <v-card flat style="border: solid 1px #64b5f6" class="mb-4">
       <v-card-title style="background-color: #64b5f6" class="py-2">
         ຂໍ້ມູນພື້ນຖານຊັບສິນ
