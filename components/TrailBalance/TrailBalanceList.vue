@@ -99,120 +99,175 @@
           <v-card-text class="px-4 py-3">
             <!-- Filter Form -->
             <v-form @submit.prevent="fetchTrialBalance" class="mb-3">
-              <v-row no-gutters class="mb-3">
-                <!-- Currency Selection -->
-                <v-col cols="12" md="3" class="pe-md-2 mb-2 mb-md-0">
-                  <v-select
-                    v-model="filters.currency"
-                    :items="currencyOptions"
-                    label="ເລືອກສະກຸນເງິນ"
-                    variant="outlined"
-                    density="compact"
-                    prepend-inner-icon="mdi-currency-usd"
-                    hide-details="auto"
-                    clearable
-                    @update:model-value="onCurrencyChange"
-                  >
-                    <template #item="{ props, item }">
-                      <v-list-item v-bind="props">
-                        <template #prepend>
-                          <v-icon :icon="item.raw.icon" size="20" />
-                        </template>
-                      </v-list-item>
-                    </template>
-                  </v-select>
-                </v-col>
-                
-                <v-col cols="12" md="3" class="px-md-1 mb-2 mb-md-0">
-                  <v-text-field
-                    v-model="filters.date_start"
-                    label="ວັນທີເລີ່ມຕົ້ນ"
-                    type="date"
-                    variant="outlined"
-                    density="compact"
-                    prepend-inner-icon="mdi-calendar-start"
-                    hide-details="auto"
-                  />
-                </v-col>
-                
-                <v-col cols="12" md="3" class="px-md-1 mb-2 mb-md-0">
-                  <v-text-field
-                    v-model="filters.date_end"
-                    label="ວັນທີສິ້ນສຸດ"
-                    type="date"
-                    variant="outlined"
-                    density="compact"
-                    prepend-inner-icon="mdi-calendar-end"
-                    hide-details="auto"
-                  />
-                </v-col>
+  <!-- Main Filter Row - Optimized for better space utilization -->
+  <v-row no-gutters class="mb-3">
+    <!-- Currency Selection - Reduced width for more space -->
+    <v-col cols="12" sm="6" md="4" lg="3" xl="2" class="pe-2 mb-2 mb-sm-0">
+      <v-select
+        v-model="filters.currency"
+        :items="currencyOptions"
+        label="ເລືອກສະກຸນເງິນ"
+        variant="outlined"
+        density="compact"
+        prepend-inner-icon="mdi-currency-usd"
+        hide-details="auto"
+        clearable
+        @update:model-value="onCurrencyChange"
+      >
+        <template #item="{ props, item }">
+          <v-list-item v-bind="props">
+            <template #prepend>
+              <v-icon :icon="item.raw.icon" size="20" />
+            </template>
+          </v-list-item>
+        </template>
+      </v-select>
+    </v-col>
+    
+    <!-- Date Range Container - Better spacing -->
+    <v-col cols="12" sm="6" md="5" lg="4" xl="4" class="px-1">
+      <v-row no-gutters>
+        <v-col cols="6" class="pe-1">
+          <v-text-field
+            v-model="filters.date_start"
+            label="ວັນທີເລີ່ມຕົ້ນ"
+            type="date"
+            variant="outlined"
+            density="compact"
+            prepend-inner-icon="mdi-calendar-start"
+            hide-details="auto"
+          />
+        </v-col>
+        <v-col cols="6" class="ps-1">
+          <v-text-field
+            v-model="filters.date_end"
+            label="ວັນທີສິ້ນສຸດ"
+            type="date"
+            variant="outlined"
+            density="compact"
+            prepend-inner-icon="mdi-calendar-end"
+            hide-details="auto"
+          />
+        </v-col>
+      </v-row>
+    </v-col>
 
-                <v-col cols="12" md="3" class="ps-md-2 d-flex gap-1">
-                  <v-btn
-                    type="submit"
-                    color="primary"
-                    prepend-icon="mdi-magnify"
-                    :loading="loading"
-                    class="flex-grow-1"
-                    density="compact"
-                    style="height: 40px;"
-                  >
-                    ຄົ້ນຫາ
-                  </v-btn>
+    <!-- Action Buttons - Optimized layout -->
+    <v-col cols="12" md="3" lg="5" xl="6" class="ps-2">
+      <v-row no-gutters class="h-100">
+        <!-- Primary Actions -->
+        <v-col cols="12" lg="8" xl="6" class="d-flex gap-1 mb-2 mb-lg-0">
+          <v-btn
+            type="submit"
+            color="primary"
+            prepend-icon="mdi-magnify"
+            :loading="loading"
+            class="flex-grow-1"
+            density="compact"
+            style="height: 40px;"
+          >
+            <span class="d-none d-sm-inline">ຄົ້ນຫາ</span>
+            <span class="d-sm-none">ຄົ້ນ</span>
+          </v-btn>
 
-                  <v-btn
-                    color="success"
-                    prepend-icon="mdi-microsoft-excel"
-                    :disabled="!results.length || loading"
-                    @click="exportToExcel"
-                    density="compact"
-                    style="height: 40px;"
-                  >
-                    Excel
-                  </v-btn>
-                </v-col>
-              </v-row>
+          <v-btn
+            color="success"
+            prepend-icon="mdi-microsoft-excel"
+            :disabled="!results.length || loading"
+            @click="exportToExcel"
+            density="compact"
+            style="height: 40px; min-width: 60px;"
+          >
+            <span class="d-none d-md-inline">Excel</span>
+            <v-icon class="d-md-none">mdi-microsoft-excel</v-icon>
+          </v-btn>
+        </v-col>
 
-              <!-- Additional Export Buttons Row -->
-              <v-row no-gutters>
-                <v-col cols="12" class="d-flex gap-2 justify-end">
-                  <v-btn
-                    color="warning"
-                    prepend-icon="mdi-database-export"
-                    :disabled="!results.length || loading"
-                    @click="exportToDairyReport"
-                    density="compact"
-                    style="height: 40px;"
-                  >
-                    Dairy Report
-                  </v-btn>
+        <!-- Secondary Export Actions -->
+        <v-col cols="12" lg="4" xl="6" class="d-flex gap-1 justify-lg-end">
+          <v-btn
+            color="warning"
+            prepend-icon="mdi-database-export"
+            :disabled="!results.length || loading"
+            @click="exportToDairyReport"
+            density="compact"
+            style="height: 40px;"
+            class="flex-lg-0 flex-grow-1"
+          >
+            <span class="d-none d-lg-inline">Dairy</span>
+            <span class="d-lg-none">Dairy Report</span>
+          </v-btn>
 
-                  <v-btn
-                    color="info"
-                    prepend-icon="mdi-paperclip-outline"
-                    :disabled="!results.length || loading"
-                    @click="exportToSOmTopReport"
-                    density="compact"
-                    style="height: 40px;"
-                  >
-                    SomTop Report
-                  </v-btn>
+          <v-btn
+            color="info"
+            prepend-icon="mdi-paperclip-outline"
+            :disabled="!results.length || loading"
+            @click="exportToSOmTopReport"
+            density="compact"
+            style="height: 40px;"
+            class="flex-lg-0 flex-grow-1"
+          >
+            <span class="d-none d-lg-inline">SomTop</span>
+            <span class="d-lg-none">SomTop Report</span>
+          </v-btn>
 
-                  <!-- Conditional export based on active tab -->
-                  <v-btn
-                    v-if="isACTBTab(activeTab)"
-                    color="deep-purple"
-                    prepend-icon="mdi-file-export"
-                    :disabled="!results.length || loading"
-                    @click="exportToACTBReport"
-                    density="compact"
-                    style="height: 40px;"
-                  >
-                    ACTB Export
-                  </v-btn>
-                </v-col>
-              </v-row>
-            </v-form>
+          <!-- Conditional export based on active tab -->
+          <v-btn
+            v-if="isACTBTab(activeTab)"
+            color="deep-purple"
+            prepend-icon="mdi-file-export"
+            :disabled="!results.length || loading"
+            @click="exportToACTBReport"
+            density="compact"
+            style="height: 40px;"
+            class="flex-lg-0 flex-grow-1"
+          >
+            <span class="d-none d-lg-inline">ACTB</span>
+            <span class="d-lg-none">ACTB Export</span>
+          </v-btn>
+        </v-col>
+      </v-row>
+    </v-col>
+  </v-row>
+
+  <!-- Mobile-Only Stacked Layout for very small screens -->
+  <v-row no-gutters class="d-block d-sm-none">
+    <v-col cols="12" class="mb-2">
+      <v-card variant="outlined" class="pa-2">
+        <div class="text-caption text-grey-darken-1 mb-2">ການດຳເນີນງານ</div>
+        <div class="d-flex flex-wrap gap-1">
+          <v-chip
+            v-if="filters.currency"
+            size="small"
+            color="primary"
+            variant="tonal"
+            prepend-icon="mdi-currency-usd"
+          >
+            {{ filters.currency }}
+          </v-chip>
+          <v-chip
+            v-if="filters.date_start && filters.date_end"
+            size="small"
+            color="success"
+            variant="tonal"
+            prepend-icon="mdi-calendar-range"
+          >
+            {{ filters.date_start }} - {{ filters.date_end }}
+          </v-chip>
+          <v-chip
+            v-if="results.length"
+            size="small"
+            color="info"
+            variant="tonal"
+            prepend-icon="mdi-table"
+          >
+            {{ results.length }} ລາຍການ
+          </v-chip>
+        </div>
+      </v-card>
+    </v-col>
+  </v-row>
+</v-form>
 
             <v-divider class="mb-3" thickness="1" color="grey-lighten-3" />
 
@@ -328,10 +383,10 @@
                     </td>
                     <!-- Closing Dr/Cr -->
                     <td class="data-cell amount-cell">
-                      <span class="amount-value text-success">{{ formatCurrency(item.Closing_Dr) }}</span>
+                      <span class="amount-value ">{{ formatCurrency(item.Closing_Dr) }}</span>
                     </td>
                     <td class="data-cell amount-cell">
-                      <span class="amount-value text-error">{{ formatCurrency(item.Closing_Cr) }}</span>
+                      <span class="amount-value">{{ formatCurrency(item.Closing_Cr) }}</span>
                     </td>
                   </tr>
                 </tbody>
@@ -1318,15 +1373,15 @@ onMounted(() => {
   width: 150px;
   min-width: 150px;
   max-width: 150px;
-  text-align: center;
+  text-align: right;
   font-weight: 500;
   background: white;
 }
 
 .gl-code-content {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: left;
+  justify-content: left;
   width: 100%;
   padding: 0 8px;
 }

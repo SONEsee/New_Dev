@@ -429,7 +429,9 @@ const headers = [
   { title: 'ລາຍລະອຽດ', key: 'description', width: '400px', sortable: true },
 //   { title: 'ຍອດເດບິດ', key: 'debit_amount', width: '150px', align: 'end', sortable: true },
 //   { title: 'ຍອດເຄຣດິດ', key: 'credit_amount', width: '150px', align: 'end', sortable: true },
-  { title: 'ຍອດສຸດທິ', key: 'net_amount', width: '150px', align: 'end', sortable: true },
+  { title: 'ຍອດເດືອນກ່ອນ', key: 'net_Amount_Opening', width: '150px', align: 'end', sortable: true },
+  { title: 'ຍອດເດືອນນີ້', key: 'net_Amount_Current', width: '150px', align: 'end', sortable: true },
+
   { title: 'ສະກຸນເງິນ', key: 'currency_display', width: '100px', align: 'center', sortable: true },
   { title: 'ປະເພດ', key: 'segment_type', width: '100px', align: 'center', sortable: true }
 ]

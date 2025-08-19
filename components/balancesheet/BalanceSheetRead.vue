@@ -222,13 +222,13 @@
                 {{ item.description }}
               </td>
               <td class="text-end font-mono">
-                <span class="amount-cell" :class="getNetAmountClass(item.total_debit_amount)">
-                  {{ formatCurrency(item.total_debit_amount) }}
+                <span class="amount-cell" :class="getNetAmountClass(item.total_Amount_Opening)">
+                  {{ formatCurrency(item.total_Amount_Opening) }}
                 </span>
               </td>
               <td class="text-end font-mono">
-                <span class="amount-cell" :class="getNetAmountClass(item.total_credit_amount)">
-                  {{ formatCurrency(item.total_credit_amount) }}
+                <span class="amount-cell" :class="getNetAmountClass(item.total_Amount_Current)">
+                  {{ formatCurrency(item.total_Amount_Current) }}
                 </span>
               </td>
               <td class="text-center font-mono">
@@ -274,10 +274,10 @@
                   <div class="text-h4 text-primary">{{ compareResults?.acc?.count || 0 }}</div>
                   <div class="text-caption">ລາຍການ</div>
                   <div class="mt-2 text-body-2">
-                    ລວມ Total Debit: {{ calculateTotalAmount(compareResults?.acc?.data, 'total_debit_amount') }}
+                    ລວມ Total Debit: {{ calculateTotalAmount(compareResults?.acc?.data, 'total_Amount_Opening') }}
                   </div>
                   <div class="text-body-2">
-                    ລວມ Total Credit: {{ calculateTotalAmount(compareResults?.acc?.data, 'total_credit_amount') }}
+                    ລວມ Total Credit: {{ calculateTotalAmount(compareResults?.acc?.data, 'total_Amount_Current') }}
                   </div>
                 </v-card-text>
               </v-card>
@@ -293,10 +293,10 @@
                   <div class="text-h4 text-success">{{ compareResults?.mfi?.count || 0 }}</div>
                   <div class="text-caption">ລາຍການ</div>
                   <div class="mt-2 text-body-2">
-                    ລວມ Total Debit: {{ calculateTotalAmount(compareResults?.mfi?.data, 'total_debit_amount') }}
+                    ລວມ Total Debit: {{ calculateTotalAmount(compareResults?.mfi?.data, 'total_Amount_Opening') }}
                   </div>
                   <div class="text-body-2">
-                    ລວມ Total Credit: {{ calculateTotalAmount(compareResults?.mfi?.data, 'total_credit_amount') }}
+                    ລວມ Total Credit: {{ calculateTotalAmount(compareResults?.mfi?.data, 'total_Amount_Current') }}
                   </div>
                 </v-card-text>
               </v-card>
@@ -350,8 +350,8 @@ interface BalanceSheetItem {
   no: number
   report_number: string
   description: string
-  total_credit_amount: number
-  total_debit_amount: number
+  total_Amount_Current: number
+  total_Amount_Opening: number
   net_amount: number
   currency_display: string
   segment_type: string
@@ -489,8 +489,8 @@ const filteredData = computed(() => {
 // Table headers
 const headers = [
   { title: 'ລາຍລະອຽດ', key: 'description', width: '400px', sortable: true },
-  { title: 'ຍອດ Debit', key: 'total_debit_amount', width: '150px', align: 'end', sortable: true },
-  { title: 'ຍອດ Credit', key: 'total_credit_amount', width: '150px', align: 'end', sortable: true },
+  { title: 'ຍອດເດືອນກ່ອນ', key: 'total_Amount_Opening', width: '150px', align: 'end', sortable: true },
+  { title: 'ຍອດເດືອນນີ້', key: 'total_Amount_Current', width: '150px', align: 'end', sortable: true },
   { title: 'ສະກຸນເງິນ', key: 'currency_display', width: '100px', align: 'center', sortable: true },
   { title: 'ປະເພດ', key: 'segment_type', width: '100px', align: 'center', sortable: true }
 ]
@@ -742,8 +742,8 @@ const formatCurrency = (value: number): string => {
 }
 
 const getNetAmountClass = (amount: number) => {
-  if (amount > 0) return 'text-success font-weight-bold'
-  if (amount < 0) return 'text-error font-weight-bold'
+  if (amount > 0) return 'font-weight-bold'
+  if (amount < 0) return 'font-weight-bold'
   return 'text-grey'
 }
 
@@ -773,7 +773,7 @@ const getDescriptionClass = (description: string) => {
   return ''
 }
 
-const calculateTotalAmount = (data: BalanceSheetItem[], field: 'total_debit_amount' | 'total_credit_amount') => {
+const calculateTotalAmount = (data: BalanceSheetItem[], field: 'total_Amount_Opening' | 'total_Amount_Current') => {
   if (!data || !Array.isArray(data)) return '0.00'
   const total = data.reduce((sum, item) => sum + (item[field] || 0), 0)
   return formatCurrency(total)
@@ -800,8 +800,8 @@ const exportToExcel = () => {
 
     const exportData = balanceSheetData.value.map(item => ({
       'ລາຍລະອຽດ': sanitizeString(item.description),
-      'ຍອດ Debit': Number(item.total_debit_amount) || 0,
-      'ຍອດ Credit': Number(item.total_credit_amount) || 0,
+      'ຍອດ Debit': Number(item.total_Amount_Opening) || 0,
+      'ຍອດ Credit': Number(item.total_Amount_Current) || 0,
       'ສະກຸນເງິນ': sanitizeString(item.currency_display || selectedCurrency.value),
       'ປະເພດ': sanitizeString(item.segment_type || selectedSegment.value)
     }))

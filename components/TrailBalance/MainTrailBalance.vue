@@ -200,10 +200,10 @@
                 </td>
                 <!-- Closing Dr/Cr -->
                 <td class="data-cell amount-cell">
-                  <span class="amount-value text-success">{{ formatCurrency(item.C1_DR) }}</span>
+                  <span class="amount-value">{{ formatCurrency(item.C1_DR) }}</span>
                 </td>
                 <td class="data-cell amount-cell">
-                  <span class="amount-value text-error">{{ formatCurrency(item.C1_CR) }}</span>
+                  <span class="amount-value">{{ formatCurrency(item.C1_CR) }}</span>
                 </td>
                 <!-- Currency -->
                 <td class="data-cell extra-column-cell">
@@ -702,15 +702,15 @@ onMounted(async () => {
   width: 150px;
   min-width: 150px;
   max-width: 150px;
-  text-align: center;
+  text-align: left;
   font-weight: 500;
   background: white;
 }
 
 .gl-code-content {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: left;
+  justify-content: left;
   width: 100%;
   padding: 0 8px;
 }
