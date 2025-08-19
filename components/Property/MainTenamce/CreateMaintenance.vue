@@ -451,7 +451,7 @@ const SubmitDataMentenance = async () => {
     const cleanedData: any = {
       ...mantanances.form_creat_mantenance,
       asset_list_id: mantanances.form_creat_mantenance.asset_list_id,
-      // Fix department_id NaN issue
+     
       department_id: mantanances.form_creat_mantenance.department_id && 
         mantanances.form_creat_mantenance.department_id !== '' &&
         !isNaN(parseInt(mantanances.form_creat_mantenance.department_id)) ? 
@@ -480,7 +480,7 @@ const SubmitDataMentenance = async () => {
       approver_name: mantanances.form_creat_mantenance.approver_name || null,
     };
     
-    // Clean null values and handle special cases
+  
     Object.keys(cleanedData).forEach(key => {
       if (cleanedData[key] === '' || cleanedData[key] === 'NaN' || 
           (typeof cleanedData[key] === 'number' && isNaN(cleanedData[key]))) {
@@ -488,12 +488,12 @@ const SubmitDataMentenance = async () => {
       }
     });
   
-    // Remove photos_attached if it's causing issues - let server handle file uploads separately
+
     if (cleanedData.photos_attached === 'N' || cleanedData.photos_attached === 'Y') {
       delete cleanedData.photos_attached;
     }
     
-    // Validate required fields
+
     if (!cleanedData.asset_list_id || cleanedData.asset_list_id === 'NaN' || cleanedData.asset_list_id === null) {
       showStatus('❌ ລະຫັດຊັບສິນບໍ່ຖືກຕ້ອງ', 'error');
       return;
@@ -953,7 +953,7 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
             </v-col>
           </v-row>
 
-          <!-- Financial Fields -->
+         
           <v-row dense>
             <v-col cols="6" md="2">
               <v-text-field
@@ -1011,7 +1011,7 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
             </v-col>
           </v-row>
 
-          <!-- Yes/No Fields -->
+         
           <v-row dense>
             <v-col cols="4" md="2">
               <v-select
@@ -1079,7 +1079,7 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
             </v-col>
           </v-row>
 
-          <!-- Review Fields (conditional) -->
+         
           <v-row dense v-if="mantanances.form_creat_mantenance.audit_status !== 'DRAFT'">
             <v-col cols="6" md="3">
               <v-text-field
@@ -1117,7 +1117,7 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
             </v-col>
           </v-row>
 
-          <!-- Text Areas -->
+         
           <v-row dense>
             <v-col cols="12" md="4">
               <v-textarea
@@ -1150,7 +1150,7 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
         </v-card-text>
       </v-card>
 
-      <!-- Action Buttons -->
+      
       <v-row class="mt-4">
         <v-col cols="12" class="text-center">
           <v-btn
