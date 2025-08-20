@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import dayjs from '#build/dayjs.imports.mjs';
+
 const accoutStore = accountMethodStore();
 const dreptriptionStore = useFassetLidtDescription();
 
@@ -145,13 +147,13 @@ onMounted(() => {
               <v-icon left>mdi-table</v-icon>
               ລາຍລະອຽດທຸກລາຍການ
             </v-card-title> </v-col>
-              <v-col cols="12" md="6"><div class="d-flex mb-2 justify-end"><v-btn color="primary" @click="handelSubmit" >
-              ຫັກຄ່າຫຼູຍຫ້ຽນ
+              <v-col cols="12" md="6"><div class="d-flex mb-2 justify-end"><v-btn color="error" @click="handelSubmit" >
+              ຢືນຢັນການຫັກຄ່າຫຼູຍຫ້ຽນ
             </v-btn></div></v-col>
             </v-row>
            
             
-           
+         
 
             <v-data-table
               :headers="headers"
@@ -185,7 +187,10 @@ onMounted(() => {
               </template>
               <template v-slot:item.due_date="{ item }">
                 <v-chip variant="outlined" size="small">
-                  {{ item.due_end_date }} - {{ item.due_end_date }}
+                  <!-- {{ item.due_end_date }}  -->
+                  {{ dayjs(item.due_end_date.split('/').reverse().join('-')).format('MM/YYYY') }}
+    <!-- <span style="color: #666;"> ຫາ </span>
+    {{ dayjs().format('MM/YYYY') }} -->
                 </v-chip>
               </template>
 

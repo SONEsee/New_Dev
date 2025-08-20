@@ -167,11 +167,37 @@ const downloadBarcode = () => {
     link.click();
   }
 };
+const items = [
+  { title: "ປະຈຳປີ" ,value:"ANNUAL" },
+  { title: "ປະຈຳໄຕມາດ",value:"QUARTERLY" },
+  { title: "ປະຈຳເດືອນ",value:"QUARTERLY" },
+  
+];
 </script>
 
 <template>
-  <div class="pa-4">
-    <GlobalTextTitleLine :title="title" />
+  <div class="pa-4 ">
+    <v-row>
+      <v-col cols="12" md="6"><GlobalTextTitleLine :title="title" /></v-col>
+      <v-col cols="12" md="6">
+        <div class="d-flex justify-end">
+          <v-menu>
+            <template v-slot:activator="{ props }">
+              <v-btn color="primary" v-bind="props"> ບຳລຸງຮັກສາຊັບສິນ </v-btn>
+            </template>
+            <v-list>
+              <v-list-item
+                v-for="(item, index) in items"
+                :key="index"
+                :value="index"
+              >
+                <v-list-item-title @click="goPath(`/property/maintemanece/create/?mantanence_id=${item.value}`)">{{ item.title }}</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+        </div>
+      </v-col>
+    </v-row>
 
     <v-data-table
       :headers="header"
@@ -180,6 +206,24 @@ const downloadBarcode = () => {
       :items-per-page="itemsPerPage"
       v-model:page="page"
     >
+    <template v-slot:header.index="{column}">
+      <b style="color: blue;">{{ column.title }}</b>
+    </template>
+    <template v-slot:header.asset_tag="{column}">
+      <b style="color: blue;">{{ column.title }}</b>
+    </template>
+    <template v-slot:header.asset_spec="{column}">
+      <b style="color: blue;">{{ column.title }}</b>
+    </template>
+    <template v-slot:header.location_detail.location_name_la="{column}">
+      <b style="color: blue;">{{ column.title }}</b>
+    </template>
+    <template v-slot:header.actions="{column}">
+      <b style="color: blue;">{{ column.title }}</b>
+    </template>
+    <template v-slot:header.asset_date="{column}">
+      <b style="color: blue;">{{ column.title }}</b>
+    </template>
       <template #item.index="{ index }">
         {{ getGlobalIndex(index) }}
       </template>
@@ -196,13 +240,20 @@ const downloadBarcode = () => {
       </template>
 
       <template #item.actions="{ item }">
-        <v-btn
+        <!-- <v-btn
           icon="mdi-qrcode"
           size="small"
           color="primary"
           variant="text"
           @click="showBarcode(item)"
-        />
+        /> -->
+ <v-tooltip :text="`ປະຫວັດການບຳລຸງຮັກສາ ${item.asset_list_id}`" location="top">
+  <template v-slot:activator="{ props }">
+    <v-btn flat @click="goPath(`/property/maintemanece/history/?history=${item.asset_list_id}`)" v-bind="props">
+      <v-icon icon="mdi-history"></v-icon>
+    </v-btn>
+  </template>
+</v-tooltip>
       </template>
     </v-data-table>
 

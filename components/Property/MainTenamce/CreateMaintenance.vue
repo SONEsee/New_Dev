@@ -1,41 +1,9 @@
-<<<<<<< HEAD
-<template>
-  <div class="pa-4">
-    <GlobalTextTitleLine :title="title" />
-    
-    <!-- Asset Search Section -->
-    <v-col cols="12">
-      <v-row>
-        <v-col cols="12" md="4">
-          <v-text-field
-            v-model="searchBarcode"
-            label="ຄົນຫາຕາມເລກ Barcode"
-            variant="outlined"
-            density="compact"
-            @keyup.enter="dataSearch"
-            @paste="handlePaste"
-            :loading="isSearching"
-            placeholder="ພິມຫຼືວາງ Barcode..."
-          ></v-text-field>
-        </v-col>
-        <v-col cols="12" md="2">
-          <v-btn
-            color="primary"
-            @click="dataSearch"
-            :disabled="!searchBarcode.trim()"
-            :loading="isSearching"
-          >
-            ຄົ້ນຫາ
-          </v-btn>
-        </v-col>
-      </v-row>
-    </v-col>
 
-=======
+
 <script setup lang="ts">
+// ໃຊ້ script ເດີມຂອງເຈົ້າແຕ່ເພີ່ມສ່ວນ scanner ເຂົ້າໄປ
 import { ref, computed, onMounted, nextTick, onUnmounted } from "vue";
 import { useMentenance } from "@/stores/mantenaces";
-
 
 const validate = ref();
 const form = ref();
@@ -47,21 +15,31 @@ const employee = useEmployeeStore();
 const searchBarcode = ref("");
 const isSearching = ref(false);
 
-
 const showScanner = ref(false);
-const isScanning = ref(false);
-const manualCode = ref('');
-const quickInput = ref('');
 const statusMessage = ref('');
 const statusType = ref<'success' | 'error' | 'warning' | 'info'>('info');
-const videoRef = ref<HTMLVideoElement>();
-const showManualInput = ref(false);
-const flashEnabled = ref(false);
-const hasMultipleCameras = ref(false);
-const currentCamera = ref('environment');
+
+// Scanner related refs
+const videoRef = ref<HTMLVideoElement | null>(null);
+const isScanning = ref(false);
+const isLoading = ref(false);
+const isReady = ref(false);
+const scanResult = ref<{ text: string; format: string; timestamp: Date } | null>(null);
+const error = ref('');
+const availableCameras = ref<{ deviceId: string; label: string }[]>([]);
+const currentCameraIndex = ref(0);
+const route = useRoute();
+watch(() => route.query.mantanence_id, (newValue) => {
+  if (newValue) {
+    mantanances.form_creat_mantenance.audit_period = newValue as string
+  }
+}, { immediate: true })
+
+// ZXing related
+let BrowserMultiFormatReader: any = null;
+let codeReader: any = null;
 let stream: MediaStream | null = null;
 
-// Computed properties
 const employees = computed(() => {
   const data = employee.respose_data_employee;
   if (Array.isArray(data)) return data;
@@ -83,12 +61,10 @@ const dataFasset = computed(() => {
   return [];
 });
 
-
 const rules = {
   required: (value: any) => !!value || "ກະລຸນາກຳນົດຄ່າ",
   number: (value: any) => !isNaN(Number(value)) || "ກະລຸນາກຳນົດຕົວເລກ",
 };
-
 
 const auditPeriodOptions = [
   { value: 'ANNUAL', text: 'ປະຈຳປີ' },
@@ -123,15 +99,13 @@ const yesNoOptions = [
   { value: 'N', text: 'ບໍ່' }
 ];
 
-
+// Number formatting functions
 const formatNumberInput = (value: string): string => {
   if (!value || value === 'undefined' || value === 'null') return '';
   
-
   const stringValue = String(value);
   const numericValue = stringValue.replace(/[^\d.]/g, '');
   
- 
   if (!numericValue || numericValue === 'NaN' || isNaN(parseFloat(numericValue))) {
     return '';
   }
@@ -189,7 +163,132 @@ const updateEstimatedValue = (newValue: string) => {
   formattedEstimatedValue.value = formatNumberInput(newValue);
 };
 
-// Status management - Fixed
+// Scanner Methods
+const initializeScanner = async () => {
+  try {
+    isLoading.value = true;
+    error.value = '';
+    
+    // Import ZXing library
+    const { BrowserMultiFormatReader: Reader } = await import('@zxing/library');
+    BrowserMultiFormatReader = Reader;
+    codeReader = new BrowserMultiFormatReader();
+    
+    // Get available cameras
+    await loadAvailableCameras();
+    
+    isReady.value = true;
+    console.log('Scanner initialized successfully');
+  } catch (err) {
+    error.value = 'ບໍ່ສາມາດເລີ່ມຕົ້ນ scanner ໄດ້. ກະລຸນາກວດສອບ browser ແລະ camera.';
+    console.error('ZXing initialization error:', err);
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const loadAvailableCameras = async () => {
+  try {
+    if (!codeReader) return;
+    
+    const devices = await codeReader.listVideoInputDevices();
+    availableCameras.value = devices.map((device: MediaDeviceInfo) => ({
+      deviceId: device.deviceId,
+      label: device.label || `Camera ${devices.indexOf(device) + 1}`
+    }));
+    
+    console.log('Available cameras:', availableCameras.value.length);
+  } catch (err) {
+    console.error('Error loading cameras:', err);
+  }
+};
+
+const startScanning = async () => {
+  if (!codeReader || !videoRef.value) {
+    error.value = 'Scanner ຍັງບໍ່ພ້ອມ';
+    return;
+  }
+
+  try {
+    error.value = '';
+    isScanning.value = true;
+    
+    if (availableCameras.value.length === 0) {
+      throw new Error('ບໍ່ພົບກ້ອງຖ່າຍຮູບ');
+    }
+    
+    // Use selected camera device
+    const selectedCamera = availableCameras.value[currentCameraIndex.value];
+    console.log('Using camera:', selectedCamera.label);
+    
+    // Start continuous decoding
+    await codeReader.decodeFromVideoDevice(
+      selectedCamera.deviceId,
+      videoRef.value,
+      (result: any, scanError: any) => {
+        if (result) {
+          handleScanSuccess({ text: result.getText(), format: result.getBarcodeFormat() });
+        }
+        if (scanError && scanError.name !== 'NotFoundException') {
+          console.error('Scanning error:', scanError);
+        }
+      }
+    );
+    
+  } catch (err: any) {
+    error.value = `ເກີດຂໍ້ຜິດພາດໃນການສະແກນ: ${err.message}`;
+    isScanning.value = false;
+    console.error('Scanning error:', err);
+  }
+};
+
+const stopScanning = () => {
+  if (codeReader) {
+    codeReader.reset();
+  }
+  
+  if (stream) {
+    stream.getTracks().forEach(track => track.stop());
+    stream = null;
+  }
+  
+  isScanning.value = false;
+  console.log('Scanning stopped');
+};
+
+const switchCamera = async () => {
+  if (availableCameras.value.length <= 1) return;
+  
+  stopScanning();
+  currentCameraIndex.value = (currentCameraIndex.value + 1) % availableCameras.value.length;
+  
+  // Wait a bit before starting with new camera
+  setTimeout(async () => {
+    await startScanning();
+  }, 500);
+};
+
+const formatBarcodeType = (format: string): string => {
+  const formats: Record<string, string> = {
+    'QR_CODE': 'QR Code',
+    'CODE_128': 'Code 128',
+    'CODE_39': 'Code 39',
+    'EAN_13': 'EAN-13',
+    'EAN_8': 'EAN-8',
+    'UPC_A': 'UPC-A',
+    'UPC_E': 'UPC-E',
+    'DATA_MATRIX': 'Data Matrix',
+    'PDF_417': 'PDF417',
+    'AZTEC': 'Aztec'
+  };
+  return formats[format] || format;
+};
+
+const clearError = () => {
+  error.value = '';
+};
+
+// Status management
 const showStatus = (message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
   statusMessage.value = message;
   statusType.value = type;
@@ -198,358 +297,46 @@ const showStatus = (message: string, type: 'success' | 'error' | 'warning' | 'in
   }, 3000);
 };
 
-// Quick input processing - Fixed
-const processQuickInput = async () => {
-  if (!quickInput.value?.trim()) {
-    showStatus('⚠️ ກະລຸນາໃສ່ລະຫັດບາໂຄດ', 'warning');
-    return;
+// QR Scanner methods
+const openScanner = async () => {
+  showScanner.value = true;
+  // Initialize and auto-start scanner when dialog opens
+  if (!isReady.value) {
+    await initializeScanner();
   }
-  
-  searchBarcode.value = quickInput.value.trim();
-  quickInput.value = '';
-  await dataSearch();
-};
-
-// Manual input processing - Fixed
-const processManualCode = async () => {
-  if (!manualCode.value.trim()) {
-    showStatus('❌ ກະລຸນາໃສ່ລະຫັດບາໂຄດ', 'error');
-    return;
-  }
-  
-  showStatus('✅ ຮັບລະຫັດແລ້ວ: ' + manualCode.value, 'success');
-  searchBarcode.value = manualCode.value.trim();
-  closeScanner();
-  
+  // Auto start scanning
   setTimeout(async () => {
-    await dataSearch();
+    await startScanning();
   }, 500);
 };
 
-// Camera functions - Fixed for Safari iOS
-const requestCameraDirectly = async () => {
-  showStatus('🔓 ກຳລັງຂໍອະນຸຍາດໃຊ້ກ້ອງ...', 'info');
-  
-  // Check for basic browser support
-  if (typeof navigator === 'undefined') {
-    showStatus('❌ Navigator ບໍ່ມີໃນ browser ນີ້', 'error');
-    return;
-  }
-  
-  // Check for HTTPS (required for camera on iOS)
-  if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-    showStatus('🔒 ຕ້ອງການ HTTPS ເພື່ອໃຊ້ກ້ອງ', 'error');
-    setTimeout(() => {
-      showStatus('💡 ໃຊ້ການພິມລະຫັດແທນ', 'info');
-    }, 2000);
-    return;
-  }
-  
-  // Check for MediaDevices API
-  if (!navigator.mediaDevices) {
-    showStatus('❌ Browser ນີ້ບໍ່ຮອງຮັບ MediaDevices', 'error');
-    setTimeout(() => {
-      showStatus('💡 ໃຊ້ການພິມລະຫັດແທນ', 'info');
-    }, 2000);
-    return;
-  }
-  
-  // Check for getUserMedia
-  if (!navigator.mediaDevices.getUserMedia) {
-    showStatus('❌ Browser ນີ້ບໍ່ຮອງຮັບ getUserMedia', 'error');
-    setTimeout(() => {
-      showStatus('💡 ໃຊ້ການພິມລະຫັດແທນ', 'info');
-    }, 2000);
-    return;
-  }
-  
-  try {
-    // Test camera permission
-    const testStream = await navigator.mediaDevices.getUserMedia({
-      video: { 
-        facingMode: 'environment',
-        width: { ideal: 640 },
-        height: { ideal: 480 }
-      }
-    });
-    
-    // Stop test stream immediately
-    testStream.getTracks().forEach(track => track.stop());
-    
-    showStatus('✅ ໄດ້ຮັບອະນຸຍາດແລ້ວ - ສາມາດໃຊ້ການສະແກນໄດ້', 'success');
-    
-    // Check for multiple cameras
-    try {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const videoDevices = devices.filter(device => device.kind === 'videoinput');
-      hasMultipleCameras.value = videoDevices.length > 1;
-    } catch (enumError) {
-      console.warn('Cannot enumerate devices:', enumError);
-      hasMultipleCameras.value = false;
-    }
-    
-  } catch (error) {
-    console.error('Permission error:', error);
-    handleCameraPermissionError(error);
-  }
-};
-
-const handleCameraPermissionError = (error: any) => {
-  let errorMessage = '❌ ບໍ່ໄດ້ຮັບອະນຸຍາດໃຊ້ກ້ອງ';
-  let suggestion = 'ໃຊ້ການພິມລະຫັດແທນ';
-  
-  if (error.name === 'NotAllowedError') {
-    errorMessage = '🚫 ຜູ້ໃຊ້ປະຕິເສດການໃຊ້ກ້ອງ';
-    suggestion = 'ໃຫ້ອະນຸຍາດໃນການຕັ້ງຄ່າ browser ແລ້ວລອງໃໝ່';
-  } else if (error.name === 'NotFoundError') {
-    errorMessage = '📷 ບໍ່ພົບກ້ອງໃນອຸປະກອນນີ້';
-  } else if (error.name === 'NotReadableError') {
-    errorMessage = '⚠️ ກ້ອງຖືກໃຊ້ງານໂດຍແອັບອື່ນ';
-    suggestion = 'ປິດແອັບອື່ນທີ່ໃຊ້ກ້ອງ';
-  } else if (error.name === 'NotSupportedError') {
-    errorMessage = '🔒 ຕ້ອງການ HTTPS';
-    suggestion = 'ເປີດໃນ https:// ຫຼື localhost';
-  } else if (error.name === 'SecurityError') {
-    errorMessage = '🔐 ບັນຫາຄວາມປອດໄພ';
-    suggestion = 'ຕ້ອງການ HTTPS ແລະອະນຸຍາດຂອງຜູ້ໃຊ້';
-  }
-  
-  showStatus(errorMessage, 'error');
-  setTimeout(() => {
-    showStatus(`💡 ${suggestion}`, 'info');
-  }, 2000);
-};
-
-const openScanner = async () => {
-  showScanner.value = true;
-  showManualInput.value = false;
-  showStatus('📷 ກຳລັງເປີດກ້ອງ...', 'info');
-  
-  // Check environment
-  if (typeof window === 'undefined' || typeof navigator === 'undefined') {
-    showStatus('❌ ບໍ່ສາມາດໃຊ້ກ້ອງໄດ້ໃນສະພາບແວດລ້ອມນີ້', 'error');
-    showManualInput.value = true;
-    return;
-  }
-  
-  // Check HTTPS requirement
-  if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-    showStatus('🔒 ຕ້ອງການ HTTPS ເພື່ອໃຊ້ກ້ອງ', 'error');
-    showManualInput.value = true;
-    return;
-  }
-  
-  // Check MediaDevices support
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    showStatus('❌ Browser ນີ້ບໍ່ຮອງຮັບກ້ອງ', 'error');
-    showManualInput.value = true;
-    return;
-  }
-  
-  try {
-    const constraints = {
-      video: { 
-        facingMode: currentCamera.value,
-        width: { ideal: 640, max: 1280 },
-        height: { ideal: 480, max: 720 },
-        frameRate: { ideal: 30, max: 30 }
-      }
-    };
-    
-    stream = await navigator.mediaDevices.getUserMedia(constraints);
-    
-    await nextTick();
-    
-    if (videoRef.value && stream) {
-      videoRef.value.srcObject = stream;
-      videoRef.value.setAttribute('playsinline', 'true');
-      videoRef.value.setAttribute('webkit-playsinline', 'true');
-      videoRef.value.setAttribute('muted', 'true');
-      videoRef.value.muted = true;
-      videoRef.value.autoplay = true;
-      
-      try {
-        await videoRef.value.play();
-        isScanning.value = true;
-        showStatus('✅ ກ້ອງພ້ອມໃຊ້ງານ', 'success');
-      } catch (playError) {
-        console.error('Video play error:', playError);
-        showStatus('⚠️ ກ້ອງເປີດແລ້ວແຕ່ບໍ່ສາມາດສະແດງໄດ້', 'warning');
-        showManualInput.value = true;
-      }
-    }
-    
-  } catch (error) {
-    console.error('Camera error:', error);
-    handleCameraError(error);
-  }
-};
-
-const handleCameraError = (error: any) => {
-  let errorMessage = '❌ ບໍ່ສາມາດເປີດກ້ອງໄດ້';
-  
-  if (error.name === 'NotAllowedError') {
-    errorMessage = '🚫 ບໍ່ໄດ້ຮັບອະນຸຍາດໃຊ້ກ້ອງ';
-  } else if (error.name === 'NotFoundError') {
-    errorMessage = '📷 ບໍ່ພົບກ້ອງໃນອຸປະກອນນີ້';
-  } else if (error.name === 'NotReadableError') {
-    errorMessage = '⚠️ ກ້ອງຖືກໃຊ້ງານໂດຍແອັບອື່ນ';
-  } else if (error.name === 'NotSupportedError') {
-    errorMessage = '🔒 ຕ້ອງການ HTTPS';
-  }
-  
-  showStatus(errorMessage, 'error');
-  showManualInput.value = true;
-};
-
-const toggleFlash = async () => {
-  if (!stream) return;
-  
-  try {
-    const track = stream.getVideoTracks()[0];
-    const capabilities = track.getCapabilities();
-    
-    if (capabilities.torch) {
-      await track.applyConstraints({
-        advanced: [{ torch: !flashEnabled.value }]
-      });
-      flashEnabled.value = !flashEnabled.value;
-      showStatus(flashEnabled.value ? '🔦 ເປີດໄຟແລ້ວ' : '🔦 ປິດໄຟແລ້ວ', 'info');
-    } else {
-      showStatus('❌ ອຸປະກອນນີ້ບໍ່ມີໄຟ', 'warning');
-    }
-  } catch (error) {
-    console.error('Flash error:', error);
-    showStatus('❌ ບໍ່ສາມາດຄວບຄຸມໄຟໄດ້', 'error');
-  }
-};
-
-const switchCamera = async () => {
-  if (!hasMultipleCameras.value) return;
-  
-  currentCamera.value = currentCamera.value === 'environment' ? 'user' : 'environment';
-  
-  if (isScanning.value) {
-    closeScanner();
-    setTimeout(() => {
-      openScanner();
-    }, 100);
-  }
-};
-
-const toggleManualInput = () => {
-  showManualInput.value = !showManualInput.value;
-  if (showManualInput.value) {
-    isScanning.value = false;
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-      stream = null;
-    }
-    showStatus('⌨️ ພິມລະຫັດບາໂຄດ', 'info');
-    
-    nextTick(() => {
-      const input = document.querySelector('#manual-barcode-input') as HTMLInputElement;
-      if (input) {
-        input.focus();
-      }
-    });
-  } else {
-    openScanner();
-  }
-};
-
-const openManualInput = () => {
-  showScanner.value = true;
-  showManualInput.value = true;
-  isScanning.value = false;
-  manualCode.value = '';
-  showStatus('⌨️ ພິມລະຫັດບາໂຄດ', 'info');
-  
-  setTimeout(() => {
-    const input = document.querySelector('#manual-barcode-input') as HTMLInputElement;
-    if (input) {
-      input.focus();
-      input.select();
-    }
-  }, 300);
-};
-
 const closeScanner = () => {
-  isScanning.value = false;
+  stopScanning();
   showScanner.value = false;
-  showManualInput.value = false;
-  manualCode.value = '';
-  statusMessage.value = '';
-  flashEnabled.value = false;
-  
-  if (stream) {
-    stream.getTracks().forEach(track => track.stop());
-    stream = null;
-  }
-  
-  if (videoRef.value) {
-    videoRef.value.srcObject = null;
-  }
+  scanResult.value = null;
+  error.value = '';
 };
 
-// Debug function - Enhanced for iOS Safari
-const showDebugInfo = () => {
-  const debugInfo = {
-    'Environment': {
-      'Protocol': location.protocol,
-      'Hostname': location.hostname,
-      'Is HTTPS': location.protocol === 'https:',
-      'Is Localhost': location.hostname === 'localhost',
-      'User Agent': navigator.userAgent,
-      'Platform': navigator.platform || 'Unknown'
-    },
-    'Browser Support': {
-      'Navigator': typeof navigator !== 'undefined',
-      'MediaDevices': !!navigator?.mediaDevices,
-      'getUserMedia': !!navigator?.mediaDevices?.getUserMedia,
-      'enumerateDevices': !!navigator?.mediaDevices?.enumerateDevices,
-      'Screen Orientation': !!screen?.orientation,
-      'Device Motion': !!window.DeviceMotionEvent
-    },
-    'Current State': {
-      'Scanner Open': showScanner.value,
-      'Scanning': isScanning.value,
-      'Manual Input': showManualInput.value,
-      'Stream Active': !!stream,
-      'Search Barcode': searchBarcode.value,
-      'Flash Enabled': flashEnabled.value
-    },
-    'Camera Info': {
-      'Multiple Cameras': hasMultipleCameras.value,
-      'Current Camera': currentCamera.value,
-      'Video Element': !!videoRef.value,
-      'Video Source': videoRef.value?.srcObject ? 'Set' : 'Not Set'
-    },
-    'Form Data': {
-      'Asset ID': mantanances?.form_creat_mantenance?.asset_list_id || 'None',
-      'Book Value': formattedBookValue.value || 'None',
-      'Form Valid': isFormValid.value
-    }
+const handleScanSuccess = async (data: { text: string; format: string }) => {
+  console.log('ສະແກນສຳເລັດ:', data);
+  
+  scanResult.value = {
+    text: data.text,
+    format: data.format,
+    timestamp: new Date()
   };
   
-  console.log('🔧 Complete Debug Info:', debugInfo);
+  searchBarcode.value = data.text;
+  showStatus('✅ ສະແກນສຳເລັດ: ' + data.text, 'success');
   
-  // Create readable summary for alert
-  const summary = `
-📱 Browser: ${navigator.userAgent.split(')')[0]})
-🔒 HTTPS: ${location.protocol === 'https:' ? 'Yes' : 'No'}
-📷 Camera Support: ${!!navigator?.mediaDevices?.getUserMedia ? 'Yes' : 'No'}
-🎯 Current Mode: ${showScanner.value ? (isScanning.value ? 'Scanning' : 'Manual') : 'Search'}
-`;
-  
-  alert('Debug info logged to console. Summary:' + summary);
-  
-  // Also show status
-  const supportLevel = !!navigator?.mediaDevices?.getUserMedia ? 'ຮອງຮັບ' : 'ບໍ່ຮອງຮັບ';
-  showStatus(`🔧 Camera: ${supportLevel}, HTTPS: ${location.protocol === 'https:' ? 'Yes' : 'No'}`, 'info');
+  // Auto close scanner and search
+  setTimeout(async () => {
+    closeScanner();
+    await dataSearch();
+  }, 1500);
 };
 
-// Main search function - Fixed
+// Search functionality
 const dataSearch = async () => {
   if (!searchBarcode.value.trim()) {
     showStatus('⚠️ ກະລຸນາໃສ່ລະຫັດບາໂຄດ', 'warning');
@@ -570,7 +357,7 @@ const dataSearch = async () => {
       
       mantanances.form_creat_mantenance.asset_list_id = dataFasset.value[0].asset_list_id;
       
-      // Update book value with NaN protection
+      // Update book value
       if (dataFasset.value[0]?.asset_value) {
         const bookValue = dataFasset.value[0].asset_value;
         const bookValueStr = String(bookValue);
@@ -580,7 +367,7 @@ const dataSearch = async () => {
         }
       }
       
-      
+      // Update accumulated depreciation
       if (dataFasset.value[0]?.asset_accu_dpca_value) {
         const accuValue = dataFasset.value[0].asset_accu_dpca_value;
         const accuValueStr = String(accuValue);
@@ -590,7 +377,7 @@ const dataSearch = async () => {
         }
       }
       
-     
+      // Update estimated value
       if (dataFasset.value[0]?.asset_value_remain) {
         const estimatedValue = dataFasset.value[0].asset_value_remain;
         const estimatedValueStr = String(estimatedValue);
@@ -600,12 +387,12 @@ const dataSearch = async () => {
         }
       }
       
-    
+      // Update location
       if (dataFasset.value[0]?.location_detail?.location_name_la) {
         mantanances.form_creat_mantenance.actual_location = dataFasset.value[0].location_detail.location_name_la;
       }
       
-  
+      // Calculate remaining useful life
       if (dataFasset.value[0]?.asset_useful_life && dataFasset.value[0]?.dpca_start_date) {
         const assetUsefulLife = parseInt(dataFasset.value[0].asset_useful_life);
         const dpcaStartDate = new Date(dataFasset.value[0].dpca_start_date);
@@ -656,7 +443,6 @@ const SubmitDataMentenance = async () => {
   const validation = await form.value.validate();
   
   if (!mantanances.form_creat_mantenance.asset_list_id) {
-    // Use showStatus instead of CallSwal
     showStatus('⚠️ ກະລຸນາເລືອກຊັບສິນກ່ອນບັນທຶກ (ສະແກນ Barcode)', 'warning');
     return;
   }
@@ -665,7 +451,10 @@ const SubmitDataMentenance = async () => {
     const cleanedData: any = {
       ...mantanances.form_creat_mantenance,
       asset_list_id: mantanances.form_creat_mantenance.asset_list_id,
-      department_id: mantanances.form_creat_mantenance.department_id ? 
+     
+      department_id: mantanances.form_creat_mantenance.department_id && 
+        mantanances.form_creat_mantenance.department_id !== '' &&
+        !isNaN(parseInt(mantanances.form_creat_mantenance.department_id)) ? 
         parseInt(mantanances.form_creat_mantenance.department_id) : null,
       audit_year: mantanances.form_creat_mantenance.audit_year ? 
         parseInt(mantanances.form_creat_mantenance.audit_year) : null,
@@ -679,7 +468,6 @@ const SubmitDataMentenance = async () => {
         parseFloat(parseFormattedNumber(mantanances.form_creat_mantenance.accumulated_depreciation)) : null,
       remaining_useful_life: mantanances.form_creat_mantenance.remaining_useful_life ? 
         parseInt(mantanances.form_creat_mantenance.remaining_useful_life) : null,
-    //   photos_attached: mantanances.form_creat_mantenance.photos_attached || 'N',
       audit_date: mantanances.form_creat_mantenance.audit_date || null,
       follow_up_date: mantanances.form_creat_mantenance.follow_up_date || null,
       review_date: mantanances.form_creat_mantenance.review_date || null,
@@ -692,17 +480,36 @@ const SubmitDataMentenance = async () => {
       approver_name: mantanances.form_creat_mantenance.approver_name || null,
     };
     
-   
+  
     Object.keys(cleanedData).forEach(key => {
-      if (cleanedData[key] === '') {
+      if (cleanedData[key] === '' || cleanedData[key] === 'NaN' || 
+          (typeof cleanedData[key] === 'number' && isNaN(cleanedData[key]))) {
         cleanedData[key] = null;
       }
     });
+  
+
+    if (cleanedData.photos_attached === 'N' || cleanedData.photos_attached === 'Y') {
+      delete cleanedData.photos_attached;
+    }
     
-    if (!cleanedData.asset_list_id || cleanedData.asset_list_id === 'NaN' || isNaN(cleanedData.asset_list_id)) {
+
+    if (!cleanedData.asset_list_id || cleanedData.asset_list_id === 'NaN' || cleanedData.asset_list_id === null) {
       showStatus('❌ ລະຫັດຊັບສິນບໍ່ຖືກຕ້ອງ', 'error');
       return;
     }
+    
+    if (!cleanedData.auditor_name) {
+      showStatus('❌ ກະລຸນາເລືອກຜູ້ກວດສອບ', 'error');
+      return;
+    }
+    
+    if (!cleanedData.physical_status) {
+      showStatus('❌ ກະລຸນາເລືອກສະຖານະກາຍະພາບ', 'error');
+      return;
+    }
+    
+    console.log('Cleaned data before sending:', cleanedData);
     
     try {
       showStatus('💾 ກຳລັງບັນທຶກ...', 'info');
@@ -717,12 +524,26 @@ const SubmitDataMentenance = async () => {
   }
 };
 
+const resetForm = () => {
+  mantanances.$reset();
+  searchBarcode.value = '';
+  formattedBookValue.value = '';
+  formattedAccumulatedDepreciation.value = '';
+  formattedEstimatedValue.value = '';
+  showStatus('🔄 ລິເຊັດຟອມສຳເລັດ', 'info');
+};
+
+// Cleanup on component unmount
+onUnmounted(() => {
+  stopScanning();
+});
+
 onMounted(() => {
   Dapremen.GetListData();
   employee.GetEmployee();
   const today = new Date().toISOString().split('T')[0];
   
-  
+  // Set default values
   mantanances.form_creat_mantenance.audit_year = new Date().getFullYear().toString();
   mantanances.form_creat_mantenance.audit_date = today;
   mantanances.form_creat_mantenance.audit_status = 'DRAFT';
@@ -733,25 +554,20 @@ onMounted(() => {
   mantanances.form_creat_mantenance.maintenance_required = 'N';
   mantanances.form_creat_mantenance.replacement_recommended = 'N';
   mantanances.form_creat_mantenance.disposal_recommended = 'N';
-//   mantanances.form_creat_mantenance.photos_attached = 'N';
+  mantanances.form_creat_mantenance.photos_attached = 'N';
   mantanances.form_creat_mantenance.documents_verified = 'N';
   mantanances.form_creat_mantenance.follow_up_required = 'N';
 });
 
-onUnmounted(() => {
-  closeScanner();
-});
-
 const title = "ບຳລູງຮັກສາຊັບສຶນ";
 </script>
-
 <template>
   <div class="pa-4">
     <GlobalTextTitleLine :title="title" />
 
-    <!-- Enhanced Search Section -->
+    
     <v-row class="mb-4">
-      <v-col cols="12" md="3">
+      <v-col cols="12" md="4">
         <v-text-field
           v-model="searchBarcode"
           label="ຄົນຫາຕາມເລກ Barcode"
@@ -766,23 +582,10 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
       </v-col>
       <v-col cols="6" md="2">
         <v-btn
-          @click="requestCameraDirectly"
-          color="orange"
-          variant="outlined"
-          prepend-icon="mdi-camera-account"
-          size="large"
-          class="mr-1"
-        >
-          🔓 ຂໍອະນຸຍາດ
-        </v-btn>
-      </v-col>
-      <v-col cols="6" md="2">
-        <v-btn
           @click="openScanner"
           color="primary"
           variant="outlined"
-          prepend-icon="mdi-barcode-scan"
-          :disabled="isScanning"
+          prepend-icon="mdi-qrcode-scan"
           size="large"
           class="mr-1"
         >
@@ -801,32 +604,10 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
           🔍 ຄົ້ນຫາ
         </v-btn>
       </v-col>
-      <v-col cols="6" md="3">
-        <v-btn
-          @click="showDebugInfo"
-          color="info"
-          variant="outlined"
-          prepend-icon="mdi-bug"
-          size="small"
-          class="mr-1"
-        >
-          🔧 ກວດສອບ
-        </v-btn>
-        
-        <v-btn
-          @click="openManualInput"
-          color="secondary"
-          variant="outlined"
-          prepend-icon="mdi-keyboard"
-          size="small"
-        >
-          ⌨️ ພິມ
-        </v-btn>
-      </v-col>
     </v-row>
 
-    <!-- Status Message Display -->
-    <v-row v-if="statusMessage && !showScanner" class="mb-2">
+  
+    <v-row v-if="statusMessage" class="mb-2">
       <v-col cols="12">
         <v-alert
           :type="statusType"
@@ -840,223 +621,167 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
       </v-col>
     </v-row>
 
-    <!-- Barcode Scanner Modal -->
+    <!-- QR Scanner Dialog -->
     <v-dialog 
       v-model="showScanner" 
-      :fullscreen="$vuetify.display.mobile"
-      :max-width="$vuetify.display.mobile ? '100%' : '600px'" 
+      max-width="800px" 
       persistent
+      :fullscreen="$vuetify.display.xs"
     >
-      <v-card :class="$vuetify.display.mobile ? 'mobile-scanner' : ''">
-        <v-card-title class="d-flex justify-space-between align-center pa-2">
-          <span class="text-h6">📱 ສະແກນບາໂຄດ</span>
-          <v-btn
-            icon="mdi-close"
-            variant="text"
+      <v-card>
+        <v-card-title class="d-flex justify-space-between align-center pa-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+          <div class="d-flex align-center">
+            <v-icon class="mr-2">mdi-qrcode-scan</v-icon>
+            <span class="text-h5">QR & Barcode Scanner</span>
+          </div>
+          <v-btn 
+            icon 
             @click="closeScanner"
+            variant="text"
+            color="white"
             size="small"
-          ></v-btn>
+          >
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
         </v-card-title>
         
-        <v-card-text class="pa-0">
-          <!-- Camera Preview - Mobile Optimized -->
-          <div 
-            v-if="!showManualInput"
-            class="camera-container" 
-            :style="{
-              position: 'relative', 
-              height: $vuetify.display.mobile ? '60vh' : '400px', 
-              background: '#000',
-              minHeight: '300px'
-            }"
-          >
-            <video
-              ref="videoRef"
-              :style="{
-                width: '100%', 
-                height: '100%', 
-                objectFit: 'cover'
-              }"
-              autoplay
+        <v-card-text class="pa-2">
+          <!-- Scanner Status -->
+          <div class="scanner-status-bar d-flex justify-center align-center pa-2 mb-2">
+            <v-chip 
+              :color="isScanning ? 'success' : 'warning'" 
+              variant="flat"
+              prepend-icon="mdi-circle"
+            >
+              {{ isScanning ? 'ກຳລັງສະແກນ...' : 'ພ້ອມສະແກນ' }}
+            </v-chip>
+          </div>
+
+          <!-- Camera Video Element -->
+          <div class="camera-wrapper">
+            <video 
+              ref="videoRef" 
+              autoplay 
+              playsinline 
               muted
-              playsinline
-              webkit-playsinline
+              :class="{ 'camera-active': isScanning }"
             ></video>
             
-            <!-- Enhanced Scanning Overlay for Mobile -->
-            <div 
-              v-if="isScanning"
-              :style="{
-                position: 'absolute', 
-                top: '50%', 
-                left: '50%', 
-                transform: 'translate(-50%, -50%)', 
-                border: '3px solid #ff5722', 
-                width: $vuetify.display.mobile ? '80%' : '250px',
-                height: $vuetify.display.mobile ? '120px' : '100px',
-                maxWidth: '300px',
-                background: 'rgba(255, 87, 34, 0.1)',
-                borderRadius: '8px',
-                animation: 'pulse 2s infinite'
-              }"
-            >
-              <div 
-                :style="{
-                  position: 'absolute', 
-                  top: '-30px', 
-                  left: '0', 
-                  color: '#ff5722', 
-                  fontSize: $vuetify.display.mobile ? '16px' : '14px',
-                  fontWeight: 'bold',
-                  background: 'rgba(0,0,0,0.7)',
-                  padding: '4px 8px',
-                  borderRadius: '4px',
-                  whiteSpace: 'nowrap'
-                }"
-              >
-                📷 ວາງບາໂຄດໃນກອບນີ້
+            <!-- Overlay for scanning area -->
+            <div v-if="isScanning" class="scan-overlay">
+              <div class="scan-box">
+                <div class="scan-corners">
+                  <div class="corner top-left"></div>
+                  <div class="corner top-right"></div>
+                  <div class="corner bottom-left"></div>
+                  <div class="corner bottom-right"></div>
+                </div>
+                <div class="scan-line"></div>
               </div>
-              
-              <!-- Scanning line animation -->
-              <div 
-                :style="{
-                  position: 'absolute',
-                  top: '0',
-                  left: '0',
-                  right: '0',
-                  height: '2px',
-                  background: 'linear-gradient(90deg, transparent, #ff5722, transparent)',
-                  animation: 'scan-line 2s linear infinite'
-                }"
-              ></div>
+              <p class="scan-instruction">ວາງ QR/Barcode ໃສ່ໃນກອບ</p>
             </div>
             
-            <!-- Mobile-friendly Control Buttons -->
-            <div 
-              :style="{
-                position: 'absolute', 
-                bottom: '15px', 
-                left: '50%',
-                transform: 'translateX(-50%)',
-                display: 'flex',
-                gap: '10px'
-              }"
-            >
-              <!-- Flash/Torch Button -->
-              <v-btn
-                v-if="$vuetify.display.mobile && isScanning"
-                @click="toggleFlash"
-                size="large"
-                color="white"
-                variant="outlined"
-                icon="mdi-flashlight"
-                :class="flashEnabled ? 'flash-on' : ''"
-              ></v-btn>
-              
-              <!-- Manual Input Toggle -->
-              <v-btn
-                @click="toggleManualInput"
-                size="large"
-                color="white"
-                variant="outlined"
-                :prepend-icon="showManualInput ? 'mdi-camera' : 'mdi-keyboard'"
-              >
-                {{ showManualInput ? 'ສະແກນ' : 'ພິມ' }}
-              </v-btn>
-              
-              <!-- Camera Switch Button -->
-              <v-btn
-                v-if="$vuetify.display.mobile && hasMultipleCameras && isScanning"
-                @click="switchCamera"
-                size="large"
-                color="white"
-                variant="outlined"
-                icon="mdi-camera-flip"
-              ></v-btn>
+            <!-- Loading when initializing -->
+            <div v-if="isLoading" class="camera-placeholder">
+              <v-progress-circular
+                indeterminate
+                color="primary"
+                size="64"
+              ></v-progress-circular>
+              <p class="mt-4">ກຳລັງເລີ່ມຕົ້ນ scanner...</p>
             </div>
             
-            <!-- Mobile Instructions -->
-            <div 
-              v-if="$vuetify.display.mobile && isScanning"
-              :style="{
-                position: 'absolute',
-                top: '20px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                background: 'rgba(0,0,0,0.8)',
-                color: 'white',
-                padding: '8px 16px',
-                borderRadius: '20px',
-                fontSize: '14px',
-                textAlign: 'center',
-                maxWidth: '90%'
-              }"
-            >
-              💡 ເຄື່ອນໄຫວມືຖືໃກ້ຫຼືໄກບາໂຄດເພື່ອໂຟກັສ
+            <!-- Placeholder when not scanning -->
+            <div v-if="!isScanning && !isLoading" class="camera-placeholder">
+              <v-icon size="64" color="primary">mdi-camera</v-icon>
+              <p class="mt-4">ກຳລັງເລີ່ມ scanner...</p>
             </div>
           </div>
-          
-          <!-- Enhanced Manual Input -->
-          <div v-if="showManualInput" class="pa-4">
-            <v-text-field
-              id="manual-barcode-input"
-              v-model="manualCode"
-              label="🔢 ພິມບາໂຄດດ້ວຍມື"
-              variant="outlined"
-              density="comfortable"
-              @keyup.enter="processManualCode"
-              autofocus
-              clearable
-              :style="{ fontSize: $vuetify.display.mobile ? '18px' : '14px' }"
-            >
-              <template #prepend-inner>
-                <v-icon>mdi-barcode</v-icon>
-              </template>
-              <template #append>
-                <v-btn
-                  @click="processManualCode"
-                  color="primary"
-                  :size="$vuetify.display.mobile ? 'default' : 'small'"
-                  :disabled="!manualCode.trim()"
-                  variant="flat"
-                >
-                  ✓ ຢືນຢັນ
-                </v-btn>
-              </template>
-            </v-text-field>
-          </div>
-          
-          <!-- Enhanced Status Messages -->
-          <div v-if="statusMessage" class="pa-4">
-            <v-alert
-              :type="statusType"
-              variant="tonal"
-              :density="$vuetify.display.mobile ? 'comfortable' : 'compact'"
-              :style="{ fontSize: $vuetify.display.mobile ? '16px' : '14px' }"
-            >
-              <template #prepend>
-                <v-icon 
-                  :icon="statusType === 'success' ? 'mdi-check-circle' : 
-                        statusType === 'error' ? 'mdi-alert-circle' : 
-                        statusType === 'warning' ? 'mdi-alert' : 'mdi-information'"
-                ></v-icon>
-              </template>
-              {{ statusMessage }}
-            </v-alert>
-          </div>
+
+          <!-- Error Display -->
+          <v-alert
+            v-if="error"
+            type="error"
+            variant="tonal"
+            closable
+            @click:close="clearError"
+            class="mt-2"
+          >
+            <v-icon>mdi-alert</v-icon>
+            {{ error }}
+          </v-alert>
+
+          <!-- Scan Result Display -->
+          <v-card v-if="scanResult" variant="outlined" class="mt-2">
+            <v-card-title class="text-success d-flex align-center">
+              <v-icon class="mr-2">mdi-check-circle</v-icon>
+              ຜົນການສະແກນ
+            </v-card-title>
+            <v-card-text>
+              <v-row dense>
+                <v-col cols="12" md="4">
+                  <strong>ປະເພດ:</strong> 
+                  <v-chip color="success" size="small" class="ml-1">
+                    {{ formatBarcodeType(scanResult.format) }}
+                  </v-chip>
+                </v-col>
+                <v-col cols="12" md="8">
+                  <strong>ຂໍ້ມູນ:</strong>
+                  <div class="result-text mt-1">{{ scanResult.text }}</div>
+                </v-col>
+              </v-row>
+            </v-card-text>
+          </v-card>
         </v-card-text>
         
-        <v-card-actions v-if="!$vuetify.display.mobile" class="pa-4">
-          <v-spacer></v-spacer>
-          <v-btn @click="closeScanner" variant="outlined" size="large">
-            ❌ ປິດ
+        <v-card-actions class="pa-4 justify-center">
+          <v-btn 
+            v-if="isScanning"
+            color="warning"
+            @click="stopScanning"
+            prepend-icon="mdi-stop"
+            size="large"
+          >
+            ຢຸດສະແກນ
+          </v-btn>
+          
+          <v-btn 
+            v-if="!isScanning && isReady"
+            color="primary"
+            @click="startScanning"
+            :disabled="isLoading"
+            prepend-icon="mdi-camera"
+            size="large"
+          >
+            ເລີ່ມໃໝ່
+          </v-btn>
+          
+          <v-btn 
+            v-if="availableCameras.length > 1"
+            color="info"
+            @click="switchCamera"
+            :disabled="isLoading"
+            prepend-icon="mdi-camera-flip"
+            variant="outlined"
+            class="ml-2"
+          >
+            ສະຫຼັບກ້ອງ
+          </v-btn>
+          
+          <v-btn 
+            color="error" 
+            variant="outlined"
+            @click="closeScanner"
+            prepend-icon="mdi-close"
+            class="ml-2"
+          >
+            ປິດ
           </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
->>>>>>> 0f9472dbedf0e98544978a530a87c4d6d615ad86
-    <!-- Asset Information Card -->
+  
     <v-card flat style="border: solid 1px #64b5f6" class="mb-4">
       <v-card-title style="background-color: #64b5f6" class="py-2">
         ຂໍ້ມູນພື້ນຖານຊັບສິນ
@@ -1071,13 +796,10 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
             <GlobalCardTitle
               :title="'ມູນຄ່າທັງໝົດ'"
               :text="formatCurrency(dataFasset[0]?.asset_value) || 'ບໍ່ມີຂໍ້ມູນ'"
-<<<<<<< HEAD
-=======
             />
             <GlobalCardTitle
               :title="'ມູນຄ່າຊົບສົມບັດຄົງເຫຼືອ'"
               :text="formatCurrency(dataFasset[0]?.asset_value_remain) || 'ບໍ່ມີຂໍ້ມູນ'"
->>>>>>> 0f9472dbedf0e98544978a530a87c4d6d615ad86
             />
           </v-col>
           <v-col cols="12" md="3">
@@ -1097,11 +819,7 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
           <v-col cols="12" md="3">
             <GlobalCardTitle
               :title="'ສະຖານທີ່ຕັ້ງ'"
-<<<<<<< HEAD
-              :text="dataFasset[0]?.location_detail.location_name_la || 'ບໍ່ມີຂໍ້ມູນ'"
-=======
               :text="dataFasset[0]?.location_detail?.location_name_la || 'ບໍ່ມີຂໍ້ມູນ'"
->>>>>>> 0f9472dbedf0e98544978a530a87c4d6d615ad86
             />
             <GlobalCardTitle
               :title="'ມື້ຊື້'"
@@ -1111,40 +829,22 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
           <v-col cols="12" md="3">
             <GlobalCardTitle
               :title="'ຜູ້ສະໜອງ'"
-<<<<<<< HEAD
-              :text="dataFasset[0]?.supplier_detail.supplier_name || 'ບໍ່ມີຂໍ້ມູນ'"
-            />
-            <GlobalCardTitle
-              :title="'ສະຖານະໃຊ້ງານ'"
-              :text="dataFasset[0]?.asset_status_detail.MC_name_la || 'ບໍ່ມີຂໍ້ມູນ'"
-=======
               :text="dataFasset[0]?.supplier_detail?.supplier_name || 'ບໍ່ມີຂໍ້ມູນ'"
             />
             <GlobalCardTitle
               :title="'ສະຖານະໃຊ້ງານ'"
               :text="dataFasset[0]?.asset_status_detail?.MC_name_la || 'ບໍ່ມີຂໍ້ມູນ'"
->>>>>>> 0f9472dbedf0e98544978a530a87c4d6d615ad86
             />
           </v-col>
         </v-row>
       </v-card-text>
     </v-card>
 
-<<<<<<< HEAD
-    <!-- Maintenance Form -->
-    <v-form ref="form" v-model="isFormValid">
-      
-      <!-- Audit Basic Information -->
-      <v-card style="border: 1px solid #bbdefb" class="mb-4">
-        <v-card-title style="background-color: #bbdefb">
-          ຂໍ້ມູນການກວດສອບ
-=======
     <!-- Single Form Card -->
     <v-form ref="form" v-model="isFormValid">
       <v-card style="border: 1px solid #bbdefb">
         <v-card-title style="background-color: #bbdefb" class="py-2">
           ຟອມບຳລຸງຮັກສາຊັບສິນ
->>>>>>> 0f9472dbedf0e98544978a530a87c4d6d615ad86
         </v-card-title>
         <v-card-text class="py-2">
           <!-- Basic Info -->
@@ -1159,16 +859,6 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
                 :rules="[rules.required]"
               ></v-text-field>
             </v-col>
-<<<<<<< HEAD
-            <v-col cols="12" md="3">
-              <v-text-field
-                v-model="mantanances.form_creat_mantenance.audit_period"
-                label="ໄລຍະການກວດສອບ"
-                variant="outlined"
-                density="compact"
-                :rules="[rules.required]"
-              ></v-text-field>
-=======
             <v-col cols="6" md="2">
               <v-select
                 v-model="mantanances.form_creat_mantenance.audit_period"
@@ -1178,9 +868,9 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
                 item-title="text"
                 variant="outlined"
                 density="compact"
+                readonly
                 :rules="[rules.required]"
               ></v-select>
->>>>>>> 0f9472dbedf0e98544978a530a87c4d6d615ad86
             </v-col>
             <v-col cols="6" md="2">
               <v-text-field
@@ -1217,20 +907,9 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
             </v-col>
           </v-row>
 
-<<<<<<< HEAD
-      <!-- Physical Status -->
-      <v-card style="border: 1px solid #c8e6c9" class="mb-4">
-        <v-card-title style="background-color: #c8e6c9">
-          ສະຖານະທາງກາຍະພາບ
-        </v-card-title>
-        <v-card-text>
-          <v-row>
-            <v-col cols="12" md="3">
-=======
           <!-- Status Fields -->
           <v-row dense>
             <v-col cols="6" md="3">
->>>>>>> 0f9472dbedf0e98544978a530a87c4d6d615ad86
               <v-select
                 v-model="mantanances.form_creat_mantenance.physical_status"
                 label="ສະຖານະກາຍະພາບ *"
@@ -1245,15 +924,10 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
             <v-col cols="6" md="3">
               <v-select
                 v-model="mantanances.form_creat_mantenance.condition_status"
-<<<<<<< HEAD
-                label="ສະພາບການທຳງານ"
-                :items="['ໃຊ້ງານໄດ້ປົກກະຕິ', 'ໃຊ້ງານໄດ້ບາງສ່ວນ', 'ບໍ່ສາມາດໃຊ້ງານໄດ້']"
-=======
                 label="ສະພາບໃຊ້ງານ"
                 :items="conditionStatusOptions"
                 item-value="value"
                 item-title="text"
->>>>>>> 0f9472dbedf0e98544978a530a87c4d6d615ad86
                 variant="outlined"
                 density="compact"
               ></v-select>
@@ -1266,23 +940,6 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
                 density="compact"
               ></v-text-field>
             </v-col>
-<<<<<<< HEAD
-          </v-row>
-        </v-card-text>
-      </v-card>
-
-      <!-- Financial Information -->
-      <v-card style="border: 1px solid #fff9c4" class="mb-4">
-        <v-card-title style="background-color: #fff9c4">
-          ຂໍ້ມູນມູນຄ່າ ແລະ ຄ່າເສື່ອມລາຄາ
-        </v-card-title>
-        <v-card-text>
-          <v-row>
-            <v-col cols="12" md="3">
-              <v-text-field
-                v-model="mantanances.form_creat_mantenance.book_value"
-                label="ມູນຄ່າໃນບັນຊີ"
-=======
             <v-col cols="6" md="3">
               <v-select
                 v-model="mantanances.form_creat_mantenance.audit_status"
@@ -1290,14 +947,13 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
                 :items="auditStatusOptions"
                 item-value="value"
                 item-title="text"
->>>>>>> 0f9472dbedf0e98544978a530a87c4d6d615ad86
                 variant="outlined"
                 density="compact"
               ></v-select>
             </v-col>
           </v-row>
 
-          <!-- Financial Fields -->
+         
           <v-row dense>
             <v-col cols="6" md="2">
               <v-text-field
@@ -1334,14 +990,9 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
             </v-col>
             <v-col cols="6" md="3">
               <v-text-field
-<<<<<<< HEAD
-                v-model="mantanances.form_creat_mantenance.accumulated_depreciation"
-                label="ຄ່າເສື່ອມລາຄາສະສົມ"
-=======
                 v-model="formattedAccumulatedDepreciation"
                 @input="updateAccumulatedDepreciation"
                 label="ຫຼຸ້ຍລາຄາສະສົມ"
->>>>>>> 0f9472dbedf0e98544978a530a87c4d6d615ad86
                 variant="outlined"
                 density="compact"
                 placeholder="0"
@@ -1351,11 +1002,7 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
             <v-col cols="6" md="3">
               <v-text-field
                 v-model="mantanances.form_creat_mantenance.remaining_useful_life"
-<<<<<<< HEAD
-                label="ອາຍຸໃຊ້ງານເຫຼືອ"
-=======
                 label="ອາຍຸການໃຊ້ເຫຼືອ (ປີ)"
->>>>>>> 0f9472dbedf0e98544978a530a87c4d6d615ad86
                 variant="outlined"
                 density="compact"
                 type="number"
@@ -1364,21 +1011,7 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
             </v-col>
           </v-row>
 
-<<<<<<< HEAD
-      <!-- Verification Section -->
-      <v-card style="border: 1px solid #ffcdd2" class="mb-4">
-        <v-card-title style="background-color: #ffcdd2">
-          ການຢັ້ງຢືນຂໍ້ມູນ
-        </v-card-title>
-        <v-card-text>
-          <v-row>
-            <v-col cols="12" md="3">
-              <v-select
-                v-model="mantanances.form_creat_mantenance.serial_number_verified"
-                label="Serial Number ຖືກຕ້ອງ?"
-                :items="['ຖືກຕ້ອງ', 'ບໍ່ຖືກຕ້ອງ', 'ບໍ່ມີ']"
-=======
-          <!-- Yes/No Fields -->
+         
           <v-row dense>
             <v-col cols="4" md="2">
               <v-select
@@ -1387,72 +1020,11 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
                 :items="yesNoOptions"
                 item-value="value"
                 item-title="text"
->>>>>>> 0f9472dbedf0e98544978a530a87c4d6d615ad86
                 variant="outlined"
                 density="compact"
               ></v-select>
             </v-col>
-<<<<<<< HEAD
-            <v-col cols="12" md="3">
-              <v-select
-                v-model="mantanances.form_creat_mantenance.tag_number_verified"
-                label="Tag Number ຖືກຕ້ອງ?"
-                :items="['ຖືກຕ້ອງ', 'ບໍ່ຖືກຕ້ອງ', 'ບໍ່ມີ']"
-                variant="outlined"
-                density="compact"
-              ></v-select>
-            </v-col>
-            <v-col cols="12" md="3">
-              <v-select
-                v-model="mantanances.form_creat_mantenance.insurance_coverage"
-                label="ການປົກປ້ອງປະກັນໄພ"
-                :items="['ມີ', 'ບໍ່ມີ', 'ບໍ່ແນ່ໃຈ']"
-                variant="outlined"
-                density="compact"
-              ></v-select>
-            </v-col>
-            <v-col cols="12" md="3">
-              <v-select
-                v-model="mantanances.form_creat_mantenance.documents_verified"
-                label="ເອກະສານຖືກຕ້ອງ?"
-                :items="['ຖືກຕ້ອງ', 'ບໍ່ຖືກຕ້ອງ', 'ບໍ່ສົມບູນ']"
-                variant="outlined"
-                density="compact"
-              ></v-select>
-            </v-col>
-          </v-row>
-        </v-card-text>
-      </v-card>
-
-      <!-- Maintenance Recommendations -->
-      <v-card style="border: 1px solid #f3e5f5" class="mb-4">
-        <v-card-title style="background-color: #f3e5f5">
-          ຄຳແນະນຳ ແລະ ການບຳລຸງຮັກສາ
-        </v-card-title>
-        <v-card-text>
-          <v-row>
-            <v-col cols="12" md="4">
-              <v-select
-                v-model="mantanances.form_creat_mantenance.maintenance_required"
-                label="ຕ້ອງການບຳລຸງຮັກສາ?"
-                :items="['ຕ້ອງການ', 'ບໍ່ຕ້ອງການ', 'ບຳລຸງຮັກສາເລື້ອຍໆ']"
-                variant="outlined"
-                density="compact"
-              ></v-select>
-            </v-col>
-            <v-col cols="12" md="4">
-              <v-select
-                v-model="mantanances.form_creat_mantenance.replacement_recommended"
-                label="ແນະນຳໃຫ້ປ່ຽນແທນ?"
-                :items="['ແນະນຳ', 'ບໍ່ແນະນຳ', 'ຍັງໃຊ້ໄດ້']"
-                variant="outlined"
-                density="compact"
-              ></v-select>
-            </v-col>
-            <v-col cols="12" md="4">
-=======
             <v-col cols="4" md="2">
->>>>>>> 0f9472dbedf0e98544978a530a87c4d6d615ad86
               <v-select
                 v-model="mantanances.form_creat_mantenance.disposal_recommended"
                 label="ແນະນຳຈຳໜ່າຍ"
@@ -1463,23 +1035,6 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
                 density="compact"
               ></v-select>
             </v-col>
-<<<<<<< HEAD
-          </v-row>
-        </v-card-text>
-      </v-card>
-
-      <!-- Findings and Recommendations -->
-      <v-card style="border: 1px solid #e1f5fe" class="mb-4">
-        <v-card-title style="background-color: #e1f5fe">
-          ຜົນການກວດສອບ ແລະ ຄຳແນະນຳ
-        </v-card-title>
-        <v-card-text>
-          <v-row>
-            <v-col cols="12" md="6">
-              <v-textarea
-                v-model="mantanances.form_creat_mantenance.audit_findings"
-                label="ຜົນການກວດສອບ"
-=======
             <v-col cols="4" md="2">
               <v-select
                 v-model="mantanances.form_creat_mantenance.photos_attached"
@@ -1487,7 +1042,6 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
                 :items="yesNoOptions"
                 item-value="value"
                 item-title="text"
->>>>>>> 0f9472dbedf0e98544978a530a87c4d6d615ad86
                 variant="outlined"
                 density="compact"
               ></v-select>
@@ -1521,28 +1075,13 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
                 variant="outlined"
                 density="compact"
                 type="date"
-<<<<<<< HEAD
-                :disabled="mantanances.form_creat_mantenance.follow_up_required !== 'ຕ້ອງການ'"
-=======
->>>>>>> 0f9472dbedf0e98544978a530a87c4d6d615ad86
               ></v-text-field>
             </v-col>
           </v-row>
 
-<<<<<<< HEAD
-      <!-- Approval Section -->
-      <v-card style="border: 1px solid #e8f5e8" class="mb-4">
-        <v-card-title style="background-color: #e8f5e8">
-          ການອະນຸມັດ
-        </v-card-title>
-        <v-card-text>
-          <v-row>
-            <v-col cols="12" md="3">
-=======
-          <!-- Review Fields (conditional) -->
+         
           <v-row dense v-if="mantanances.form_creat_mantenance.audit_status !== 'DRAFT'">
             <v-col cols="6" md="3">
->>>>>>> 0f9472dbedf0e98544978a530a87c4d6d615ad86
               <v-text-field
                 v-model="mantanances.form_creat_mantenance.reviewer_name"
                 label="ຊື່ຜູ້ທົບທວນ"
@@ -1578,26 +1117,12 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
             </v-col>
           </v-row>
 
-<<<<<<< HEAD
-      <!-- Photo Upload Section -->
-      <v-card style="border: 1px solid #fff3e0" class="mb-4">
-        <v-card-title style="background-color: #fff3e0">
-          ເອກະສານແນບ
-        </v-card-title>
-        <v-card-text>
-          <v-row>
-            <v-col cols="12" md="6">
-              <v-file-input
-                v-model="mantanances.form_creat_mantenance.photos_attached"
-                label="ຮູບພາບແນບ"
-=======
-          <!-- Text Areas -->
+         
           <v-row dense>
             <v-col cols="12" md="4">
               <v-textarea
                 v-model="mantanances.form_creat_mantenance.audit_findings"
                 label="ຜົນການກວດສອບ"
->>>>>>> 0f9472dbedf0e98544978a530a87c4d6d615ad86
                 variant="outlined"
                 density="compact"
                 rows="3"
@@ -1625,7 +1150,7 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
         </v-card-text>
       </v-card>
 
-      <!-- Action Buttons -->
+      
       <v-row class="mt-4">
         <v-col cols="12" class="text-center">
           <v-btn
@@ -1636,7 +1161,7 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
             :disabled="!isFormValid"
             class="mx-2"
           >
-            ບັນທຶກຂໍ້ມູນ
+            💾 ບັນທຶກຂໍ້ມູນ
           </v-btn>
           <v-btn
             color="error"
@@ -1645,7 +1170,7 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
             @click="resetForm"
             class="mx-2"
           >
-            ຍົກເລີກ
+            🔄 ລິເຊັດ
           </v-btn>
         </v-col>
       </v-row>
@@ -1653,147 +1178,157 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
     </v-form>
   </div>
 </template>
-
-<<<<<<< HEAD
-<script setup lang="ts">
-import { ref, computed, onMounted, nextTick } from "vue";
-import { useMentenance } from '@/stores/mantenaces';
-
-const validate = ref()
-const form = ref()
-const isFormValid = ref(false)
-const faAssetStoreInstance = faAssetStore();
-const mantanances = useMentenance();
-const searchBarcode = ref("");
-const isSearching = ref(false);
-
-// Form validation rules
-const rules = {
-  required: (value: any) => !!value || 'ກະລຸນາກຳນົດຄ່າ',
-};
-
-const dataSearch = async () => {
-  if (searchBarcode.value.trim() && !isSearching.value) {
-    isSearching.value = true;
-    try {
-      faAssetStoreInstance.filterBarcode.request.asset_tag = searchBarcode.value;
-      await faAssetStoreInstance.getDataBarcode();
-      // Auto-populate asset_list_id when asset is found
-      if (dataFasset.value.length > 0 && dataFasset.value[0]?.asset_list_id) {
-        mantanances.form_creat_mantenance.asset_list_id = dataFasset.value[0].asset_list_id;
-        mantanances.form_creat_mantenance.book_value = dataFasset.value[0]?.asset_value || "";
-      }
-    } catch (error) {
-      console.error("Error searching:", error);
-    } finally {
-      isSearching.value = false;
-    }
-  }
-};
-
-const handlePaste = async (event: ClipboardEvent) => {
-  await nextTick();
-  if (searchBarcode.value.trim()) {
-    setTimeout(() => {
-      dataSearch();
-    }, 100);
-  }
-};
-
-const dataFasset = computed(() => {
-  const data = faAssetStoreInstance.response_fa_asset_detail;
-  if (Array.isArray(data)) {
-    return data;
-  }
-  if (data && typeof data === "object") {
-    return [data];
-  }
-  return [];
-});
-
-const formatCurrency = (value: any): string => {
-  if (!value || isNaN(Number(value))) {
-    return "ບໍ່ມີຂໍ້ມູນ";
-  }
-  return (
-    new Intl.NumberFormat("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(Number(value)) + " ກີບ"
-  );
-};
-
-const SubmitDataMentenance = async () => {
-  const validation = await form.value.validate();
-  if (validation.valid) {
-    try {
-      await mantanances.createMantenance();
-      // Optional: Redirect or refresh data after successful submission
-    } catch (error) {
-      console.error("Submission error:", error);
-    }
-  } else {
-    CallSwal({
-      title: "ກະລຸນາກວດສອບຂໍ້ມູນ",
-      text: "ມີຟິວທີ່ບໍ່ຖືກຕ້ອງ ຫຼື ຍັງບໍ່ໄດ້ເຕີມ",
-      icon: "warning",
-    });
-  }
-};
-
-const resetForm = () => {
-  if (form.value) {
-    form.value.reset();
-  }
-  Object.keys(mantanances.form_creat_mantenance).forEach((key: string) => {
-    const typedKey = key as keyof typeof mantanances.form_creat_mantenance;
-    if (key === 'audit_year') {
-      (mantanances.form_creat_mantenance as any)[typedKey] = new Date().getFullYear();
-    } else if (typeof mantanances.form_creat_mantenance[typedKey] === 'number') {
-      (mantanances.form_creat_mantenance as any)[typedKey] = 0;
-    } else {
-      (mantanances.form_creat_mantenance as any)[typedKey] = "";
-    }
-  });
-};
-
-onMounted(() => {
-  // Set current year as default
-  mantanances.form_creat_mantenance.audit_year = new Date().getFullYear();
-});
-
-const title = "ບຳລູງຮັກສາຊັບສຶນ";
-</script>
-=======
 <style scoped>
-.camera-container {
-  border-radius: 8px;
+.scanner-status-bar {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 10px;
+  border: 1px solid #dee2e6;
+}
+
+.camera-wrapper {
+  position: relative;
+  width: 100%;
+  height: 350px;
+  border-radius: 15px;
   overflow: hidden;
-  touch-action: manipulation;
+  background: #000;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
 }
 
-.v-dialog .v-card {
-  overflow: visible;
+video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
-.mobile-scanner {
-  height: 100vh;
-  border-radius: 0 !important;
+.camera-active {
+  border: 3px solid #27ae60;
+  box-shadow: 0 0 20px rgba(39, 174, 96, 0.4);
 }
 
-.flash-on {
-  background-color: #ffd700 !important;
-  color: #000 !important;
+.camera-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  text-align: center;
+}
+
+.scan-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.scan-box {
+  position: relative;
+  width: 250px;
+  height: 250px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.scan-corners {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.corner {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  border: 3px solid #27ae60;
+}
+
+.corner.top-left {
+  top: 0;
+  left: 0;
+  border-right: none;
+  border-bottom: none;
+}
+
+.corner.top-right {
+  top: 0;
+  right: 0;
+  border-left: none;
+  border-bottom: none;
+}
+
+.corner.bottom-left {
+  bottom: 0;
+  left: 0;
+  border-right: none;
+  border-top: none;
+}
+
+.corner.bottom-right {
+  bottom: 0;
+  right: 0;
+  border-left: none;
+  border-top: none;
+}
+
+.scan-line {
+  width: 200px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #27ae60, transparent);
+  animation: scan 2s linear infinite;
+}
+
+.scan-instruction {
+  margin-top: 30px;
+  color: white;
+  font-size: 16px;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 10px 20px;
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+}
+
+.result-text {
+  background: #f8f9fa;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border-left: 4px solid #27ae60;
+  word-break: break-all;
+  font-family: 'Courier New', monospace;
+  margin: 4px 0;
+  font-size: 14px;
+}
+
+@keyframes scan {
+  0% { transform: translateY(-100px); }
+  100% { transform: translateY(100px); }
 }
 
 /* Mobile-specific styles */
 @media (max-width: 768px) {
-  .camera-container {
-    border-radius: 0;
+  .camera-wrapper {
+    height: 280px;
   }
   
-  .mobile-scanner .v-card-text {
-    padding: 0 !important;
+  .scan-box {
+    width: 200px;
+    height: 200px;
   }
   
   .v-btn {
@@ -1806,34 +1341,7 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
   }
 }
 
-/* Scanning animations */
-@keyframes pulse {
-  0% { opacity: 0.6; }
-  50% { opacity: 1; }
-  100% { opacity: 0.6; }
-}
-
-@keyframes scan-line {
-  0% { transform: translateY(0); }
-  100% { transform: translateY(100px); }
-}
-
-/* Prevent video from being selectable */
-video {
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-  pointer-events: none;
-}
-
-/* Ensure proper fullscreen display on mobile */
-@media screen and (max-device-width: 768px) {
-  .v-dialog--fullscreen {
-    margin: 0 !important;
-    max-height: 100vh !important;
-    max-width: 100vw !important;
-  }
+.v-dialog .v-card {
+  overflow: visible;
 }
 </style>
->>>>>>> 0f9472dbedf0e98544978a530a87c4d6d615ad86

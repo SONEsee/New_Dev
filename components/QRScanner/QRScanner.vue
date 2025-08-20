@@ -32,24 +32,15 @@
         <p class="scan-instruction">ວາງ QR/Barcode ໃສ່ໃນກອບ</p>
       </div>
       
-      <!-- Placeholder when not scanning -->
-      <div v-if="!isScanning" class="camera-placeholder">
-        <div class="placeholder-icon">📱</div>
-        <p>ກົດປຸ່ມເພື່ອເລີ່ມສະແກນ</p>
+      <!-- Loading when initializing -->
+      <div v-if="isLoading" class="camera-placeholder">
+        <div class="loading-spinner"></div>
+        <p>ກຳລັງເລີ່ມຕົ້ນ scanner...</p>
       </div>
     </div>
     
     <!-- Controls -->
     <div class="controls">
-      <button 
-        @click="startScanning" 
-        :disabled="isScanning || !isReady"
-        class="btn btn-primary"
-      >
-        <span class="btn-icon">📷</span>
-        {{ isScanning ? 'ກຳລັງສະແກນ...' : 'ເລີ່ມສະແກນ' }}
-      </button>
-      
       <button 
         @click="stopScanning" 
         :disabled="!isScanning"
@@ -60,12 +51,21 @@
       </button>
       
       <button 
+        @click="restartScanning" 
+        :disabled="isScanning || isLoading"
+        class="btn btn-primary"
+      >
+        <span class="btn-icon">🔄</span>
+        ເລີ່ມໃຫມ່
+      </button>
+      
+      <button 
         @click="switchCamera" 
-        :disabled="isScanning || availableCameras.length <= 1"
+        :disabled="isScanning || availableCameras.length <= 1 || isLoading"
         class="btn btn-tertiary"
         v-if="availableCameras.length > 1"
       >
-        <span class="btn-icon">🔄</span>
+        <span class="btn-icon">📷</span>
         ສະຫຼັບກ້ອງ
       </button>
     </div>
@@ -110,10 +110,10 @@
       <button @click="clearError" class="error-close">✕</button>
     </div>
     
-    <!-- Loading State -->
-    <div v-if="isLoading" class="loading-container">
-      <div class="loading-spinner"></div>
-      <p>ກຳລັງເລີ່ມຕົ້ນ scanner...</p>
+    <!-- Auto-start notification -->
+    <div v-if="showAutoStartMessage" class="auto-start-message">
+      <div class="message-icon">🚀</div>
+      <p>Scanner ເລີ່ມອັດຕະໂນມັດແລ້ວ</p>
     </div>
   </div>
 </template>
@@ -159,16 +159,17 @@ const scanResult = ref<ScanResult | null>(null)
 const error = ref('')
 const availableCameras = ref<CameraDevice[]>([])
 const currentCameraIndex = ref(0)
+const showAutoStartMessage = ref(false)
 
 // ZXing related
 let BrowserMultiFormatReader: any = null
 let codeReader: any = null
 let stream: MediaStream | null = null
 
-// Initialize ZXing library on client side
+// Initialize and auto-start scanner on component mount
 onMounted(async () => {
   if (process.client) {
-    await initializeScanner()
+    await initializeAndStartScanner()
   }
 })
 
@@ -178,10 +179,16 @@ onUnmounted(() => {
 })
 
 // Methods
-const initializeScanner = async () => {
+const initializeAndStartScanner = async () => {
   try {
     isLoading.value = true
     error.value = ''
+    
+    // Show auto-start message
+    showAutoStartMessage.value = true
+    setTimeout(() => {
+      showAutoStartMessage.value = false
+    }, 3000)
     
     // Import ZXing library
     const { BrowserMultiFormatReader: Reader } = await import('@zxing/library')
@@ -192,7 +199,11 @@ const initializeScanner = async () => {
     await loadAvailableCameras()
     
     isReady.value = true
-    console.log('Scanner initialized successfully')
+    
+    // Auto-start scanning
+    await startScanning()
+    
+    console.log('Scanner initialized and started successfully')
   } catch (err) {
     error.value = 'ບໍ່ສາມາດເລີ່ມຕົ້ນ scanner ໄດ້. ກະລຸນາກວດສອບ browser ແລະ camera.'
     console.error('ZXing initialization error:', err)
@@ -270,6 +281,12 @@ const stopScanning = () => {
   console.log('Scanning stopped')
 }
 
+const restartScanning = async () => {
+  stopScanning()
+  await new Promise(resolve => setTimeout(resolve, 500))
+  await startScanning()
+}
+
 const switchCamera = async () => {
   if (availableCameras.value.length <= 1) return
   
@@ -277,10 +294,8 @@ const switchCamera = async () => {
   currentCameraIndex.value = (currentCameraIndex.value + 1) % availableCameras.value.length
   
   // Wait a bit before starting with new camera
-  setTimeout(() => {
-    if (!isScanning.value) {
-      startScanning()
-    }
+  setTimeout(async () => {
+    await startScanning()
   }, 500)
 }
 
@@ -376,7 +391,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  autoStop: true
+  autoStop: false // Changed default to false for continuous scanning
 })
 
 // Emits
@@ -469,12 +484,6 @@ video {
   align-items: center;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-}
-
-.placeholder-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
-  opacity: 0.8;
 }
 
 .scan-overlay {
@@ -622,6 +631,50 @@ video {
   font-size: 18px;
 }
 
+.auto-start-message {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 25px;
+  box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+  z-index: 1000;
+  animation: slideInDown 0.5s ease, slideOutUp 0.5s ease 2.5s;
+  font-weight: 500;
+}
+
+.message-icon {
+  font-size: 18px;
+}
+
+@keyframes slideInDown {
+  from {
+    transform: translateX(-50%) translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutUp {
+  from {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-50%) translateY(-100%);
+    opacity: 0;
+  }
+}
+
 .result-container {
   margin-top: 25px;
   padding: 20px;
@@ -762,16 +815,6 @@ video {
   background-color: rgba(197, 48, 48, 0.1);
 }
 
-.loading-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 15px;
-  padding: 30px;
-  text-align: center;
-  color: #7f8c8d;
-}
-
 .loading-spinner {
   width: 40px;
   height: 40px;
@@ -825,6 +868,13 @@ video {
   
   .action-btn {
     justify-content: center;
+  }
+  
+  .auto-start-message {
+    left: 10px;
+    right: 10px;
+    transform: none;
+    text-align: center;
   }
 }
 </style>

@@ -1,7 +1,3 @@
-<template>
-    <ExcRateUpdate/>
-</template>
-
 <script setup lang="ts">
 definePageMeta({
   middleware: ['auth'],
@@ -9,3 +5,6 @@ definePageMeta({
   subMenuId: 5
 })
 </script>
+<template>
+    <History />
+</template>

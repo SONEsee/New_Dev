@@ -194,7 +194,7 @@ const handleNotificationClick = () => {
                                 @click="
                                   goPath(`/property/faassetdetription/create`)
                                 "
-                                >ຫັກຄ່າຫຼູ້ຍຫ້ຽນ</v-btn
+                                >ລາຍລະອຽດການຫັກຄ່າຫຼູ້ຍຫ້ຽນ</v-btn
                               >
                             </td>
                           </tr>
