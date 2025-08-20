@@ -62,6 +62,7 @@ export const useMasterStore = defineStore("master", {
       }
     
     },
+  
     async getCAT() {
       this.isloading = true;
       this.error = null;
@@ -77,6 +78,34 @@ export const useMasterStore = defineStore("master", {
         );
         if (res.status === 200) {
           this.respone_data_cat = res.data;
+          console.log("Master data fetched successfully:", this.respone_data_master);
+          this.isloading = false;
+        }
+      } catch (error) {
+        CallSwal({
+          title: "Error",
+          text: "ການດຶງຂໍ້ມູນຜິດພາດ.",
+          icon: "error",
+        });
+        this.error = "Failed to fetch master data";
+        console.error(error);
+      }
+    },
+    async getTMN() {
+      this.isloading = true;
+      this.error = null;
+      try {
+        const res = await axios.get<{ MasterCodes: MasterModel.MasterRespons[] }>(
+          `/api/master-types/tree/TMN/`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+            },
+          }
+        );
+        if (res.status === 200) {
+          this.resposne_status_puamsuepuamkrsang = res.data.MasterCodes ;
           console.log("Master data fetched successfully:", this.respone_data_master);
           this.isloading = false;
         }

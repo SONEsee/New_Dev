@@ -31,6 +31,7 @@ import * as AccountsModel from "./accountmethod";
 import * as LocationModel from "./locations";
 import * as AssetModels from "./asset";
 import * as TransactionLogModel from "./transactionlog";
+import * as ReportDeprecationModel from "./reportdeprecation"
 // import *as GlModel from './gl';
 
 // import * as RoleMasterModel from "./rolemaster";
@@ -85,6 +86,7 @@ export {
   AssetListDrisTionModel,
   jernalModel,
   MantananceModel,
+  ReportDeprecationModel,
   
   // RoleMasterModel
 };
