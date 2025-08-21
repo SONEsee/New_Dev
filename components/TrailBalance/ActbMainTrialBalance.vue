@@ -1,3 +1,4 @@
+<!-- MainTrialBalance.vue -->
 <template>
   <v-container fluid class="pa-6">
     <v-card elevation="0" style="border: 1px solid #e0e0e0; width: 100%;">
@@ -5,41 +6,106 @@
       <v-card-title class="px-6 py-4 d-flex align-center" style="background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%); color: white;">
         <v-icon start size="24">mdi-chart-line</v-icon>
         <span class="text-h6 font-weight-medium text-styles">
-          ລາຍງານໃບດຸ່ນດຽງ - DairyReport
-          {{ selectedCurrency === 'all' ? 'ທຸກສະກຸນເງິນ' : selectedCurrency }}
+          Dairy Report ລາຍງານໃບດຸ່ນດຽງ - {{ selectedCurrency }} ({{ selectedMSegment }})
         </span>
+        <v-spacer />
+        <v-chip 
+          color="white" 
+          text-color="primary" 
+          size="small" 
+          variant="outlined"
+        >
+          Main Trial Balance
+        </v-chip>
       </v-card-title>
       
       <v-card-text class="px-6 py-4">
         <!-- Filter Form -->
         <v-form @submit.prevent="fetchTrialBalanceData" class="mb-4">
-          <v-row no-gutters class="mb-4">
-            <!-- Currency Selection -->
-            <v-col cols="12" md="4" class="pe-md-2 mb-3 mb-md-0">
+          <!-- First Row: MSegment and Currency -->
+          <v-row no-gutters class="mb-3">
+            <!-- Market Segment Selection -->
+            <v-col cols="12" md="3" class="pe-md-2 mb-3 mb-md-0">
               <v-select
-                v-model="selectedCurrency"
-                :items="currencyOptions"
-                label="ເລືອກສະກຸນເງິນ (Currency)"
+                v-model="selectedMSegment"
+                :items="mSegmentOptions"
+                label="ປະເພດຕະຫຼາດ (Market Segment)"
                 variant="outlined"
                 density="compact"
-                prepend-inner-icon="mdi-currency-usd"
+                prepend-inner-icon="mdi-bank"
                 hide-details="auto"
-                @update:model-value="onCurrencyChange"
+                @update:model-value="onMSegmentChange"
               >
                 <template #item="{ props, item }">
                   <v-list-item v-bind="props">
                     <template #prepend>
                       <v-icon :icon="item.raw.icon" size="20" />
                     </template>
-                    <!-- <v-list-item-title>{{ item.raw.title }}</v-list-item-title> -->
                     <v-list-item-subtitle>{{ item.raw.subtitle }}</v-list-item-subtitle>
                   </v-list-item>
                 </template>
               </v-select>
             </v-col>
             
+            <!-- Currency Selection -->
+            <v-col cols="12" md="3" class="px-md-1 mb-3 mb-md-0">
+              <v-select
+                v-model="selectedCurrency"
+                :items="availableCurrencyOptions"
+                label="ເລືອກສະກຸນເງິນ (Currency)"
+                variant="outlined"
+                density="compact"
+                prepend-inner-icon="mdi-currency-usd"
+                hide-details="auto"
+                :disabled="!selectedMSegment"
+              >
+                <template #item="{ props, item }">
+                  <v-list-item v-bind="props">
+                    <template #prepend>
+                      <v-icon :icon="item.raw.icon" size="20" />
+                    </template>
+                    <v-list-item-subtitle>{{ item.raw.subtitle }}</v-list-item-subtitle>
+                  </v-list-item>
+                </template>
+              </v-select>
+            </v-col>
+            
+            <!-- Financial Year -->
+            <v-col cols="12" md="3" class="px-md-1 mb-3 mb-md-0">
+              <v-text-field
+                v-model="selectedFinYear"
+                label="ປີການເງິນ (Financial Year)"
+                variant="outlined"
+                density="compact"
+                prepend-inner-icon="mdi-calendar"
+                hide-details="auto"
+                type="number"
+                min="2020"
+                max="2050"
+                :rules="[validateFinYear]"
+              />
+            </v-col>
+            
+            <!-- Period Code -->
+            <v-col cols="12" md="3" class="ps-md-2 mb-3 mb-md-0">
+              <v-text-field
+                v-model="selectedPeriodCode"
+                label="ລະຫັດງວດ (Period Code)"
+                variant="outlined"
+                density="compact"
+                prepend-inner-icon="mdi-calendar-month"
+                hide-details="auto"
+                placeholder="202508"
+                maxlength="6"
+                :rules="[validatePeriodCode]"
+              />
+            </v-col>
+          </v-row>
+
+          <!-- Second Row: Search and Actions -->
+          <v-row no-gutters class="mb-4">
             <!-- Search Field -->
-            <v-col cols="12" md="4" class="px-md-1 mb-3 mb-md-0">
+            <v-col cols="12" md="6" class="pe-md-2 mb-3 mb-md-0">
               <v-text-field
                 v-model="searchText"
                 label="ຄົ້ນຫາໃນຕາຕະລາງ"
@@ -52,12 +118,13 @@
             </v-col>
 
             <!-- Action Buttons -->
-            <v-col cols="12" md="4" class="ps-md-2 d-flex gap-1">
+            <v-col cols="12" md="6" class="ps-md-2 d-flex gap-2">
               <v-btn
                 type="submit"
                 color="primary"
                 prepend-icon="mdi-refresh"
                 :loading="loading"
+                :disabled="!isFormValid"
                 class="flex-grow-1"
                 density="compact"
                 style="height: 40px;"
@@ -80,132 +147,158 @@
 
         <v-divider class="mb-4" thickness="1" color="grey-lighten-3" />
 
-        <!-- Data Table with Grouped Headers -->
-        <div class="table-container">
-          <!-- Top Actions Bar -->
-          <div class="d-flex justify-space-between align-center pa-4 bg-grey-lighten-5 table-top-bar">
-            <div class="text-h6 font-weight-medium text-styles">
-              ຜົນການຄົ້ນຫາ: {{ filteredData.length }} ລາຍການ
-              <v-chip size="small" :color="chipColor" variant="tonal" class="ml-2">
-                {{ chipText }}
-              </v-chip>
-            </div>
-            <div class="text-caption text-grey-darken-1">
-              API: {{ selectedCurrency === 'all' ? 'all-currencies' : 'by-currency' }}
-            </div>
+        <!-- Table Info Bar -->
+        <div class="d-flex justify-space-between align-center mb-3 pa-3 bg-grey-lighten-5 rounded">
+          <div class="text-h6 font-weight-medium text-styles">
+            ຜົນການຄົ້ນຫາ: {{ filteredData.length }} ລາຍການ
+            <v-chip size="small" :color="chipColor" variant="tonal" class="ml-2">
+              {{ chipText }}
+            </v-chip>
           </div>
-
-          <!-- Group Headers Row -->
-          <div class="group-headers-wrapper">
-            <table class="group-headers-table">
-              <thead>
-                <tr class="group-header-row">
-                  <th class="group-header-cell sticky-col text-left">
-                    <span class="text-subtitle-2 font-weight-bold">GL Code</span>
-                  </th>
-                  <th class="group-header-cell text-left">
-                    <span class="text-subtitle-2 font-weight-bold">ລາຍລະອຽດ</span>
-                  </th>
-                  <th class="group-header-cell text-center" colspan="2">
-                    <div class="header-content">
-                      <v-icon start size="16" color="success">mdi-arrow-up-circle</v-icon>
-                      <span class="text-subtitle-1 font-weight-bold text-success">ຍອດຍົກ</span>
-                    </div>
-                  </th>
-                  <th class="group-header-cell text-center" colspan="2">
-                    <div class="header-content">
-                      <v-icon start size="16" color="info">mdi-swap-horizontal-circle</v-icon>
-                      <span class="text-subtitle-1 font-weight-bold text-info">ຍອດເຄື່ອນ</span>
-                    </div>
-                  </th>
-                  <th class="group-header-cell text-center" colspan="2">
-                    <div class="header-content">
-                      <v-icon start size="16" color="warning">mdi-arrow-down-circle</v-icon>
-                      <span class="text-subtitle-1 font-weight-bold text-warning">ຍອດເຫຼືອ</span>
-                    </div>
-                  </th>
-                  <th class="group-header-cell text-center">
-                    <span class="text-subtitle-2 font-weight-bold">Currency</span>
-                  </th>
-                  <th class="group-header-cell text-center">
-                    <span class="text-subtitle-2 font-weight-bold">Category</span>
-                  </th>
-                </tr>
-              </thead>
-            </table>
+          <div class="text-caption text-grey-darken-1">
+            API: main-trial-balance | {{ selectedMSegment }}-{{ selectedCurrency }}
           </div>
+        </div>
 
-          <!-- Main Data Table -->
-          <v-data-table
-            :headers="customHeaders"
-            :items="filteredData"
-            :items-per-page="25"
-            :loading="loading"
-            class="elevation-0 professional-table"
-            density="compact"
-            hover
-            show-current-page
-            fixed-header
-            height="550"
-          >
-            <!-- Loading State -->
-            <template #loading>
-              <v-skeleton-loader type="table-row@10" />
-            </template>
+        <!-- Parameter Summary -->
+        <div v-if="lastUsedParams" class="mb-3 pa-2 bg-blue-lighten-5 rounded">
+          <div class="text-caption text-blue-darken-2">
+            <strong>ພາລາມິເຕີທີ່ໃຊ້:</strong> 
+            Currency: {{ lastUsedParams.ccy_code_id }}, 
+            Segment: {{ lastUsedParams.m_segment }}, 
+            Year: {{ lastUsedParams.fin_year_id }}, 
+            Period: {{ lastUsedParams.period_code_id }}
+          </div>
+        </div>
+
+        <!-- Custom Table Implementation -->
+        <div class="custom-table-container">
+          <table class="custom-trial-balance-table">
+            <!-- Table Header -->
+            <thead>
+              <!-- Main Group Headers -->
+              <tr class="main-header-row">
+                <th rowspan="2" class="header-cell sticky-column account-code-header">
+                  <div class="header-content-center">GL Code</div>
+                </th>
+                <th rowspan="2" class="header-cell description-header">
+                  <div class="header-content-left">ລາຍລະອຽດ</div>
+                </th>
+                <th colspan="2" class="header-cell group-header">
+                  <div class="group-header-content">
+                    <v-icon size="16" color="success">mdi-arrow-up-circle</v-icon>
+                    <span>ຍອດຍົກ</span>
+                  </div>
+                </th>
+                <th colspan="2" class="header-cell group-header">
+                  <div class="group-header-content">
+                    <v-icon size="16" color="info">mdi-swap-horizontal-circle</v-icon>
+                    <span>ຍອດເຄື່ອນ</span>
+                  </div>
+                </th>
+                <th colspan="2" class="header-cell group-header">
+                  <div class="group-header-content">
+                    <v-icon size="16" color="warning">mdi-arrow-down-circle</v-icon>
+                    <span>ຍອດເຫຼືອ</span>
+                  </div>
+                </th>
+                <th rowspan="2" class="header-cell extra-column-header">
+                  <div class="header-content-center">Currency</div>
+                </th>
+                <th rowspan="2" class="header-cell extra-column-header">
+                  <div class="header-content-center">Segment</div>
+                </th>
+              </tr>
+              <!-- Sub Headers -->
+              <tr class="sub-header-row">
+                <th class="header-cell sub-header">Dr</th>
+                <th class="header-cell sub-header">Cr</th>
+                <th class="header-cell sub-header">Dr</th>
+                <th class="header-cell sub-header">Cr</th>
+                <th class="header-cell sub-header">Dr</th>
+                <th class="header-cell sub-header">Cr</th>
+              </tr>
+            </thead>
             
-            <!-- Custom Row Template -->
-            <template #item="{ item }">
-              <tr class="table-row">
-                <td class="font-weight-medium text-primary sticky-col">
-                  {{ item.gl_code }}
+            <!-- Table Body -->
+            <tbody>
+              <tr v-if="loading">
+                <td colspan="10" class="text-center pa-8">
+                  <v-progress-circular indeterminate color="primary" />
+                  <div class="mt-3">ກຳລັງໂຫຼດຂໍ້ມູນ...</div>
                 </td>
-                <td class="description-cell">
-                  <span :title="item.Desc">{{ item.Desc }}</span>
+              </tr>
+              
+              <tr v-else-if="!filteredData.length">
+                <td colspan="10" class="text-center pa-8">
+                  <v-icon size="64" color="grey-lighten-2" class="mb-4">mdi-chart-line-variant</v-icon>
+                  <div class="text-h6 text-grey-darken-1 mb-2 text-styles">ບໍ່ມີຂໍ້ມູນ</div>
+                  <div class="text-body-2 text-grey text-styles">
+                    {{ !isFormValid ? 'ກະລຸນາປ້ອນຂໍ້ມູນໃຫ້ຄົບຖ້ວນ' : 'ກະລຸນາກົດປຸ່ມດຶງຂໍ້ມູນເພື່ອໂຫຼດຂໍ້ມູນ' }}
+                  </div>
                 </td>
-                <td class="text-right font-mono amount-column">
-                  <span class="amount-cell">{{ formatCurrency(item.OP_DR) }}</span>
+              </tr>
+              
+              <!-- Data Rows -->
+              <tr 
+                v-for="(item, index) in filteredData" 
+                :key="index"
+                class="data-row"
+              >
+                <td class="data-cell sticky-column account-code-cell">
+                  <div class="gl-code-content">
+                    <span class="text-primary font-weight-medium">{{ item.gl_code }}</span>
+                  </div>
                 </td>
-                <td class="text-right font-mono amount-column">
-                  <span class="amount-cell">{{ formatCurrency(item.OP_CR) }}</span>
+                <td class="data-cell description-cell">
+                  <div class="description-content" :title="item.Desc">
+                    {{ item.Desc }}
+                  </div>
                 </td>
-                <td class="text-right font-mono amount-column">
-                  <span class="amount-cell">{{ formatCurrency(item.Mo_DR) }}</span>
+                <!-- Opening Dr/Cr -->
+                <td class="data-cell amount-cell">
+                  <span class="amount-value">{{ formatCurrency(item.OP_DR) }}</span>
                 </td>
-                <td class="text-right font-mono amount-column">
-                  <span class="amount-cell">{{ formatCurrency(item.Mo_Cr) }}</span>
+                <td class="data-cell amount-cell">
+                  <span class="amount-value">{{ formatCurrency(item.OP_CR) }}</span>
                 </td>
-                <td class="text-right font-mono amount-column">
-                  <span class="amount-cell text-success font-weight-medium">
-                    {{ formatCurrency(item.C1_DR) }}
-                  </span>
+                <!-- Movement Dr/Cr -->
+                <td class="data-cell amount-cell">
+                  <span class="amount-value">{{ formatCurrency(item.Mo_DR) }}</span>
                 </td>
-                <td class="text-right font-mono amount-column">
-                  <span class="amount-cell text-error font-weight-medium">
-                    {{ formatCurrency(item.C1_CR) }}
-                  </span>
+                <td class="data-cell amount-cell">
+                  <span class="amount-value">{{ formatCurrency(item.Mo_Cr) }}</span>
                 </td>
-                <td class="text-center currency-column">
-                  <v-chip size="small" :color="getCurrencyColor(item.CCy_Code_id)" variant="tonal">
+                <!-- Closing Dr/Cr -->
+                <td class="data-cell amount-cell">
+                  <span class="amount-value">{{ formatCurrency(item.C1_DR) }}</span>
+                </td>
+                <td class="data-cell amount-cell">
+                  <span class="amount-value">{{ formatCurrency(item.C1_CR) }}</span>
+                </td>
+                <!-- Currency -->
+                <td class="data-cell extra-column-cell">
+                  <v-chip 
+                    size="small" 
+                    :color="getCurrencyColor(item.CCy_Code_id)" 
+                    variant="tonal"
+                  >
                     {{ item.CCy_Code_id }}
                   </v-chip>
                 </td>
-                <td class="text-center category-column">
-                  <v-chip size="small" color="info" variant="outlined">
-                    {{ item.Category }}
+                <!-- Market Segment -->
+                <td class="data-cell extra-column-cell">
+                  <v-chip 
+                    size="small" 
+                    :color="getSegmentColor(item.MSegment)" 
+                    variant="outlined"
+                  >
+                    {{ item.MSegment }}
                   </v-chip>
                 </td>
               </tr>
-            </template>
-
-            <!-- Empty State -->
-            <template #no-data>
-              <div class="text-center pa-8">
-                <v-icon size="64" color="grey-lighten-2" class="mb-4">mdi-chart-line-variant</v-icon>
-                <div class="text-h6 text-grey-darken-1 mb-2">ບໍ່ມີຂໍ້ມູນ</div>
-                <div class="text-body-2 text-grey">ກະລຸນາກົດປຸ່ມດຶງຂໍ້ມູນເພື່ອໂຫຼດຂໍ້ມູນ</div>
-              </div>
-            </template>
-          </v-data-table>
+            </tbody>
+          </table>
         </div>
       </v-card-text>
     </v-card>
@@ -235,7 +328,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, nextTick } from 'vue'
+import { ref, onMounted, computed, nextTick, watch } from 'vue'
 import axios from '@/helpers/axios'
 import * as XLSX from 'xlsx'
 
@@ -264,8 +357,13 @@ interface ApiResponse {
   status: 'success' | 'error'
   message: string
   count?: number
-  currency?: string
   data: TrialBalanceItem[]
+  parameters?: {
+    ccy_code_id: string
+    m_segment: string
+    fin_year_id: string
+    period_code_id: string
+  }
 }
 
 // Authentication helper
@@ -285,8 +383,12 @@ const getAuthHeaders = () => {
 // Reactive state
 const loading = ref(false)
 const searchText = ref('')
-const selectedCurrency = ref('all') // Default to 'all'
+const selectedMSegment = ref('') // Start empty to force user selection
+const selectedCurrency = ref('')
+const selectedFinYear = ref(new Date().getFullYear().toString()) // Default current year
+const selectedPeriodCode = ref('') // User must enter
 const trialBalanceData = ref<TrialBalanceItem[]>([])
+const lastUsedParams = ref<any>(null)
 
 const snackbar = ref({
   show: false,
@@ -295,37 +397,88 @@ const snackbar = ref({
   icon: 'mdi-check-circle'
 })
 
-// Currency options with 'all' as default
-const currencyOptions = [
+// Market Segment options
+const mSegmentOptions = [
   {
-    title: 'ທຸກສະກຸນເງິນ (All Currencies)',
-    value: 'all',
-    subtitle: 'ສະແດງຂໍ້ມູນທຸກສະກຸນເງິນ',
+    title: 'LCY - ທຽບເທົ່າກີບ (Local Currency)',
+    value: 'LCY',
+    subtitle: 'ສະເພາະກີບລາວ (LAK)',
+    icon: 'mdi-home-currency-usd'
+  },
+  {
+    title: 'FCY - ສະກຸນເງິນຕ່າງປະເທດ (Foreign Currency)',
+    value: 'FCY',
+    subtitle: 'LAK, USD, THB',
     icon: 'mdi-currency-usd-circle'
-  },
-  {
-    title: 'ກີບລາວ (LAK)',
-    value: 'LAK',
-    subtitle: 'Lao Kip',
-    icon: 'mdi-currency-kzt'
-  },
-  {
-    title: 'ໂດລາສະຫະລັດ (USD)',
-    value: 'USD',
-    subtitle: 'US Dollar',
-    icon: 'mdi-currency-usd'
-  },
-  {
-    title: 'ບາດໄທ (THB)',
-    value: 'THB',
-    subtitle: 'Thai Baht',
-    icon: 'mdi-currency-jpy'
   }
 ]
 
+// All currency options
+const allCurrencyOptions = {
+  LCY: [
+    {
+      title: 'ກີບລາວ (LAK)',
+      value: 'LAK',
+      subtitle: 'Lao Kip',
+      icon: 'mdi-currency-kzt'
+    }
+  ],
+  FCY: [
+    {
+      title: 'ກີບລາວ (LAK)',
+      value: 'LAK',
+      subtitle: 'Lao Kip',
+      icon: 'mdi-currency-kzt'
+    },
+    {
+      title: 'ໂດລາສະຫະລັດ (USD)',
+      value: 'USD',
+      subtitle: 'US Dollar',
+      icon: 'mdi-currency-usd'
+    },
+    {
+      title: 'ບາດໄທ (THB)',
+      value: 'THB',
+      subtitle: 'Thai Baht',
+      icon: 'mdi-currency-jpy'
+    }
+  ]
+}
+
+// Validation functions
+const validateFinYear = (value: string) => {
+  if (!value) return 'ປີການເງິນບໍ່ຄວນຫວ່າງເປົ່າ'
+  const year = parseInt(value)
+  if (year < 2020 || year > 2050) return 'ປີການເງິນຕ້ອງຢູ່ລະຫວ່າງ 2020-2050'
+  return true
+}
+
+const validatePeriodCode = (value: string) => {
+  if (!value) return 'ລະຫັດງວດບໍ່ຄວນຫວ່າງເປົ່າ'
+  if (!/^\d{6}$/.test(value)) return 'ລະຫັດງວດຕ້ອງເປັນຕົວເລກ 6 ຫຼັກ (YYYYMM)'
+  const year = parseInt(value.substring(0, 4))
+  const month = parseInt(value.substring(4, 6))
+  if (year < 2020 || year > 2050) return 'ປີໃນລະຫັດງວດບໍ່ຖືກຕ້ອງ'
+  if (month < 1 || month > 12) return 'ເດືອນໃນລະຫັດງວດບໍ່ຖືກຕ້ອງ'
+  return true
+}
+
 // Computed properties
+const availableCurrencyOptions = computed(() => {
+  if (!selectedMSegment.value) return []
+  return allCurrencyOptions[selectedMSegment.value as keyof typeof allCurrencyOptions] || []
+})
+
+const isFormValid = computed(() => {
+  return selectedMSegment.value && 
+         selectedCurrency.value && 
+         selectedFinYear.value && 
+         selectedPeriodCode.value &&
+         validateFinYear(selectedFinYear.value) === true &&
+         validatePeriodCode(selectedPeriodCode.value) === true
+})
+
 const chipColor = computed(() => {
-  if (selectedCurrency.value === 'all') return 'success'
   switch (selectedCurrency.value) {
     case 'LAK': return 'success'
     case 'USD': return 'primary'
@@ -335,8 +488,7 @@ const chipColor = computed(() => {
 })
 
 const chipText = computed(() => {
-  if (selectedCurrency.value === 'all') return 'ທຸກສະກຸນເງິນ'
-  return selectedCurrency.value
+  return `${selectedMSegment.value} - ${selectedCurrency.value}`
 })
 
 // Filter data based on search text
@@ -348,121 +500,57 @@ const filteredData = computed(() => {
     item.gl_code?.toLowerCase().includes(search) ||
     item.Desc?.toLowerCase().includes(search) ||
     item.CCy_Code_id?.toLowerCase().includes(search) ||
-    item.Category?.toString().includes(search)
+    item.MSegment?.toLowerCase().includes(search)
   )
 })
 
-// Table headers for the grouped display
-const customHeaders = [
-  { 
-    title: '', 
-    key: 'gl_code', 
-    width: '120px', 
-    sortable: true, 
-    align: 'start',
-    class: 'sticky-col text-left'
-  },
-  { 
-    title: '', 
-    key: 'Desc', 
-    width: '250px', 
-    sortable: true, 
-    align: 'start',
-    class: 'description-col text-left'
-  },
-  { 
-    title: 'Dr', 
-    key: 'OP_DR', 
-    width: '120px', 
-    align: 'end', 
-    sortable: true, 
-    class: 'amount-col text-center'
-  },
-  { 
-    title: 'Cr', 
-    key: 'OP_CR', 
-    width: '120px', 
-    align: 'end', 
-    sortable: true, 
-    class: 'amount-col text-center'
-  },
-  { 
-    title: 'Dr', 
-    key: 'Mo_DR', 
-    width: '120px', 
-    align: 'end', 
-    sortable: true, 
-    class: 'amount-col text-center'
-  },
-  { 
-    title: 'Cr', 
-    key: 'Mo_Cr', 
-    width: '120px', 
-    align: 'end', 
-    sortable: true, 
-    class: 'amount-col text-center'
-  },
-  { 
-    title: 'Dr', 
-    key: 'C1_DR', 
-    width: '120px', 
-    align: 'end', 
-    sortable: true, 
-    class: 'amount-col text-center'
-  },
-  { 
-    title: 'Cr', 
-    key: 'C1_CR', 
-    width: '120px', 
-    align: 'end', 
-    sortable: true, 
-    class: 'amount-col text-center'
-  },
-  { 
-    title: '', 
-    key: 'CCy_Code_id', 
-    width: '100px', 
-    align: 'center', 
-    sortable: true,
-    class: 'text-center'
-  },
-  { 
-    title: '', 
-    key: 'Category', 
-    width: '100px', 
-    align: 'center', 
-    sortable: true,
-    class: 'text-center'
+// Event handlers
+const onMSegmentChange = (newValue: string) => {
+  console.log(`🔄 MSegment changed to: ${newValue}`)
+  // Reset currency when MSegment changes
+  selectedCurrency.value = ''
+  trialBalanceData.value = []
+  lastUsedParams.value = null
+}
+
+// Watch for currency changes to auto-set as first available if needed
+watch([selectedMSegment], () => {
+  if (selectedMSegment.value && availableCurrencyOptions.value.length > 0) {
+    // Auto-select first currency if none selected
+    if (!selectedCurrency.value) {
+      selectedCurrency.value = availableCurrencyOptions.value[0].value
+    }
   }
-]
+})
 
 // API calls
 const fetchTrialBalanceData = async () => {
   try {
     loading.value = true
     
-    let response: ApiResponse
-    
-    if (selectedCurrency.value === 'all') {
-      // Call all-currencies API
-      console.log('🔄 Calling all-currencies API')
-      const apiResponse = await axios.get('/api/main-trial-balance/all-currencies/', getAuthHeaders())
-      response = apiResponse.data
-    } else {
-      // Call by-currency API
-      console.log(`🔄 Calling by-currency API for ${selectedCurrency.value}`)
-      const apiResponse = await axios.post('/api/main-trial-balance/by-currency/', {
-        currency: selectedCurrency.value
-      }, getAuthHeaders())
-      response = apiResponse.data
+    if (!isFormValid.value) {
+      showSnackbar('ກະລຸນາປ້ອນຂໍ້ມູນໃຫ້ຄົບຖ້ວນແລະຖືກຕ້ອງ', 'warning', 'mdi-alert')
+      return
     }
+    
+    const params = {
+      ccy_code_id: selectedCurrency.value,
+      m_segment: selectedMSegment.value,
+      fin_year_id: selectedFinYear.value,
+      period_code_id: selectedPeriodCode.value
+    }
+    
+    console.log('🔄 Calling Trial Balance API with params:', params)
+    
+    const apiResponse = await axios.post('/api/main-trial-balance/all-currencies/dairy-report/', params, getAuthHeaders())
+    const response: ApiResponse = apiResponse.data
     
     if (response.status === 'success') {
       trialBalanceData.value = response.data || []
+      lastUsedParams.value = response.parameters || params
       
-      const currencyDisplay = selectedCurrency.value === 'all' ? 'ທຸກສະກຸນເງິນ' : selectedCurrency.value
       showSnackbar(
-        `✅ ດຶງຂໍ້ມູນ Main Trial Balance ${currencyDisplay} ສຳເລັດ (${trialBalanceData.value.length} ລາຍການ)`,
+        `✅ ດຶງຂໍ້ມູນ Trial Balance ສຳເລັດ (${trialBalanceData.value.length} ລາຍການ)`,
         'success',
         'mdi-check-circle'
       )
@@ -475,7 +563,7 @@ const fetchTrialBalanceData = async () => {
   } catch (error: any) {
     console.error('❌ Error fetching trial balance data:', error)
     
-    let errorMessage = 'ເກີດຂໍ້ຜິດພາດໃນການດຶງຂໍ້ມູນ Main Trial Balance'
+    let errorMessage = 'ເກີດຂໍ້ຜິດພາດໃນການດຶງຂໍ້ມູນ Trial Balance'
     let errorIcon = 'mdi-alert-circle'
     
     // Handle specific errors
@@ -489,7 +577,8 @@ const fetchTrialBalanceData = async () => {
       errorMessage = '🔍 ບໍ່ພົບ API endpoint ທີ່ຕ້ອງການ'
       errorIcon = 'mdi-api-off'
     } else if (error?.response?.status === 400) {
-      errorMessage = '📋 ຂໍ້ມູນທີ່ສົ່ງມາບໍ່ຖືກຕ້ອງ: ' + (error?.response?.data?.message || 'Invalid request format')
+      const backendMessage = error?.response?.data?.message || 'Invalid request format'
+      errorMessage = '📋 ' + backendMessage
       errorIcon = 'mdi-form-select'
     } else if (error?.response?.status === 500) {
       errorMessage = '🔧 ເກີດຂໍ້ຜິດພາດຈາກເຊີຟເວີ ກະລຸນາລອງໃໝ່ໃນພາຍຫຼັງ'
@@ -512,18 +601,6 @@ const fetchTrialBalanceData = async () => {
   }
 }
 
-// Event handlers
-const onCurrencyChange = (newValue: string) => {
-  console.log(`🔄 Currency changed to: ${newValue}`)
-  // Clear previous data when currency changes
-  trialBalanceData.value = []
-  
-  // Auto-fetch data when currency changes
-  nextTick(() => {
-    fetchTrialBalanceData()
-  })
-}
-
 // Utility functions
 const formatCurrency = (value: number | string | undefined): string => {
   const numValue = Number(value || 0)
@@ -543,6 +620,10 @@ const getCurrencyColor = (currency: string) => {
     'JPY': 'purple'
   }
   return colors[currency as keyof typeof colors] || 'grey'
+}
+
+const getSegmentColor = (segment: string) => {
+  return segment === 'LCY' ? 'success' : 'info'
 }
 
 const showSnackbar = (message: string, color: string = 'success', icon: string = 'mdi-check-circle') => {
@@ -568,7 +649,7 @@ const exportToExcel = () => {
       'Closing Dr': item.C1_DR,
       'Closing Cr': item.C1_CR,
       'Currency': item.CCy_Code_id,
-      'Category': item.Category
+      'Market Segment': item.MSegment
     }))
 
     // Create and save Excel file
@@ -582,21 +663,19 @@ const exportToExcel = () => {
       { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, // Amount columns
       { wch: 12 }, { wch: 12 }, // Amount columns
       { wch: 10 }, // Currency
-      { wch: 10 }  // Category
+      { wch: 15 }  // Market Segment
     ]
     ws['!cols'] = colWidths
 
     XLSX.utils.book_append_sheet(wb, ws, 'Main Trial Balance')
 
     // Generate secure filename
-    const currentDate = new Date().toISOString().split('T')[0]
-    const currencyPart = selectedCurrency.value === 'all' ? 'AllCurrencies' : selectedCurrency.value
-    const filename = `Main_Trial_Balance_${currencyPart}_${currentDate}.xlsx`
+    const filename = `Trial_Balance_${selectedMSegment.value}_${selectedCurrency.value}_${selectedFinYear.value}_${selectedPeriodCode.value}.xlsx`
 
     XLSX.writeFile(wb, filename)
 
     showSnackbar(
-      `📊 ສົ່ງອອກສຳເລັດ (${currencyPart}) - ${trialBalanceData.value.length} ລາຍການ`, 
+      `📊 ສົ່ງອອກສຳເລັດ (${selectedMSegment.value}-${selectedCurrency.value}) - ${trialBalanceData.value.length} ລາຍການ`, 
       'success', 
       'mdi-download'
     )
@@ -612,9 +691,15 @@ onMounted(async () => {
   try {
     const token = localStorage.getItem("token")
     if (token) {
-      console.log('🚀 Component mounted, loading default data...')
-      // Auto-fetch data on mount with default 'all' selection
-      await fetchTrialBalanceData()
+      console.log('🚀 Component mounted')
+      // Set default period code to current year-month
+      const now = new Date()
+      const year = now.getFullYear()
+      const month = String(now.getMonth() + 1).padStart(2, '0')
+      selectedPeriodCode.value = `${year}${month}`
+      
+      // Don't auto-fetch data - wait for user to complete form
+      showSnackbar('📋 ກະລຸນາເລືອກຂໍ້ມູນໃນແບບຟອມແລ້ວກົດດຶງຂໍ້ມູນ', 'info', 'mdi-information')
     } else {
       showSnackbar('🔑 ກະລຸນາເຂົ້າສູ່ລະບົບເພື່ອເຂົ້າເຖິງຂໍ້ມູນ', 'warning', 'mdi-account-alert')
     }
@@ -625,566 +710,429 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* Table Container and Base Styles */
-.table-container {
+/* Custom Table Container */
+.custom-table-container {
   width: 100%;
-  overflow-x: auto;
-  border-radius: 8px;
+  max-height: 65vh;
+  overflow: auto;
   border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: #fff;
+  position: relative;
 }
 
-/* 
-  NOTE: Borders are added for alignment debugging and visual clarity.
-  To remove borders for a cleaner look, you can:
-  1. Change border-collapse: collapse to border-collapse: separate
-  2. Remove border declarations from .group-header-cell and .professional-table :deep() selectors
-  3. Keep only border-right: 2px solid #dee2e6 for sticky columns
-*/
-
-.table-top-bar {
-  border-bottom: 1px solid #e0e0e0;
-  border-radius: 8px 8px 0 0;
-}
-
-/* Group Headers Styling */
-.group-headers-wrapper {
+/* Custom Table */
+.custom-trial-balance-table {
   width: 100%;
-  overflow-x: auto;
-  border-bottom: none;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-}
-
-.group-headers-table {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.875rem;
   min-width: 1200px;
 }
 
-.group-header-row {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+/* Header Rows */
+.main-header-row {
+  background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
 }
 
-.group-header-cell {
-  padding: 12px 8px !important;
-  border: 1px solid #dee2e6;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  vertical-align: middle;
+.sub-header-row {
+  background: #fafafa;
+}
+
+/* Header Cells */
+.header-cell {
+  padding: 12px 8px;
   font-weight: 600;
   color: #37474f;
+  border: 1px solid #dee2e6;
+  vertical-align: middle;
+  text-align: center;
   white-space: nowrap;
-  box-sizing: border-box;
 }
 
-/* Exact width matching with data table columns - with borders */
-.group-header-cell:nth-child(1) {
-  width: 120px;
-  position: sticky;
-  left: 0;
-  z-index: 15;
-  border-right: 2px solid #dee2e6;
+/* GL Code Header - Optimized Width */
+.account-code-header {
+  width: 150px;
+  min-width: 150px;
+  max-width: 150px;
+}
+
+.header-content-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* Description Header - Fixed for no-wrap */
+.description-header {
+  width: 400px;
+  min-width: 400px;
+  max-width: 400px;
   text-align: left;
-  padding-left: 12px !important;
 }
 
-.group-header-cell:nth-child(2) {
-  width: 250px;
-  text-align: left;
-  padding-left: 12px !important;
+.header-content-left {
+  display: flex;
+  align-items: center;
+  padding-left: 16px;
+  width: 100%;
+  height: 100%;
 }
 
-.group-header-cell:nth-child(3) {
-  width: 241px; /* 120px + 120px + 1px border */
-  text-align: center;
+.group-header {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
 }
 
-.group-header-cell:nth-child(4) {
-  width: 241px; /* 120px + 120px + 1px border */
-  text-align: center;
-}
-
-.group-header-cell:nth-child(5) {
-  width: 241px; /* 120px + 120px + 1px border */
-  text-align: center;
-}
-
-.group-header-cell:nth-child(6) {
-  width: 100px;
-  text-align: center;
-}
-
-.group-header-cell:nth-child(7) {
-  width: 100px;
-  text-align: center;
-  border-right: none;
-}
-
-.header-content {
+.group-header-content {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  white-space: nowrap;
 }
 
-/* Adjust main table to align with group headers */
-.professional-table {
-  border-radius: 0 0 8px 8px !important;
-  border-top: none !important;
-  border: 1px solid #dee2e6 !important;
-  border-top: none !important;
-  width: 100%;
-  min-width: 1200px;
-}
-
-.professional-table :deep(.v-data-table__wrapper) {
-  border-collapse: collapse;
-}
-
-.professional-table :deep(.v-data-table__wrapper table) {
-  border-collapse: collapse;
-  table-layout: fixed;
-}
-
-.professional-table :deep(.v-data-table__thead > tr > th) {
-  background-color: #ffffff !important;
-  border-top: none;
-  padding: 8px 12px !important;
+.sub-header {
+  width: 140px;
+  min-width: 140px;
   font-size: 0.75rem;
   font-weight: 500;
-  border: 1px solid #dee2e6;
-  box-sizing: border-box;
+  background: #fafafa;
+  color: #546e7a;
 }
 
-/* Exact column width and alignment matching */
-.professional-table :deep(.v-data-table__thead > tr > th:nth-child(1)) {
-  width: 120px !important;
-  min-width: 120px !important;
-  max-width: 120px !important;
+/* Extra columns for Currency and Segment */
+.extra-column-header {
+  width: 120px;
+  min-width: 120px;
+  max-width: 120px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+/* Sticky Column */
+.sticky-column {
   position: sticky;
   left: 0;
-  z-index: 3;
-  border-right: 2px solid #dee2e6;
-  background-color: #ffffff !important;
-  text-align: left !important;
+  z-index: 2;
+  background: white;
+  border-right: 2px solid #dee2e6 !important;
 }
 
-.professional-table :deep(.v-data-table__thead > tr > th:nth-child(2)) {
-  width: 250px !important;
-  min-width: 250px !important;
-  max-width: 250px !important;
-  text-align: left !important;
+.main-header-row .sticky-column,
+.sub-header-row .sticky-column {
+  background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
 }
 
-.professional-table :deep(.v-data-table__thead > tr > th:nth-child(3)),
-.professional-table :deep(.v-data-table__thead > tr > th:nth-child(4)) {
-  width: 120px !important;
-  min-width: 120px !important;
-  max-width: 120px !important;
-  text-align: center !important;
+/* Data Rows */
+.data-row {
+  transition: background-color 0.2s;
+  background: white;
 }
 
-.professional-table :deep(.v-data-table__thead > tr > th:nth-child(5)),
-.professional-table :deep(.v-data-table__thead > tr > th:nth-child(6)) {
-  width: 120px !important;
-  min-width: 120px !important;
-  max-width: 120px !important;
-  text-align: center !important;
+.data-row:hover {
+  background-color: #f8f9fa !important;
 }
 
-.professional-table :deep(.v-data-table__thead > tr > th:nth-child(7)),
-.professional-table :deep(.v-data-table__thead > tr > th:nth-child(8)) {
-  width: 120px !important;
-  min-width: 120px !important;
-  max-width: 120px !important;
-  text-align: center !important;
+.data-row:nth-child(even) {
+  background-color: #fafafa;
 }
 
-.professional-table :deep(.v-data-table__thead > tr > th:nth-child(9)),
-.professional-table :deep(.v-data-table__thead > tr > th:nth-child(10)) {
-  width: 100px !important;
-  min-width: 100px !important;
-  max-width: 100px !important;
-  text-align: center !important;
-}
-
-.professional-table :deep(.v-data-table__thead > tr > th:nth-child(10)) {
-  border-right: none;
-}
-
-/* Data cell alignment with borders */
-.professional-table :deep(.v-data-table__td) {
-  padding: 8px 12px !important;
+/* Data Cells */
+.data-cell {
+  padding: 10px 8px;
   border: 1px solid #f0f0f0;
-  font-size: 0.875rem;
   vertical-align: middle;
-  white-space: nowrap;
-  box-sizing: border-box;
 }
 
-.professional-table :deep(.v-data-table__td:nth-child(1)) {
-  width: 120px !important;
-  position: sticky;
-  left: 0;
-  z-index: 1;
-  border-right: 2px solid #dee2e6;
-  background-color: white !important;
-  text-align: left !important;
+/* GL Code Cell - Optimized */
+.account-code-cell {
+  width: 150px;
+  min-width: 150px;
+  max-width: 150px;
+  text-align: left;
   font-weight: 500;
+  background: white;
 }
 
-.professional-table :deep(.v-data-table__td:nth-child(2)) {
-  width: 250px !important;
-  text-align: left !important;
+.gl-code-content {
+  display: flex;
+  align-items: left;
+  justify-content: left;
+  width: 100%;
+  padding: 0 8px;
 }
 
-.professional-table :deep(.v-data-table__td:nth-child(3)),
-.professional-table :deep(.v-data-table__td:nth-child(4)),
-.professional-table :deep(.v-data-table__td:nth-child(5)),
-.professional-table :deep(.v-data-table__td:nth-child(6)),
-.professional-table :deep(.v-data-table__td:nth-child(7)),
-.professional-table :deep(.v-data-table__td:nth-child(8)) {
-  width: 120px !important;
-  text-align: right !important;
+.data-row:hover .account-code-cell {
+  background-color: #f8f9fa;
 }
 
-.professional-table :deep(.v-data-table__td:nth-child(9)),
-.professional-table :deep(.v-data-table__td:nth-child(10)) {
-  width: 100px !important;
-  text-align: center !important;
+/* Description Cell - No Wrap with Ellipsis */
+.description-cell {
+  width: 400px;
+  min-width: 400px;
+  max-width: 400px;
+  padding: 10px 16px;
 }
 
-.professional-table :deep(.v-data-table__td:nth-child(10)) {
-  border-right: none;
+.description-content {
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  cursor: default;
 }
 
-.font-mono {
+.description-content:hover {
+  cursor: help;
+}
+
+/* Amount Cells */
+.amount-cell {
+  width: 140px;
+  min-width: 140px;
+  text-align: right;
+  padding-right: 12px;
+}
+
+.amount-value {
   font-family: 'Roboto Mono', 'Consolas', monospace;
   font-size: 0.875rem;
-}
-
-.table-row {
-  transition: all 0.2s ease;
-}
-
-.table-row:hover {
-  background-color: #f8f9fa !important;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.table-row:hover .sticky-col {
-  background-color: #f8f9fa !important;
-}
-
-.table-row:hover .description-cell {
-  background-color: #f8f9fa !important;
-}
-
-.amount-cell {
-  padding: 4px 8px;
+  font-weight: 500;
+  display: inline-block;
+  padding: 2px 6px;
   border-radius: 4px;
   background: rgba(0,0,0,0.02);
-  border: 1px solid rgba(0,0,0,0.05);
-  font-size: 0.85rem;
-  font-weight: 500;
-  min-width: 80px;
-  display: inline-block;
+  min-width: 100px;
+  text-align: right;
 }
 
-.description-cell {
-  width: 250px !important;
-  min-width: 250px !important;
-  max-width: 250px !important;
-  padding: 8px 12px !important;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  text-align: left !important;
+.amount-value.text-success {
+  color: #4caf50;
+  background: rgba(76, 175, 80, 0.08);
 }
 
-.description-cell span {
-  display: block;
-  width: 100%;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+.amount-value.text-error {
+  color: #f44336;
+  background: rgba(244, 67, 54, 0.08);
 }
 
-.amount-column {
-  width: 120px !important;
-  min-width: 120px !important;
-  max-width: 120px !important;
+/* Extra Column Cells for Currency and Segment */
+.extra-column-cell {
+  width: 120px;
+  min-width: 120px;
+  max-width: 120px;
+  text-align: center;
+  padding: 8px;
 }
 
-.currency-column,
-.category-column {
-  width: 100px !important;
-  min-width: 100px !important;
-  max-width: 100px !important;
+/* Scrollbar Styling */
+.custom-table-container::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
 }
 
-.sticky-col {
-  position: sticky !important;
-  left: 0 !important;
-  background-color: white !important;
-  z-index: 1 !important;
-  border-right: 2px solid #dee2e6 !important;
-  width: 120px !important;
-  min-width: 120px !important;
-  max-width: 120px !important;
-  text-align: left !important;
+.custom-table-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 5px;
 }
 
-.professional-table :deep(.v-data-table__td) {
-  padding: 8px 12px !important;
-  border-bottom: 1px solid #f0f0f0;
-  font-size: 0.875rem;
-  vertical-align: middle;
-  white-space: nowrap;
-  border-right: 1px solid #f0f0f0;
+.custom-table-container::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 5px;
 }
 
-.professional-table :deep(.v-data-table__wrapper) {
-  overflow-x: auto;
+.custom-table-container::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
 
-/* Responsive design */
+.custom-table-container::-webkit-scrollbar-corner {
+  background: #f1f1f1;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1400px) {
+  .description-header,
+  .description-cell {
+    width: 350px;
+    min-width: 350px;
+    max-width: 350px;
+  }
+}
+
 @media (max-width: 1200px) {
-  .amount-cell {
-    font-size: 0.75rem;
-    padding: 2px 6px;
-    min-width: 70px;
-  }
-  
-  .professional-table :deep(.v-data-table__td) {
-    padding: 6px 8px !important;
+  .custom-trial-balance-table {
     font-size: 0.8rem;
+    min-width: 1100px;
   }
   
-  .group-headers-table {
-    min-width: 1000px;
+  .account-code-header,
+  .account-code-cell {
+    width: 130px;
+    min-width: 130px;
+    max-width: 130px;
   }
   
-  .professional-table {
-    min-width: 1000px;
+  .description-header,
+  .description-cell {
+    width: 300px;
+    min-width: 300px;
+    max-width: 300px;
   }
   
-  /* Maintain exact column alignment with borders */
-  .group-header-cell:nth-child(3),
-  .group-header-cell:nth-child(4),
-  .group-header-cell:nth-child(5) {
-    width: 201px; /* 100px + 100px + 1px border */
+  .header-cell {
+    padding: 10px 6px;
   }
   
-  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(3)),
-  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(4)),
-  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(5)),
-  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(6)),
-  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(7)),
-  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(8)) {
-    width: 100px !important;
-    min-width: 100px !important;
-    max-width: 100px !important;
+  .data-cell {
+    padding: 8px 6px;
   }
   
-  .professional-table :deep(.v-data-table__td:nth-child(3)),
-  .professional-table :deep(.v-data-table__td:nth-child(4)),
-  .professional-table :deep(.v-data-table__td:nth-child(5)),
-  .professional-table :deep(.v-data-table__td:nth-child(6)),
-  .professional-table :deep(.v-data-table__td:nth-child(7)),
-  .professional-table :deep(.v-data-table__td:nth-child(8)) {
-    width: 100px !important;
+  .amount-value {
+    font-size: 0.8rem;
+    min-width: 85px;
   }
   
-  .amount-column {
-    width: 100px !important;
-    min-width: 100px !important;
-    max-width: 100px !important;
+  .sub-header {
+    width: 130px;
+    min-width: 130px;
   }
   
-  .group-header-cell {
-    padding: 10px 6px !important;
-    font-size: 0.85rem;
+  .amount-cell {
+    width: 130px;
+    min-width: 130px;
+  }
+  
+  .extra-column-header,
+  .extra-column-cell {
+    width: 100px;
+    min-width: 100px;
+    max-width: 100px;
   }
 }
 
 @media (max-width: 960px) {
-  .font-mono { 
-    font-size: 0.75rem; 
-  }
-  
-  .amount-cell { 
-    padding: 2px 4px; 
-    font-size: 0.7rem;
-    min-width: 60px;
-  }
-  
-  .professional-table :deep(.v-data-table__td) { 
-    padding: 4px 6px !important; 
+  .custom-trial-balance-table {
     font-size: 0.75rem;
+    min-width: 1000px;
   }
   
+  .account-code-header,
+  .account-code-cell {
+    width: 110px;
+    min-width: 110px;
+    max-width: 110px;
+  }
+  
+  .description-header,
   .description-cell {
-    width: 200px !important;
-    min-width: 200px !important;
-    max-width: 200px !important;
+    width: 250px;
+    min-width: 250px;
+    max-width: 250px;
   }
   
-  .group-header-cell:nth-child(2) {
-    width: 200px;
-  }
-  
-  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(2)) {
-    width: 200px !important;
-    min-width: 200px !important;
-    max-width: 200px !important;
-  }
-  
-  .professional-table :deep(.v-data-table__td:nth-child(2)) {
-    width: 200px !important;
-  }
-  
-  .group-header-cell:nth-child(3),
-  .group-header-cell:nth-child(4),
-  .group-header-cell:nth-child(5) {
-    width: 181px; /* 90px + 90px + 1px border */
-  }
-  
-  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(3)),
-  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(4)),
-  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(5)),
-  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(6)),
-  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(7)),
-  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(8)) {
-    width: 90px !important;
-    min-width: 90px !important;
-    max-width: 90px !important;
-  }
-  
-  .professional-table :deep(.v-data-table__td:nth-child(3)),
-  .professional-table :deep(.v-data-table__td:nth-child(4)),
-  .professional-table :deep(.v-data-table__td:nth-child(5)),
-  .professional-table :deep(.v-data-table__td:nth-child(6)),
-  .professional-table :deep(.v-data-table__td:nth-child(7)),
-  .professional-table :deep(.v-data-table__td:nth-child(8)) {
-    width: 90px !important;
-  }
-  
-  .amount-column {
-    width: 90px !important;
-    min-width: 90px !important;
-    max-width: 90px !important;
-  }
-  
-  .group-header-cell {
-    padding: 8px 4px !important;
-    font-size: 0.8rem;
-  }
-  
-  .header-content {
+  .header-cell {
+    padding: 8px 4px;
     font-size: 0.75rem;
+  }
+  
+  .sub-header {
+    font-size: 0.7rem;
+    width: 120px;
+    min-width: 120px;
+  }
+  
+  .data-cell {
+    padding: 6px 4px;
+    font-size: 0.75rem;
+  }
+  
+  .amount-cell {
+    width: 120px;
+    min-width: 120px;
+  }
+  
+  .amount-value {
+    font-size: 0.75rem;
+    min-width: 75px;
+    padding: 1px 4px;
+  }
+  
+  .extra-column-header,
+  .extra-column-cell {
+    width: 90px;
+    min-width: 90px;
+    max-width: 90px;
   }
 }
 
 @media (max-width: 600px) {
-  .table-container {
-    overflow-x: scroll;
-    -webkit-overflow-scrolling: touch;
+  .custom-table-container {
+    border-radius: 4px;
   }
   
-  .group-headers-table {
-    min-width: 800px;
+  .custom-trial-balance-table {
+    font-size: 0.7rem;
+    min-width: 900px;
   }
   
-  .professional-table {
-    min-width: 800px;
+  .account-code-header,
+  .account-code-cell {
+    width: 100px;
+    min-width: 100px;
+    max-width: 100px;
   }
   
+  .description-header,
   .description-cell {
-    width: 180px !important;
-    min-width: 180px !important;
-    max-width: 180px !important;
+    width: 200px;
+    min-width: 200px;
+    max-width: 200px;
   }
   
-  .group-header-cell:nth-child(2) {
-    width: 180px;
-  }
-  
-  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(2)) {
-    width: 180px !important;
-    min-width: 180px !important;
-    max-width: 180px !important;
-  }
-  
-  .professional-table :deep(.v-data-table__td:nth-child(2)) {
-    width: 180px !important;
-  }
-  
-  .group-header-cell:nth-child(3),
-  .group-header-cell:nth-child(4),
-  .group-header-cell:nth-child(5) {
-    width: 161px; /* 80px + 80px + 1px border */
-  }
-  
-  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(3)),
-  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(4)),
-  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(5)),
-  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(6)),
-  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(7)),
-  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(8)) {
-    width: 80px !important;
-    min-width: 80px !important;
-    max-width: 80px !important;
-  }
-  
-  .professional-table :deep(.v-data-table__td:nth-child(3)),
-  .professional-table :deep(.v-data-table__td:nth-child(4)),
-  .professional-table :deep(.v-data-table__td:nth-child(5)),
-  .professional-table :deep(.v-data-table__td:nth-child(6)),
-  .professional-table :deep(.v-data-table__td:nth-child(7)),
-  .professional-table :deep(.v-data-table__td:nth-child(8)) {
-    width: 80px !important;
-  }
-  
-  .amount-column {
-    width: 80px !important;
-    min-width: 80px !important;
-    max-width: 80px !important;
-  }
-  
-  .group-header-cell {
-    padding: 6px 3px !important;
-    font-size: 0.75rem;
-  }
-  
-  .header-content {
+  .description-content {
     font-size: 0.7rem;
   }
   
-  .group-header-cell .header-content {
-    flex-direction: column;
-    gap: 2px;
+  .sub-header,
+  .amount-cell {
+    width: 100px;
+    min-width: 100px;
   }
   
-  .currency-column,
-  .category-column {
-    width: 80px !important;
-    min-width: 80px !important;
-    max-width: 80px !important;
-  }
-  
-  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(9)),
-  .professional-table :deep(.v-data-table__thead > tr > th:nth-child(10)) {
-    width: 80px !important;
-    min-width: 80px !important;
-    max-width: 80px !important;
+  .amount-value {
     font-size: 0.7rem;
+    min-width: 65px;
   }
   
-  .professional-table :deep(.v-data-table__td:nth-child(9)),
-  .professional-table :deep(.v-data-table__td:nth-child(10)) {
-    width: 80px !important;
+  .extra-column-header,
+  .extra-column-cell {
+    width: 80px;
+    min-width: 80px;
+    max-width: 80px;
+  }
+}
+
+/* Print styles */
+@media print {
+  .custom-table-container {
+    max-height: none;
+    overflow: visible;
+    border: none;
+  }
+  
+  .sticky-column {
+    position: static;
+  }
+  
+  .data-row:hover {
+    background-color: transparent !important;
+  }
+  
+  .description-content {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
   }
 }
 </style>

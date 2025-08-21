@@ -7,6 +7,9 @@
         <span class="text-h6 font-weight-medium text-styles">
           ລາຍງານຜົນການດໍາເນີນງານ (Income Statement) - 
           {{ selectedTab.toUpperCase() }} {{ selectedSegment }} {{ selectedCurrency }}
+          <span v-if="periodCodeId" class="ml-2 text-caption text-styles">
+            ({{ formatPeriodDisplay(periodCodeId) }})
+          </span>
         </span>
       </v-card-title>
       
@@ -25,13 +28,13 @@
 
         <!-- Filter Form -->
         <v-form @submit.prevent="fetchIncomeStatementData" class="mb-4">
-          <v-row no-gutters class="mb-4">
+          <v-row no-gutters class="mb-4 align-center">
             <!-- Segment Selection -->
-            <v-col cols="12" md="3" class="pe-md-2 mb-3 mb-md-0">
+            <v-col cols="12" md="2" class="pe-md-2 mb-3 mb-md-0">
               <v-select
                 v-model="selectedSegment"
                 :items="segmentOptions"
-                label="ເລືອກປະເພດ (Segment)"
+                label="ເລືອກປະເພດ"
                 variant="outlined"
                 density="compact"
                 prepend-inner-icon="mdi-tag"
@@ -43,7 +46,6 @@
                     <template #prepend>
                       <v-icon :icon="item.raw.icon" size="20" />
                     </template>
-                    <!-- <v-list-item-title>{{ item.raw.title }}</v-list-item-title> -->
                     <v-list-item-subtitle>{{ item.raw.subtitle }}</v-list-item-subtitle>
                   </v-list-item>
                 </template>
@@ -51,11 +53,11 @@
             </v-col>
             
             <!-- Currency Selection -->
-            <v-col cols="12" md="3" class="px-md-1 mb-3 mb-md-0">
+            <v-col cols="12" md="2" class="px-md-1 mb-3 mb-md-0">
               <v-select
                 v-model="selectedCurrency"
                 :items="currencyOptions"
-                label="ເລືອກສະກຸນເງິນ (Currency)"
+                label="ເລືອກສະກຸນເງິນ"
                 variant="outlined"
                 density="compact"
                 prepend-inner-icon="mdi-currency-usd"
@@ -67,11 +69,26 @@
                     <template #prepend>
                       <v-icon :icon="item.raw.icon" size="20" />
                     </template>
-                    <!-- <v-list-item-title>{{ item.raw.title }}</v-list-item-title> -->
                     <v-list-item-subtitle>{{ item.raw.subtitle }}</v-list-item-subtitle>
                   </v-list-item>
                 </template>
               </v-select>
+            </v-col>
+
+            <!-- Period Code Input -->
+            <v-col cols="12" md="2" class="px-md-1 mb-3 mb-md-0">
+              <v-text-field
+                v-model="periodCodeId"
+                label="ລະຫັດເດືອນ (YYYYMM)"
+                variant="outlined"
+                density="compact"
+                prepend-inner-icon="mdi-calendar-month"
+                hide-details="auto"
+                maxlength="6"
+                :rules="[v => !v || /^[0-9]{6}$/.test(v) || 'ປ້ອນຮູບແບບ YYYYMM']"
+                clearable
+                @blur="validatePeriod"
+              />
             </v-col>
 
             <!-- Search Field -->
@@ -88,7 +105,7 @@
             </v-col>
 
             <!-- Action Buttons -->
-            <v-col cols="12" md="3" class="ps-md-2 d-flex gap-1">
+            <v-col cols="12" md="3" class="ps-md-2 d-flex gap-2">
               <v-btn
                 type="submit"
                 color="primary"
@@ -107,19 +124,9 @@
                 :disabled="!incomeStatementData.length || loading"
                 @click="exportToExcel"
                 density="compact"
-                style="height: 40px;"
+                style="height: 40px; min-width: 100px;"
               >
                 Excel
-              </v-btn>
-              <v-btn
-                color="info"
-                prepend-icon="mdi-compare"
-                :disabled="!selectedSegment || !selectedCurrency || loading"
-                @click="compareAccMfi"
-                density="compact"
-                style="height: 40px;"
-              >
-                Compare
               </v-btn>
             </v-col>
           </v-row>
@@ -153,6 +160,9 @@
                 <v-chip size="small" :color="chipColor" variant="tonal" class="ml-2">
                   {{ chipText }}
                 </v-chip>
+                <v-chip v-if="periodCodeId" size="small" color="orange" variant="tonal" class="ml-1">
+                  {{ formatPeriodDisplay(periodCodeId) }}
+                </v-chip>
               </div>
               <div class="text-caption text-grey-darken-1">
                 API: {{ selectedTab.toUpperCase() }} - {{ selectedSegment }} {{ selectedCurrency }}
@@ -162,7 +172,7 @@
           
           <!-- Custom Row Template -->
           <template #item="{ item }">
-                <tr class="table-row"
+            <tr class="table-row"
                 :class="[
                     // Blue for special Lao descriptions
                     (item.description === 'ຄ. ລາຍຮັບ ແລະ ລາຍຈ່າຍພິເສດ(ບັງເອີນ)' ||
@@ -176,16 +186,13 @@
                         : ''
                     )
                 ]"
-                >
-              <!-- <td class="text-center">{{ item.no }}</td>
-              <td class="font-weight-medium text-primary">{{ item.report_number }}</td> -->
+            >
               <td class="description-cell" 
                 :title="item.description"
                 :class="[
                   (
                     item.description === 'ລາຍການໜີ້ສິນ ແລະທືນ' ||
                     item.description === 'ລວມຍອດຊັບສິນ' ||
-                    // /(^|[^A-Z])I($|[^A-Z])|III|IV/.test(item.description)
                     /\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/.test(item.description)
                     ||
                     /\b([1-9]|1[0-9]|2[0-9]|30)\)/.test(item.description)
@@ -193,13 +200,17 @@
                     ? 'font-weight-bold'
                     : ''
                 ]">
-                
                 {{ item.description }}
               </td>
-                <td class="text-center font-mono">
-                    <span class="amount-cell" :class="getNetAmountClass(item.net_amount)">
-                        {{ formatCurrency(item.net_amount) }}
-                    </span>
+              <td class="text-end font-mono">
+                <span class="amount-cell" :class="getNetAmountClass(item.previous_month)">
+                  {{ formatCurrency(item.previous_month) }}
+                </span>
+              </td>
+              <td class="text-end font-mono">
+                <span class="amount-cell" :class="getNetAmountClass(item.current_month)">
+                  {{ formatCurrency(item.current_month) }}
+                </span>
               </td>
               <td class="text-center font-mono">
                 <span class="amount-cell positive">{{ formatCurrency(item.currency_display) }}</span>
@@ -207,7 +218,6 @@
               <td class="text-end font-mono">
                 <span class="amount-cell negative">{{ formatCurrency(item.segment_type) }}</span>
               </td>
-
             </tr>
           </template>
 
@@ -215,8 +225,8 @@
           <template #no-data>
             <div class="text-center pa-8">
               <v-icon size="64" color="grey-lighten-2" class="mb-4">mdi-file-chart-outline</v-icon>
-              <div class="text-h6 text-grey-darken-1 mb-2">ບໍ່ມີຂໍ້ມູນ</div>
-              <div class="text-body-2 text-grey">
+              <div class="text-h6 text-grey-darken-1 mb-2 text-styles">ບໍ່ມີຂໍ້ມູນ</div>
+              <div class="text-body-2 text-grey text-styles">
                 ກະລຸນາເລືອກ segment ແລະ currency ແລ້ວກົດດຶງຂໍ້ມູນ
               </div>
             </div>
@@ -224,57 +234,6 @@
         </v-data-table>
       </v-card-text>
     </v-card>
-
-    <!-- Compare Results Dialog -->
-    <v-dialog v-model="showCompareDialog" max-width="1200">
-      <v-card>
-        <v-card-title class="d-flex align-center">
-          <v-icon start color="info">mdi-compare</v-icon>
-          ຜົນສົມທຽບ ACC ແລະ MFI
-        </v-card-title>
-        
-        <v-card-text>
-          <v-row>
-            <v-col cols="12" md="6">
-              <v-card variant="outlined">
-                <v-card-title class="text-h6 d-flex align-center">
-                  <v-icon start color="primary">mdi-office-building</v-icon>
-                  ACC (Accounting)
-                </v-card-title>
-                <v-card-text>
-                  <div class="text-h4 text-primary">{{ compareResults?.acc?.count || 0 }}</div>
-                  <div class="text-caption">ລາຍການ</div>
-                  <div class="mt-2 text-body-2">
-                    ລວມ Net Amount: {{ calculateTotalNet(compareResults?.acc?.data) }}
-                  </div>
-                </v-card-text>
-              </v-card>
-            </v-col>
-            
-            <v-col cols="12" md="6">
-              <v-card variant="outlined">
-                <v-card-title class="text-h6 d-flex align-center">
-                  <v-icon start color="success">mdi-bank</v-icon>
-                  MFI (Microfinance)
-                </v-card-title>
-                <v-card-text>
-                  <div class="text-h4 text-success">{{ compareResults?.mfi?.count || 0 }}</div>
-                  <div class="text-caption">ລາຍການ</div>
-                  <div class="mt-2 text-body-2">
-                    ລວມ Net Amount: {{ calculateTotalNet(compareResults?.mfi?.data) }}
-                  </div>
-                </v-card-text>
-              </v-card>
-            </v-col>
-          </v-row>
-        </v-card-text>
-        
-        <v-card-actions>
-          <v-spacer />
-          <v-btn color="primary" @click="showCompareDialog = false">ປິດ</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
 
     <!-- Notification Snackbar -->
     <v-snackbar
@@ -301,7 +260,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import axios from '@/helpers/axios'
 import * as XLSX from 'xlsx'
 
@@ -319,6 +278,8 @@ interface IncomeStatementItem {
   debit_amount: number
   credit_amount: number
   net_amount: number
+  previous_month: number
+  current_month: number
   currency_display: string
   segment_type: string
 }
@@ -347,15 +308,37 @@ const getAuthHeaders = () => {
   }
 }
 
+// Utility function to get current period
+const getCurrentPeriodCodeId = (): string => {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  return `${year}${month}`
+}
+
+// Format period for display
+const formatPeriodDisplay = (periodCode: string): string => {
+  if (!periodCode || periodCode.length !== 6) return ''
+  const year = periodCode.substring(0, 4)
+  const month = periodCode.substring(4, 6)
+  const monthNames = [
+    'ມັງກອນ', 'ກຸມພາ', 'ມີນາ', 'ເມສາ', 'ພຶດສະພາ', 'ມິຖຸນາ',
+    'ກໍລະກົດ', 'ສິງຫາ', 'ກັນຍາ', 'ຕຸລາ', 'ພະຈິກ', 'ທັນວາ'
+  ]
+  const monthIndex = parseInt(month) - 1
+  return monthIndex >= 0 && monthIndex < 12 ? `${monthNames[monthIndex]} ${year}` : `${month}/${year}`
+}
+
 // Reactive state
 const loading = ref(false)
 const searchText = ref('')
-const selectedTab = ref('acc') // Default to ACC tab
+const selectedTab = ref('acc')
 const selectedSegment = ref('')
 const selectedCurrency = ref('')
 const incomeStatementData = ref<IncomeStatementItem[]>([])
 const showCompareDialog = ref(false)
 const compareResults = ref<any>(null)
+const periodCodeId = ref(getCurrentPeriodCodeId()) // Fixed: Now properly calling the function
 
 const snackbar = ref({
   show: false,
@@ -388,7 +371,7 @@ const currencyOptions = computed(() => {
     ]
   } else if (selectedSegment.value === 'FCY') {
     return [
-    { title: 'ກີບລາວ (LAK)', value: 'LAK', subtitle: 'Lao Kip', icon: 'mdi-currency-kzt' },
+      { title: 'ກີບລາວ (LAK)', value: 'LAK', subtitle: 'Lao Kip', icon: 'mdi-currency-kzt' },
       { title: 'ໂດລາສະຫະລັດ (USD)', value: 'USD', subtitle: 'US Dollar', icon: 'mdi-currency-usd' },
       { title: 'ບາດໄທ (THB)', value: 'THB', subtitle: 'Thai Baht', icon: 'mdi-currency-jpy' },
     ]
@@ -424,15 +407,20 @@ const filteredData = computed(() => {
 
 // Table headers
 const headers = [
-//   { title: 'ລຳດັບ', key: 'no', width: '80px', sortable: true, align: 'center' },
-//   { title: 'ເລກລາຍງານ', key: 'report_number', width: '120px', sortable: true },
   { title: 'ລາຍລະອຽດ', key: 'description', width: '400px', sortable: true },
-//   { title: 'ຍອດເດບິດ', key: 'debit_amount', width: '150px', align: 'end', sortable: true },
-//   { title: 'ຍອດເຄຣດິດ', key: 'credit_amount', width: '150px', align: 'end', sortable: true },
-  { title: 'ຍອດສຸດທິ', key: 'net_amount', width: '150px', align: 'end', sortable: true },
+  { title: 'ຍອດເດືອນກ່ອນ', key: 'previous_month', width: '150px', align: 'end', sortable: true },
+  { title: 'ຍອດເດືອນນີ້', key: 'current_month', width: '150px', align: 'end', sortable: true },
   { title: 'ສະກຸນເງິນ', key: 'currency_display', width: '100px', align: 'center', sortable: true },
   { title: 'ປະເພດ', key: 'segment_type', width: '100px', align: 'center', sortable: true }
 ]
+
+// Validation function for period
+const validatePeriod = () => {
+  if (periodCodeId.value && !/^[0-9]{6}$/.test(periodCodeId.value)) {
+    showSnackbar('ລະຫັດເດືອນຕ້ອງເປັນຮູບແບບ YYYYMM', 'warning', 'mdi-alert')
+    periodCodeId.value = getCurrentPeriodCodeId()
+  }
+}
 
 // API calls
 const fetchIncomeStatementData = async () => {
@@ -452,7 +440,8 @@ const fetchIncomeStatementData = async () => {
     
     const response = await axios.post(endpoint, {
       segment: selectedSegment.value,
-      currency: selectedCurrency.value
+      currency: selectedCurrency.value,
+      period_code_id: periodCodeId.value 
     }, getAuthHeaders())
     
     if (response.data.status === 'success') {
@@ -506,44 +495,6 @@ const fetchIncomeStatementData = async () => {
   }
 }
 
-const compareAccMfi = async () => {
-  if (!selectedSegment.value || !selectedCurrency.value) {
-    showSnackbar('ກະລຸນາເລືອກ segment ແລະ currency ເພື່ອສົມທຽບ', 'warning', 'mdi-alert')
-    return
-  }
-
-  try {
-    loading.value = true
-    
-    const response = await axios.post('/api/income-statement/compare_acc_mfi/', {
-      segment: selectedSegment.value,
-      currency: selectedCurrency.value
-    }, getAuthHeaders())
-    
-    if (response.data.status === 'success') {
-      compareResults.value = response.data.data
-      showCompareDialog.value = true
-      showSnackbar(
-        `✅ ສົມທຽບຂໍ້ມູນ ACC ແລະ MFI ສຳລັບ ${response.data.display_currency} ສຳເລັດ`,
-        'success',
-        'mdi-check-circle'
-      )
-    } else {
-      throw new Error(response.data.message || 'Comparison failed')
-    }
-    
-  } catch (error: any) {
-    console.error('❌ Error comparing ACC and MFI:', error)
-    showSnackbar(
-      error?.response?.data?.message || 'ເກີດຂໍ້ຜິດພາດໃນການສົມທຽບຂໍ້ມູນ ACC ແລະ MFI',
-      'error',
-      'mdi-alert-circle'
-    )
-  } finally {
-    loading.value = false
-  }
-}
-
 // Event handlers
 const onSegmentChange = () => {
   selectedCurrency.value = ''
@@ -565,15 +516,9 @@ const formatCurrency = (value: number): string => {
 }
 
 const getNetAmountClass = (amount: number) => {
-  if (amount > 0) return 'text-success font-weight-bold'
-  if (amount < 0) return 'text-error font-weight-bold'
+  if (amount > 0) return 'font-weight-bold'
+  if (amount < 0) return 'font-weight-bold'
   return 'text-grey'
-}
-
-const calculateTotalNet = (data: any[]) => {
-  if (!data || !Array.isArray(data)) return '0.00'
-  const total = data.reduce((sum, item) => sum + (item.net_amount || 0), 0)
-  return formatCurrency(total)
 }
 
 const showSnackbar = (message: string, color: string = 'success', icon: string = 'mdi-check-circle') => {
@@ -590,14 +535,11 @@ const exportToExcel = () => {
 
     // Prepare export data
     const exportData = incomeStatementData.value.map(item => ({
-    //   'ລຳດັບ': item.no,
-    //   'ເລກລາຍງານ': item.report_number,
       'ລາຍລະອຽດ': item.description,
-    //   'ຍອດເດບິດ': item.debit_amount,
-    //   'ຍອດເຄຣດິດ': item.credit_amount,
-      'ຍອດສຸດທິ': item.net_amount,
+      'ຍອດເດືອນກ່ອນ': item.previous_month,
+      'ຍອດເດືອນນີ້': item.current_month,
       'ສະກຸນເງິນ': item.currency_display,
-        'ປະເພດ': item.segment_type
+      'ປະເພດ': item.segment_type
     }))
 
     // Create and save Excel file
@@ -606,12 +548,11 @@ const exportToExcel = () => {
     
     // Set column widths
     const colWidths = [
-      { wch: 8 }, // ລຳດັບ
-      { wch: 15 }, // ເລກລາຍງານ
       { wch: 40 }, // ລາຍລະອຽດ
-      { wch: 15 }, // ຍອດເດບິດ
-      { wch: 15 }, // ຍອດເຄຣດິດ
-      { wch: 15 }  // ຍອດສຸດທິ
+      { wch: 15 }, // ຍອດເດືອນກ່ອນ
+      { wch: 15 }, // ຍອດເດືອນນີ້
+      { wch: 12 }, // ສະກຸນເງິນ
+      { wch: 12 }  // ປະເພດ
     ]
     ws['!cols'] = colWidths
 
@@ -619,7 +560,8 @@ const exportToExcel = () => {
 
     // Generate secure filename
     const currentDate = new Date().toISOString().split('T')[0]
-    const filename = `Income_Statement_${selectedTab.value.toUpperCase()}_${selectedSegment.value}_${selectedCurrency.value}_${currentDate}.xlsx`
+    const periodDisplay = formatPeriodDisplay(periodCodeId.value)
+    const filename = `Income_Statement_${selectedTab.value.toUpperCase()}_${selectedSegment.value}_${selectedCurrency.value}_${periodDisplay}_${currentDate}.xlsx`
 
     XLSX.writeFile(wb, filename)
 
@@ -647,6 +589,7 @@ onMounted(async () => {
     const token = localStorage.getItem("token")
     if (token) {
       console.log('🚀 Income Statement component mounted')
+      console.log(`📅 Current period: ${periodCodeId.value} (${formatPeriodDisplay(periodCodeId.value)})`)
       // Set default values
       selectedSegment.value = 'LCY'
       selectedCurrency.value = 'LAK'
@@ -738,6 +681,17 @@ onMounted(async () => {
   min-width: 1000px;
 }
 
+.highlight-blue-row {
+  background: linear-gradient(135deg, #59b4ff 0%, #e3f2fd 100%);
+  font-weight: bold;
+}
+
+.highlight-grey-row {
+  background: linear-gradient(135deg, #ffb25a 0%, #e7e7e7 100%);
+  font-weight: bold;
+}
+
+/* Responsive improvements */
 @media (max-width: 1200px) {
   .professional-table :deep(table) {
     min-width: 900px;
@@ -750,9 +704,18 @@ onMounted(async () => {
 }
 
 @media (max-width: 960px) {
-  .font-mono { font-size: 0.75rem; }
-  .amount-cell { padding: 2px 4px; font-size: 0.75rem; }
-  .professional-table :deep(.v-data-table__td) { padding: 6px 8px !important; }
+  .font-mono { 
+    font-size: 0.75rem; 
+  }
+  
+  .amount-cell { 
+    padding: 2px 4px; 
+    font-size: 0.75rem; 
+  }
+  
+  .professional-table :deep(.v-data-table__td) { 
+    padding: 6px 8px !important; 
+  }
   
   .description-cell {
     max-width: 250px;
@@ -770,15 +733,5 @@ onMounted(async () => {
     max-width: 200px;
     min-width: 120px;
   }
-}
-
-.highlight-blue-row {
-  background : linear-gradient(135deg, #59b4ff 0%, #e3f2fd 100%);
-  font-weight: bold;
-}
-
-.highlight-grey-row {
-  background : linear-gradient(135deg, #ffb25a 0%, #e7e7e7 100%);
-  font-weight: bold;
 }
 </style>

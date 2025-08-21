@@ -6,8 +6,7 @@
       <v-card-title class="px-6 py-4 d-flex align-center" style="background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%); color: white;">
         <v-icon start size="24">mdi-chart-line</v-icon>
         <span class="text-h6 font-weight-medium text-styles">
-          ລາຍງານໃບດຸ່ນດຽງ - 
-          {{ selectedCurrency === 'all' ? 'ທຸກສະກຸນເງິນ' : selectedCurrency }}
+          ລາຍງານໃບດຸ່ນດຽງ - {{ selectedCurrency }} ({{ selectedMSegment }})
         </span>
         <v-spacer />
         <v-chip 
@@ -23,18 +22,19 @@
       <v-card-text class="px-6 py-4">
         <!-- Filter Form -->
         <v-form @submit.prevent="fetchTrialBalanceData" class="mb-4">
-          <v-row no-gutters class="mb-4">
-            <!-- Currency Selection -->
-            <v-col cols="12" md="4" class="pe-md-2 mb-3 mb-md-0">
+          <!-- First Row: MSegment and Currency -->
+          <v-row no-gutters class="mb-3">
+            <!-- Market Segment Selection -->
+            <v-col cols="12" md="3" class="pe-md-2 mb-3 mb-md-0">
               <v-select
-                v-model="selectedCurrency"
-                :items="currencyOptions"
-                label="ເລືອກສະກຸນເງິນ (Currency)"
+                v-model="selectedMSegment"
+                :items="mSegmentOptions"
+                label="ປະເພດຕະຫຼາດ (Market Segment)"
                 variant="outlined"
                 density="compact"
-                prepend-inner-icon="mdi-currency-usd"
+                prepend-inner-icon="mdi-bank"
                 hide-details="auto"
-                @update:model-value="onCurrencyChange"
+                @update:model-value="onMSegmentChange"
               >
                 <template #item="{ props, item }">
                   <v-list-item v-bind="props">
@@ -47,8 +47,65 @@
               </v-select>
             </v-col>
             
+            <!-- Currency Selection -->
+            <v-col cols="12" md="3" class="px-md-1 mb-3 mb-md-0">
+              <v-select
+                v-model="selectedCurrency"
+                :items="availableCurrencyOptions"
+                label="ເລືອກສະກຸນເງິນ (Currency)"
+                variant="outlined"
+                density="compact"
+                prepend-inner-icon="mdi-currency-usd"
+                hide-details="auto"
+                :disabled="!selectedMSegment"
+              >
+                <template #item="{ props, item }">
+                  <v-list-item v-bind="props">
+                    <template #prepend>
+                      <v-icon :icon="item.raw.icon" size="20" />
+                    </template>
+                    <v-list-item-subtitle>{{ item.raw.subtitle }}</v-list-item-subtitle>
+                  </v-list-item>
+                </template>
+              </v-select>
+            </v-col>
+            
+            <!-- Financial Year -->
+            <v-col cols="12" md="3" class="px-md-1 mb-3 mb-md-0">
+              <v-text-field
+                v-model="selectedFinYear"
+                label="ປີການເງິນ (Financial Year)"
+                variant="outlined"
+                density="compact"
+                prepend-inner-icon="mdi-calendar"
+                hide-details="auto"
+                type="number"
+                min="2020"
+                max="2050"
+                :rules="[validateFinYear]"
+              />
+            </v-col>
+            
+            <!-- Period Code -->
+            <v-col cols="12" md="3" class="ps-md-2 mb-3 mb-md-0">
+              <v-text-field
+                v-model="selectedPeriodCode"
+                label="ລະຫັດງວດ (Period Code)"
+                variant="outlined"
+                density="compact"
+                prepend-inner-icon="mdi-calendar-month"
+                hide-details="auto"
+                placeholder="202508"
+                maxlength="6"
+                :rules="[validatePeriodCode]"
+              />
+            </v-col>
+          </v-row>
+
+          <!-- Second Row: Search and Actions -->
+          <v-row no-gutters class="mb-4">
             <!-- Search Field -->
-            <v-col cols="12" md="4" class="px-md-1 mb-3 mb-md-0">
+            <v-col cols="12" md="6" class="pe-md-2 mb-3 mb-md-0">
               <v-text-field
                 v-model="searchText"
                 label="ຄົ້ນຫາໃນຕາຕະລາງ"
@@ -61,12 +118,13 @@
             </v-col>
 
             <!-- Action Buttons -->
-            <v-col cols="12" md="4" class="ps-md-2 d-flex gap-1">
+            <v-col cols="12" md="6" class="ps-md-2 d-flex gap-2">
               <v-btn
                 type="submit"
                 color="primary"
                 prepend-icon="mdi-refresh"
                 :loading="loading"
+                :disabled="!isFormValid"
                 class="flex-grow-1"
                 density="compact"
                 style="height: 40px;"
@@ -91,14 +149,25 @@
 
         <!-- Table Info Bar -->
         <div class="d-flex justify-space-between align-center mb-3 pa-3 bg-grey-lighten-5 rounded">
-          <div class="text-h6 font-weight-medium">
+          <div class="text-h6 font-weight-medium text-styles">
             ຜົນການຄົ້ນຫາ: {{ filteredData.length }} ລາຍການ
             <v-chip size="small" :color="chipColor" variant="tonal" class="ml-2">
               {{ chipText }}
             </v-chip>
           </div>
           <div class="text-caption text-grey-darken-1">
-            API: {{ selectedCurrency === 'all' ? 'all-currencies' : 'by-currency' }}
+            API: main-trial-balance | {{ selectedMSegment }}-{{ selectedCurrency }}
+          </div>
+        </div>
+
+        <!-- Parameter Summary -->
+        <div v-if="lastUsedParams" class="mb-3 pa-2 bg-blue-lighten-5 rounded">
+          <div class="text-caption text-blue-darken-2">
+            <strong>ພາລາມິເຕີທີ່ໃຊ້:</strong> 
+            Currency: {{ lastUsedParams.ccy_code_id }}, 
+            Segment: {{ lastUsedParams.m_segment }}, 
+            Year: {{ lastUsedParams.fin_year_id }}, 
+            Period: {{ lastUsedParams.period_code_id }}
           </div>
         </div>
 
@@ -137,7 +206,7 @@
                   <div class="header-content-center">Currency</div>
                 </th>
                 <th rowspan="2" class="header-cell extra-column-header">
-                  <div class="header-content-center">Category</div>
+                  <div class="header-content-center">Segment</div>
                 </th>
               </tr>
               <!-- Sub Headers -->
@@ -163,8 +232,10 @@
               <tr v-else-if="!filteredData.length">
                 <td colspan="10" class="text-center pa-8">
                   <v-icon size="64" color="grey-lighten-2" class="mb-4">mdi-chart-line-variant</v-icon>
-                  <div class="text-h6 text-grey-darken-1 mb-2">ບໍ່ມີຂໍ້ມູນ</div>
-                  <div class="text-body-2 text-grey">ກະລຸນາກົດປຸ່ມດຶງຂໍ້ມູນເພື່ອໂຫຼດຂໍ້ມູນ</div>
+                  <div class="text-h6 text-grey-darken-1 mb-2 text-styles">ບໍ່ມີຂໍ້ມູນ</div>
+                  <div class="text-body-2 text-grey text-styles">
+                    {{ !isFormValid ? 'ກະລຸນາປ້ອນຂໍ້ມູນໃຫ້ຄົບຖ້ວນ' : 'ກະລຸນາກົດປຸ່ມດຶງຂໍ້ມູນເພື່ອໂຫຼດຂໍ້ມູນ' }}
+                  </div>
                 </td>
               </tr>
               
@@ -200,10 +271,10 @@
                 </td>
                 <!-- Closing Dr/Cr -->
                 <td class="data-cell amount-cell">
-                  <span class="amount-value text-success">{{ formatCurrency(item.C1_DR) }}</span>
+                  <span class="amount-value">{{ formatCurrency(item.C1_DR) }}</span>
                 </td>
                 <td class="data-cell amount-cell">
-                  <span class="amount-value text-error">{{ formatCurrency(item.C1_CR) }}</span>
+                  <span class="amount-value">{{ formatCurrency(item.C1_CR) }}</span>
                 </td>
                 <!-- Currency -->
                 <td class="data-cell extra-column-cell">
@@ -215,14 +286,14 @@
                     {{ item.CCy_Code_id }}
                   </v-chip>
                 </td>
-                <!-- Category -->
+                <!-- Market Segment -->
                 <td class="data-cell extra-column-cell">
                   <v-chip 
                     size="small" 
-                    color="info" 
+                    :color="getSegmentColor(item.MSegment)" 
                     variant="outlined"
                   >
-                    {{ item.Category }}
+                    {{ item.MSegment }}
                   </v-chip>
                 </td>
               </tr>
@@ -257,7 +328,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, nextTick } from 'vue'
+import { ref, onMounted, computed, nextTick, watch } from 'vue'
 import axios from '@/helpers/axios'
 import * as XLSX from 'xlsx'
 
@@ -286,8 +357,13 @@ interface ApiResponse {
   status: 'success' | 'error'
   message: string
   count?: number
-  currency?: string
   data: TrialBalanceItem[]
+  parameters?: {
+    ccy_code_id: string
+    m_segment: string
+    fin_year_id: string
+    period_code_id: string
+  }
 }
 
 // Authentication helper
@@ -307,8 +383,12 @@ const getAuthHeaders = () => {
 // Reactive state
 const loading = ref(false)
 const searchText = ref('')
-const selectedCurrency = ref('all') // Default to 'all'
+const selectedMSegment = ref('') // Start empty to force user selection
+const selectedCurrency = ref('')
+const selectedFinYear = ref(new Date().getFullYear().toString()) // Default current year
+const selectedPeriodCode = ref('') // User must enter
 const trialBalanceData = ref<TrialBalanceItem[]>([])
+const lastUsedParams = ref<any>(null)
 
 const snackbar = ref({
   show: false,
@@ -317,37 +397,88 @@ const snackbar = ref({
   icon: 'mdi-check-circle'
 })
 
-// Currency options with 'all' as default
-const currencyOptions = [
+// Market Segment options
+const mSegmentOptions = [
   {
-    title: 'ທຸກສະກຸນເງິນ (All Currencies)',
-    value: 'all',
-    subtitle: 'ສະແດງຂໍ້ມູນທຸກສະກຸນເງິນ',
+    title: 'LCY - ທຽບເທົ່າກີບ (Local Currency)',
+    value: 'LCY',
+    subtitle: 'ສະເພາະກີບລາວ (LAK)',
+    icon: 'mdi-home-currency-usd'
+  },
+  {
+    title: 'FCY - ສະກຸນເງິນຕ່າງປະເທດ (Foreign Currency)',
+    value: 'FCY',
+    subtitle: 'LAK, USD, THB',
     icon: 'mdi-currency-usd-circle'
-  },
-  {
-    title: 'ກີບລາວ (LAK)',
-    value: 'LAK',
-    subtitle: 'Lao Kip',
-    icon: 'mdi-currency-kzt'
-  },
-  {
-    title: 'ໂດລາສະຫະລັດ (USD)',
-    value: 'USD',
-    subtitle: 'US Dollar',
-    icon: 'mdi-currency-usd'
-  },
-  {
-    title: 'ບາດໄທ (THB)',
-    value: 'THB',
-    subtitle: 'Thai Baht',
-    icon: 'mdi-currency-jpy'
   }
 ]
 
+// All currency options
+const allCurrencyOptions = {
+  LCY: [
+    {
+      title: 'ກີບລາວ (LAK)',
+      value: 'LAK',
+      subtitle: 'Lao Kip',
+      icon: 'mdi-currency-kzt'
+    }
+  ],
+  FCY: [
+    {
+      title: 'ກີບລາວ (LAK)',
+      value: 'LAK',
+      subtitle: 'Lao Kip',
+      icon: 'mdi-currency-kzt'
+    },
+    {
+      title: 'ໂດລາສະຫະລັດ (USD)',
+      value: 'USD',
+      subtitle: 'US Dollar',
+      icon: 'mdi-currency-usd'
+    },
+    {
+      title: 'ບາດໄທ (THB)',
+      value: 'THB',
+      subtitle: 'Thai Baht',
+      icon: 'mdi-currency-jpy'
+    }
+  ]
+}
+
+// Validation functions
+const validateFinYear = (value: string) => {
+  if (!value) return 'ປີການເງິນບໍ່ຄວນຫວ່າງເປົ່າ'
+  const year = parseInt(value)
+  if (year < 2020 || year > 2050) return 'ປີການເງິນຕ້ອງຢູ່ລະຫວ່າງ 2020-2050'
+  return true
+}
+
+const validatePeriodCode = (value: string) => {
+  if (!value) return 'ລະຫັດງວດບໍ່ຄວນຫວ່າງເປົ່າ'
+  if (!/^\d{6}$/.test(value)) return 'ລະຫັດງວດຕ້ອງເປັນຕົວເລກ 6 ຫຼັກ (YYYYMM)'
+  const year = parseInt(value.substring(0, 4))
+  const month = parseInt(value.substring(4, 6))
+  if (year < 2020 || year > 2050) return 'ປີໃນລະຫັດງວດບໍ່ຖືກຕ້ອງ'
+  if (month < 1 || month > 12) return 'ເດືອນໃນລະຫັດງວດບໍ່ຖືກຕ້ອງ'
+  return true
+}
+
 // Computed properties
+const availableCurrencyOptions = computed(() => {
+  if (!selectedMSegment.value) return []
+  return allCurrencyOptions[selectedMSegment.value as keyof typeof allCurrencyOptions] || []
+})
+
+const isFormValid = computed(() => {
+  return selectedMSegment.value && 
+         selectedCurrency.value && 
+         selectedFinYear.value && 
+         selectedPeriodCode.value &&
+         validateFinYear(selectedFinYear.value) === true &&
+         validatePeriodCode(selectedPeriodCode.value) === true
+})
+
 const chipColor = computed(() => {
-  if (selectedCurrency.value === 'all') return 'success'
   switch (selectedCurrency.value) {
     case 'LAK': return 'success'
     case 'USD': return 'primary'
@@ -357,8 +488,7 @@ const chipColor = computed(() => {
 })
 
 const chipText = computed(() => {
-  if (selectedCurrency.value === 'all') return 'ທຸກສະກຸນເງິນ'
-  return selectedCurrency.value
+  return `${selectedMSegment.value} - ${selectedCurrency.value}`
 })
 
 // Filter data based on search text
@@ -370,8 +500,27 @@ const filteredData = computed(() => {
     item.gl_code?.toLowerCase().includes(search) ||
     item.Desc?.toLowerCase().includes(search) ||
     item.CCy_Code_id?.toLowerCase().includes(search) ||
-    item.Category?.toString().includes(search)
+    item.MSegment?.toLowerCase().includes(search)
   )
+})
+
+// Event handlers
+const onMSegmentChange = (newValue: string) => {
+  console.log(`🔄 MSegment changed to: ${newValue}`)
+  // Reset currency when MSegment changes
+  selectedCurrency.value = ''
+  trialBalanceData.value = []
+  lastUsedParams.value = null
+}
+
+// Watch for currency changes to auto-set as first available if needed
+watch([selectedMSegment], () => {
+  if (selectedMSegment.value && availableCurrencyOptions.value.length > 0) {
+    // Auto-select first currency if none selected
+    if (!selectedCurrency.value) {
+      selectedCurrency.value = availableCurrencyOptions.value[0].value
+    }
+  }
 })
 
 // API calls
@@ -379,28 +528,29 @@ const fetchTrialBalanceData = async () => {
   try {
     loading.value = true
     
-    let response: ApiResponse
-    
-    if (selectedCurrency.value === 'all') {
-      // Call all-currencies API
-      console.log('🔄 Calling all-currencies API')
-      const apiResponse = await axios.get('/api/main-trial-balance/all-currencies/', getAuthHeaders())
-      response = apiResponse.data
-    } else {
-      // Call by-currency API
-      console.log(`🔄 Calling by-currency API for ${selectedCurrency.value}`)
-      const apiResponse = await axios.post('/api/main-trial-balance/by-currency/', {
-        currency: selectedCurrency.value
-      }, getAuthHeaders())
-      response = apiResponse.data
+    if (!isFormValid.value) {
+      showSnackbar('ກະລຸນາປ້ອນຂໍ້ມູນໃຫ້ຄົບຖ້ວນແລະຖືກຕ້ອງ', 'warning', 'mdi-alert')
+      return
     }
+    
+    const params = {
+      ccy_code_id: selectedCurrency.value,
+      m_segment: selectedMSegment.value,
+      fin_year_id: selectedFinYear.value,
+      period_code_id: selectedPeriodCode.value
+    }
+    
+    console.log('🔄 Calling Trial Balance API with params:', params)
+    
+    const apiResponse = await axios.post('/api/main-trial-balance/all-currencies/', params, getAuthHeaders())
+    const response: ApiResponse = apiResponse.data
     
     if (response.status === 'success') {
       trialBalanceData.value = response.data || []
+      lastUsedParams.value = response.parameters || params
       
-      const currencyDisplay = selectedCurrency.value === 'all' ? 'ທຸກສະກຸນເງິນ' : selectedCurrency.value
       showSnackbar(
-        `✅ ດຶງຂໍ້ມູນ Main Trial Balance ${currencyDisplay} ສຳເລັດ (${trialBalanceData.value.length} ລາຍການ)`,
+        `✅ ດຶງຂໍ້ມູນ Trial Balance ສຳເລັດ (${trialBalanceData.value.length} ລາຍການ)`,
         'success',
         'mdi-check-circle'
       )
@@ -413,7 +563,7 @@ const fetchTrialBalanceData = async () => {
   } catch (error: any) {
     console.error('❌ Error fetching trial balance data:', error)
     
-    let errorMessage = 'ເກີດຂໍ້ຜິດພາດໃນການດຶງຂໍ້ມູນ Main Trial Balance'
+    let errorMessage = 'ເກີດຂໍ້ຜິດພາດໃນການດຶງຂໍ້ມູນ Trial Balance'
     let errorIcon = 'mdi-alert-circle'
     
     // Handle specific errors
@@ -427,7 +577,8 @@ const fetchTrialBalanceData = async () => {
       errorMessage = '🔍 ບໍ່ພົບ API endpoint ທີ່ຕ້ອງການ'
       errorIcon = 'mdi-api-off'
     } else if (error?.response?.status === 400) {
-      errorMessage = '📋 ຂໍ້ມູນທີ່ສົ່ງມາບໍ່ຖືກຕ້ອງ: ' + (error?.response?.data?.message || 'Invalid request format')
+      const backendMessage = error?.response?.data?.message || 'Invalid request format'
+      errorMessage = '📋 ' + backendMessage
       errorIcon = 'mdi-form-select'
     } else if (error?.response?.status === 500) {
       errorMessage = '🔧 ເກີດຂໍ້ຜິດພາດຈາກເຊີຟເວີ ກະລຸນາລອງໃໝ່ໃນພາຍຫຼັງ'
@@ -450,18 +601,6 @@ const fetchTrialBalanceData = async () => {
   }
 }
 
-// Event handlers
-const onCurrencyChange = (newValue: string) => {
-  console.log(`🔄 Currency changed to: ${newValue}`)
-  // Clear previous data when currency changes
-  trialBalanceData.value = []
-  
-  // Auto-fetch data when currency changes
-  nextTick(() => {
-    fetchTrialBalanceData()
-  })
-}
-
 // Utility functions
 const formatCurrency = (value: number | string | undefined): string => {
   const numValue = Number(value || 0)
@@ -481,6 +620,10 @@ const getCurrencyColor = (currency: string) => {
     'JPY': 'purple'
   }
   return colors[currency as keyof typeof colors] || 'grey'
+}
+
+const getSegmentColor = (segment: string) => {
+  return segment === 'LCY' ? 'success' : 'info'
 }
 
 const showSnackbar = (message: string, color: string = 'success', icon: string = 'mdi-check-circle') => {
@@ -506,7 +649,7 @@ const exportToExcel = () => {
       'Closing Dr': item.C1_DR,
       'Closing Cr': item.C1_CR,
       'Currency': item.CCy_Code_id,
-      'Category': item.Category
+      'Market Segment': item.MSegment
     }))
 
     // Create and save Excel file
@@ -520,21 +663,19 @@ const exportToExcel = () => {
       { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, // Amount columns
       { wch: 12 }, { wch: 12 }, // Amount columns
       { wch: 10 }, // Currency
-      { wch: 10 }  // Category
+      { wch: 15 }  // Market Segment
     ]
     ws['!cols'] = colWidths
 
     XLSX.utils.book_append_sheet(wb, ws, 'Main Trial Balance')
 
     // Generate secure filename
-    const currentDate = new Date().toISOString().split('T')[0]
-    const currencyPart = selectedCurrency.value === 'all' ? 'AllCurrencies' : selectedCurrency.value
-    const filename = `Main_Trial_Balance_${currencyPart}_${currentDate}.xlsx`
+    const filename = `Trial_Balance_${selectedMSegment.value}_${selectedCurrency.value}_${selectedFinYear.value}_${selectedPeriodCode.value}.xlsx`
 
     XLSX.writeFile(wb, filename)
 
     showSnackbar(
-      `📊 ສົ່ງອອກສຳເລັດ (${currencyPart}) - ${trialBalanceData.value.length} ລາຍການ`, 
+      `📊 ສົ່ງອອກສຳເລັດ (${selectedMSegment.value}-${selectedCurrency.value}) - ${trialBalanceData.value.length} ລາຍການ`, 
       'success', 
       'mdi-download'
     )
@@ -550,9 +691,15 @@ onMounted(async () => {
   try {
     const token = localStorage.getItem("token")
     if (token) {
-      console.log('🚀 Component mounted, loading default data...')
-      // Auto-fetch data on mount with default 'all' selection
-      await fetchTrialBalanceData()
+      console.log('🚀 Component mounted')
+      // Set default period code to current year-month
+      const now = new Date()
+      const year = now.getFullYear()
+      const month = String(now.getMonth() + 1).padStart(2, '0')
+      selectedPeriodCode.value = `${year}${month}`
+      
+      // Don't auto-fetch data - wait for user to complete form
+      showSnackbar('📋 ກະລຸນາເລືອກຂໍ້ມູນໃນແບບຟອມແລ້ວກົດດຶງຂໍ້ມູນ', 'info', 'mdi-information')
     } else {
       showSnackbar('🔑 ກະລຸນາເຂົ້າສູ່ລະບົບເພື່ອເຂົ້າເຖິງຂໍ້ມູນ', 'warning', 'mdi-account-alert')
     }
@@ -654,7 +801,7 @@ onMounted(async () => {
   color: #546e7a;
 }
 
-/* Extra columns for Currency and Category */
+/* Extra columns for Currency and Segment */
 .extra-column-header {
   width: 120px;
   min-width: 120px;
@@ -702,15 +849,15 @@ onMounted(async () => {
   width: 150px;
   min-width: 150px;
   max-width: 150px;
-  text-align: center;
+  text-align: left;
   font-weight: 500;
   background: white;
 }
 
 .gl-code-content {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: left;
+  justify-content: left;
   width: 100%;
   padding: 0 8px;
 }
@@ -770,7 +917,7 @@ onMounted(async () => {
   background: rgba(244, 67, 54, 0.08);
 }
 
-/* Extra Column Cells for Currency and Category */
+/* Extra Column Cells for Currency and Segment */
 .extra-column-cell {
   width: 120px;
   min-width: 120px;
