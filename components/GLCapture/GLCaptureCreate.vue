@@ -85,6 +85,7 @@
                   @change="updateReferenceNumber" 
                   prepend-inner-icon="mdi-calendar"
                   hide-details="auto"
+                  :disabled="isValueDateDisabled"
 
                 >
                   <template #append-inner v-if="isValueDateDisabled">
