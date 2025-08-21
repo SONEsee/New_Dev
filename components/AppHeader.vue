@@ -1,7 +1,7 @@
 <template>
   <v-app-bar
     :elevation="2"
-    class="d-flex align-center "
+    class="d-flex align-center"
     :style="{
       background: 'linear-gradient(135deg, #0D47A1 0%, #BBDEFB 100%)',
       color: 'white',
@@ -14,9 +14,10 @@
     ></v-app-bar-nav-icon>
 
     <v-app-bar-title class="text-center flex-grow-1">
-      ລະບົບບັນຊີ ບໍລິສັດລັດ ບໍລິຫານໜີ້ ແລະ ຊັບສິນ ຈຳກັດຜູ້ດຽວ (SAMC'S Accounting
-      System)
+      ລະບົບບັນຊີ ບໍລິສັດລັດ ບໍລິຫານໜີ້ ແລະ ຊັບສິນ ຈຳກັດຜູ້ດຽວ (SAMC'S Accounting System)
     </v-app-bar-title>
+
+    <!-- Working Day Status Indicator -->
     <v-tooltip bottom>
       <template v-slot:activator="{ props }">
         <v-btn
@@ -43,54 +44,140 @@
       </template>
       <span>{{ workingDayMessage || 'ກວດສອບວັນເຮັດການ' }}</span>
     </v-tooltip>
-    <v-spacer></v-spacer>
-    <v-chip color="#0D47A1"
-      ><h5 class="mr-5">ສິດການເຂົ້ານຳໃຊ້: {{ role }}</h5></v-chip
-    >
 
-    <v-menu min-width="200px" rounded>
+    <v-spacer></v-spacer>
+
+    <!-- Role Chip -->
+    <v-chip color="#0D47A1" class="mr-4">
+      <h5>ສິດການເຂົ້ານຳໃຊ້: {{ userRole }}</h5>
+    </v-chip>
+
+    <!-- User Profile Menu -->
+    <v-menu min-width="280px" rounded offset-y>
       <template v-slot:activator="{ props }">
-        <v-btn icon v-bind="props" style="flex-shrink: 0">
-          <v-avatar class="pa-3,mr-3" color="#E3F2FD" size="large">
-            <span class="text-h5" v-if="user">
-              <v-icon
-                icon="mdi-account-circle-outline"
-                color="#0D47A1"
-              ></v-icon>
-            </span>
-            <span class="text-h5" v-else>
-              <v-icon
-                icon="mdi-account-circle-outline"
-                color="#0D47A1"
-              ></v-icon>
-            </span>
+        <v-btn icon v-bind="props" style="flex-shrink: 0" class="profile-btn">
+          <v-avatar size="42" color="#E3F2FD" class="profile-avatar">
+            <v-img
+              v-if="profileImageUrl"
+              :src="profileImageUrl"
+              :alt="`ຮູບໂປຣໄຟລ້ຂອງ ${userName}`"
+              cover
+              @error="onProfileImageError"
+            >
+              <template v-slot:placeholder>
+                <div class="d-flex align-center justify-center fill-height">
+                  <v-progress-circular
+                    indeterminate
+                    size="20"
+                    color="primary"
+                  ></v-progress-circular>
+                </div>
+              </template>
+            </v-img>
+            <v-icon
+              v-else
+              icon="mdi-account-circle"
+              color="#0D47A1"
+              size="28"
+            ></v-icon>
           </v-avatar>
         </v-btn>
       </template>
-      <v-card>
-        <v-card-text>
-          <div class="mx-auto text-center">
-            <v-avatar color="brown">
-              <span class="text-h5" v-if="user">{{ user }}</span>
-              <span class="text-h5" v-else>
-                <v-icon icon="mdi-account-circle-outline"></v-icon>
-              </span>
+
+      <v-card elevation="8" rounded="lg">
+        <v-card-text class="pa-4">
+          <div class="text-center">
+            <!-- Profile Avatar in Menu -->
+            <v-avatar size="80" color="#E3F2FD" class="mb-3 profile-menu-avatar">
+              <v-img
+                v-if="profileImageUrl"
+                :src="profileImageUrl"
+                :alt="`ຮູບໂປຣໄຟລ້ຂອງ ${userName}`"
+                cover
+                @error="onProfileImageError"
+              >
+                <template v-slot:placeholder>
+                  <div class="d-flex align-center justify-center fill-height">
+                    <v-progress-circular
+                      indeterminate
+                      size="24"
+                      color="primary"
+                    ></v-progress-circular>
+                  </div>
+                </template>
+              </v-img>
+              <v-icon
+                v-else
+                icon="mdi-account-circle"
+                color="#0D47A1"
+                size="40"
+              ></v-icon>
             </v-avatar>
-            <h3>ຊື່ຜູ້ໃຊ້ :{{ username }}</h3>
-            <p class="text-caption mt-1">ອີເມວ: {{ email }}</p>
-            <p class="text-caption mt-1">ພະແນກ: {{ department }}</p>
+
+            <!-- User Information -->
+            <div class="user-info">
+              <h3 class="text-h6 font-weight-medium text-primary mb-1">
+                {{ userName }}
+              </h3>
+              <p class="text-caption text-medium-emphasis mb-1">
+                <v-icon size="small" class="mr-1">mdi-email</v-icon>
+                {{ userEmail }}
+              </p>
+              <p class="text-caption text-medium-emphasis mb-1">
+                <v-icon size="small" class="mr-1">mdi-office-building</v-icon>
+                {{ userDepartment }}
+              </p>
+              <p class="text-caption text-medium-emphasis">
+                <v-icon size="small" class="mr-1">mdi-shield-account</v-icon>
+                {{ userRole }}
+              </p>
+            </div>
+
             <v-divider class="my-3"></v-divider>
-            <v-btn variant="text" rounded> ແກ້ໄຂຂໍ້ມູນສວນຕົວ </v-btn>
-            <v-divider class="my-3" color="#0D47A1"></v-divider>
-            <v-btn variant="text" rounded @click="onLogout">
-              ອອກຈາກລະບົບ
-            </v-btn>
+
+            <!-- Menu Actions -->
+            <div class="d-flex flex-column ga-2">
+              <v-btn
+                variant="tonal"
+                color="primary"
+                prepend-icon="mdi-account-edit"
+                block
+                @click="goToProfile"
+              >
+                ແກ້ໄຂຂໍ້ມູນສ່ວນຕົວ
+              </v-btn>
+              
+              <v-btn
+                variant="tonal"
+                color="warning"
+                prepend-icon="mdi-logout"
+                block
+                @click="onLogout"
+              >
+                ອອກຈາກລະບົບ
+              </v-btn>
+            </div>
+
+            <!-- User Status Indicator -->
+            <div class="mt-3">
+              <v-chip
+                size="small"
+                :color="isUserActive ? 'success' : 'error'"
+                variant="tonal"
+              >
+                <v-icon start size="small">
+                  {{ isUserActive ? 'mdi-check-circle' : 'mdi-alert-circle' }}
+                </v-icon>
+                {{ isUserActive ? 'ອອນລາຍ' : 'ອັບເດດ' }}
+              </v-chip>
+            </div>
           </div>
         </v-card-text>
       </v-card>
     </v-menu>
   </v-app-bar>
 
+  <!-- Navigation Drawer -->
   <v-navigation-drawer
     class="mt-2"
     v-model="drawer"
@@ -104,8 +191,9 @@
         <v-list-subheader
           style="color: #e3f2fd; padding-left: 0px"
           v-show="!rail"
-          >ກຳລັງໂຫຼດ...</v-list-subheader
         >
+          ກຳລັງໂຫຼດ...
+        </v-list-subheader>
         <v-list-item
           prepend-icon="mdi-loading mdi-spin"
           :title="rail ? '' : 'ກຳລັງໂຫຼດຂໍ້ມູນເມນູ...'"
@@ -119,8 +207,9 @@
         <v-list-subheader
           style="color: #0d47a1; padding-left: 0px"
           v-show="!rail"
-          >ຂໍ້ຜິດພາດ</v-list-subheader
         >
+          ຂໍ້ຜິດພາດ
+        </v-list-subheader>
         <v-list-item
           prepend-icon="mdi-alert-circle"
           :title="rail ? '' : 'ມີຂໍ້ຜິດພາດໃນການໂຫຼດຂໍ້ມູນ'"
@@ -385,8 +474,9 @@
         <v-list-subheader
           style="color: #0d47a1; padding-left: 0px"
           v-show="!rail"
-          >ເມນູ</v-list-subheader
         >
+          ເມນູ
+        </v-list-subheader>
         <v-list-item
           prepend-icon="mdi-menu-off"
           :title="rail ? '' : 'ບໍ່ມີຂໍ້ມູນເມນູ'"
@@ -397,58 +487,150 @@
       </template>
     </v-list>
   </v-navigation-drawer>
+
+  <!-- Working Day Status Snackbar -->
+  <v-snackbar
+    v-model="showWorkingDaySnackbar"
+    :color="isWorkingDay ? 'success' : 'error'"
+    location="top right"
+    timeout="3000"
+  >
+    <div class="d-flex align-center">
+      <v-icon
+        start
+        :icon="isWorkingDay ? 'mdi-check-circle' : 'mdi-alert-circle'"
+      ></v-icon>
+      <span>{{ workingDayMessage }}</span>
+    </div>
+    <template v-slot:actions>
+      <v-btn
+        icon="mdi-close"
+        size="small"
+        @click="showWorkingDaySnackbar = false"
+      ></v-btn>
+    </template>
+  </v-snackbar>
 </template>
 
 <script lang="ts" setup>
-import { useRoute, useRouter } from "vue-router";
-import { computed, onMounted, onUnmounted, ref } from "vue";
-import { useMenuStore } from "~/stores/menu";
-import axios from "@/helpers/axios";
+import { useRoute, useRouter } from "vue-router"
+import { computed, onMounted, onUnmounted, ref } from "vue"
+import { useMenuStore } from "~/stores/menu"
+import axios from "@/helpers/axios"
 
 // Working Day Check Interface
 interface WorkingDayResponse {
-  available: boolean;
-  reason: string;
+  available: boolean
+  reason: string
   bypass_info?: {
-    working_day_bypassed: boolean;
-    eod_check_bypassed: boolean;
-  };
+    working_day_bypassed: boolean
+    eod_check_bypassed: boolean
+  }
 }
 
-const roleStore = RoleStore();
-const menuStore = useMenuStore();
-const route = useRoute();
-const router = useRouter();
-const drawer = ref(true);
-const rail = ref(false);
-const error = ref(false);
+// User Interface
+interface UserData {
+  user_id: string
+  user_name: string
+  user_email: string
+  user_mobile?: string
+  division?: {
+    div_id: string
+    division_name_la: string
+    division_name_en: string
+  }
+  role?: {
+    role_id: string
+    role_name_la: string
+    role_name_en: string
+  }
+  profile_picture?: string
+  Auth_Status?: string
+}
+
+const roleStore = RoleStore()
+const menuStore = useMenuStore()
+const route = useRoute()
+const router = useRouter()
+const drawer = ref(true)
+const rail = ref(false)
+const error = ref(false)
 
 // Working Day Check Variables
-const isWorkingDay = ref<boolean | null>(null);
-const loadingWorkingDay = ref(false);
-const workingDayMessage = ref('');
-const workingDayError = ref('');
-const showWorkingDaySnackbar = ref(false);
+const isWorkingDay = ref<boolean | null>(null)
+const loadingWorkingDay = ref(false)
+const workingDayMessage = ref('')
+const workingDayError = ref('')
+const showWorkingDaySnackbar = ref(false)
 
-// User data from localStorage
-const user = localStorage.getItem("user");
-const sub_menu_id = route.query.sub_menu_id as string;
-const username = user ? JSON.parse(user).user_name : "ບໍ່ພົບຂໍ້ມູນ";
-const email = user ? JSON.parse(user).user_email : "ບໍ່ພົບຂໍ້ມູນ";
-const department = user
-  ? JSON.parse(user).division?.division_name_la || "ບໍ່ພົບຂໍ້ມູນ"
-  : "ບໍ່ພົບຂໍ້ມູນ";
-const role = user
-  ? JSON.parse(user).role?.role_name_la || "ບໍ່ພົບຂໍ້ມູນ"
-  : "ບໍ່ພົບຂໍ້ມູນ";
+// Profile Image Error Handling
+const profileImageError = ref(false)
+
+// Parse user data from localStorage with proper type safety
+const parseUserData = (): UserData | null => {
+  try {
+    const userStr = localStorage.getItem("user")
+    if (!userStr) return null
+    
+    const userData = JSON.parse(userStr) as UserData
+    return userData
+  } catch (error) {
+    console.error("Error parsing user data:", error)
+    return null
+  }
+}
+
+// Computed properties for user data
+const userData = computed(() => parseUserData())
+
+const userName = computed(() => {
+  return userData.value?.user_name || "ບໍ່ພົບຂໍ້ມູນ"
+})
+
+const userEmail = computed(() => {
+  return userData.value?.user_email || "ບໍ່ພົບຂໍ້ມູນ"
+})
+
+const userDepartment = computed(() => {
+  return userData.value?.division?.division_name_la || "ບໍ່ພົບຂໍ້ມູນ"
+})
+
+const userRole = computed(() => {
+  return userData.value?.role?.role_name_la || "ບໍ່ພົບຂໍ້ມູນ"
+})
+
+const isUserActive = computed(() => {
+  return userData.value?.Auth_Status === 'A'
+})
+
+// Profile image URL with proper fallback handling
+const profileImageUrl = computed(() => {
+  if (profileImageError.value) return null
+  
+  const user = userData.value
+  if (!user?.profile_picture) return null
+  
+  // Handle different URL formats
+  let imageUrl = user.profile_picture
+  
+  // If it's a relative URL, make it absolute
+  if (imageUrl.startsWith('/media/') || imageUrl.startsWith('media/')) {
+    const baseUrl = axios.defaults.baseURL || 'http://127.0.0.1:8000'
+    imageUrl = `${baseUrl.replace(/\/$/, '')}/${imageUrl.replace(/^\//, '')}`
+  }
+  
+  return imageUrl
+})
+
+const sub_menu_id = route.query.sub_menu_id as string
 
 // Working Day Check Methods
 const checkWorkingDay = async () => {
-  loadingWorkingDay.value = true;
+  loadingWorkingDay.value = true
   try {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token")
     if (!token) {
-      throw new Error("ບໍ່ພົບ Token ການເຂົ້າລະບົບ");
+      throw new Error("ບໍ່ພົບ Token ການເຂົ້າລະບົບ")
     }
 
     const response = await axios.get<WorkingDayResponse>(
@@ -459,88 +641,101 @@ const checkWorkingDay = async () => {
           Authorization: `Bearer ${token}`,
         },
       }
-    );
+    )
 
     if (response.status === 200) {
-      const data = response.data;
-      isWorkingDay.value = data.available;
-      workingDayMessage.value = data.reason;
+      const data = response.data
+      isWorkingDay.value = data.available
+      workingDayMessage.value = data.reason
       
       if (data.available) {
-        workingDayError.value = '';
-        console.log('Working day check passed:', data.reason);
+        workingDayError.value = ''
+        console.log('Working day check passed:', data.reason)
       } else {
-        workingDayError.value = data.reason;
-        console.log('Working day check failed:', data.reason);
+        workingDayError.value = data.reason
+        console.log('Working day check failed:', data.reason)
       }
       
-      // Show snackbar notification
-      showWorkingDaySnackbar.value = true;
+      showWorkingDaySnackbar.value = true
     }
   } catch (error: any) {
-    console.error("Working day check failed:", error);
-    isWorkingDay.value = false;
+    console.error("Working day check failed:", error)
+    isWorkingDay.value = false
     
     if (error.response?.status === 400) {
-      workingDayError.value = error.response.data.reason || 'ວັນນີ້ບໍ່ແມ່ນວັນເຮັດການ';
-      workingDayMessage.value = workingDayError.value;
+      workingDayError.value = error.response.data.reason || 'ວັນນີ້ບໍ່ແມ່ນວັນເຮັດການ'
+      workingDayMessage.value = workingDayError.value
     } else if (error.response?.status === 500) {
-      workingDayError.value = 'ເກີດຂໍ້ຜິດພາດໃນລະບົບ';
-      workingDayMessage.value = workingDayError.value;
+      workingDayError.value = 'ເກີດຂໍ້ຜິດພາດໃນລະບົບ'
+      workingDayMessage.value = workingDayError.value
     } else if (error.response?.status === 401) {
-      workingDayError.value = 'ກະລຸນາເຂົ້າສູ່ລະບົບໃໝ່';
-      workingDayMessage.value = workingDayError.value;
-      // Optionally redirect to login
-      // router.push('/login');
+      workingDayError.value = 'ກະລຸນາເຂົ້າສູ່ລະບົບໃໝ່'
+      workingDayMessage.value = workingDayError.value
     } else {
-      workingDayError.value = error.response?.data?.reason || 'ເກີດຂໍ້ຜິດພາດໃນການກວດສອບວັນເຮັດການ';
-      workingDayMessage.value = workingDayError.value;
+      workingDayError.value = error.response?.data?.reason || 'ເກີດຂໍ້ຜິດພາດໃນການກວດສອບວັນເຮັດການ'
+      workingDayMessage.value = workingDayError.value
     }
     
-    // Show error notification
-    showWorkingDaySnackbar.value = true;
+    showWorkingDaySnackbar.value = true
   } finally {
-    loadingWorkingDay.value = false;
+    loadingWorkingDay.value = false
   }
-};
+}
+
+// Profile image error handler
+const onProfileImageError = () => {
+  console.warn("Failed to load profile image:", profileImageUrl.value)
+  profileImageError.value = true
+}
+
+// Navigation methods
+const goToProfile = () => {
+  const userId = userData.value?.user_id
+  if (userId) {
+    router.push({
+      path: '/user/edit',
+      query: { user_id: userId }
+    })
+  }
+}
 
 // Auto-check working day on component mount
 onMounted(() => {
-  roleStore.filter_role_id.query.sub_menu_id = sub_menu_id || "";
+  roleStore.filter_role_id.query.sub_menu_id = sub_menu_id || ""
   
   // Auto-check working day status
-  checkWorkingDay();
+  checkWorkingDay()
   
   // Optional: Set up periodic checking (every 30 minutes)
   const workingDayInterval = setInterval(() => {
-    checkWorkingDay();
-  }, 30 * 60 * 1000); // 30 minutes
+    checkWorkingDay()
+  }, 30 * 60 * 1000) // 30 minutes
   
   // Clean up interval on component unmount
   onUnmounted(() => {
-    clearInterval(workingDayInterval);
-  });
-});
+    clearInterval(workingDayInterval)
+  })
+})
 
 const getUserIdFromLocalStorage = () => {
-  if (typeof window === "undefined") return null;
+  if (typeof window === "undefined") return null
 
   try {
-    const userStr = localStorage.getItem("user");
-    if (!userStr) return null;
+    const userStr = localStorage.getItem("user")
+    if (!userStr) return null
 
-    const userData = JSON.parse(userStr);
-    return userData.user_id || null;
+    const userData = JSON.parse(userStr)
+    return userData.user_id || null
   } catch (error) {
-    console.error("Error parsing user data from localStorage:", error);
-    return null;
+    console.error("Error parsing user data from localStorage:", error)
+    return null
   }
-};
+}
 
 const convertIcon = (icon: string): string => {
-  if (!icon) return "mdi-circle-small";
+  if (!icon) return "mdi-circle-small"
 
-  if (icon.startsWith("mdi-")) return icon;
+  if (icon.startsWith("mdi-")) return icon
 
   const iconMap: Record<string, string> = {
     "mdi-home": "mdi-home",
@@ -566,107 +761,107 @@ const convertIcon = (icon: string): string => {
     "fa-book": "mdi-book",
     "fa-bookmark": "mdi-bookmark",
     "fa-money-bill": "mdi-cash-multiple",
-  };
-
-  return iconMap[icon] || "mdi-circle-small";
-};
-
-const cleanUrl = (url: string): string => {
-  if (!url) return "/";
-
-  if (url.includes("/module/user-rule/functions/module/user-rule/functions")) {
-    return "/module/user-rule/functions";
   }
 
-  return url.replace(/[\r\n\s]+/g, "").trim();
-};
+  return iconMap[icon] || "mdi-circle-small"
+}
+
+const cleanUrl = (url: string): string => {
+  if (!url) return "/"
+
+  if (url.includes("/module/user-rule/functions/module/user-rule/functions")) {
+    return "/module/user-rule/functions"
+  }
+
+  return url.replace(/[\r\n\s]+/g, "").trim()
+}
 
 const responeMenuData = computed(() => {
-  return menuStore.respone_menu_data;
-});
+  return menuStore.respone_menu_data
+})
 
 const isLoading = computed(() => {
-  return menuStore.isloading;
-});
+  return menuStore.isloading
+})
 
 // Check if a module should be disabled based on working day
 const isModuleDisabled = (moduleId: string): boolean => {
-  const restrictedModules = ['AS', 'GL']; // Accounting System and General Ledger
-  return !isWorkingDay.value && restrictedModules.includes(moduleId);
-};
+  const restrictedModules = ['AS', 'GL'] // Accounting System and General Ledger
+  return !isWorkingDay.value && restrictedModules.includes(moduleId)
+}
 
 // Check if a main menu should be disabled
 const isMainMenuDisabled = (module: any): boolean => {
-  return isModuleDisabled(module.module_Id);
-};
+  return isModuleDisabled(module.module_Id)
+}
 
 // Check if a sub menu should be disabled
 const isSubMenuDisabled = (module: any): boolean => {
-  return isModuleDisabled(module.module_Id);
-};
+  return isModuleDisabled(module.module_Id)
+}
 
 const loadMenu = async (userId: string) => {
   try {
-    error.value = false;
-    console.log("ກຳລັງດຶງຂໍ້ມູນເມນູສຳລັບຜູ້ໃຊ້:", userId);
-    await menuStore.Getmenu(userId);
+    error.value = false
+    console.log("ກຳລັງດຶງຂໍ້ມູນເມນູສຳລັບຜູ້ໃຊ້:", userId)
+    await menuStore.Getmenu(userId)
 
     if (
       !responeMenuData.value ||
       (Array.isArray(responeMenuData.value) &&
         responeMenuData.value.length === 0)
     ) {
-      console.warn("ບໍ່ພົບຂໍ້ມູນເມນູ");
-      error.value = true;
+      console.warn("ບໍ່ພົບຂໍ້ມູນເມນູ")
+      error.value = true
     }
   } catch (err) {
-    console.error("ເກີດຂໍ້ຜິດພາດໃນການດຶງຂໍ້ມູນເມນູ:", err);
-    error.value = true;
+    console.error("ເກີດຂໍ້ຜິດພາດໃນການດຶງຂໍ້ມູນເມນູ:", err)
+    error.value = true
   }
-};
+}
 
 const retryLoadMenu = async () => {
-  const user_id = getUserIdFromLocalStorage();
-  const user_code = route.query.id as string | undefined;
-  const userIdToUse = user_code || user_id;
+  const user_id = getUserIdFromLocalStorage()
+  const user_code = route.query.id as string | undefined
+  const userIdToUse = user_code || user_id
 
   if (userIdToUse) {
-    await loadMenu(userIdToUse);
+    await loadMenu(userIdToUse)
   } else {
-    console.error("ບໍ່ພົບລະຫັດຜູ້ໃຊ້");
-    error.value = true;
+    console.error("ບໍ່ພົບລະຫັດຜູ້ໃຊ້")
+    error.value = true
   }
-};
+}
 
 onMounted(async () => {
-  const user_id = getUserIdFromLocalStorage();
-  const user_code = route.query.id as string | undefined;
-  const userIdToUse = user_code || user_id;
+  const user_id = getUserIdFromLocalStorage()
+  const user_code = route.query.id as string | undefined
+  const userIdToUse = user_code || user_id
 
   if (userIdToUse) {
-    await loadMenu(userIdToUse);
+    await loadMenu(userIdToUse)
   } else {
-    console.error("ບໍ່ພົບລະຫັດຜູ້ໃຊ້");
-    error.value = true;
+    console.error("ບໍ່ພົບລະຫັດຜູ້ໃຊ້")
+    error.value = true
   }
-});
+})
 
 const onLogout = async () => {
   try {
     let refreshToken =
       localStorage.getItem("refresh") ||
       localStorage.getItem("refreshToken") ||
-      localStorage.getItem("refresh_token");
+      localStorage.getItem("refresh_token")
 
     if (!refreshToken) {
-      const userStr = localStorage.getItem("user");
+      const userStr = localStorage.getItem("user")
       if (userStr) {
-        const user = JSON.parse(userStr);
-        refreshToken = user.refresh || user.refreshToken || user.refresh_token;
+        const user = JSON.parse(userStr)
+        refreshToken = user.refresh || user.refreshToken || user.refresh_token
       }
     }
 
-    console.log("Found refresh token:", refreshToken);
+    console.log("Found refresh token:", refreshToken)
 
     if (refreshToken) {
       await axios.post(
@@ -679,40 +874,40 @@ const onLogout = async () => {
             "Content-Type": "application/json",
           },
         }
-      );
+      )
     }
 
-    clearLocalStorage();
-    router.push("/login");
+    clearLocalStorage()
+    router.push("/login")
   } catch (err) {
-    console.error("Error during logout:", err.response?.data);
-    clearLocalStorage();
-    window.location.href = "/login";
+    console.error("Error during logout:", err.response?.data)
+    clearLocalStorage()
+    window.location.href = "/login"
   }
-};
+}
 
 const clearLocalStorage = () => {
   if (typeof window !== "undefined") {
-    localStorage.clear();
+    localStorage.clear()
   }
-};
+}
 
 const handleMenuClick = (subMenu: any, event?: Event) => {
   if (subMenu.sub_menu_urls === "#") {
-    event?.preventDefault();
+    event?.preventDefault()
     CallSwal({
       title: "ຂໍອະໄພ",
       text: `ໜ້າ "${subMenu.sub_menu_name_la}" ກຳລັງພັດທະນາຢູ....`,
       icon: "info",
       confirmButtonText: "OK",
-    });
+    })
   }
-};
+}
 
 // Handle clicks on disabled menu items
 const handleDisabledMenuClick = (event: Event) => {
-  event.preventDefault();
-  event.stopPropagation();
+  event.preventDefault()
+  event.stopPropagation()
   
   CallSwal({
     title: "ບໍ່ສາມາດເຂົ້າໃຊ້ໄດ້",
@@ -723,13 +918,56 @@ const handleDisabledMenuClick = (event: Event) => {
     cancelButtonText: "ກວດສອບວັນເຮັດການ",
   }).then((result: any) => {
     if (result.dismiss === 'cancel') {
-      checkWorkingDay();
+      checkWorkingDay()
     }
-  });
-};
+  })
+}
 </script>
 
-<style>
+<style scoped>
+/* Profile button hover effects */
+.profile-btn {
+  transition: all 0.3s ease;
+}
+
+.profile-btn:hover {
+  transform: scale(1.05);
+}
+
+.profile-avatar {
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.3s ease;
+}
+
+.profile-avatar:hover {
+  border-color: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.profile-menu-avatar {
+  border: 3px solid rgba(13, 71, 161, 0.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* User info section */
+.user-info {
+  margin-bottom: 8px;
+}
+
+.text-primary {
+  color: #0D47A1 !important;
+}
+
+.text-medium-emphasis {
+  opacity: 0.7;
+}
+
+/* Profile card enhancements */
+.v-card {
+  border: 1px solid rgba(13, 71, 161, 0.1);
+}
+
+/* Menu styles (existing styles preserved) */
 .v-list-item--active {
   flex: auto;
   border-color: #0d47a1 !important;
