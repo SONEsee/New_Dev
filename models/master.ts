@@ -1,6 +1,6 @@
 export interface MasterRespons {
     MasterType:  MasterType;
-    MasterCodes: MasterCode[];
+    MasterCodes: MasterCode;
 }
 
 export interface MasterCode {

@@ -7,6 +7,7 @@ export const useMasterStore = defineStore("master", {
       respone_data_cat: null as MasterModel.MasterRespons[] | null,
       respone_data_sub:null as MasterModel.Datum | null,
       resposne_status_puamsuepuamkrsang:null as MasterModel.MasterCode | null,
+      respons_data_status_nuw :null as MasterModel.MasterCode | null,
       resposne_status_setting:null as MasterModel.MasterCode | null,
       isloading: false,
       error: null as string | null,
@@ -95,7 +96,7 @@ export const useMasterStore = defineStore("master", {
       this.isloading = true;
       this.error = null;
       try {
-        const res = await axios.get<{ MasterCodes: MasterModel.MasterRespons[] }>(
+        const res = await axios.get<{ MasterCodes: MasterModel.MasterRespons }>(
           `/api/master-types/tree/TMN/`,
           {
             headers: {
@@ -189,6 +190,34 @@ export const useMasterStore = defineStore("master", {
         );
         if (res.status === 200) {
           this.resposne_status_puamsuepuamkrsang = res.data;
+          console.log("Master data fetched successfully:", this.respone_data_master);
+          this.isloading = false;
+        }
+      } catch (error) {
+        CallSwal({
+          title: "Error",
+          text: "ການດຶງຂໍ້ມູນຜິດພາດ.",
+          icon: "error",
+        });
+        this.error = "Failed to fetch master data";
+        console.error(error);
+      }
+    },
+    async getPuamsue1(){
+      this.isloading = true;
+      this.error = null;
+      try {
+        const res = await axios.get<MasterModel.MasterRespons>(
+          `/api/master-types/tree/AS/`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+            },
+          }
+        );
+        if (res.status === 200) {
+          this.respons_data_status_nuw = res.data.MasterCodes;
           console.log("Master data fetched successfully:", this.respone_data_master);
           this.isloading = false;
         }

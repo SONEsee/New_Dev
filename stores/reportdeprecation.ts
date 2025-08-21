@@ -8,17 +8,17 @@ export const useReportDeprecationStore = defineStore("reportdeprecation", {
         null as ReportDeprecationModel.Datum | null,
       form_filter_report_deprecaton: {
         asset_type_id: null,
-        asset_status: null,
+        asset_status:  null,
         start_date: "",
         end_date: "",
-      },
+      }as ReportDeprecationModel.FilterReportDeprecation,
     };
   },
   actions: {
     async getReportDeprecation() {
       this.isLoading = true;
       try {
-        const req = await axios.post(
+        const req = await axios.post<ReportDeprecationModel.ReportDeprecationRespons>(
           `/api/assets/`,
           this.form_filter_report_deprecaton,
           {
@@ -28,7 +28,7 @@ export const useReportDeprecationStore = defineStore("reportdeprecation", {
             },
           }
         );if(req.status ===200){
-            this.response_data_report_deprecation = req.data
+            this.response_data_report_deprecation = req.data.data
         }
       } catch (error) {
         CallSwal({

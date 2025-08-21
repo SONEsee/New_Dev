@@ -1,41 +1,35 @@
 <script setup lang="ts">
 const title = "ບົດລາຍງານຫັກຄ່າຫຼຸຍຫຽ້ນ";
-const AssetListStore = faAssetStore();
+const AssetListStore = assetStore();
 const reportStore = useReportDeprecationStore();
-
-
+const masterStore = useMasterStore();
 const selecteAssetType = ref(null);
 const selectStatus = ref(null);
 const selectStartDate = ref("");
 const selectEndDate = ref("");
 
-
 const searchQuery = ref("");
 const isLoading = ref(false);
-
-
 const assetTypeList = computed(() => {
-  const data = AssetListStore.response_fa_asset_list;
-  let list = [];
-  
+  const data = AssetListStore.response_asset_list;
   if (Array.isArray(data)) {
-    list = data;
-  } else if (data && typeof data === "object") {
-    list = [data];
+    return data;
   }
-  
-  
-  if (searchQuery.value) {
-    return list.filter(item => 
-      item.asset_spec && 
-      item.asset_spec.toLowerCase().includes(searchQuery.value.toLowerCase())
-    );
+  if (data && typeof data === "object") {
+    return [data];
   }
-  
-  return list;
+  return [];
 });
-
-
+const status = computed(() => {
+  const data = masterStore.respons_data_status_nuw;
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (data && typeof data === "object") {
+    return [data];
+  }
+  return [];
+});
 const reportResponse = computed(() => {
   const data = reportStore.response_data_report_deprecation;
   if (Array.isArray(data)) {
@@ -47,20 +41,16 @@ const reportResponse = computed(() => {
   return [];
 });
 
-
 watch(selecteAssetType, async (newValue) => {
   try {
     isLoading.value = true;
     if (newValue) {
       reportStore.form_filter_report_deprecaton.asset_type_id = newValue;
       await reportStore.getReportDeprecation();
-      console.log("Asset type updated:", newValue);
     } else {
       reportStore.form_filter_report_deprecaton.asset_type_id = null;
-      reportStore.response_data_report_deprecation = [];
     }
   } catch (error) {
-    console.error("Error updating asset type:", error);
     CallSwal({
       icon: "error",
       title: "ເກີດຂໍ້ຜິດພາດ",
@@ -70,10 +60,30 @@ watch(selecteAssetType, async (newValue) => {
     isLoading.value = false;
   }
 });
-
-
+watch(selectStatus, async (newValue) => {
+  try {
+    isLoading.value = true;
+    if (newValue && typeof newValue === "string") {
+      reportStore.form_filter_report_deprecaton.asset_status = (
+        newValue as string
+      ).toLowerCase();
+      await reportStore.getReportDeprecation();
+    } else {
+      reportStore.form_filter_report_deprecaton.asset_status = null;
+    }
+  } catch (error) {
+    console.error("Error updating status:", error);
+    CallSwal({
+      icon: "error",
+      title: "ເກີດຂໍ້ຜິດພາດ",
+      text: "ເກີດຂໍ້ຜິດພາດໃນການອັບເດດສະຖານະ",
+    });
+  } finally {
+    isLoading.value = false;
+  }
+});
 watch([selectStartDate, selectEndDate], async ([startDate, endDate]) => {
-  if (startDate && endDate && selecteAssetType.value) {
+  if (startDate && endDate && selecteAssetType.value && selectStatus.value) {
     try {
       isLoading.value = true;
       reportStore.form_filter_report_deprecaton.start_date = startDate;
@@ -92,7 +102,6 @@ watch([selectStartDate, selectEndDate], async ([startDate, endDate]) => {
   }
 });
 
-// ຟັງຊັນລ້າງການເລືອກ
 const clearFilters = () => {
   selecteAssetType.value = null;
   selectStatus.value = null;
@@ -104,11 +113,9 @@ const clearFilters = () => {
     asset_status: null,
     start_date: "",
     end_date: "",
-    
   };
 };
 
-// ຟັງຊັນສ່ງອອກຂໍ້ມູນ
 const exportReport = () => {
   if (reportResponse.value.length === 0) {
     CallSwal({
@@ -118,28 +125,44 @@ const exportReport = () => {
     });
     return;
   }
-  
-  // ໃສ່ໂຄດສ່ງອອກຢູ່ທີ່ນີ້
+
   console.log("Exporting report...", reportResponse.value);
 };
 
 onMounted(async () => {
   try {
     await Promise.all([
+      masterStore.getPuamsue1(),
       reportStore.getReportDeprecation(),
-      AssetListStore.GetFaAssetList()
+      AssetListStore.GetAssetList(),
     ]);
   } catch (error) {
     console.error("Error loading initial data:", error);
   }
 });
+const formatNumber = (value: any) => {
+  if (!value && value !== 0) return "0";
+  const num = parseFloat(value);
+  if (isNaN(num)) return "0";
+
+  if (num % 1 === 0) {
+    return new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(num);
+  } else {
+    return new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(num);
+  }
+};
 </script>
 
 <template>
   <div class="pa-4">
     <GlobalTextTitleLine :title="title" />
-    
-    <!-- ແຖບຄົ້ນຫາ ແລະ ກອງຂໍ້ມູນ -->
+
     <v-card class="mb-4">
       <v-card-title>
         <v-icon left>mdi-filter-variant</v-icon>
@@ -147,12 +170,11 @@ onMounted(async () => {
       </v-card-title>
       <v-card-text>
         <v-row>
-          <!-- ເລືອກປະເພດຊັບສິນ -->
-          <v-col cols="12" md="4">
+          <v-col cols="12" md="3">
             <v-autocomplete
               :items="assetTypeList"
-              item-title="asset_spec"
-              item-value="asset_type_id"
+              item-title="asset_name_la"
+              item-value="coa_id"
               v-model="selecteAssetType"
               label="ເລືອກປະເພດຊັບສິນ"
               clearable
@@ -160,12 +182,14 @@ onMounted(async () => {
               prepend-inner-icon="mdi-database-search"
               :search-input.sync="searchQuery"
               no-data-text="ບໍ່ພົບຂໍ້ມູນ"
+              variant="outlined"
+              density="compact"
             >
               <template v-slot:item="{ props, item }">
                 <v-list-item
                   v-bind="props"
-                  :title="item.raw.asset_spec"
-                  :subtitle="`ID: ${item.raw.asset_type_id}`"
+                  :title="item.raw.asset_name_la"
+                  :subtitle="`ID: ${item.raw.coa_id}`"
                 >
                   <template v-slot:prepend>
                     <v-avatar size="small" color="primary">
@@ -177,48 +201,42 @@ onMounted(async () => {
             </v-autocomplete>
           </v-col>
 
-          <!-- ເລືອກສະຖານະ -->
-          <v-col cols="12" md="4">
+          <v-col cols="12" md="3">
             <v-select
+              variant="outlined"
+              density="compact"
               v-model="selectStatus"
-              :items="[
-                { text: 'ທັງໝົດ', value: null },
-                { text: 'ໃຊ້ງານ', value: 'active' },
-                { text: 'ບໍ່ໃຊ້ງານ', value: 'inactive' },
-                { text: 'ຫັກຄ່າຫຼຸຍຫຽ້ນແລ້ວ', value: 'deprecated' }
-              ]"
-              item-title="text"
-              item-value="value"
+              :items="status"
+              item-title="MC_name_la"
+              item-value="MC_code"
               label="ເລືອກສະຖານະ"
               clearable
               prepend-inner-icon="mdi-check-circle"
             ></v-select>
           </v-col>
 
-          <!-- ວັນທີເລີ່ມຕົ້ນ -->
           <v-col cols="12" md="2">
             <v-text-field
               v-model="selectStartDate"
               type="date"
               label="ວັນທີເລີ່ມຕົ້ນ"
               prepend-inner-icon="mdi-calendar-start"
+              variant="outlined"
+              density="compact"
             ></v-text-field>
           </v-col>
 
-          <!-- ວັນທີສິ້ນສຸດ -->
           <v-col cols="12" md="2">
             <v-text-field
               v-model="selectEndDate"
               type="date"
               label="ວັນທີສິ້ນສຸດ"
               prepend-inner-icon="mdi-calendar-end"
+              variant="outlined"
+              density="compact"
             ></v-text-field>
           </v-col>
-        </v-row>
-
-        <!-- ປຸ່ມຄວບຄຸມ -->
-        <v-row class="mt-2">
-          <v-col>
+          <v-col cols="12" md="2">
             <v-btn
               color="error"
               variant="outlined"
@@ -227,56 +245,106 @@ onMounted(async () => {
             >
               ລ້າງການກອງ
             </v-btn>
-            
-            <v-btn
-              color="success"
-              class="ml-2"
-              @click="exportReport"
-              :disabled="reportResponse.length === 0"
-              prepend-icon="mdi-download"
-            >
-              ສ່ງອອກບົດລາຍງານ
-            </v-btn>
           </v-col>
         </v-row>
+
+        <v-row class="mt-2"> </v-row>
       </v-card-text>
     </v-card>
 
-    <!-- ສະແດງຜົນບົດລາຍງານ -->
     <v-card>
       <v-card-title>
-        <v-icon left>mdi-chart-line</v-icon>
-        ຜົນລາຍງານຫັກຄ່າຫຼຸຍຫຽ້ນ
-        <v-spacer></v-spacer>
-        <v-chip 
-          :color="reportResponse.length > 0 ? 'success' : 'warning'"
-          size="small"
-        >
-          {{ reportResponse.length }} ລາຍການ
-        </v-chip>
+        <v-row>
+          <v-col cols="12" md="6">
+            <v-icon left>mdi-chart-line</v-icon>
+            ຜົນລາຍງານຊັບສິນຄົງທີ່
+            <v-spacer></v-spacer>
+            <v-chip
+              :color="reportResponse.length > 0 ? 'success' : 'warning'"
+              size="small"
+            >
+              {{ reportResponse.length }} ລາຍການ
+            </v-chip>
+          </v-col>
+          <v-col cols="12" md="6" class="d-flex justify-end">
+            <v-btn
+              color="primary"
+              @click="
+                goPath(
+                  `/property/report/prin_report_deprecation?status=${selectStatus}&type=${selecteAssetType}&start=${selectStartDate}&end=${selectEndDate}`
+                )
+              "
+            >
+              ພິມບົດລາບງານ
+            </v-btn>
+          </v-col>
+        </v-row>
       </v-card-title>
-      
+
       <v-card-text>
         <div v-if="isLoading" class="text-center py-4">
-          <v-progress-circular indeterminate color="primary"></v-progress-circular>
+          <v-progress-circular
+            indeterminate
+            color="primary"
+          ></v-progress-circular>
           <p class="mt-2">ກຳລັງໂຫຼດຂໍ້ມູນ...</p>
         </div>
-        
+        <div v-else-if="reportResponse.length !== 0">
+          <v-table
+            style="border: 1px solid"
+            class="rounded-lg"
+            fixed-header
+            height="600px"
+          >
+            <thead style="border: 1px solid">
+              <tr style="border: 1px solid">
+                <th>ລຳດັບ</th>
+                <th>ເລກທີຊັບສົມລບັດ</th>
+                <!-- <th>ເລກທີຜູ້ໃຊ້</th> -->
+                <th>ລາຍລະອຽດຊັບສົມບັດ</th>
+                <th>ວັນທີຊື້</th>
+                <th>ລາຄາ</th>
+                <th>ອາຍຸການນຳໃຊ້</th>
+                <th>ຫັກຄ່າຫຼູຍຫຽ້ນໃນເດືອນ</th>
+                <th>ລວມຫັກຄ່າຫຼູຍຫຽ້ນໃນປີ</th>
+                <!-- <th>ລວມຫກຄ່າຫຼູ້ຍຫຽ້ນທັງໝົດ</th> -->
+                <th>ຍອດເຫຼືອມູນຄ່າຊັບສິນ</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(item, index) in reportResponse">
+                <td>{{ index + 1 }}</td>
+                <td>{{ item.asset_list_id }}</td>
+                <!-- <td>-</td> -->
+                <td>{{ item.asset_spec }}</td>
+                <td>{{ item.asset_date }}</td>
+                <td>{{ formatNumber(item.asset_value) }}</td>
+                <td>{{ item.asset_useful_life }} ປີ</td>
+                <td>{{ formatNumber(item.asset_value_remainMonth) }}</td>
+                <td>{{ formatNumber(item.asset_accu_dpca_value) }}</td>
+                <td>{{ formatNumber(item.asset_value_remain) }}</td>
+              </tr>
+            </tbody>
+          </v-table>
+        </div>
+
         <div v-else-if="reportResponse.length === 0" class="text-center py-8">
           <v-icon size="64" color="grey lighten-2">mdi-database-off</v-icon>
           <p class="text-h6 mt-4 grey--text">ບໍ່ມີຂໍ້ມູນສະແດງ</p>
           <p class="grey--text">ກະລຸນາເລືອກປະເພດຊັບສິນເພື່ອເບິ່ງບົດລາຍງານ</p>
         </div>
-        
-        <pre v-else class="overflow-auto">{{ reportResponse }}</pre>
+
+        <!-- <v-data-table :items="reportResponse" class="overflow-auto"></v-data-table> -->
+        <!-- <pre v-else class="overflow-auto">{{ reportResponse }}</pre> -->
       </v-card-text>
     </v-card>
+    <!--  -->
   </div>
 </template>
 
 <style scoped>
 .v-card {
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 pre {

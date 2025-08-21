@@ -1,9 +1,14 @@
 export interface ReportDeprecationRespons {
     success: boolean;
-    data:    Datum[];
+    data:    Datum;
     count:   number;
 }
-
+ export interface FilterReportDeprecation {
+  asset_type_id: number | null;
+  asset_status: string | null;
+  start_date: string;
+  end_date: string;
+}
 export interface Datum {
     asset_list_id:           string;
     asset_list_code:         string;
