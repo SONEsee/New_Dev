@@ -113,7 +113,9 @@ const clearFilters = () => {
     asset_status: null,
     start_date: "",
     end_date: "",
+    asset_list_id_id:""
   };
+  reportStore.getReportDeprecation()
 };
 
 const exportReport = () => {
