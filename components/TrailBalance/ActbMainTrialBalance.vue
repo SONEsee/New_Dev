@@ -6,7 +6,7 @@
       <v-card-title class="px-6 py-4 d-flex align-center" style="background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%); color: white;">
         <v-icon start size="24">mdi-chart-line</v-icon>
         <span class="text-h6 font-weight-medium text-styles">
-          ລາຍງານໃບດຸ່ນດຽງ - {{ selectedCurrency }} ({{ selectedMSegment }})
+          Dairy Report ລາຍງານໃບດຸ່ນດຽງ - {{ selectedCurrency }} ({{ selectedMSegment }})
         </span>
         <v-spacer />
         <v-chip 
@@ -542,7 +542,7 @@ const fetchTrialBalanceData = async () => {
     
     console.log('🔄 Calling Trial Balance API with params:', params)
     
-    const apiResponse = await axios.post('/api/main-trial-balance/all-currencies/', params, getAuthHeaders())
+    const apiResponse = await axios.post('/api/main-trial-balance/all-currencies/dairy-report/', params, getAuthHeaders())
     const response: ApiResponse = apiResponse.data
     
     if (response.status === 'success') {

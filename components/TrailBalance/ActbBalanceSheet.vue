@@ -1,11 +1,11 @@
 <template>
   <v-container fluid class="pa-6">
-    <v-card elevation="0" style="border: 1px solid #e0e0e0; width: 100%;">
+    <v-card elevation="0" class="main-card">
       <!-- Header Section -->
-      <v-card-title class="px-6 py-4 d-flex align-center" style="background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%); color: white;">
+      <v-card-title class="header-gradient px-6 py-4 d-flex align-center">
         <v-icon start size="24">mdi-file-chart</v-icon>
         <span class="text-h6 font-weight-medium text-styles">
-          ລາຍງານຜົນການດໍາເນີນງານ (Income Statement) - 
+          ລາຍງານຖານະການເງິນ (Balance Sheet) - 
           {{ selectedTab.toUpperCase() }} {{ selectedSegment }} {{ selectedCurrency }}
           <span v-if="periodCodeId" class="ml-2 text-caption text-styles">
             ({{ formatPeriodDisplay(periodCodeId) }})
@@ -27,7 +27,7 @@
         </v-tabs>
 
         <!-- Filter Form -->
-        <v-form @submit.prevent="fetchIncomeStatementData" class="mb-4">
+        <v-form @submit.prevent="fetchBalanceSheetData" class="mb-4">
           <v-row no-gutters class="mb-4 align-center">
             <!-- Segment Selection -->
             <v-col cols="12" md="2" class="pe-md-2 mb-3 mb-md-0">
@@ -121,7 +121,7 @@
               <v-btn
                 color="success"
                 prepend-icon="mdi-microsoft-excel"
-                :disabled="!incomeStatementData.length || loading"
+                :disabled="!balanceSheetData.length || loading"
                 @click="exportToExcel"
                 density="compact"
                 style="height: 40px; min-width: 100px;"
@@ -155,7 +155,7 @@
           <!-- Table Top Actions -->
           <template #top>
             <div class="d-flex justify-space-between align-center pa-4 bg-grey-lighten-5">
-              <div class="text-h6 font-weight-medium text-styles">
+              <div class="text-h6 text-styles font-weight-medium">
                 ຜົນການຄົ້ນຫາ: {{ filteredData.length }} ລາຍການ
                 <v-chip size="small" :color="chipColor" variant="tonal" class="ml-2">
                   {{ chipText }}
@@ -172,51 +172,25 @@
           
           <!-- Custom Row Template -->
           <template #item="{ item }">
-            <tr class="table-row"
-                :class="[
-                    // Blue for special Lao descriptions
-                    (item.description === 'ຄ. ລາຍຮັບ ແລະ ລາຍຈ່າຍພິເສດ(ບັງເອີນ)' ||
-                    item.description === 'ຂ. ລາຍຮັບ ແລະ ລາຍຈ່າຍປົກກະຕິ' ||
-                    item.description === 'ກ. ລາຍຮັບ ແລະ ລາຍຈ່າຍໃນການທຸລະກິດ')
-                    ? 'highlight-grey-row'
-                    : (
-                        // Grey for Roman numerals I-XX (but not if it's a special Lao description)
-                        /\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/.test(item.description)
-                        ? 'highlight-blue-row'
-                        : ''
-                    )
-                ]"
-            >
-              <td class="description-cell" 
-                :title="item.description"
-                :class="[
-                  (
-                    item.description === 'ລາຍການໜີ້ສິນ ແລະທືນ' ||
-                    item.description === 'ລວມຍອດຊັບສິນ' ||
-                    /\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/.test(item.description)
-                    ||
-                    /\b([1-9]|1[0-9]|2[0-9]|30)\)/.test(item.description)
-                  )
-                    ? 'font-weight-bold'
-                    : ''
-                ]">
+            <tr class="table-row" :class="getRowClass(item.description)">
+              <td class="description-cell" :title="item.description" :class="getDescriptionClass(item.description)">
                 {{ item.description }}
               </td>
               <td class="text-end font-mono">
-                <span class="amount-cell" :class="getNetAmountClass(item.previous_month)">
-                  {{ formatCurrency(item.previous_month) }}
+                <span class="amount-cell" :class="getNetAmountClass(item.OPen_Total_amount)">
+                  {{ formatCurrency(item.OPen_Total_amount) }}
                 </span>
               </td>
               <td class="text-end font-mono">
-                <span class="amount-cell" :class="getNetAmountClass(item.current_month)">
-                  {{ formatCurrency(item.current_month) }}
+                <span class="amount-cell" :class="getNetAmountClass(item.Current_Total_amount)">
+                  {{ formatCurrency(item.Current_Total_amount) }}
                 </span>
               </td>
               <td class="text-center font-mono">
-                <span class="amount-cell positive">{{ formatCurrency(item.currency_display) }}</span>
+                <span class="amount-cell positive">{{ item.currency_display || selectedCurrency }}</span>
               </td>
-              <td class="text-end font-mono">
-                <span class="amount-cell negative">{{ formatCurrency(item.segment_type) }}</span>
+              <td class="text-center font-mono">
+                <span class="amount-cell neutral">{{ item.segment_type || selectedSegment }}</span>
               </td>
             </tr>
           </template>
@@ -261,25 +235,22 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
-import axios from '@/helpers/axios'
 import * as XLSX from 'xlsx'
 
 // Page Meta
 definePageMeta({
-  title: 'Income Statement',
+  title: 'Balance Sheet',
   layout: 'default'
 })
 
 // Types
-interface IncomeStatementItem {
+interface BalanceSheetItem {
   no: number
   report_number: string
   description: string
-  debit_amount: number
-  credit_amount: number
+  Current_Total_amount: number
+  OPen_Total_amount: number
   net_amount: number
-  previous_month: number
-  current_month: number
   currency_display: string
   segment_type: string
 }
@@ -291,7 +262,14 @@ interface ApiResponse {
   currency?: string
   type?: string
   count?: number
-  data: IncomeStatementItem[]
+  data: BalanceSheetItem[]
+}
+
+interface SnackbarState {
+  show: boolean
+  message: string
+  color: string
+  icon: string
 }
 
 // Authentication helper
@@ -335,12 +313,10 @@ const searchText = ref('')
 const selectedTab = ref('acc')
 const selectedSegment = ref('')
 const selectedCurrency = ref('')
-const incomeStatementData = ref<IncomeStatementItem[]>([])
-const showCompareDialog = ref(false)
-const compareResults = ref<any>(null)
+const balanceSheetData = ref<BalanceSheetItem[]>([])
 const periodCodeId = ref(getCurrentPeriodCodeId()) // Fixed: Now properly calling the function
 
-const snackbar = ref({
+const snackbar = ref<SnackbarState>({
   show: false,
   message: '',
   color: 'success',
@@ -395,10 +371,10 @@ const chipText = computed(() => {
 
 // Filter data based on search text
 const filteredData = computed(() => {
-  if (!searchText.value) return incomeStatementData.value
+  if (!searchText.value) return balanceSheetData.value
   
   const search = searchText.value.toLowerCase()
-  return incomeStatementData.value.filter(item => 
+  return balanceSheetData.value.filter(item => 
     item.report_number?.toLowerCase().includes(search) ||
     item.description?.toLowerCase().includes(search) ||
     item.no?.toString().includes(search)
@@ -408,8 +384,8 @@ const filteredData = computed(() => {
 // Table headers
 const headers = [
   { title: 'ລາຍລະອຽດ', key: 'description', width: '400px', sortable: true },
-  { title: 'ຍອດເດືອນກ່ອນ', key: 'previous_month', width: '150px', align: 'end', sortable: true },
-  { title: 'ຍອດເດືອນນີ້', key: 'current_month', width: '150px', align: 'end', sortable: true },
+  { title: 'ຍອດເດືອນກ່ອນ', key: 'OPen_Total_amount', width: '150px', align: 'end', sortable: true },
+  { title: 'ຍອດເດືອນນີ້', key: 'Current_Total_amount', width: '150px', align: 'end', sortable: true },
   { title: 'ສະກຸນເງິນ', key: 'currency_display', width: '100px', align: 'center', sortable: true },
   { title: 'ປະເພດ', key: 'segment_type', width: '100px', align: 'center', sortable: true }
 ]
@@ -422,8 +398,8 @@ const validatePeriod = () => {
   }
 }
 
-// API calls
-const fetchIncomeStatementData = async () => {
+// API call function
+const fetchBalanceSheetData = async () => {
   if (!selectedSegment.value || !selectedCurrency.value) {
     showSnackbar('ກະລຸນາເລືອກ segment ແລະ currency', 'warning', 'mdi-alert')
     return
@@ -433,35 +409,40 @@ const fetchIncomeStatementData = async () => {
     loading.value = true
     
     const endpoint = selectedTab.value === 'acc' 
-      ? '/api/income-statement/acc/' 
-      : '/api/income-statement/mfi/'
+      ? '/api/balance-sheet/acc/dairy-report/' 
+      : '/api/balance-sheet/mfi/dairy-report/'
     
     console.log(`🔄 Calling ${selectedTab.value.toUpperCase()} API: ${endpoint}`)
     
-    const response = await axios.post(endpoint, {
+    const axios = (await import('@/helpers/axios')).default
+    
+    const requestData = {
       segment: selectedSegment.value,
       currency: selectedCurrency.value,
-      period_code_id: periodCodeId.value 
-    }, getAuthHeaders())
+    }
+    
+    console.log('📤 Request data:', requestData)
+    
+    const response = await axios.post(endpoint, requestData, getAuthHeaders())
     
     if (response.data.status === 'success') {
-      incomeStatementData.value = response.data.data || []
+      balanceSheetData.value = response.data.data || []
       
       showSnackbar(
-        `✅ ດຶງຂໍ້ມູນງົບກຳໄລຂາດທຸນ ${selectedTab.value.toUpperCase()} ສຳເລັດ - ${response.data.display_currency} (${incomeStatementData.value.length} ລາຍການ)`,
+        `✅ ດຶງຂໍ້ມູນງົບຖານະການເງິນ ${selectedTab.value.toUpperCase()} ສຳເລັດ - ${response.data.display_currency} (${balanceSheetData.value.length} ລາຍການ)`,
         'success',
         'mdi-check-circle'
       )
       
-      console.log(`✅ Data loaded successfully: ${incomeStatementData.value.length} records`)
+      console.log(`✅ Data loaded successfully: ${balanceSheetData.value.length} records`)
     } else {
       throw new Error(response.data.message || 'Unknown error occurred')
     }
     
   } catch (error: any) {
-    console.error('❌ Error fetching income statement data:', error)
+    console.error('❌ Error fetching balance sheet data:', error)
     
-    let errorMessage = 'ເກີດຂໍ້ຜິດພາດໃນການດຶງຂໍ້ມູນງົບກຳໄລຂາດທຸນ'
+    let errorMessage = 'ເກີດຂໍ້ຜິດພາດໃນການດຶງຂໍ້ມູນງົບຖານະການເງິນ'
     let errorIcon = 'mdi-alert-circle'
     
     // Handle specific errors
@@ -488,7 +469,7 @@ const fetchIncomeStatementData = async () => {
     }
     
     showSnackbar(errorMessage, 'error', errorIcon)
-    incomeStatementData.value = []
+    balanceSheetData.value = []
     
   } finally {
     loading.value = false
@@ -498,7 +479,7 @@ const fetchIncomeStatementData = async () => {
 // Event handlers
 const onSegmentChange = () => {
   selectedCurrency.value = ''
-  incomeStatementData.value = []
+  balanceSheetData.value = []
   
   // Auto-select LAK for LCY
   if (selectedSegment.value === 'LCY') {
@@ -521,6 +502,32 @@ const getNetAmountClass = (amount: number) => {
   return 'text-grey'
 }
 
+const getRowClass = (description: string) => {
+  // Blue for special Lao descriptions
+  if (description === 'ຄ. ລາຍຮັບ ແລະ ລາຍຈ່າຍພິເສດ(ບັງເອີນ)' ||
+      description === 'ຂ. ລາຍຮັບ ແລະ ລາຍຈ່າຍປົກກະຕິ' ||
+      description === 'ກ. ລາຍຮັບ ແລະ ລາຍຈ່າຍໃນການທຸລະກິດ') {
+    return 'highlight-grey-row'
+  }
+  
+  // Grey for Roman numerals I-XX
+  if (/\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/.test(description)) {
+    return 'highlight-blue-row'
+  }
+  
+  return ''
+}
+
+const getDescriptionClass = (description: string) => {
+  if (description === 'ລາຍການໜີ້ສິນ ແລະທືນ' ||
+      description === 'ລວມຍອດຊັບສິນ' ||
+      /\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/.test(description) ||
+      /\b([1-9]|1[0-9]|2[0-9]|30)\)/.test(description)) {
+    return 'font-weight-bold'
+  }
+  return ''
+}
+
 const showSnackbar = (message: string, color: string = 'success', icon: string = 'mdi-check-circle') => {
   snackbar.value = { show: true, message, color, icon }
 }
@@ -528,18 +535,18 @@ const showSnackbar = (message: string, color: string = 'success', icon: string =
 // Export to Excel function
 const exportToExcel = () => {
   try {
-    if (!incomeStatementData.value.length) {
+    if (!balanceSheetData.value.length) {
       showSnackbar('ບໍ່ມີຂໍ້ມູນໃຫ້ສົ່ງອອກ', 'warning', 'mdi-alert')
       return
     }
 
     // Prepare export data
-    const exportData = incomeStatementData.value.map(item => ({
+    const exportData = balanceSheetData.value.map(item => ({
       'ລາຍລະອຽດ': item.description,
-      'ຍອດເດືອນກ່ອນ': item.previous_month,
-      'ຍອດເດືອນນີ້': item.current_month,
-      'ສະກຸນເງິນ': item.currency_display,
-      'ປະເພດ': item.segment_type
+      'ຍອດເດືອນກ່ອນ': item.OPen_Total_amount,
+      'ຍອດເດືອນນີ້': item.Current_Total_amount,
+      'ສະກຸນເງິນ': item.currency_display || selectedCurrency.value,
+      'ປະເພດ': item.segment_type || selectedSegment.value
     }))
 
     // Create and save Excel file
@@ -556,17 +563,17 @@ const exportToExcel = () => {
     ]
     ws['!cols'] = colWidths
 
-    XLSX.utils.book_append_sheet(wb, ws, `Income Statement ${selectedTab.value.toUpperCase()}`)
+    XLSX.utils.book_append_sheet(wb, ws, `Balance Sheet ${selectedTab.value.toUpperCase()}`)
 
     // Generate secure filename
     const currentDate = new Date().toISOString().split('T')[0]
     const periodDisplay = formatPeriodDisplay(periodCodeId.value)
-    const filename = `Income_Statement_${selectedTab.value.toUpperCase()}_${selectedSegment.value}_${selectedCurrency.value}_${periodDisplay}_${currentDate}.xlsx`
+    const filename = `Balance_Sheet_${selectedTab.value.toUpperCase()}_${selectedSegment.value}_${selectedCurrency.value}_${periodDisplay}_${currentDate}.xlsx`
 
     XLSX.writeFile(wb, filename)
 
     showSnackbar(
-      `📊 ສົ່ງອອກສຳເລັດ (${selectedTab.value.toUpperCase()} ${selectedSegment.value} ${selectedCurrency.value}) - ${incomeStatementData.value.length} ລາຍການ`, 
+      `📊 ສົ່ງອອກສຳເລັດ (${selectedTab.value.toUpperCase()} ${selectedSegment.value} ${selectedCurrency.value}) - ${balanceSheetData.value.length} ລາຍການ`, 
       'success', 
       'mdi-download'
     )
@@ -579,7 +586,7 @@ const exportToExcel = () => {
 
 // Watch for tab changes
 watch(selectedTab, () => {
-  incomeStatementData.value = []
+  balanceSheetData.value = []
   console.log(`🔄 Tab changed to: ${selectedTab.value.toUpperCase()}`)
 })
 
@@ -588,7 +595,7 @@ onMounted(async () => {
   try {
     const token = localStorage.getItem("token")
     if (token) {
-      console.log('🚀 Income Statement component mounted')
+      console.log('🚀 Balance Sheet component mounted')
       console.log(`📅 Current period: ${periodCodeId.value} (${formatPeriodDisplay(periodCodeId.value)})`)
       // Set default values
       selectedSegment.value = 'LCY'
@@ -603,6 +610,18 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.main-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.header-gradient {
+  background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+  color: white;
+}
+
 .font-mono {
   font-family: 'Roboto Mono', 'Consolas', monospace;
   font-size: 0.875rem;
@@ -642,6 +661,11 @@ onMounted(async () => {
   color: #d32f2f;
 }
 
+.amount-cell.neutral {
+  background: rgba(96, 125, 139, 0.1);
+  color: #546e7a;
+}
+
 .description-cell {
   max-width: 400px;
   min-width: 250px;
@@ -650,6 +674,16 @@ onMounted(async () => {
   white-space: nowrap;
   text-overflow: ellipsis;
   position: relative;
+}
+
+.highlight-blue-row {
+  background: linear-gradient(135deg, #59b4ff 0%, #e3f2fd 100%);
+  font-weight: bold;
+}
+
+.highlight-grey-row {
+  background: linear-gradient(135deg, #ffb25a 0%, #e7e7e7 100%);
+  font-weight: bold;
 }
 
 .professional-table :deep(.v-data-table__td) {
@@ -681,17 +715,7 @@ onMounted(async () => {
   min-width: 1000px;
 }
 
-.highlight-blue-row {
-  background: linear-gradient(135deg, #59b4ff 0%, #e3f2fd 100%);
-  font-weight: bold;
-}
-
-.highlight-grey-row {
-  background: linear-gradient(135deg, #ffb25a 0%, #e7e7e7 100%);
-  font-weight: bold;
-}
-
-/* Responsive improvements */
+/* Responsive Design */
 @media (max-width: 1200px) {
   .professional-table :deep(table) {
     min-width: 900px;

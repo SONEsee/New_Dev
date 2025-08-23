@@ -203,13 +203,13 @@
                 {{ item.description }}
               </td>
               <td class="text-end font-mono">
-                <span class="amount-cell" :class="getNetAmountClass(item.previous_month)">
-                  {{ formatCurrency(item.previous_month) }}
+                <span class="amount-cell" :class="getNetAmountClass(item.OPen_Total_amount)">
+                  {{ formatCurrency(item.OPen_Total_amount) }}
                 </span>
               </td>
               <td class="text-end font-mono">
-                <span class="amount-cell" :class="getNetAmountClass(item.current_month)">
-                  {{ formatCurrency(item.current_month) }}
+                <span class="amount-cell" :class="getNetAmountClass(item.Current_Total_amount)">
+                  {{ formatCurrency(item.Current_Total_amount) }}
                 </span>
               </td>
               <td class="text-center font-mono">
@@ -278,8 +278,8 @@ interface IncomeStatementItem {
   debit_amount: number
   credit_amount: number
   net_amount: number
-  previous_month: number
-  current_month: number
+  OPen_Total_amount: number
+  Current_Total_amount: number
   currency_display: string
   segment_type: string
 }
@@ -408,8 +408,8 @@ const filteredData = computed(() => {
 // Table headers
 const headers = [
   { title: 'ລາຍລະອຽດ', key: 'description', width: '400px', sortable: true },
-  { title: 'ຍອດເດືອນກ່ອນ', key: 'previous_month', width: '150px', align: 'end', sortable: true },
-  { title: 'ຍອດເດືອນນີ້', key: 'current_month', width: '150px', align: 'end', sortable: true },
+  { title: 'ຍອດເດືອນກ່ອນ', key: 'OPen_Total_amount', width: '150px', align: 'end', sortable: true },
+  { title: 'ຍອດເດືອນນີ້', key: 'Current_Total_amount', width: '150px', align: 'end', sortable: true },
   { title: 'ສະກຸນເງິນ', key: 'currency_display', width: '100px', align: 'center', sortable: true },
   { title: 'ປະເພດ', key: 'segment_type', width: '100px', align: 'center', sortable: true }
 ]
@@ -433,15 +433,14 @@ const fetchIncomeStatementData = async () => {
     loading.value = true
     
     const endpoint = selectedTab.value === 'acc' 
-      ? '/api/income-statement/acc/' 
-      : '/api/income-statement/mfi/'
-    
+      ? '/api/income-statement/acc/dairy-report/' 
+      : '/api/income-statement/mfi/dairy-report/'
+
     console.log(`🔄 Calling ${selectedTab.value.toUpperCase()} API: ${endpoint}`)
     
     const response = await axios.post(endpoint, {
       segment: selectedSegment.value,
       currency: selectedCurrency.value,
-      period_code_id: periodCodeId.value 
     }, getAuthHeaders())
     
     if (response.data.status === 'success') {
@@ -536,8 +535,8 @@ const exportToExcel = () => {
     // Prepare export data
     const exportData = incomeStatementData.value.map(item => ({
       'ລາຍລະອຽດ': item.description,
-      'ຍອດເດືອນກ່ອນ': item.previous_month,
-      'ຍອດເດືອນນີ້': item.current_month,
+      'ຍອດເດືອນກ່ອນ': item.OPen_Total_amount,
+      'ຍອດເດືອນນີ້': item.Current_Total_amount,
       'ສະກຸນເງິນ': item.currency_display,
       'ປະເພດ': item.segment_type
     }))
