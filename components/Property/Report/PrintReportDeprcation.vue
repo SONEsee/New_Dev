@@ -1,8 +1,27 @@
 <script setup lang="ts">
 const reportStore = useReportDeprecationStore();
+const AssetListStore = assetStore();
+const masterStore = useMasterStore();
 const route = useRoute();
-
-
+const assetype = computed(() => {
+  const data = AssetListStore.response_asset_list;
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (data && typeof data === "object") {
+    return [data];
+  }
+});
+const masterdata = computed(() => {
+  const data = masterStore.respons_data_status_nuw;
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (data && typeof data === "object") {
+    return [data];
+  }
+  return [];
+});
 const type = computed(() => {
   const typeValue = route.query.type;
   if (!typeValue || typeValue === "null" || typeValue === "undefined")
@@ -20,7 +39,6 @@ const status = computed(() => {
 
 const start = route.query.start;
 const end = route.query.end;
-
 
 const getCleanType = (value: any) => {
   if (!value || value === "null" || value === "undefined") return null;
@@ -78,13 +96,11 @@ const totalRemainingValue = computed(() => {
   );
 });
 
-
 const printReport = () => {
   window.print();
 };
 
 const exportToPDF = () => {
- 
   const printWindow = window.open("", "_blank");
   const reportHtml = document.querySelector(".report-container")?.innerHTML;
 
@@ -224,12 +240,11 @@ const exportToPDF = () => {
 };
 
 const exportToExcel = () => {
- 
   const excelData = [
     ["ບົດລາຍງານການຫຼຸດມູນຄ່າຊັບສິນ"],
     ["ວັນທີ່ລາຍງານ:", new Date().toLocaleDateString("lo-LA")],
     ["ຈຳນວນຊັບສິນທັງໝົດ:", reportData.value.length + " ລາຍການ"],
-    [""], 
+    [""],
     [
       "ລຳດັບ",
       "ລະຫັດຊັບສິນ",
@@ -243,7 +258,6 @@ const exportToExcel = () => {
     ],
   ];
 
-  
   reportData.value.forEach((item, index) => {
     excelData.push([
       index + 1,
@@ -258,7 +272,6 @@ const exportToExcel = () => {
     ]);
   });
 
- 
   excelData.push([
     "",
     "",
@@ -271,12 +284,10 @@ const exportToExcel = () => {
     totalRemainingValue.value,
   ]);
 
- 
   const csvContent = excelData
     .map((row) => row.map((cell) => `"${cell}"`).join(","))
     .join("\n");
 
- 
   const blob = new Blob(["\ufeff" + csvContent], {
     type: "text/csv;charset=utf-8;",
   });
@@ -318,46 +329,59 @@ watch(
   },
   { immediate: true, deep: true }
 );
+const statusInfo = computed(() => {
+  const data = masterStore.respons_data_status_nuw;
+  if (!data || !Array.isArray(data) || !status.value) return null;
 
+  return data.find((item) => item.MC_code === status.value);
+});
+const statusName = computed(() => {
+  return statusInfo.value ? statusInfo.value.MC_name_la : status.value;
+});
+
+const typeinfo = computed(()=>{
+  const data = AssetListStore.response_asset_list;
+  if(!data || !Array.isArray(data)|| !type.value)return null
+  return data.find((item)=> item.coa_id === type.value)
+})
+const typeName = computed(()=>{
+  return typeinfo.value ? typeinfo.value.asset_name_la :type.value
+})
 onMounted(() => {
- 
+  masterStore.getPuamsue1();
+  AssetListStore.GetAssetList();
 });
 </script>
 
 <template>
   <div class="report-container">
-   <div class="text-center">
-    
-    <p><b>ສາທາລະນະລັດ ປະຊາທິປະໄຕ ປະຊາຊົນລາວ</b></p>
-    
-    <p><b>ສັນຕິພາບ ເອກະລາດ ປະຊາທິປະໄຕ ເອກະພາບ ວັດທະນາຖາວອນ</b></p>
-   </div>
-   <div>
-    <v-row>
-       <v-col cols="6" md="6" class="text-center">
-        <img src="../../../assets/img/logo.png" alt="" width="100">
-        <h4>ບໍລິສັດລັດ ບໍລິຫານໜີ້ ແລະ ຊັບສິນ ຈຳກັດຜູ້ດຽວ</h4>
-       </v-col>
-    <v-col cols="6" md="6" class=" align-end">
-        <div class="text-end align-end">
-        <p>
-          <strong>ວັນທີ່ລາຍງານ:</strong>
-          {{ new Date().toLocaleDateString("lo-LA") }}
-        </p>
-        <p>ເລກທີເອກະສານ:...............</p>
-        <p></p>
-        
-      </div>
-    </v-col>  
-    </v-row>
-   
-   </div>
+    <div class="text-center">
+      <p><b>ສາທາລະນະລັດ ປະຊາທິປະໄຕ ປະຊາຊົນລາວ</b></p>
+
+      <p><b>ສັນຕິພາບ ເອກະລາດ ປະຊາທິປະໄຕ ເອກະພາບ ວັດທະນາຖາວອນ</b></p>
+    </div>
+    <div>
+      <v-row>
+        <v-col cols="6" md="6" class="text-center">
+          <img src="../../../assets/img/logo.png" alt="" width="100" />
+          <h4>ບໍລິສັດລັດ ບໍລິຫານໜີ້ ແລະ ຊັບສິນ ຈຳກັດຜູ້ດຽວ</h4>
+        </v-col>
+        <v-col cols="6" md="6" class="align-end">
+          <div class="text-end align-end">
+            <p>
+              <strong>ວັນທີ່ລາຍງານ:</strong>
+              {{ new Date().toLocaleDateString("lo-LA") }}
+            </p>
+            <p>ເລກທີເອກະສານ:...............</p>
+            <p></p>
+          </div>
+        </v-col>
+      </v-row>
+    </div>
     <div class="report-header">
       <h1 class="report-title">ບົດລາຍງານຊັບສິນຄົງທີ່</h1>
-      
     </div>
 
-    
     <div class="export-actions">
       <button @click="printReport" class="export-btn print-btn">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -391,25 +415,21 @@ onMounted(() => {
       v-if="type !== null || status !== null || start || end"
     >
       <div class="filter-grid">
-        <div v-if="!isNaN(type)"><strong>ປະເພດຊັບສິນ:</strong> {{ type }}</div>
+        <div v-if="!isNaN(type)"><strong>ປະເພດຊັບສິນ:</strong> {{ typeName }}</div>
         <div v-if="status && status !== 'NaN'">
-          <strong>ສະຖານະ:</strong> {{ status }}
+          <strong>ສະຖານະ:</strong> {{ statusName }}
         </div>
         <div v-if="start"><strong>ວັນທີ່ເລີ່ມຕົ້ນ:</strong> {{ start }}</div>
         <div v-if="end"><strong>ວັນທີ່ສິ້ນສຸດ:</strong> {{ end }}</div>
       </div>
     </div>
 
-  
     <div v-if="reportStore.isLoading" class="loading-state">
       <p>ກຳລັງໂຫຼດຂໍ້ມູນ...</p>
     </div>
 
-    
     <div v-else-if="reportData.length > 0" class="table-container">
-        <p>
-          <strong>ຈຳນວນຊັບສິນທັງໝົດ:</strong> {{ reportData.length }} ລາຍການ
-        </p>
+      <p><strong>ຈຳນວນຊັບສິນທັງໝົດ:</strong> {{ reportData.length }} ລາຍການ</p>
       <table class="report-table">
         <thead>
           <tr>
@@ -466,30 +486,26 @@ onMounted(() => {
       </table>
     </div>
 
-    
     <div v-else class="empty-state">
       <p>ບໍ່ພົບຂໍ້ມູນຊັບສິນ</p>
       <p class="text-sm">ກະລຸນາປັບປ່ຽນເງື່ອນໄຂການຄົ້ນຫາ</p>
     </div>
     <v-row>
-        <v-col cols="6" class="text-start">
-            <div class="signature-box">
+      <v-col cols="6" class="text-start">
+        <div class="signature-box">
           <p><strong>ຜູ້ຈັດຕຳລາຍງານ</strong></p>
           <div class="signature-line"></div>
           <p>ວັນທີ່: ________________</p>
         </div>
-        </v-col>
-        <v-col cols="6" class="text-center">
-            <div class="signature-box">
+      </v-col>
+      <v-col cols="6" class="text-center">
+        <div class="signature-box">
           <p><strong>ຜູ້ອະນຸມັດ</strong></p>
           <div class="signature-line"></div>
           <p>ວັນທີ່: ________________</p>
         </div>
-        </v-col>
+      </v-col>
     </v-row>
-
-    
-    
   </div>
 </template>
 
