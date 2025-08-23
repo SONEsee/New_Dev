@@ -1,10 +1,20 @@
 
 
 <script setup lang="ts">
-// ໃຊ້ script ເດີມຂອງເຈົ້າແຕ່ເພີ່ມສ່ວນ scanner ເຂົ້າໄປ
+
 import { ref, computed, onMounted, nextTick, onUnmounted } from "vue";
 import { useMentenance } from "@/stores/mantenaces";
-
+const masterStore = useMasterStore();
+const tmn = computed(() => {
+  const data = masterStore.resposne_status_puamsuepuamkrsang;
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (data && typeof data === "object") {
+    return [data];
+  }
+  return [];
+});
 const validate = ref();
 const form = ref();
 const isFormValid = ref(false);
@@ -35,7 +45,7 @@ watch(() => route.query.mantanence_id, (newValue) => {
   }
 }, { immediate: true })
 
-// ZXing related
+
 let BrowserMultiFormatReader: any = null;
 let codeReader: any = null;
 let stream: MediaStream | null = null;
@@ -533,17 +543,18 @@ const resetForm = () => {
   showStatus('🔄 ລິເຊັດຟອມສຳເລັດ', 'info');
 };
 
-// Cleanup on component unmount
+
 onUnmounted(() => {
   stopScanning();
 });
 
 onMounted(() => {
+  masterStore.getTMN();
   Dapremen.GetListData();
   employee.GetEmployee();
   const today = new Date().toISOString().split('T')[0];
   
-  // Set default values
+ 
   mantanances.form_creat_mantenance.audit_year = new Date().getFullYear().toString();
   mantanances.form_creat_mantenance.audit_date = today;
   mantanances.form_creat_mantenance.audit_status = 'DRAFT';
@@ -860,12 +871,13 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
               ></v-text-field>
             </v-col>
             <v-col cols="6" md="2">
+              <!-- <pre>{{ tmn }}</pre> -->
               <v-select
                 v-model="mantanances.form_creat_mantenance.audit_period"
                 label="ໄລຍະກວດສອບ *"
-                :items="auditPeriodOptions"
-                item-value="value"
-                item-title="text"
+                :items="tmn"
+                item-value="MC_code"
+                item-title="MC_name_la"
                 variant="outlined"
                 density="compact"
                 readonly
