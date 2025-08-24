@@ -114,6 +114,7 @@ const clearFilters = () => {
     asset_status: null,
     start_date: "",
     end_date: "",
+    devision: "",
     
   };
   reportStore.getReportDeprecation()
