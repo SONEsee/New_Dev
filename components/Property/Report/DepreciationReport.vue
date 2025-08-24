@@ -10,6 +10,7 @@ const selectEndDate = ref("");
 
 const searchQuery = ref("");
 const isLoading = ref(false);
+
 const assetTypeList = computed(() => {
   const data = AssetListStore.response_asset_list;
   if (Array.isArray(data)) {
@@ -113,7 +114,7 @@ const clearFilters = () => {
     asset_status: null,
     start_date: "",
     end_date: "",
-    asset_list_id_id:""
+    
   };
   reportStore.getReportDeprecation()
 };
@@ -292,9 +293,9 @@ const formatNumber = (value: any) => {
           <p class="mt-2">ກຳລັງໂຫຼດຂໍ້ມູນ...</p>
         </div>
         <div v-else-if="reportResponse.length !== 0">
-          <v-table
+          <v-table 
             style="border: 1px solid"
-            class="rounded-lg"
+            class="rounded-lg text-no-wrap"
             fixed-header
             height="600px"
           >

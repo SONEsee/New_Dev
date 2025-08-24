@@ -118,9 +118,7 @@ export interface AssetListIDDetail {
   asset_tag: string;
 }
 
-export enum DpcaACYesno {
-  N = "N",
-}
+
 
 export interface HistoryFaDeptriptoinRespons {
     aldim_id:         number;
@@ -208,4 +206,82 @@ export interface UrgencyLegend {
     low:      string;
     warning:  string;
     Auth_Status:string;
+}
+export interface GroupDeprecationRespons {
+    success:      boolean;
+    grouped_by:   string;
+    data:         Datum[];
+    grand_totals: GrandTotals;
+    filters:      Filters;
+}
+
+export interface Datum {
+    asset_list_id:         string;
+    asset_list_code:       string;
+    asset_serial_no:       string;
+    asset_tag:             string;
+    asset_spec:            string;
+    asset_type_id:         number;
+    asset_location_id:     number;
+    asset_value:           number;
+    asset_salvage_value:   number;
+    asset_useful_life:     number;
+    dpca_type:             string;
+    dpca_percentage:       number;
+    dpca_start_date:       Date;
+    dpca_end_date:         Date;
+    asset_currency:        string;
+    asset_status:          string;
+    depreciation_schedule: DepreciationSchedule[];
+    depreciation_summary:  DepreciationSummary;
+}
+
+export interface DepreciationSchedule {
+    aldm_id:          number;
+    dpca_year:        string;
+    dpca_month:       string;
+    dpca_date:        Date;
+    dpca_desc:        string;
+    dpca_value:       number;
+    remaining_value:  number;
+    accumulated_dpca: number;
+    dpca_no_of_days:  number;
+    dpca_ac_yesno:    DpcaACYesno;
+    Auth_Status:      AuthStatus;
+    Maker_Id:         string;
+    Maker_DT_Stamp:   Date;
+}
+
+export enum AuthStatus {
+    A = "A",
+}
+
+export enum DpcaACYesno {
+    N = "N",
+}
+
+export interface DepreciationSummary {
+    total_periods:                   number;
+    total_depreciation_amount:       number;
+    latest_remaining_value:          number;
+    latest_accumulated_depreciation: number;
+    first_depreciation_date:         Date;
+    last_depreciation_date:          Date;
+    average_monthly_depreciation:    number;
+}
+
+export interface Filters {
+    asset_list_id: null;
+    asset_type_id: null;
+    asset_status:  null;
+    start_date:    null;
+    end_date:      null;
+    group_by:      string;
+}
+
+export interface GrandTotals {
+    total_assets:               number;
+    total_depreciation_records: number;
+    total_depreciation_amount:  number;
+    total_remaining_value:      number;
 }
