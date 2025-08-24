@@ -1185,7 +1185,7 @@ const validateDescriptions = () => {
       icon: 'success',
       title: 'ຖືກຕ້ອງ',
       text: 'ລາຍລະອຽດທັງໝົດຖືກຕ້ອງ',
-      timer: 2000,
+      timer: 500,
       showConfirmButton: false
     })
   }
@@ -1744,8 +1744,8 @@ const submitJournal = async () => {
     
     // Clean dialog styling
     width: '520px',
-    padding: '20px',
-    timer: 6000,
+    padding: '20px',  
+    timer: 1000,
     timerProgressBar: true,
     allowOutsideClick: false,
     allowEscapeKey: true,
@@ -1846,7 +1846,7 @@ const submitJournal = async () => {
   if (autoReferenceMode.value) {
     setTimeout(() => {
       generateReference()
-    }, 1000)
+    }, 500)
   }
 
     resetForm()
