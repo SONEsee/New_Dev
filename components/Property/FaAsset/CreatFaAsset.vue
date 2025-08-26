@@ -2,7 +2,7 @@
 import { CallSwal } from "#build/imports";
 import { useRouter, useRoute } from "vue-router";
 import { nextTick } from "vue";
-
+const isGeneratingCode = ref(false);
 const currencyStore = useCerrencyStore();
 const currency = computed(() => {
   const data = currencyStore.respons_cerrency_data;
@@ -432,27 +432,32 @@ const computedAssetSpecName = computed(() => {
 
   return mcNameLa || "";
 });
-
-const generateNextAssetCode = () => {
-  const assetCodes = assetcode.value;
-
-  if (!assetCodes || !Array.isArray(assetCodes) || assetCodes.length === 0) {
-    return "0000001";
-  }
-
-  let maxNumber = 0;
-
-  assetCodes.forEach((asset) => {
-    if (asset && asset.asset_list_code) {
-      const codeNumber = parseInt(asset.asset_list_code);
-      if (!isNaN(codeNumber) && codeNumber > maxNumber) {
-        maxNumber = codeNumber;
-      }
+import axios from "@/helpers/axios";
+const generateNextAssetCode = async () => {
+    try {
+        const res = await axios.post(`/api/asset_list/generate-next-code/`, {}, {
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+            }
+        });
+        
+        if (res.data.success) {
+            faAssetStoreInstance.form_create_fa_asset.asset_list_code = res.data.next_code;
+            return res.data.next_code;
+        } else {
+            throw new Error(res.data.message || 'Failed to generate asset code');
+        }
+    } catch (error) {
+        console.error('API Error:', error);
+        await CallSwal({
+            icon: "error",
+            title: "ຜິດພາດ",
+            text: "ບໍ່ສາມາດສ້າງລະຫັດຊັບສິນໄດ້",
+            confirmButtonText: "ຕົກລົງ",
+        });
+        return null;
     }
-  });
-
-  const nextNumber = maxNumber + 1;
-  return nextNumber.toString().padStart(7, "0");
 };
 
 const generateSerialNumber = () => {
@@ -734,17 +739,36 @@ watch(
 
 watch(
   assetcode,
-  (newValue) => {
-    if (newValue && Array.isArray(newValue) && newValue.length >= 0) {
-      const newCode = generateNextAssetCode();
-      faAssetStoreInstance.form_create_fa_asset.asset_list_code = newCode;
+  async (newValue) => { 
+    // ກວດວ່າຍັງບໍ່ມີເລກ ແລະ ບໍ່ໄດ້ກຳລັງສ້າງ
+    if (
+      newValue && 
+      Array.isArray(newValue) && 
+      newValue.length >= 0 && 
+      !faAssetStoreInstance.form_create_fa_asset.asset_list_code && // ຍັງບໍ່ມີເລກ
+      !isGeneratingCode.value // ບໍ່ໄດ້ກຳລັງສ້າງ
+    ) {
+      console.log('🎯 Generating asset code...');
+      
+      try {
+        isGeneratingCode.value = true; // ລັອກ
+        const newCode = await generateNextAssetCode(); 
+        
+        if (newCode) {
+          faAssetStoreInstance.form_create_fa_asset.asset_list_code = newCode;
 
-      if (faAssetStoreInstance.form_create_fa_asset.asset_type_id) {
-        faAssetStoreInstance.form_create_fa_asset.asset_list_id =
-          generateAssetListId();
-        faAssetStoreInstance.form_create_fa_asset.asset_serial_no =
-          generateSerialNumber();
+          if (faAssetStoreInstance.form_create_fa_asset.asset_type_id) {
+            faAssetStoreInstance.form_create_fa_asset.asset_list_id = generateAssetListId();
+            faAssetStoreInstance.form_create_fa_asset.asset_serial_no = generateSerialNumber();
+          }
+        }
+      } catch (error) {
+        console.error('Error generating code:', error);
+      } finally {
+        isGeneratingCode.value = false; // ປົດລັອກ
       }
+    } else {
+      console.log('🔄 Skipping - already has code or generating in progress');
     }
   },
   { immediate: true }
@@ -923,8 +947,8 @@ onMounted(async () => {
 
     console.log("📦 Data loaded, mockData length:", mockData.value?.length);
 
-    faAssetStoreInstance.form_create_fa_asset.asset_list_code =
-      generateNextAssetCode();
+    // faAssetStoreInstance.form_create_fa_asset.asset_list_code =
+    //   generateNextAssetCode();
 
     await noaccStore.getSubData();
 
