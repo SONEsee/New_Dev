@@ -25,7 +25,7 @@
           <!-- First Row: MSegment and Currency -->
           <v-row no-gutters class="mb-3">
             <!-- Market Segment Selection -->
-            <v-col cols="12" md="3" class="pe-md-2 mb-3 mb-md-0">
+            <v-col cols="12" md="4" class="pe-md-2 mb-3 mb-md-0">
               <v-select
                 v-model="selectedMSegment"
                 :items="mSegmentOptions"
@@ -48,7 +48,7 @@
             </v-col>
             
             <!-- Currency Selection -->
-            <v-col cols="12" md="3" class="px-md-1 mb-3 mb-md-0">
+            <v-col cols="12" md="4" class="px-md-1 mb-3 mb-md-0">
               <v-select
                 v-model="selectedCurrency"
                 :items="availableCurrencyOptions"
@@ -69,56 +69,9 @@
                 </template>
               </v-select>
             </v-col>
-            
-            <!-- Financial Year -->
-            <v-col cols="12" md="3" class="px-md-1 mb-3 mb-md-0">
-              <v-text-field
-                v-model="selectedFinYear"
-                label="ປີການເງິນ (Financial Year)"
-                variant="outlined"
-                density="compact"
-                prepend-inner-icon="mdi-calendar"
-                hide-details="auto"
-                type="number"
-                min="2020"
-                max="2050"
-                :rules="[validateFinYear]"
-              />
-            </v-col>
-            
-            <!-- Period Code -->
-            <v-col cols="12" md="3" class="ps-md-2 mb-3 mb-md-0">
-              <v-text-field
-                v-model="selectedPeriodCode"
-                label="ລະຫັດງວດ (Period Code)"
-                variant="outlined"
-                density="compact"
-                prepend-inner-icon="mdi-calendar-month"
-                hide-details="auto"
-                placeholder="202508"
-                maxlength="6"
-                :rules="[validatePeriodCode]"
-              />
-            </v-col>
-          </v-row>
-
-          <!-- Second Row: Search and Actions -->
-          <v-row no-gutters class="mb-4">
-            <!-- Search Field -->
-            <v-col cols="12" md="6" class="pe-md-2 mb-3 mb-md-0">
-              <v-text-field
-                v-model="searchText"
-                label="ຄົ້ນຫາໃນຕາຕະລາງ"
-                prepend-inner-icon="mdi-magnify"
-                variant="outlined"
-                density="compact"
-                hide-details
-                clearable
-              />
-            </v-col>
 
             <!-- Action Buttons -->
-            <v-col cols="12" md="6" class="ps-md-2 d-flex gap-2">
+            <v-col cols="12" md="4" class="ps-md-2 d-flex gap-2">
               <v-btn
                 type="submit"
                 color="primary"
@@ -143,6 +96,22 @@
               </v-btn>
             </v-col>
           </v-row>
+
+          <!-- Second Row: Search Field -->
+          <v-row no-gutters class="mb-4">
+            <!-- Search Field -->
+            <v-col cols="12">
+              <v-text-field
+                v-model="searchText"
+                label="ຄົ້ນຫາໃນຕາຕະລາງ (Search GL Code, Description, Currency)"
+                prepend-inner-icon="mdi-magnify"
+                variant="outlined"
+                density="compact"
+                hide-details
+                clearable
+              />
+            </v-col>
+          </v-row>
         </v-form>
 
         <v-divider class="mb-4" thickness="1" color="grey-lighten-3" />
@@ -156,7 +125,7 @@
             </v-chip>
           </div>
           <div class="text-caption text-grey-darken-1">
-            API: main-trial-balance | {{ selectedMSegment }}-{{ selectedCurrency }}
+            API: main-trial-balance-dairy | {{ selectedMSegment }}-{{ selectedCurrency }}
           </div>
         </div>
 
@@ -165,9 +134,16 @@
           <div class="text-caption text-blue-darken-2">
             <strong>ພາລາມິເຕີທີ່ໃຊ້:</strong> 
             Currency: {{ lastUsedParams.ccy_code_id }}, 
-            Segment: {{ lastUsedParams.m_segment }}, 
-            Year: {{ lastUsedParams.fin_year_id }}, 
-            Period: {{ lastUsedParams.period_code_id }}
+            Segment: {{ lastUsedParams.m_segment }}
+          </div>
+        </div>
+
+        <!-- Data Info (from stored procedure results) -->
+        <div v-if="trialBalanceData.length > 0" class="mb-3 pa-2 bg-green-lighten-5 rounded">
+          <div class="text-caption text-green-darken-2">
+            <strong>ຂໍ້ມູນປີ:</strong> {{ getDataYear() }} | 
+            <strong>ງວດ:</strong> {{ getDataPeriod() }} | 
+            <strong>ປະເພດ:</strong> GL Category ≤ 5
           </div>
         </div>
 
@@ -234,7 +210,7 @@
                   <v-icon size="64" color="grey-lighten-2" class="mb-4">mdi-chart-line-variant</v-icon>
                   <div class="text-h6 text-grey-darken-1 mb-2 text-styles">ບໍ່ມີຂໍ້ມູນ</div>
                   <div class="text-body-2 text-grey text-styles">
-                    {{ !isFormValid ? 'ກະລຸນາປ້ອນຂໍ້ມູນໃຫ້ຄົບຖ້ວນ' : 'ກະລຸນາກົດປຸ່ມດຶງຂໍ້ມູນເພື່ອໂຫຼດຂໍ້ມູນ' }}
+                    {{ !isFormValid ? 'ກະລຸນາເລືອກ Market Segment ແລະ Currency' : 'ກະລຸນາກົດປຸ່ມດຶງຂໍ້ມູນເພື່ອໂຫຼດຂໍ້ມູນ' }}
                   </div>
                 </td>
               </tr>
@@ -247,53 +223,53 @@
               >
                 <td class="data-cell sticky-column account-code-cell">
                   <div class="gl-code-content">
-                    <span class="text-primary font-weight-medium">{{ item.gl_code }}</span>
+                    <span class="text-primary font-weight-medium">{{ item.GL_Code }}</span>
                   </div>
                 </td>
                 <td class="data-cell description-cell">
-                  <div class="description-content" :title="item.Desc">
-                    {{ item.Desc }}
+                  <div class="description-content" :title="item.Description">
+                    {{ item.Description }}
                   </div>
                 </td>
                 <!-- Opening Dr/Cr -->
                 <td class="data-cell amount-cell">
-                  <span class="amount-value">{{ formatCurrency(item.OP_DR) }}</span>
+                  <span class="amount-value">{{ formatCurrency(item.Opening_Dr) }}</span>
                 </td>
                 <td class="data-cell amount-cell">
-                  <span class="amount-value">{{ formatCurrency(item.OP_CR) }}</span>
+                  <span class="amount-value">{{ formatCurrency(item.Opening_Cr) }}</span>
                 </td>
                 <!-- Movement Dr/Cr -->
                 <td class="data-cell amount-cell">
-                  <span class="amount-value">{{ formatCurrency(item.Mo_DR) }}</span>
+                  <span class="amount-value">{{ formatCurrency(item.Flow_Dr) }}</span>
                 </td>
                 <td class="data-cell amount-cell">
-                  <span class="amount-value">{{ formatCurrency(item.Mo_Cr) }}</span>
+                  <span class="amount-value">{{ formatCurrency(item.Flow_Cr) }}</span>
                 </td>
                 <!-- Closing Dr/Cr -->
                 <td class="data-cell amount-cell">
-                  <span class="amount-value">{{ formatCurrency(item.C1_DR) }}</span>
+                  <span class="amount-value">{{ formatCurrency(item.Closing_Dr) }}</span>
                 </td>
                 <td class="data-cell amount-cell">
-                  <span class="amount-value">{{ formatCurrency(item.C1_CR) }}</span>
+                  <span class="amount-value">{{ formatCurrency(item.Closing_Cr) }}</span>
                 </td>
                 <!-- Currency -->
                 <td class="data-cell extra-column-cell">
                   <v-chip 
                     size="small" 
-                    :color="getCurrencyColor(item.CCy_Code_id)" 
+                    :color="getCurrencyColor(item.Currency_Code)" 
                     variant="tonal"
                   >
-                    {{ item.CCy_Code_id }}
+                    {{ item.Currency_Code }}
                   </v-chip>
                 </td>
                 <!-- Market Segment -->
                 <td class="data-cell extra-column-cell">
                   <v-chip 
                     size="small" 
-                    :color="getSegmentColor(item.MSegment)" 
+                    :color="getSegmentColor(item.Market_Segment)" 
                     variant="outlined"
                   >
-                    {{ item.MSegment }}
+                    {{ item.Market_Segment }}
                   </v-chip>
                 </td>
               </tr>
@@ -338,19 +314,24 @@ definePageMeta({
   layout: 'default'
 })
 
-// Types
+// Types - Updated to match API response
 interface TrialBalanceItem {
-  gl_code: string
-  Desc: string
-  OP_DR: number
-  OP_CR: number
-  Mo_DR: number
-  Mo_Cr: number
-  C1_DR: number
-  C1_CR: number
-  CCy_Code_id: string
-  MSegment: string
-  Category: string
+  GL_Code: string
+  Description: string
+  Opening_Dr: number
+  Opening_Cr: number
+  Flow_Dr: number
+  Flow_Cr: number
+  Closing_Dr: number
+  Closing_Cr: number
+  Category: number
+  Currency_Code: string
+  Market_Segment: string
+  Financial_Year: string
+  Period_Code: string
+  Opening_Net: number
+  Flow_Net: number
+  Closing_Net: number
 }
 
 interface ApiResponse {
@@ -358,11 +339,13 @@ interface ApiResponse {
   message: string
   count?: number
   data: TrialBalanceItem[]
-  parameters?: {
-    ccy_code_id: string
-    m_segment: string
-    fin_year_id: string
-    period_code_id: string
+  ccy_code_id?: string
+  m_segment?: string
+  report_category?: string
+  display_currency?: string
+  business_rules?: {
+    lcy_currencies: string[]
+    fcy_currencies: string[]
   }
 }
 
@@ -385,8 +368,6 @@ const loading = ref(false)
 const searchText = ref('')
 const selectedMSegment = ref('') // Start empty to force user selection
 const selectedCurrency = ref('')
-const selectedFinYear = ref(new Date().getFullYear().toString()) // Default current year
-const selectedPeriodCode = ref('') // User must enter
 const trialBalanceData = ref<TrialBalanceItem[]>([])
 const lastUsedParams = ref<any>(null)
 
@@ -445,24 +426,6 @@ const allCurrencyOptions = {
   ]
 }
 
-// Validation functions
-const validateFinYear = (value: string) => {
-  if (!value) return 'ປີການເງິນບໍ່ຄວນຫວ່າງເປົ່າ'
-  const year = parseInt(value)
-  if (year < 2020 || year > 2050) return 'ປີການເງິນຕ້ອງຢູ່ລະຫວ່າງ 2020-2050'
-  return true
-}
-
-const validatePeriodCode = (value: string) => {
-  if (!value) return 'ລະຫັດງວດບໍ່ຄວນຫວ່າງເປົ່າ'
-  if (!/^\d{6}$/.test(value)) return 'ລະຫັດງວດຕ້ອງເປັນຕົວເລກ 6 ຫຼັກ (YYYYMM)'
-  const year = parseInt(value.substring(0, 4))
-  const month = parseInt(value.substring(4, 6))
-  if (year < 2020 || year > 2050) return 'ປີໃນລະຫັດງວດບໍ່ຖືກຕ້ອງ'
-  if (month < 1 || month > 12) return 'ເດືອນໃນລະຫັດງວດບໍ່ຖືກຕ້ອງ'
-  return true
-}
-
 // Computed properties
 const availableCurrencyOptions = computed(() => {
   if (!selectedMSegment.value) return []
@@ -470,12 +433,7 @@ const availableCurrencyOptions = computed(() => {
 })
 
 const isFormValid = computed(() => {
-  return selectedMSegment.value && 
-         selectedCurrency.value && 
-         selectedFinYear.value && 
-         selectedPeriodCode.value &&
-         validateFinYear(selectedFinYear.value) === true &&
-         validatePeriodCode(selectedPeriodCode.value) === true
+  return selectedMSegment.value && selectedCurrency.value
 })
 
 const chipColor = computed(() => {
@@ -497,16 +455,31 @@ const filteredData = computed(() => {
   
   const search = searchText.value.toLowerCase()
   return trialBalanceData.value.filter(item => 
-    item.gl_code?.toLowerCase().includes(search) ||
-    item.Desc?.toLowerCase().includes(search) ||
-    item.CCy_Code_id?.toLowerCase().includes(search) ||
-    item.MSegment?.toLowerCase().includes(search)
+    item.GL_Code?.toLowerCase().includes(search) ||
+    item.Description?.toLowerCase().includes(search) ||
+    item.Currency_Code?.toLowerCase().includes(search) ||
+    item.Market_Segment?.toLowerCase().includes(search)
   )
 })
 
+// Helper functions to show data info from results
+const getDataYear = () => {
+  if (trialBalanceData.value.length > 0) {
+    return trialBalanceData.value[0].Financial_Year || 'N/A'
+  }
+  return 'N/A'
+}
+
+const getDataPeriod = () => {
+  if (trialBalanceData.value.length > 0) {
+    return trialBalanceData.value[0].Period_Code || 'N/A'
+  }
+  return 'N/A'
+}
+
 // Event handlers
 const onMSegmentChange = (newValue: string) => {
-  console.log(`🔄 MSegment changed to: ${newValue}`)
+  console.log(`MSegment changed to: ${newValue}`)
   // Reset currency when MSegment changes
   selectedCurrency.value = ''
   trialBalanceData.value = []
@@ -523,73 +496,75 @@ watch([selectedMSegment], () => {
   }
 })
 
-// API calls
+// API calls - Updated to use only 2 parameters
 const fetchTrialBalanceData = async () => {
   try {
     loading.value = true
     
     if (!isFormValid.value) {
-      showSnackbar('ກະລຸນາປ້ອນຂໍ້ມູນໃຫ້ຄົບຖ້ວນແລະຖືກຕ້ອງ', 'warning', 'mdi-alert')
+      showSnackbar('ກະລຸນາເລືອກ Market Segment ແລະ Currency', 'warning', 'mdi-alert')
       return
     }
     
+    // Only 2 parameters as per your stored procedure
     const params = {
       ccy_code_id: selectedCurrency.value,
-      m_segment: selectedMSegment.value,
-      fin_year_id: selectedFinYear.value,
-      period_code_id: selectedPeriodCode.value
+      m_segment: selectedMSegment.value
     }
     
-    console.log('🔄 Calling Trial Balance API with params:', params)
+    console.log('Calling Trial Balance API with params:', params)
     
     const apiResponse = await axios.post('/api/main-trial-balance/all-currencies/dairy-report/', params, getAuthHeaders())
     const response: ApiResponse = apiResponse.data
     
     if (response.status === 'success') {
       trialBalanceData.value = response.data || []
-      lastUsedParams.value = response.parameters || params
+      lastUsedParams.value = {
+        ccy_code_id: response.ccy_code_id,
+        m_segment: response.m_segment
+      }
       
       showSnackbar(
-        `✅ ດຶງຂໍ້ມູນ Trial Balance ສຳເລັດ (${trialBalanceData.value.length} ລາຍການ)`,
+        `ດຶງຂໍ້ມູນ Trial Balance ສຳເລັດ (${trialBalanceData.value.length} ລາຍການ)`,
         'success',
         'mdi-check-circle'
       )
       
-      console.log(`✅ Data loaded successfully: ${trialBalanceData.value.length} records`)
+      console.log(`Data loaded successfully: ${trialBalanceData.value.length} records`)
     } else {
       throw new Error(response.message || 'Unknown error occurred')
     }
     
   } catch (error: any) {
-    console.error('❌ Error fetching trial balance data:', error)
+    console.error('Error fetching trial balance data:', error)
     
     let errorMessage = 'ເກີດຂໍ້ຜິດພາດໃນການດຶງຂໍ້ມູນ Trial Balance'
     let errorIcon = 'mdi-alert-circle'
     
     // Handle specific errors
     if (error?.response?.status === 401) {
-      errorMessage = '🔐 ໂທເຄນໝົດອາຍຸ ກະລຸນາເຂົ້າສູ່ລະບົບໃໝ່'
+      errorMessage = 'ໂທເຄນໝົດອາຍຸ ກະລຸນາເຂົ້າສູ່ລະບົບໃໝ່'
       errorIcon = 'mdi-account-alert'
     } else if (error?.response?.status === 403) {
-      errorMessage = '🚫 ທ່ານບໍ່ມີສິດໃນການເຂົ້າເຖິງຂໍ້ມູນນີ້'
+      errorMessage = 'ທ່ານບໍ່ມີສິດໃນການເຂົ້າເຖິງຂໍ້ມູນນີ້'
       errorIcon = 'mdi-lock-alert'
     } else if (error?.response?.status === 404) {
-      errorMessage = '🔍 ບໍ່ພົບ API endpoint ທີ່ຕ້ອງການ'
+      errorMessage = 'ບໍ່ພົບ API endpoint ທີ່ຕ້ອງການ'
       errorIcon = 'mdi-api-off'
     } else if (error?.response?.status === 400) {
       const backendMessage = error?.response?.data?.message || 'Invalid request format'
-      errorMessage = '📋 ' + backendMessage
+      errorMessage = backendMessage
       errorIcon = 'mdi-form-select'
     } else if (error?.response?.status === 500) {
-      errorMessage = '🔧 ເກີດຂໍ້ຜິດພາດຈາກເຊີຟເວີ ກະລຸນາລອງໃໝ່ໃນພາຍຫຼັງ'
+      errorMessage = 'ເກີດຂໍ້ຜິດພາດຈາກເຊີຟເວີ ກະລຸນາລອງໃໝ່ໃນພາຍຫຼັງ'
       errorIcon = 'mdi-server-network-off'
     } else if (error?.response?.data?.message) {
       errorMessage = error.response.data.message
     } else if (error?.message === 'Authentication token not found') {
-      errorMessage = '🔑 ກະລຸນາເຂົ້າສູ່ລະບົບກ່ອນ'
+      errorMessage = 'ກະລຸນາເຂົ້າສູ່ລະບົບກ່ອນ'
       errorIcon = 'mdi-account-alert'
     } else if (error?.message?.includes('Network Error')) {
-      errorMessage = '🌐 ບໍ່ສາມາດເຊື່ອມຕໍ່ກັບເຊີຟເວີໄດ້'
+      errorMessage = 'ບໍ່ສາມາດເຊື່ອມຕໍ່ກັບເຊີຟເວີໄດ້'
       errorIcon = 'mdi-wifi-off'
     }
     
@@ -640,16 +615,22 @@ const exportToExcel = () => {
 
     // Prepare export data
     const exportData = trialBalanceData.value.map(item => ({
-      'GL Code': item.gl_code,
-      'Description': item.Desc,
-      'Opening Dr': item.OP_DR,
-      'Opening Cr': item.OP_CR,
-      'Movement Dr': item.Mo_DR,
-      'Movement Cr': item.Mo_Cr,
-      'Closing Dr': item.C1_DR,
-      'Closing Cr': item.C1_CR,
-      'Currency': item.CCy_Code_id,
-      'Market Segment': item.MSegment
+      'GL Code': item.GL_Code,
+      'Description': item.Description,
+      'Opening Dr': item.Opening_Dr,
+      'Opening Cr': item.Opening_Cr,
+      'Flow Dr': item.Flow_Dr,
+      'Flow Cr': item.Flow_Cr,
+      'Closing Dr': item.Closing_Dr,
+      'Closing Cr': item.Closing_Cr,
+      'Category': item.Category,
+      'Currency': item.Currency_Code,
+      'Market Segment': item.Market_Segment,
+      'Financial Year': item.Financial_Year,
+      'Period Code': item.Period_Code,
+      'Opening Net': item.Opening_Net,
+      'Flow Net': item.Flow_Net,
+      'Closing Net': item.Closing_Net
     }))
 
     // Create and save Excel file
@@ -660,29 +641,40 @@ const exportToExcel = () => {
     const colWidths = [
       { wch: 12 }, // GL Code
       { wch: 30 }, // Description
-      { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, // Amount columns
-      { wch: 12 }, { wch: 12 }, // Amount columns
+      { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, // Amount columns (Opening, Flow)
+      { wch: 12 }, { wch: 12 }, // Closing columns
+      { wch: 8 },  // Category
       { wch: 10 }, // Currency
-      { wch: 15 }  // Market Segment
+      { wch: 15 }, // Market Segment
+      { wch: 12 }, // Financial Year
+      { wch: 12 }, // Period Code
+      { wch: 12 }, { wch: 12 }, { wch: 12 } // Net columns (Opening, Flow, Closing)
     ]
     ws['!cols'] = colWidths
 
     XLSX.utils.book_append_sheet(wb, ws, 'Main Trial Balance')
 
-    // Generate secure filename
-    const filename = `Trial_Balance_${selectedMSegment.value}_${selectedCurrency.value}_${selectedFinYear.value}_${selectedPeriodCode.value}.xlsx`
+    // Generate filename with current timestamp
+    const now = new Date()
+    const timestamp = now.getFullYear() + 
+                     String(now.getMonth() + 1).padStart(2, '0') + 
+                     String(now.getDate()).padStart(2, '0') + '_' +
+                     String(now.getHours()).padStart(2, '0') + 
+                     String(now.getMinutes()).padStart(2, '0')
+    
+    const filename = `Trial_Balance_Dairy_${selectedMSegment.value}_${selectedCurrency.value}_${timestamp}.xlsx`
 
     XLSX.writeFile(wb, filename)
 
     showSnackbar(
-      `📊 ສົ່ງອອກສຳເລັດ (${selectedMSegment.value}-${selectedCurrency.value}) - ${trialBalanceData.value.length} ລາຍການ`, 
+      `ສົ່ງອອກສຳເລັດ (${selectedMSegment.value}-${selectedCurrency.value}) - ${trialBalanceData.value.length} ລາຍການ`, 
       'success', 
       'mdi-download'
     )
 
   } catch (error) {
     console.error('Export error:', error)
-    showSnackbar('❌ ເກີດຂໍ້ຜິດພາດໃນການສົ່ງອອກ', 'error', 'mdi-alert-circle')
+    showSnackbar('ເກີດຂໍ້ຜິດພາດໃນການສົ່ງອອກ', 'error', 'mdi-alert-circle')
   }
 }
 
@@ -691,17 +683,12 @@ onMounted(async () => {
   try {
     const token = localStorage.getItem("token")
     if (token) {
-      console.log('🚀 Component mounted')
-      // Set default period code to current year-month
-      const now = new Date()
-      const year = now.getFullYear()
-      const month = String(now.getMonth() + 1).padStart(2, '0')
-      selectedPeriodCode.value = `${year}${month}`
+      console.log('Component mounted')
       
       // Don't auto-fetch data - wait for user to complete form
-      showSnackbar('📋 ກະລຸນາເລືອກຂໍ້ມູນໃນແບບຟອມແລ້ວກົດດຶງຂໍ້ມູນ', 'info', 'mdi-information')
+      showSnackbar('ກະລຸນາເລືອກ Market Segment ແລະ Currency ແລ້ວກົດດຶງຂໍ້ມູນ', 'info', 'mdi-information')
     } else {
-      showSnackbar('🔑 ກະລຸນາເຂົ້າສູ່ລະບົບເພື່ອເຂົ້າເຖິງຂໍ້ມູນ', 'warning', 'mdi-account-alert')
+      showSnackbar('ກະລຸນາເຂົ້າສູ່ລະບົບເພື່ອເຂົ້າເຖິງຂໍ້ມູນ', 'warning', 'mdi-account-alert')
     }
   } catch (error) {
     console.error('Initialization error:', error)
@@ -907,16 +894,6 @@ onMounted(async () => {
   text-align: right;
 }
 
-.amount-value.text-success {
-  color: #4caf50;
-  background: rgba(76, 175, 80, 0.08);
-}
-
-.amount-value.text-error {
-  color: #f44336;
-  background: rgba(244, 67, 54, 0.08);
-}
-
 /* Extra Column Cells for Currency and Segment */
 .extra-column-cell {
   width: 120px;
@@ -948,191 +925,5 @@ onMounted(async () => {
 
 .custom-table-container::-webkit-scrollbar-corner {
   background: #f1f1f1;
-}
-
-/* Responsive adjustments */
-@media (max-width: 1400px) {
-  .description-header,
-  .description-cell {
-    width: 350px;
-    min-width: 350px;
-    max-width: 350px;
-  }
-}
-
-@media (max-width: 1200px) {
-  .custom-trial-balance-table {
-    font-size: 0.8rem;
-    min-width: 1100px;
-  }
-  
-  .account-code-header,
-  .account-code-cell {
-    width: 130px;
-    min-width: 130px;
-    max-width: 130px;
-  }
-  
-  .description-header,
-  .description-cell {
-    width: 300px;
-    min-width: 300px;
-    max-width: 300px;
-  }
-  
-  .header-cell {
-    padding: 10px 6px;
-  }
-  
-  .data-cell {
-    padding: 8px 6px;
-  }
-  
-  .amount-value {
-    font-size: 0.8rem;
-    min-width: 85px;
-  }
-  
-  .sub-header {
-    width: 130px;
-    min-width: 130px;
-  }
-  
-  .amount-cell {
-    width: 130px;
-    min-width: 130px;
-  }
-  
-  .extra-column-header,
-  .extra-column-cell {
-    width: 100px;
-    min-width: 100px;
-    max-width: 100px;
-  }
-}
-
-@media (max-width: 960px) {
-  .custom-trial-balance-table {
-    font-size: 0.75rem;
-    min-width: 1000px;
-  }
-  
-  .account-code-header,
-  .account-code-cell {
-    width: 110px;
-    min-width: 110px;
-    max-width: 110px;
-  }
-  
-  .description-header,
-  .description-cell {
-    width: 250px;
-    min-width: 250px;
-    max-width: 250px;
-  }
-  
-  .header-cell {
-    padding: 8px 4px;
-    font-size: 0.75rem;
-  }
-  
-  .sub-header {
-    font-size: 0.7rem;
-    width: 120px;
-    min-width: 120px;
-  }
-  
-  .data-cell {
-    padding: 6px 4px;
-    font-size: 0.75rem;
-  }
-  
-  .amount-cell {
-    width: 120px;
-    min-width: 120px;
-  }
-  
-  .amount-value {
-    font-size: 0.75rem;
-    min-width: 75px;
-    padding: 1px 4px;
-  }
-  
-  .extra-column-header,
-  .extra-column-cell {
-    width: 90px;
-    min-width: 90px;
-    max-width: 90px;
-  }
-}
-
-@media (max-width: 600px) {
-  .custom-table-container {
-    border-radius: 4px;
-  }
-  
-  .custom-trial-balance-table {
-    font-size: 0.7rem;
-    min-width: 900px;
-  }
-  
-  .account-code-header,
-  .account-code-cell {
-    width: 100px;
-    min-width: 100px;
-    max-width: 100px;
-  }
-  
-  .description-header,
-  .description-cell {
-    width: 200px;
-    min-width: 200px;
-    max-width: 200px;
-  }
-  
-  .description-content {
-    font-size: 0.7rem;
-  }
-  
-  .sub-header,
-  .amount-cell {
-    width: 100px;
-    min-width: 100px;
-  }
-  
-  .amount-value {
-    font-size: 0.7rem;
-    min-width: 65px;
-  }
-  
-  .extra-column-header,
-  .extra-column-cell {
-    width: 80px;
-    min-width: 80px;
-    max-width: 80px;
-  }
-}
-
-/* Print styles */
-@media print {
-  .custom-table-container {
-    max-height: none;
-    overflow: visible;
-    border: none;
-  }
-  
-  .sticky-column {
-    position: static;
-  }
-  
-  .data-row:hover {
-    background-color: transparent !important;
-  }
-  
-  .description-content {
-    white-space: normal !important;
-    overflow: visible !important;
-    text-overflow: clip !important;
-  }
 }
 </style>
