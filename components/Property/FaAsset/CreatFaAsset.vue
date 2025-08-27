@@ -765,7 +765,7 @@ watch(
       } catch (error) {
         console.error('Error generating code:', error);
       } finally {
-        isGeneratingCode.value = false; // ປົດລັອກ
+        isGeneratingCode.value = false; 
       }
     } else {
       console.log('🔄 Skipping - already has code or generating in progress');
