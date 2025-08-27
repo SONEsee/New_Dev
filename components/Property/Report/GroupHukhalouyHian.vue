@@ -51,7 +51,7 @@ const formatCurrency = (amount:any) => {
 const formatDate = (dateString:any) => {
   if (!dateString) return '';
   const date = new Date(dateString);
-  return date.toLocaleDateString('en-GB'); // DD/MM/YYYY format
+  return date.toLocaleDateString('en-GB'); 
 };
 
 // Watchers
