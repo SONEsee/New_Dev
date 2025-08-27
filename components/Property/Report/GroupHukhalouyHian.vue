@@ -13,7 +13,7 @@ const selectedDevision = ref(null);
 const searchQuery = ref("");
 const isLoading = ref(false);
 
-// Computed properties
+
 const devisiondata = computed(() => {
   const data = devisionStore.categories;
   if (Array.isArray(data)) return data;
@@ -42,7 +42,7 @@ const reportData = computed(() => {
   return [];
 });
 
-// Helper functions
+
 const formatCurrency = (amount:any) => {
   if (!amount) return '0';
   return new Intl.NumberFormat('lo-LA').format(amount);
@@ -54,7 +54,7 @@ const formatDate = (dateString:any) => {
   return date.toLocaleDateString('en-GB'); 
 };
 
-// Watchers
+
 watch(selecteAssetType, async (newValue) => {
   reporStore.isLoading = true;
   try {
@@ -74,7 +74,7 @@ watch(selecteAssetType, async (newValue) => {
 watch(selectedDevision, async (newValue) => {
   reporStore.isLoading = true;
   try {
-    reporStore.from_filter_group.devision = newValue;
+    reporStore.from_filter_group.division_id = newValue;
     await reporStore.getGroupData();
   } catch (error) {
     CallSwal({
@@ -143,7 +143,7 @@ onMounted(() => {
   <div class="pa-4">
     <GlobalTextTitleLine :title="title" />
     
-    <!-- Filter Section -->
+   
     <v-card class="mb-4" elevation="2">
       <v-card-title class="bg-primary text-white">
         <v-icon class="mr-2">mdi-filter</v-icon>
