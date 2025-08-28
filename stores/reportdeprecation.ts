@@ -5,7 +5,7 @@ export const useReportDeprecationStore = defineStore("reportdeprecation", {
     return {
       response_group_data: null as ReportDeprecationModel.Datum | null,
       from_filter_group: {
-        asset_list_id_id: null,
+        asset_list_id: null,
         asset_type_id: null,
         asset_status: null,
         division_id: null,

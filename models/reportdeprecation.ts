@@ -9,6 +9,7 @@ export interface ReportDeprecationRespons {
   start_date: string;
   end_date: string;
   division_id: string | null;
+  asset_list_id: string | null;
 }
 export interface Datum {
     asset_list_id:           string;

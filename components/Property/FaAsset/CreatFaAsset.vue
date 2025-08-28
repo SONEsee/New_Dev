@@ -2,8 +2,16 @@
 import { CallSwal } from "#build/imports";
 import { useRouter, useRoute } from "vue-router";
 import { nextTick } from "vue";
+<<<<<<< HEAD
+const reservedAssetCode = ref("");
+const codeExpiration = ref(null);
+const reservationTimer = ref(null);
+=======
 const isGeneratingCode = ref(false);
+>>>>>>> 5818324e9822334e6e1a9bed33c71e59a3c25bdf
 const currencyStore = useCerrencyStore();
+
+
 const currency = computed(() => {
   const data = currencyStore.respons_cerrency_data;
 
