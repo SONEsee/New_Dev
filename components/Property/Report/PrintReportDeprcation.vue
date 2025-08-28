@@ -31,11 +31,12 @@ const type = computed(() => {
   const parsed = Number(typeValue);
   return isNaN(parsed) ? NaN : parsed;
 });
-const branch = computed(()=>{
-  const branchValue = route.query.branch
-  return branchValue && branchValue !=="null" && branchValue !=="undefined"
-  ? branchValue : NaN;
-})
+const branch = computed(() => {
+  const branchValue = route.query.branch;
+  return branchValue && branchValue !== "null" && branchValue !== "undefined"
+    ? branchValue
+    : NaN;
+});
 const status = computed(() => {
   const statusValue = route.query.status;
   return statusValue && statusValue !== "null" && statusValue !== "undefined"
@@ -79,7 +80,6 @@ const reportData = computed(() => {
   }
   return [];
 });
-
 
 const totalAssetValue = computed(() => {
   return reportData.value.reduce(
@@ -346,22 +346,22 @@ const statusInfo = computed(() => {
 const statusName = computed(() => {
   return statusInfo.value ? statusInfo.value.MC_name_la : status.value;
 });
-const branchInfo = computed(()=>{
-  const data = devisionStore.categories
-  if(!data|| !Array.isArray(data)|| !branch.value)return null;
-  return data.find((item)=> item.div_id === branch.value)
+const branchInfo = computed(() => {
+  const data = devisionStore.categories;
+  if (!data || !Array.isArray(data) || !branch.value) return null;
+  return data.find((item) => item.div_id === branch.value);
 });
-const branchName = computed(()=>{
-  return branchInfo.value ? branchInfo.value.division_name_la :branch.value
-})
-const typeinfo = computed(()=>{
+const branchName = computed(() => {
+  return branchInfo.value ? branchInfo.value.division_name_la : branch.value;
+});
+const typeinfo = computed(() => {
   const data = AssetListStore.response_asset_list;
-  if(!data || !Array.isArray(data)|| !type.value)return null
-  return data.find((item)=> item.coa_id === type.value)
-})
-const typeName = computed(()=>{
-  return typeinfo.value ? typeinfo.value.asset_name_la :type.value
-})
+  if (!data || !Array.isArray(data) || !type.value) return null;
+  return data.find((item) => item.coa_id === type.value);
+});
+const typeName = computed(() => {
+  return typeinfo.value ? typeinfo.value.asset_name_la : type.value;
+});
 onMounted(() => {
   masterStore.getPuamsue1();
   AssetListStore.GetAssetList();
@@ -407,11 +407,10 @@ onMounted(() => {
     <div>
       <v-row>
         <v-col cols="6" md="6" class="d-flex text-start">
-          <div class=" text-center">
+          <div class="text-center">
             <img src="../../../assets/img/logo.png" alt="" width="100" />
-          <h4>ບໍລິສັດລັດ ບໍລິຫານໜີ້ ແລະ ຊັບສິນ ຈຳກັດຜູ້ດຽວ</h4>
+            <h4>ບໍລິສັດລັດ ບໍລິຫານໜີ້ ແລະ ຊັບສິນ ຈຳກັດຜູ້ດຽວ</h4>
           </div>
-          
         </v-col>
         <v-col cols="6" md="6" class="align-end">
           <div class="text-end align-end">
@@ -429,13 +428,14 @@ onMounted(() => {
       <h1 class="report-title">ບົດລາຍງານຊັບສິນຄົງທີ່</h1>
     </div>
 
-    
     <div
       class="filter-info"
       v-if="type !== null || status !== null || start || end"
     >
       <div class="filter-grid">
-        <div v-if="!isNaN(type)"><strong>ປະເພດຊັບສິນ:</strong> {{ typeName }}</div>
+        <div v-if="!isNaN(type)">
+          <strong>ປະເພດຊັບສິນ:</strong> {{ typeName }}
+        </div>
         <div v-if="status && status !== 'NaN'">
           <strong>ສະຖານະ:</strong> {{ statusName }}
         </div>
