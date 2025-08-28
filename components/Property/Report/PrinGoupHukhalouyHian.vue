@@ -12,7 +12,7 @@ const selectedAssetList = ref(null);
 const selectedDevision = ref(null);
 const searchQuery = ref("");
 const isLoading = ref(false);
-
+const route = useRoute();
 
 const devisiondata = computed(() => {
   const data = devisionStore.categories;
