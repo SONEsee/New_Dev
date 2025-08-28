@@ -12,8 +12,69 @@ const selectedAssetList = ref(null);
 const selectedDevision = ref(null);
 const searchQuery = ref("");
 const isLoading = ref(false);
+<<<<<<< HEAD
 const route = useRoute();
+=======
+const rout = useRoute();
+const debouncedFetch = useDebounceFn(() => {
+  console.log("Fetching with filters:", reporStore.response_group_data);
+  reporStore.getGroupData();
+}, 300);
+const getCleanType = (value: any) => {
+  if (!value || value === "null" || value === "undefined") return null;
+  const parsed = Number(value);
+  return isNaN(parsed) ? null : parsed;
+};
+const getCleanTypes = (value: any) => {
+  if (!value || value === "null" || value === "undefined") return null;
+  const parsed = (value);
+  return isNaN(parsed) ? null : parsed;
+};
 
+const getCleanString = (value: any) => {
+  return value && value !== "null" && value !== "undefined"
+    ? String(value)
+    : null;
+};
+>>>>>>> 517073b0aafb0d26f33f14580e499c2b9a5b8807
+
+const assetTypes = computed(() => {
+  const assetTypeQuery = rout.query.type;
+  return getCleanType(assetTypeQuery);
+});
+const assetID = computed(() => {
+  const assetIDQuery = rout.query.asset;
+  return getCleanString(assetIDQuery);
+});
+const startDate = computed(() => {
+  const startDateQuery = rout.query.start_date;
+  return getCleanString(startDateQuery);
+});
+const endDate = computed(()=>{
+  const endDateQuery = rout.query.end_date
+  return getCleanString(endDateQuery)
+})
+const Devision = computed(()=>{
+  const devisionQuery = rout.query.devision;
+  return getCleanString(devisionQuery)
+})
+watch(
+  () => rout.query,
+  (newValue) => {
+    const cleanType = getCleanType(newValue.type);
+    const cleanAsset = getCleanString(newValue.asset);
+    const cleanStartDate = getCleanString(newValue.start_date);
+    const cleanEndDate = getCleanString(newValue.end_date)
+    // const cleanDevision = getCleanTypes(newValue.devision);
+    // reporStore.from_filter_group.division_id = cleanDevision ?? "" ;
+    reporStore.from_filter_group.start_date = cleanStartDate ?? "";
+    reporStore.from_filter_group.end_date = cleanEndDate ?? "";
+    reporStore.from_filter_group.asset_list_id = cleanAsset;
+    reporStore.from_filter_group.asset_type_id = cleanType;
+    debouncedFetch();
+  },
+  { immediate: true, deep: true }
+);
 const devisiondata = computed(() => {
   const data = devisionStore.categories;
   if (Array.isArray(data)) return data;
@@ -42,7 +103,6 @@ const reportData = computed(() => {
   return [];
 });
 
-// Get filter names for display
 const statusInfo = computed(() => {
   const data = masterStore.respons_data_status_nuw;
   if (!data || !Array.isArray(data) || !selectStatus.value) return null;
@@ -60,7 +120,9 @@ const branchInfo = computed(() => {
 });
 
 const branchName = computed(() => {
-  return branchInfo.value ? branchInfo.value.division_name_la : selectedDevision.value;
+  return branchInfo.value
+    ? branchInfo.value.division_name_la
+    : selectedDevision.value;
 });
 
 const typeinfo = computed(() => {
@@ -74,14 +136,14 @@ const typeName = computed(() => {
 });
 
 const formatCurrency = (amount: any) => {
-  if (!amount) return '0';
-  return new Intl.NumberFormat('lo-LA').format(amount);
+  if (!amount) return "0";
+  return new Intl.NumberFormat("lo-LA").format(amount);
 };
 
 const formatDate = (dateString: any) => {
-  if (!dateString) return '';
+  if (!dateString) return "";
   const date = new Date(dateString);
-  return date.toLocaleDateString('en-GB');
+  return date.toLocaleDateString("en-GB");
 };
 
 // Print and Export Functions
@@ -208,19 +270,18 @@ const exportToExcel = () => {
     [""],
     [
       "ເລກບັນຊີ",
-      "ເລກທີ່ຜູ້ລົງບັນຊີ", 
+      "ເລກທີ່ຜູ້ລົງບັນຊີ",
       "ລາຍລະອຽດຊັບສິນ",
       "ວັນທີຊື້",
       "ລາຄາຊື້ (LAK)",
       "ອາຍຸການໃຊ້ງານ",
       "ວັນທີຫັກຄ່າຫຼຸຍຫ້ຽນ",
       "ຈຳນວນເງິນຫັກຄ່າຫຼຸຍຫ້ຽນ (LAK)",
-      "ເຫຼືອຍອດຫັກຄ່າຫຼຸຍຫ້ຽນ (LAK)"
+      "ເຫຼືອຍອດຫັກຄ່າຫຼຸຍຫ້ຽນ (LAK)",
     ],
   ];
 
   reportData.value.forEach((item) => {
-    // Add main asset row
     excelData.push([
       item.asset_list_code,
       item.asset_serial_no,
@@ -230,12 +291,14 @@ const exportToExcel = () => {
       item.asset_useful_life + " ປີ",
       "",
       "",
-      parseFloat(item.asset_salvage_value || "0")
+      parseFloat(item.asset_salvage_value || "0"),
     ]);
 
-    
-    if (item.depreciation_schedule && Array.isArray(item.depreciation_schedule)) {
-      item.depreciation_schedule.forEach((schedule:any) => {
+    if (
+      item.depreciation_schedule &&
+      Array.isArray(item.depreciation_schedule)
+    ) {
+      item.depreciation_schedule.forEach((schedule: any) => {
         excelData.push([
           "",
           "",
@@ -245,7 +308,7 @@ const exportToExcel = () => {
           "",
           formatDate(schedule.dpca_date),
           parseFloat(schedule.dpca_value || 0) as any,
-          parseFloat(schedule.remaining_value || "0")
+          parseFloat(schedule.remaining_value || "0"),
         ]);
       });
     }
@@ -260,7 +323,9 @@ const exportToExcel = () => {
   });
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
-  link.download = `ບົດລາຍງານຫັກຄ່າຫຼຸຍຫ້ຽນ_${new Date().toISOString().split("T")[0]}.csv`;
+  link.download = `ບົດລາຍງານຫັກຄ່າຫຼຸຍຫ້ຽນ_${
+    new Date().toISOString().split("T")[0]
+  }.csv`;
   link.click();
   URL.revokeObjectURL(link.href);
 };
@@ -316,7 +381,7 @@ watch(selectStatus, async (newValue) => {
 
 watch([selectStartDate, selectEndDate], async ([startDate, endDate]) => {
   if (!startDate || !endDate) return;
-  
+
   if (new Date(startDate) > new Date(endDate)) {
     CallSwal({
       icon: "warning",
@@ -353,7 +418,7 @@ onMounted(() => {
 <template>
   <div class="pa-4 report-container">
     <GlobalTextTitleLine :title="title" />
-    
+
     <!-- Export Actions -->
     <div class="export-actions mb-4">
       <v-btn
@@ -385,7 +450,7 @@ onMounted(() => {
         ສົ່ງອອກ Excel
       </v-btn>
     </div>
-   
+
     <!-- Filter Card -->
     <!-- <v-card class="mb-4" elevation="2">
       <v-card-title class="bg-primary text-white">
@@ -513,7 +578,7 @@ onMounted(() => {
         <p><b>ສາທາລະນະລັດ ປະຊາທິປະໄຕ ປະຊາຊົນລາວ</b></p>
         <p><b>ສັນຕິພາບ ເອກະລາດ ປະຊາທິປະໄຕ ເອກະພາບ ວັດທະນາຖາວອນ</b></p>
       </div>
-      
+
       <v-row class="mb-4">
         <v-col cols="6" md="6" class="d-flex text-start">
           <div class="text-center">
@@ -539,18 +604,29 @@ onMounted(() => {
       <!-- Filter Info -->
       <div
         class="filter-info"
-        v-if="selecteAssetType !== null || selectStatus !== null || selectStartDate || selectEndDate"
+        v-if="
+          selecteAssetType !== null ||
+          selectStatus !== null ||
+          selectStartDate ||
+          selectEndDate
+        "
       >
         <div class="filter-grid">
-          <div v-if="selecteAssetType"><strong>ປະເພດຊັບສິນ:</strong> {{ typeName }}</div>
+          <div v-if="selecteAssetType">
+            <strong>ປະເພດຊັບສິນ:</strong> {{ typeName }}
+          </div>
           <div v-if="selectStatus">
             <strong>ສະຖານະ:</strong> {{ statusName }}
           </div>
           <div v-if="selectedDevision">
             <strong>ພະແນກ:</strong> {{ branchName }}
           </div>
-          <div v-if="selectStartDate"><strong>ວັນທີ່ເລີ່ມຕົ້ນ:</strong> {{ selectStartDate }}</div>
-          <div v-if="selectEndDate"><strong>ວັນທີ່ສິ້ນສຸດ:</strong> {{ selectEndDate }}</div>
+          <div v-if="selectStartDate">
+            <strong>ວັນທີ່ເລີ່ມຕົ້ນ:</strong> {{ selectStartDate }}
+          </div>
+          <div v-if="selectEndDate">
+            <strong>ວັນທີ່ສິ້ນສຸດ:</strong> {{ selectEndDate }}
+          </div>
         </div>
       </div>
     </div>
@@ -574,40 +650,69 @@ onMounted(() => {
 
     <!-- Report Table -->
     <div v-else>
-      <p class="mb-3"><strong>ຈຳນວນຊັບສິນທັງໝົດ:</strong> {{ reportData.length }} ລາຍການ</p>
-      
+      <p class="mb-3">
+        <strong>ຈຳນວນຊັບສິນທັງໝົດ:</strong> {{ reportData.length }} ລາຍການ
+      </p>
+
       <v-card elevation="2">
         <div class="table-container">
           <table class="report-table">
             <thead>
               <tr class="header-row">
                 <th rowspan="2" class="border-cell text-center">ເລກບັນຊີ</th>
-                <th rowspan="2" class="border-cell text-center">ເລກທີ່ຜູ້ລົງບັນຊີ</th>
-                <th rowspan="2" class="border-cell text-center">ລາຍລະອຽດຊັບສິນ</th>
+                <th rowspan="2" class="border-cell text-center">
+                  ເລກທີ່ຜູ້ລົງບັນຊີ
+                </th>
+                <th rowspan="2" class="border-cell text-center">
+                  ລາຍລະອຽດຊັບສິນ
+                </th>
                 <th rowspan="2" class="border-cell text-center">ວັນທີຊື້</th>
                 <th rowspan="2" class="border-cell text-center">ລາຄາຊື້</th>
-                <th rowspan="2" class="border-cell text-center">ອາຍຸການໃຊ້ງານ</th>
-                <th colspan="2" class="border-cell text-center bg-blue-lighten-4">ລາຍການຫັກຄ່າຫຼຸຍຫ້ຽນປັດຈຸບັນ</th>
-                <th rowspan="2" class="border-cell text-center">ເຫຼືອຍອດຫັກຄ່າຫຼຸຍຫ້ຽນ</th>
+                <th rowspan="2" class="border-cell text-center">
+                  ອາຍຸການໃຊ້ງານ
+                </th>
+                <th
+                  colspan="2"
+                  class="border-cell text-center bg-blue-lighten-4"
+                >
+                  ລາຍການຫັກຄ່າຫຼຸຍຫ້ຽນປັດຈຸບັນ
+                </th>
+                <th rowspan="2" class="border-cell text-center">
+                  ເຫຼືອຍອດຫັກຄ່າຫຼຸຍຫ້ຽນ
+                </th>
               </tr>
               <tr class="subheader-row">
                 <th class="border-cell text-center bg-blue-lighten-4">ວັນທີ</th>
-                <th class="border-cell text-center bg-blue-lighten-4">ຈຳນວນເງິນ</th>
+                <th class="border-cell text-center bg-blue-lighten-4">
+                  ຈຳນວນເງິນ
+                </th>
               </tr>
             </thead>
             <tbody>
               <template v-for="(item, index) in reportData" :key="index">
                 <!-- Asset Main Row -->
                 <tr class="asset-main-row">
-                  <td class="border-cell text-center font-weight-bold">{{ item.asset_list_code }}</td>
-                  <td class="border-cell text-center">{{ item.asset_serial_no }}</td>
-                  <td class="border-cell">{{ item.asset_spec || 'ຊັບສິນ' }}</td>
-                  <td class="border-cell text-center">{{ formatDate(item.dpca_start_date) }}</td>
-                  <td class="border-cell text-end">{{ formatCurrency(item.asset_value) }}</td>
-                  <td class="border-cell text-center">{{ item.asset_useful_life }}</td>
+                  <td class="border-cell text-center font-weight-bold">
+                    {{ item.asset_list_code }}
+                  </td>
+                  <td class="border-cell text-center">
+                    {{ item.asset_serial_no }}
+                  </td>
+                  <td class="border-cell">{{ item.asset_spec || "ຊັບສິນ" }}</td>
+                  <td class="border-cell text-center">
+                    {{ formatDate(item.dpca_start_date) }}
+                  </td>
+                  <td class="border-cell text-end">
+                    {{ formatCurrency(item.asset_value) }}
+                  </td>
+                  <td class="border-cell text-center">
+                    {{ item.asset_useful_life }}
+                  </td>
                   <td class="border-cell"></td>
                   <td class="border-cell"></td>
-                  <td class="border-cell text-end font-weight-bold text-success">
+                  <td
+                    class="border-cell text-end font-weight-bold text-success"
+                  >
                     {{ formatCurrency(item.asset_salvage_value) }}
                   </td>
                 </tr>
@@ -615,25 +720,41 @@ onMounted(() => {
                 <!-- Depreciation Detail Header -->
                 <tr class="depreciation-header">
                   <td colspan="6" class="border-cell"></td>
-                  <td colspan="2" class="border-cell text-center bg-blue-lighten-5 font-weight-bold">
+                  <td
+                    colspan="2"
+                    class="border-cell text-center bg-blue-lighten-5 font-weight-bold"
+                  >
                     ລາຍການຫັກຄ່າຫຼຸຍຫ້ຽນປະຈຳເດືອນ
                   </td>
-                  <td class="border-cell text-center bg-blue-lighten-5 font-weight-bold">ຍອດຄົງເຫຼືອ</td>
+                  <td
+                    class="border-cell text-center bg-blue-lighten-5 font-weight-bold"
+                  >
+                    ຍອດຄົງເຫຼືອ
+                  </td>
                 </tr>
 
                 <!-- Depreciation Schedule Rows -->
                 <tr
-                  v-for="(schedule, scheduleIndex) in item.depreciation_schedule"
+                  v-for="(
+                    schedule, scheduleIndex
+                  ) in item.depreciation_schedule"
                   :key="scheduleIndex"
                   class="depreciation-row"
                 >
                   <td colspan="6" class="border-cell"></td>
-                  <td class="border-cell text-center">{{ formatDate(schedule.dpca_date) }}</td>
+                  <td class="border-cell text-center">
+                    {{ formatDate(schedule.dpca_date) }}
+                  </td>
                   <td class="border-cell text-end">
-                    <span v-if="schedule.dpca_value > 0" class="text-error font-weight-bold">
+                    <span
+                      v-if="schedule.dpca_value > 0"
+                      class="text-error font-weight-bold"
+                    >
                       {{ formatCurrency(schedule.dpca_value) }}
                     </span>
-                    <span v-else class="text-grey">{{ formatCurrency(schedule.dpca_value) }}</span>
+                    <span v-else class="text-grey">{{
+                      formatCurrency(schedule.dpca_value)
+                    }}</span>
                   </td>
                   <td class="border-cell text-end font-weight-bold">
                     {{ formatCurrency(schedule.remaining_value) }}
@@ -955,11 +1076,11 @@ onMounted(() => {
   .report-table {
     font-size: 11px;
   }
-  
+
   .border-cell {
     padding: 6px 8px;
   }
-  
+
   .header-row th,
   .subheader-row th {
     padding: 8px 6px;
