@@ -32,6 +32,7 @@ export const useTransactionLogStore = defineStore("transactionLog", {
         estimated_arrival: "",
         actual_arrival: "",
         notes: "",
+        division:"",
       },
     
     
@@ -105,9 +106,9 @@ export const useTransactionLogStore = defineStore("transactionLog", {
             showConfirmButton: false,
           });
           
-          // setTimeout(() => {
-          //   goPath("/property/transfer_log/");
-          // }, 1500);
+          setTimeout(() => {
+            goPath("/property/transfer_log/");
+          }, 1500);
         }
       } catch (error: any) {
         console.error("Error creating transaction log:", error);
@@ -166,6 +167,7 @@ export const useTransactionLogStore = defineStore("transactionLog", {
         handover_date: form.handover_date || null,
         received_date: form.received_date || null,
         status: form.status || null,
+        division:form.division || null,
         insurance_covered: form.insurance_covered || "N", 
         estimated_arrival: form.estimated_arrival || null,
         actual_arrival: form.actual_arrival || null,
