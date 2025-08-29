@@ -329,15 +329,15 @@ const title = "ບັນທຶກການໂອນຍ້າຍຊັບສົ�
             </v-col>
 
             <v-col cols="12" class="d-flex flex-wrap justify-center mt-6">
-              <!-- <v-btn
+              <v-btn
                 color="error"
                 variant="outlined"
-                @click="goBack"
+                @click="goPath('/property/transfer_log')"
                 class="mr-2"
-                :disabled="faAssetStoreInstance.isLoading"
+                
               >
                 ຍົກເລີກ
-              </v-btn> -->
+              </v-btn>
 
               <v-btn
                 color="primary"

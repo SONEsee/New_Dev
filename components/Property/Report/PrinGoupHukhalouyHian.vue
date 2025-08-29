@@ -12,9 +12,6 @@ const selectedAssetList = ref(null);
 const selectedDevision = ref(null);
 const searchQuery = ref("");
 const isLoading = ref(false);
-<<<<<<< HEAD
-const route = useRoute();
-=======
 const rout = useRoute();
 const debouncedFetch = useDebounceFn(() => {
   console.log("Fetching with filters:", reporStore.response_group_data);
@@ -36,7 +33,6 @@ const getCleanString = (value: any) => {
     ? String(value)
     : null;
 };
->>>>>>> 517073b0aafb0d26f33f14580e499c2b9a5b8807
 
 const assetTypes = computed(() => {
   const assetTypeQuery = rout.query.type;
