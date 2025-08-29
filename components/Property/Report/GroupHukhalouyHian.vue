@@ -87,7 +87,7 @@ const formatDate = (dateString: any) => {
   const date = new Date(dateString);
   return date.toLocaleDateString("en-GB");
 };
-watch(selecList, async (newValue)=>{
+watch(selecList, async (newValue) => {
   reporStore.isLoading = true;
   try {
     reporStore.from_filter_group.asset_list_id = newValue;
@@ -100,9 +100,8 @@ watch(selecList, async (newValue)=>{
     });
   } finally {
     reporStore.isLoading = false;
-    
   }
-})
+});
 watch(selecteAssetType, async (newValue) => {
   reporStore.isLoading = true;
   try {
@@ -229,23 +228,30 @@ onMounted(() => {
           </v-col>
           <v-col cols="12" md="2">
             <v-autocomplete
-            prepend-inner-icon="mdi-package-variant"
-            label="ເລືອກຕາມຊັບສິນ"
-            v-model="selecList"
+              prepend-inner-icon="mdi-package-variant"
+              label="ເລືອກຕາມຊັບສິນ"
+              v-model="selecList"
               :items="assetList"
               variant="outlined"
               density="compact"
               item-title="asset_spec"
               item-value="asset_list_id"
             >
-          <template v-slot:item="{props,item}">
-            <v-list-item v-bind="props" :title="`${item.raw.asset_spec}-${item.raw.asset_list_id}`">
-              <template v-slot:prepend>
-                <v-avatar size="small" color="primary"><v-icon size="small">mdi-package-variant</v-icon></v-avatar>
+              <template v-slot:item="{ props, item }">
+                <v-list-item
+                  v-bind="props"
+                  :title="`${item.raw.asset_spec}-${item.raw.asset_list_id}`"
+                >
+                  <template v-slot:prepend>
+                    <v-avatar size="small" color="primary"
+                      ><v-icon size="small"
+                        >mdi-package-variant</v-icon
+                      ></v-avatar
+                    >
+                  </template>
+                </v-list-item>
               </template>
-            </v-list-item>
-          </template>
-          </v-autocomplete>
+            </v-autocomplete>
           </v-col>
 
           <v-col cols="12" md="2">
