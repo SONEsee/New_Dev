@@ -513,9 +513,9 @@ onMounted(async () => {
     masterStore.getStatus();
     typeAssetStore.GetPropertyCategoryById();
     faAssetStoreInstance.GetFaAssetList();
-    assetStores.GetAssetList();
+    // assetStores.GetAssetList();
     typeAssetStore.GetPropertyCategoryById();
-    faAssetStoreInstance.GetFaAssetList();
+    faAssetStoreInstance.GetFaAssetList1();
     masterStore.getPuamsue();
 
     initializeRole();
