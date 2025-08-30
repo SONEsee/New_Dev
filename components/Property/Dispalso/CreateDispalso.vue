@@ -68,11 +68,9 @@ onMounted(() => {
           <v-text-field
             v-model="request.disposal_value"
             label="ມູນຄ່າການຖອນ"
-            
             variant="outlined"
             density="compact"
           >
-           
           </v-text-field>
         </v-col>
         <v-col cols="12" md="3">
