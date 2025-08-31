@@ -164,7 +164,7 @@
                 color="purple"
                 variant="tonal"
                 size="small"
-                @click="viewPeriods(item)"
+                @click="viewYearCalendar(item)"
                 :loading="loadingPeriods === item.fin_cycle"
                 class="font-weight-medium"
               >
@@ -204,19 +204,19 @@
           <!-- Actions Column -->
           <template #item.actions="{ item }">
             <div class="d-flex align-center gap-1">
-              <!-- View Periods Button -->
+              <!-- View Calendar Button -->
               <v-btn
                 color="purple"
                 variant="text"
                 size="small"
                 icon
-                @click="viewPeriods(item)"
+                @click="viewYearCalendar(item)"
                 class="action-btn"
                 :loading="loadingPeriods === item.fin_cycle"
               >
                 <v-icon size="20">mdi-calendar-month</v-icon>
                 <v-tooltip activator="parent" location="top">
-                  ເບິ່ງລາຍເດືອນ
+                  ເບິ່ງປະຕິທິນປີ {{ item.fin_cycle }}
                 </v-tooltip>
               </v-btn>
 
@@ -438,11 +438,11 @@
           <v-btn
             color="purple"
             variant="outlined"
-            @click="viewPeriods(selectedItem)"
+            @click="viewYearCalendar(selectedItem)"
             prepend-icon="mdi-calendar-month"
             class="text-none"
           >
-            ເບິ່ງລາຍເດືອນ
+            ເບິ່ງປະຕິທິນປີ {{ selectedItem?.fin_cycle }}
           </v-btn>
           <v-spacer />
           <v-btn
@@ -464,83 +464,115 @@
       </v-card>
     </v-dialog>
 
-    <!-- Periods Dialog -->
-    <v-dialog v-model="periodsDialog" max-width="900">
+    <!-- Year Calendar Dialog -->
+    <v-dialog v-model="calendarDialog" max-width="1200">
       <v-card class="rounded-lg">
         <v-card-title class="pa-6 pb-4">
           <div class="d-flex align-center justify-space-between">
             <div class="d-flex align-center">
-              <v-icon color="purple" size="28" class="mr-3">mdi-calendar-month</v-icon>
+              <v-icon color="purple" size="28" class="mr-3">mdi-calendar</v-icon>
               <div>
-                <span class="text-h6 font-weight-bold text-styles">ລາຍເດືອນຮອບວຽນ {{ selectedCycleForPeriods }}</span>
-                <div class="text-caption text-grey text-styles">{{ periods.length }} ລາຍການ</div>
+                <span class="text-h6 font-weight-bold text-styles">ປະຕິທິນປີ {{ selectedYear }}</span>
+                <div class="text-caption text-grey text-styles">
+                  {{ yearPeriods.length }} ລາຍເດືອນ
+                  <span v-if="hasCompleteYear" class="text-success ml-2">
+                    <v-icon size="16" color="success">mdi-check-circle</v-icon>
+                    ຄົບ 12 ເດືອນ
+                  </span>
+                  <span v-else class="text-warning ml-2">
+                    <v-icon size="16" color="warning">mdi-alert-circle</v-icon>
+                    ຍັງບໍ່ຄົບ
+                  </span>
+                </div>
               </div>
             </div>
             <v-btn
               color="primary"
               variant="outlined"
               size="small"
-              @click="generateNewPeriods"
+              @click="addMorePeriods"
               prepend-icon="mdi-plus"
               class="text-none"
+              :disabled="hasCompleteYear"
             >
-              ເພີ່ມລາຍເດືອນ
+              {{ hasCompleteYear ? 'ຄົບ 12 ເດືອນແລ້ວ' : 'ເພີ່ມລາຍເດືອນ' }}
             </v-btn>
           </div>
         </v-card-title>
+        
         <v-card-text class="pa-6 pt-0">
-          <v-row v-if="periods.length > 0">
-            <v-col 
-              v-for="(period, index) in periods" 
-              :key="index"
-              cols="12" sm="6" md="4"
+          <!-- Year Calendar Grid -->
+          <div class="year-calendar-grid">
+            <div 
+              v-for="month in 12" 
+              :key="month"
+              class="month-card"
+              :class="getMonthCardClass(month)"
             >
-              <v-card 
-                class="pa-3 rounded-lg" 
-                :color="getPeriodTypeColor(period.period_code)" 
-                variant="tonal"
-                elevation="1"
-              >
-                <div class="d-flex justify-space-between align-center mb-2">
-                  <v-icon :color="getPeriodTypeColor(period.period_code)" size="20">
-                    {{ getPeriodTypeIcon(period.period_code) }}
-                  </v-icon>
+              <div class="month-header">
+                <div class="month-name">{{ getMonthName(month) }}</div>
+                <div class="month-number">{{ String(month).padStart(2, '0') }}</div>
+              </div>
+              
+              <div class="month-content">
+                <div v-if="getMonthPeriod(month)" class="period-info">
+                  <v-chip 
+                    size="small" 
+                    :color="getPeriodChipColor(getMonthPeriod(month))" 
+                    variant="tonal"
+                    class="mb-2"
+                  >
+                    {{ getMonthPeriod(month)?.period_code }}
+                  </v-chip>
+                  <div class="text-caption">
+                    {{ formatShortDate(getMonthPeriod(month)?.PC_StartDate) }} - 
+                    {{ formatShortDate(getMonthPeriod(month)?.PC_EndDate) }}
+                  </div>
                   <v-btn
                     color="error"
                     variant="text"
                     size="x-small"
                     icon
-                    @click="deletePeriod(period)"
+                    @click="deletePeriod(getMonthPeriod(month))"
+                    class="delete-period-btn"
                   >
-                    <v-icon size="16">mdi-close</v-icon>
+                    <v-icon size="12">mdi-close</v-icon>
                   </v-btn>
                 </div>
-                <div class="text-center">
-                  <div class="font-weight-bold text-body-2">{{ period.period_code }}</div>
-                  <div class="text-caption mt-1">
-                    {{ formatShortDate(period.PC_StartDate) }} - {{ formatShortDate(period.PC_EndDate) }}
-                  </div>
+                
+                <div v-else class="empty-month">
+                  <v-icon color="grey-lighten-2" size="32">mdi-calendar-blank</v-icon>
+                  <div class="text-caption text-grey mt-1">ວ່າງເປົ່າ</div>
                 </div>
-              </v-card>
-            </v-col>
-          </v-row>
-          <div v-else class="text-center pa-8">
-            <v-icon size="64" color="grey-lighten-2" class="mb-4">
-              mdi-calendar-blank
-            </v-icon>
-            <p class="text-h6 text-grey-lighten-1 mb-2">
-              ບໍ່ມີລາຍເດືອນ
-            </p>
-            <p class="text-body-2 text-grey-lighten-1 mb-4">
-              ເລີ່ມຕົ້ນໂດຍການເພີ່ມລາຍເດືອນໃໝ່
-            </p>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Summary Info -->
+          <v-divider class="my-6" />
+          <div class="d-flex align-center justify-space-between">
+            <div class="text-body-2 text-styles">
+              <v-icon color="info" size="16" class="mr-1">mdi-information</v-icon>
+              ສະຖິຕິ: {{ yearPeriods.length }}/12 ເດືອນ ({{ Math.round((yearPeriods.length/12)*100) }}%)
+            </div>
+            <div class="d-flex gap-2">
+              <v-chip size="small" color="success" variant="outlined">
+                <v-icon start size="12">mdi-check</v-icon>
+                ມີຂໍ້ມູນ: {{ yearPeriods.length }}
+              </v-chip>
+              <v-chip size="small" color="grey" variant="outlined">
+                <v-icon start size="12">mdi-calendar-blank</v-icon>
+                ວ່າງ: {{ 12 - yearPeriods.length }}
+              </v-chip>
+            </div>
           </div>
         </v-card-text>
+        
         <v-card-actions class="pa-6 pt-0">
           <v-spacer />
           <v-btn
             variant="text"
-            @click="periodsDialog = false"
+            @click="calendarDialog = false"
             class="text-none"
           >
             ປິດ
@@ -581,7 +613,7 @@ import { FinCycleModel } from '~/models'
 
 const router = useRouter()
 const items = ref<FinCycleModel.FinCycleResponse[]>([])
-const periods = ref<any[]>([])
+const yearPeriods = ref<any[]>([])
 const loading = ref(false)
 const loadingPeriods = ref<string | null>(null)
 const deleteLoading = ref(false)
@@ -589,22 +621,22 @@ const search = ref('')
 const statusFilter = ref('')
 const deleteDialog = ref(false)
 const detailsDialog = ref(false)
-const periodsDialog = ref(false)
+const calendarDialog = ref(false)
 const showSuccess = ref(false)
 const showError = ref(false)
 const successMessage = ref('')
 const errorMessage = ref('')
 const itemToDelete = ref<FinCycleModel.FinCycleResponse | null>(null)
 const selectedItem = ref<FinCycleModel.FinCycleResponse | null>(null)
-const selectedCycleForPeriods = ref('')
+const selectedYear = ref('')
 
 // Period counts cache
 const periodCounts = ref<Record<string, number>>({})
 
 const statusFilterItems = [
   { title: 'ທັງໝົດ', value: '' },
-  { title: 'ເປີດໃຊ້ງານ', value: 'O' },
-  { title: 'ປິດໃຊ້ງານ', value: 'C' }
+  { title: 'ເປີດໃຊ້ງານ', value: 'C' },
+  { title: 'ປິດໃຊ້ງານ', value: 'O' }
 ]
 
 const filteredItems = computed(() => {
@@ -615,6 +647,15 @@ const filteredItems = computed(() => {
   }
   
   return filtered
+})
+
+// Check if the year has complete 12 months
+const hasCompleteYear = computed(() => {
+  if (!selectedYear.value) return false
+  const monthlyPeriods = yearPeriods.value.filter(p => 
+    p.period_code && p.period_code.length === 6 && !p.period_code.includes('Q') && !p.period_code.includes('H')
+  )
+  return monthlyPeriods.length >= 12
 })
 
 const headers = [
@@ -724,18 +765,48 @@ function calculateDuration(startDate: string | Date | null, endDate: string | Da
   }
 }
 
+// Calendar helper functions
+function getMonthName(month: number): string {
+  const monthNames = [
+    'ມັງກອນ', 'ກຸມພາ', 'ມີນາ', 'ເມສາ', 'ພຶດສະພາ', 'ມິຖຸນາ',
+    'ກໍລະກົດ', 'ສິງຫາ', 'ກັນຍາ', 'ຕຸລາ', 'ພະຈິກ', 'ທັນວາ'
+  ]
+  return monthNames[month - 1] || `M${month}`
+}
+
+function getMonthPeriod(month: number) {
+  if (!selectedYear.value) return null
+  const monthCode = `${selectedYear.value}${String(month).padStart(2, '0')}`
+  return yearPeriods.value.find(p => p.period_code === monthCode)
+}
+
+function getMonthCardClass(month: number) {
+  const period = getMonthPeriod(month)
+  return {
+    'has-period': !!period,
+    'empty-period': !period
+  }
+}
+
+function getPeriodChipColor(period: any) {
+  if (!period) return 'grey'
+  if (period.period_code?.includes('Q')) return 'info'
+  if (period.period_code?.includes('H')) return 'warning'
+  return 'success'
+}
+
 function getStatusColor(status: string) {
   switch (status) {
-    case 'O': return 'success'
-    case 'C': return 'error'
+    case 'C': return 'success'
+    case 'O': return 'error'
     default: return 'grey'
   }
 }
 
 function getStatusIcon(status: string) {
   switch (status) {
-    case 'O': return 'mdi-check-circle'
-    case 'C': return 'mdi-cancel'
+    case 'C': return 'mdi-check-circle'
+    case 'O': return 'mdi-cancel'
     default: return 'mdi-help-circle'
   }
 }
@@ -758,15 +829,15 @@ function getAuthStatusIcon(status: string) {
 
 function mapRecordStatus(status: string) {
   switch (status) {
-    case 'O': return 'ເປີດໃຊ້ງານ'
-    case 'C': return 'ປິດໃຊ້ງານ'
+    case 'C': return 'ເປີດໃຊ້ງານ'
+    case 'O': return 'ປິດໃຊ້ງານ'
     default: return status || '-'
   }
 }
 
 function mapAuthStatus(status: string) {
   switch (status) {
-    case 'A': return 'ອະນຽມັດແລ້ວ'
+    case 'A': return 'ອະນຸມັດແລ້ວ'
     case 'U': return 'ລໍຖ້າອະນຸມັດ'
     default: return status || '-'
   }
@@ -774,18 +845,6 @@ function mapAuthStatus(status: string) {
 
 function getPeriodCount(finCycle: string): number {
   return periodCounts.value[finCycle] || 0
-}
-
-function getPeriodTypeColor(periodCode: string): string {
-  if (periodCode.includes('Q')) return 'info'
-  if (periodCode.includes('H')) return 'warning'
-  return 'success' // Monthly
-}
-
-function getPeriodTypeIcon(periodCode: string): string {
-  if (periodCode.includes('Q')) return 'mdi-calendar-range'
-  if (periodCode.includes('H')) return 'mdi-calendar-range-outline'
-  return 'mdi-calendar-month-outline' // Monthly
 }
 
 function confirmDelete(item: FinCycleModel.FinCycleResponse) {
@@ -798,9 +857,10 @@ function viewDetails(item: FinCycleModel.FinCycleResponse) {
   detailsDialog.value = true
 }
 
-async function viewPeriods(item: FinCycleModel.FinCycleResponse) {
+// Main function to view year calendar
+async function viewYearCalendar(item: FinCycleModel.FinCycleResponse) {
   loadingPeriods.value = item.fin_cycle
-  selectedCycleForPeriods.value = item.fin_cycle
+  selectedYear.value = item.fin_cycle
   
   try {
     const { data } = await axios.get(`/api/percodes/?Fin_cycle=${item.fin_cycle}`, {
@@ -809,18 +869,32 @@ async function viewPeriods(item: FinCycleModel.FinCycleResponse) {
         Authorization: `Bearer ${localStorage.getItem('token')}` 
       }
     })
-    periods.value = data
-    periodsDialog.value = true
+    
+    // Filter periods for this specific year
+    yearPeriods.value = data.filter((period: any) => 
+      period.period_code && period.period_code.startsWith(selectedYear.value)
+    )
+    
+    calendarDialog.value = true
   } catch (error: any) {
-    errorMessage.value = error.response?.data?.message || 'ເກີດຂໍ້ຜິດພາດໃນການໂຫຼດລາຍເດືອນ'
+    errorMessage.value = error.response?.data?.message || 'ເກີດຂໍ້ຜິດພາດໃນການໂຫຼດປະຕິທິນ'
     showError.value = true
-    console.error('Error fetching periods:', error)
+    console.error('Error fetching year calendar:', error)
   } finally {
     loadingPeriods.value = null
   }
 }
 
+function addMorePeriods() {
+  if (!hasCompleteYear.value && selectedYear.value) {
+    calendarDialog.value = false
+    goPath(`/fincycle/update?id=${selectedYear.value}`)
+  }
+}
+
 async function deletePeriod(period: any) {
+  if (!period) return
+  
   try {
     await axios.delete(`/api/percodes/${period.period_code}/`, {
       headers: { 
@@ -830,28 +904,23 @@ async function deletePeriod(period: any) {
     })
     
     // Remove from local array
-    const index = periods.value.findIndex(p => p.period_code === period.period_code)
+    const index = yearPeriods.value.findIndex(p => p.period_code === period.period_code)
     if (index > -1) {
-      periods.value.splice(index, 1)
+      yearPeriods.value.splice(index, 1)
     }
     
     // Update period count
-    if (periodCounts.value[selectedCycleForPeriods.value]) {
-      periodCounts.value[selectedCycleForPeriods.value]--
+    if (periodCounts.value[selectedYear.value]) {
+      periodCounts.value[selectedYear.value]--
     }
     
-    successMessage.value = 'ລົບລາຍເດືອນສຳເລັດແລ້ວ'
+    successMessage.value = `ລົບລາຍເດືອນ ${period.period_code} ສຳເລັດແລ້ວ`
     showSuccess.value = true
   } catch (error: any) {
     errorMessage.value = error.response?.data?.message || 'ເກີດຂໍ້ຜິດພາດໃນການລົບລາຍເດືອນ'
     showError.value = true
     console.error('Error deleting period:', error)
   }
-}
-
-function generateNewPeriods() {
-  periodsDialog.value = false
-  goPath(`/fincycle/update?id=${selectedCycleForPeriods.value}`)
 }
 
 async function deleteItem() {
@@ -972,7 +1041,100 @@ onMounted(fetchData)
   transform: scale(1.1);
 }
 
-/* Custom scrollbar for table */
+/* Year Calendar Grid */
+.year-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin: 16px 0;
+}
+
+.month-card {
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 16px;
+  min-height: 140px;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.month-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.month-card.has-period {
+  border-color: #4caf50;
+  background: linear-gradient(135deg, #f1f8e9 0%, #e8f5e8 100%);
+}
+
+.month-card.empty-period {
+  border-color: #e0e0e0;
+  background: #fafafa;
+}
+
+.month-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.month-name {
+  font-weight: 600;
+  color: #37474f;
+  font-size: 0.9rem;
+}
+
+.month-number {
+  font-size: 0.8rem;
+  color: #666;
+  background: rgba(0,0,0,0.05);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.month-content {
+  text-align: center;
+}
+
+.period-info {
+  position: relative;
+}
+
+.empty-month {
+  opacity: 0.6;
+}
+
+.delete-period-btn {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Responsive grid */
+@media (max-width: 960px) {
+  .year-calendar-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+}
+
+@media (max-width: 600px) {
+  .year-calendar-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  
+  .month-card {
+    padding: 12px;
+    min-height: 120px;
+  }
+}
+
+/* Custom scrollbar */
 :deep(.v-data-table__wrapper) {
   scrollbar-width: thin;
   scrollbar-color: rgba(var(--v-theme-primary), 0.3) transparent;
@@ -994,12 +1156,6 @@ onMounted(fetchData)
 
 :deep(.v-data-table__wrapper::-webkit-scrollbar-thumb:hover) {
   background-color: rgba(var(--v-theme-primary), 0.5);
-}
-
-/* Period cards hover effect */
-.v-card:hover {
-  transform: translateY(-2px);
-  transition: transform 0.2s ease;
 }
 
 .text-styles {

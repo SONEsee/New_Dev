@@ -11,34 +11,36 @@
       <v-card elevation="0" class="rounded-lg pa-6 mb-6" style="border: 1px solid rgb(var(--v-theme-surface-variant));">
         <v-form @submit.prevent="submitForm" v-model="isValid">
           <v-row>
-            <!-- Cycle Code -->
+            <!-- Year Input (Cycle Code) -->
             <v-col cols="12" md="6">
               <v-text-field
-                v-model="form.fin_cycle"
-                label="ລະຫັດຮອບວຽນ *"
-                placeholder="ເຊັ່ນ: 2024, FY2024"
+                v-model="cycleYear"
+                label="ປີຮອບວຽນ *"
+                placeholder="ເຊັ່ນ: 2024, 2025"
                 variant="outlined"
                 density="comfortable"
                 required
-                :rules="[rules.required, rules.cycleCode]"
-                maxlength="10"
-                @input="form.fin_cycle = form.fin_cycle.toUpperCase()"
+                type="number"
+                :min="2020"
+                :max="2030"
+                :rules="[rules.required, rules.yearValidation]"
+                @input="updateCycleData"
               >
                 <template #prepend-inner>
-                  <v-icon size="20" color="brown">mdi-identifier</v-icon>
+                  <v-icon size="20" color="brown">mdi-calendar</v-icon>
                 </template>
               </v-text-field>
             </v-col>
 
-            <!-- Cycle Description -->
+            <!-- Cycle Description (Auto-generated) -->
             <v-col cols="12" md="6">
               <v-text-field
                 v-model="form.cycle_Desc"
                 label="ລາຍລະອຽດຮອບວຽນ"
-                placeholder="ເຊັ່ນ:  ຮອບວຽນບັນຊີ ປີ  * "
                 variant="outlined"
                 density="comfortable"
-                maxlength="250"
+                readonly
+                bg-color="grey-lighten-4"
               >
                 <template #prepend-inner>
                   <v-icon size="20" color="brown">mdi-text</v-icon>
@@ -46,7 +48,7 @@
               </v-text-field>
             </v-col>
 
-            <!-- Date Range Section -->
+            <!-- Date Range Section (Auto-set based on year) -->
             <v-col cols="12">
               <div class="text-subtitle-2 mb-3 text-grey-darken-1 text-styles">ໄລຍະເວລາຮອບວຽນ</div>
               <v-row>
@@ -59,8 +61,9 @@
                     variant="outlined"
                     density="comfortable"
                     required
+                    readonly
+                    bg-color="grey-lighten-4"
                     :rules="[rules.required]"
-                    @input="validateDateRange"
                   >
                     <template #prepend-inner>
                       <v-icon size="20" color="brown">mdi-calendar-start</v-icon>
@@ -77,8 +80,9 @@
                     variant="outlined"
                     density="comfortable"
                     required
-                    :rules="[rules.required, rules.endDateValidation]"
-                    @input="validateDateRange"
+                    readonly
+                    bg-color="grey-lighten-4"
+                    :rules="[rules.required]"
                   >
                     <template #prepend-inner>
                       <v-icon size="20" color="brown">mdi-calendar-end</v-icon>
@@ -88,53 +92,82 @@
               </v-row>
             </v-col>
 
-            <!-- Quick Preset Buttons -->
-            <v-col cols="12">
-              <div class="text-subtitle-2 mb-3 text-grey-darken-1 text-styles">ຕັ້ງຄ່າໄວ</div>
-              <div class="d-flex flex-wrap gap-2">
-                <v-btn
-                  variant="outlined"
-                  size="small"
-                  @click="setYearDates()"
-                  class="text-none"
-                  prepend-icon="mdi-calendar"
-                >
-                  ປີປັດຈຸບັນ
-                </v-btn>
-                <v-btn
-                  variant="outlined"
-                  size="small"
-                  @click="setYearDates(new Date().getFullYear() + 1)"
-                  class="text-none"
-                  prepend-icon="mdi-calendar-plus"
-                >
-                  ປີໜ້າ
-                </v-btn>
-                <v-btn
-                  variant="outlined"
-                  size="small"
-                  @click="setCustomYear()"
-                  class="text-none"
-                  prepend-icon="mdi-calendar-edit"
-                >
-                  ປີອື່ນໆ
-                </v-btn>
-              </div>
-            </v-col>
-
             <!-- Duration Display -->
             <v-col cols="12" v-if="duration">
               <v-card 
                 class="pa-4 rounded-lg" 
-                :color="getDurationColor()" 
+                color="success"
                 variant="tonal"
               >
                 <div class="d-flex align-center">
-                  <v-icon size="24" :color="getDurationColor()">mdi-clock-outline</v-icon>
+                  <v-icon size="24" color="success">mdi-clock-outline</v-icon>
                   <div class="ml-3">
                     <div class="text-subtitle-2 text-styles">ໄລຍະເວລາຮອບວຽນ</div>
                     <div class="text-h6 font-weight-bold text-styles">
                       {{ duration }}
+                    </div>
+                  </div>
+                </div>
+              </v-card>
+            </v-col>
+
+            <!-- Period Generation Option -->
+            <v-col cols="12" v-if="cycleYear">
+              <div class="text-subtitle-2 mb-3 text-grey-darken-1 text-styles">ສ້າງລາຍເດືອນອັດຕະໂນມັດ</div>
+              <v-card class="pa-4 rounded-lg" variant="outlined">
+                <v-switch
+                  v-model="generatePeriods"
+                  label="ສ້າງລາຍເດືອນພ້ອມກັບຮອບວຽນບັນຊີ"
+                  color="primary"
+                  hide-details
+                  class="mb-4"
+                />
+
+                <!-- Period Type Selection -->
+                <div v-if="generatePeriods">
+                  <div class="text-body-2 mb-3 text-styles">ເລືອກປະເພດລາຍເດືອນ:</div>
+                  <v-radio-group v-model="selectedPeriodType" inline hide-details>
+                    <v-radio
+                      label="ລາຍເດືອນ (12 ເດືອນ)"
+                      value="monthly"
+                      color="primary"
+                    />
+                    <v-radio
+                      label="ລາຍໄຕມາດ (4 ໄຕມາດ)"
+                      value="quarterly"
+                      color="primary"
+                    />
+                    <v-radio
+                      label="ຄິ້ງປີ (2 ໄລຍະ)"
+                      value="half-yearly"
+                      color="primary"
+                    />
+                  </v-radio-group>
+
+                  <!-- Period Preview -->
+                  <div v-if="selectedPeriodType" class="mt-4">
+                    <v-divider class="mb-3" />
+                    <div class="text-body-2 mb-3 text-styles">
+                      ລາຍການທີ່ຈະສ້າງ ({{ getPreviewPeriods().length }} ລາຍການ):
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                      <v-chip
+                        v-for="(period, index) in getPreviewPeriods().slice(0, 6)"
+                        :key="index"
+                        size="small"
+                        color="primary"
+                        variant="tonal"
+                      >
+                        {{ period.period_code }}
+                      </v-chip>
+                      <v-chip
+                        v-if="getPreviewPeriods().length > 6"
+                        size="small"
+                        color="grey"
+                        variant="tonal"
+                      >
+                        +{{ getPreviewPeriods().length - 6 }} ເພີ່ມເຕີມ
+                      </v-chip>
                     </div>
                   </div>
                 </div>
@@ -196,6 +229,7 @@
               variant="text"
               @click="goBack"
               class="text-none"
+              :disabled="loading"
             >
               ຍົກເລີກ
             </v-btn>
@@ -203,157 +237,18 @@
               color="primary"
               variant="elevated"
               type="submit"
-              :disabled="!isValid"
+              :disabled="!isValid || !cycleYear"
               :loading="loading"
               class="text-none px-8"
             >
-              ບັນທຶກ
+              <v-icon start v-if="generatePeriods">mdi-calendar-plus</v-icon>
+              <v-icon start v-else>mdi-content-save</v-icon>
+              {{ generatePeriods ? 'ບັນທຶກຮອບວຽນ + ລາຍເດືອນ' : 'ບັນທຶກຮອບວຽນ' }}
             </v-btn>
           </div>
         </v-form>
       </v-card>
-
-      <!-- Period Generation Section -->
-      <v-card 
-        elevation="0" 
-        class="rounded-lg pa-6" 
-        style="border: 1px solid rgb(var(--v-theme-surface-variant));"
-        v-if="isValidDateRange && form.fin_cycle"
-      >
-        <div class="text-h6 font-weight-bold mb-4 text-styles">
-          <v-icon color="primary" class="mr-2">mdi-calendar-month</v-icon>
-          ສ້າງລາຍເດືອນອັດຕະໂນມັດ
-        </div>
-        
-        <div class="text-body-2 text-grey-darken-1 mb-4 text-styles">
-          ເລືອກວິທີການສ້າງລາຍເດືອນສຳລັບຮອບວຽນນີ້
-        </div>
-
-        <!-- Period Generation Buttons -->
-        <v-row class="mb-4">
-          <v-col cols="12" md="4">
-            <v-btn
-              color="yellow-darken-2"
-              variant="elevated"
-              block
-              @click="generatePeriods('monthly')"
-              :loading="generatingPeriods === 'monthly'"
-              class="text-none py-4"
-              prepend-icon="mdi-calendar-month-outline"
-            >
-              <div>
-                <div class="font-weight-bold text-styles">ລາຍເດືອນ</div>
-                <div class="text-caption text-styles">12 ເດືອນ</div>
-              </div>
-            </v-btn>
-          </v-col>
-          <v-col cols="12" md="4">
-            <v-btn
-              color="yellow-darken-2"
-              variant="elevated"
-              block
-              @click="generatePeriods('quarterly')"
-              :loading="generatingPeriods === 'quarterly'"
-              class="text-none py-4"
-              prepend-icon="mdi-calendar-range"
-            >
-              <div>
-                <div class="font-weight-bold text-styles">ລາຍໄຕມາດ</div>
-                <div class="text-caption text-styles">4 ໄຕມາດ</div>
-              </div>
-            </v-btn>
-          </v-col>
-          <v-col cols="12" md="4">
-            <v-btn
-              color="yellow-darken-2"
-              variant="elevated"
-              block
-              @click="generatePeriods('half-yearly')"
-              :loading="generatingPeriods === 'half-yearly'"
-              class="text-none py-4"
-              prepend-icon="mdi-calendar-range-outline"
-            >
-              <div>
-                <div class="font-weight-bold text-styles">ຄິ້ງປີ</div>
-                <div class="text-caption text-styles">2 ໄລຍະ</div>
-              </div>
-            </v-btn>
-          </v-col>
-        </v-row>
-
-        <!-- Generated Periods Preview -->
-        <div v-if="generatedPeriods.length > 0">
-          <v-divider class="mb-4"></v-divider>
-          <div class="text-subtitle-2 mb-3 text-grey-darken-1 text-styles">
-            ລາຍການເດືອນທີ່ຈະສ້າງ ({{ generatedPeriods.length }} ລາຍການ)
-          </div>
-          <v-row>
-            <v-col 
-              v-for="(period, index) in generatedPeriods" 
-              :key="index"
-              cols="12" sm="6" md="4" lg="3"
-            >
-              <v-card 
-                class="pa-3 rounded-lg" 
-                :color="getPeriodColor(period.type)" 
-                variant="tonal"
-                elevation="1"
-              >
-                <div class="text-center">
-                  <v-icon :color="getPeriodColor(period.type)" class="mb-1" size="20">
-                    {{ getPeriodIcon(period.type) }}
-                  </v-icon>
-                  <div class="text-caption text-grey-darken-1 text-styles">{{ period.period_code }}</div>
-                  <div class="font-weight-bold text-body-2 text-styles">{{ period.description }}</div>
-                  <div class="text-caption mt-1">
-                    {{ formatShortDate(period.PC_StartDate) }} - {{ formatShortDate(period.PC_EndDate) }}
-                  </div>
-                </div>
-              </v-card>
-            </v-col>
-          </v-row>
-          
-          <!-- Save Periods Button -->
-          <div class="d-flex justify-center mt-4">
-            <v-btn
-              color="primary"
-              variant="elevated"
-              @click="savePeriods"
-              :loading="savingPeriods"
-              class="text-none px-8"
-              prepend-icon="mdi-content-save"
-            >
-              ບັນທຶກລາຍເດືອນທັງໝົດ
-            </v-btn>
-          </div>
-        </div>
-      </v-card>
     </div>
-
-    <!-- Custom Year Dialog -->
-    <v-dialog v-model="showYearDialog" max-width="400">
-      <v-card class="rounded-lg">
-        <v-card-title class="pa-6 pb-4">
-          <span class="text-h6 font-weight-bold  text-styles">ເລືອກປີ</span>
-        </v-card-title>
-        <v-card-text class="pa-6 pt-0">
-          <v-text-field
-            v-model="customYear"
-            label="ປີ"
-            type="number"
-            variant="outlined"
-            :min="2020"
-            :max="2030"
-            density="comfortable"
-          />
-        </v-card-text>
-        <v-card-actions class="pa-6 pt-0">
-          <v-spacer />
-          <v-btn variant="text" @click="showYearDialog = false">ຍົກເລີກ</v-btn>
-          <v-btn color="primary" @click="applyCustomYear">ຕົກລົງ</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
 
     <!-- Success Snackbar -->
     <v-snackbar
@@ -380,7 +275,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import axios from '@/helpers/axios'
 import { useRouter } from 'vue-router'
 import { FinCycleModel } from '~/models'
@@ -408,11 +303,11 @@ const showSuccess = ref(false)
 const showError = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
-const showYearDialog = ref(false)
-const customYear = ref(new Date().getFullYear())
-const generatingPeriods = ref<string | null>(null)
-const savingPeriods = ref(false)
-const generatedPeriods = ref<PeriodCode[]>([])
+
+// New state for simplified workflow
+const cycleYear = ref<number | null>(null)
+const generatePeriods = ref(false)
+const selectedPeriodType = ref<'monthly' | 'quarterly' | 'half-yearly'>('monthly')
 
 const form = ref<CreateFinCyclePayload>({
   fin_cycle: '',
@@ -426,21 +321,16 @@ const form = ref<CreateFinCyclePayload>({
 
 // Computed property for duration calculation
 const duration = computed(() => {
-  if (form.value.StartDate && form.value.EndDate && isValidDateRange.value) {
+  if (form.value.StartDate && form.value.EndDate) {
     return calculateDuration(form.value.StartDate, form.value.EndDate)
   }
   return null
 })
 
-const isValidDateRange = computed(() => {
-  if (!form.value.StartDate || !form.value.EndDate) return false
-  return new Date(form.value.StartDate) < new Date(form.value.EndDate)
-})
-
-// Dropdown options with better labels
+// Dropdown options
 const recordStatusItems = [
-  { title: 'ເປີດໃຊ້ງານ', value: 'O' },
-  { title: 'ປິດໃຊ້ງານ', value: 'C' }
+  { title: 'ເປີດໃຊ້ງານ', value: 'C' },
+  { title: 'ປິດໃຊ້ງານ', value: 'O' }
 ]
 
 const authStatusItems = [
@@ -456,20 +346,35 @@ const onceAuthItems = [
 // Validation rules
 const rules = {
   required: (value: any) => !!value || 'ຈຳເປັນຕ້ອງມີຂໍ້ມູນນີ້',
-  cycleCode: (value: string) => {
+  yearValidation: (value: any) => {
     if (!value) return true
-    if (value.length < 2) return 'ລະຫັດຮອບວຽນຕ້ອງມີຢ່າງໜ້ອຍ 2 ຕົວອັກສອນ'
-    if (!/^[A-Z0-9]+$/.test(value)) return 'ໃຊ້ພຽງຕົວອັກສອນພິມໃຫຍ່ແລະຕົວເລກເທົ່ານັ້ນ'
-    return true
-  },
-  endDateValidation: (value: string) => {
-    if (!value || !form.value.StartDate) return true
-    if (new Date(value) <= new Date(form.value.StartDate)) return 'ວັນທີສິ້ນສຸດຕ້ອງຫຼັງຈາກວັນທີເລີ່ມຕົ້ນ'
+    const year = parseInt(value)
+    if (year < 2020 || year > 2030) return 'ປີຕ້ອງຢູ່ລະຫວ່າງ 2020-2030'
     return true
   }
 }
 
+// Watch cycleYear changes to auto-update form
+watch(cycleYear, (newYear) => {
+  updateCycleData()
+})
+
 // Helper functions
+function updateCycleData() {
+  if (cycleYear.value) {
+    const year = parseInt(cycleYear.value.toString())
+    form.value.fin_cycle = year.toString()
+    form.value.cycle_Desc = `ປີຮອບວຽນບັນຊີ ${year}`
+    form.value.StartDate = `${year}-01-01`
+    form.value.EndDate = `${year}-12-31`
+  } else {
+    form.value.fin_cycle = ''
+    form.value.cycle_Desc = ''
+    form.value.StartDate = ''
+    form.value.EndDate = ''
+  }
+}
+
 function calculateDuration(startDate: string, endDate: string): string {
   const start = new Date(startDate)
   const end = new Date(endDate)
@@ -489,84 +394,25 @@ function calculateDuration(startDate: string, endDate: string): string {
   }
 }
 
-function getDurationColor() {
-  if (!duration.value) return 'grey'
-  const durationText = duration.value
-  if (durationText.includes('ມື້')) return 'warning'
-  if (durationText.includes('ເດືອນ') && !durationText.includes('ປີ')) return 'info'
-  return 'success'
-}
-
-function formatDisplayDate(dateStr: string): string {
-  if (!dateStr) return '-'
-  const date = new Date(dateStr)
-  return date.toLocaleDateString('lo-LA', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  })
-}
-
-function formatShortDate(dateStr: string): string {
-  if (!dateStr) return '-'
-  const date = new Date(dateStr)
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric'
-  })
-}
-
-function validateDateRange() {
-  // This triggers validation for both date fields
-  generatedPeriods.value = [] // Clear generated periods when dates change
-}
-
-function setYearDates(year?: number) {
-  const targetYear = year || new Date().getFullYear()
-  form.value.StartDate = `${targetYear}-01-01`
-  form.value.EndDate = `${targetYear}-12-31`
-  form.value.fin_cycle = `${targetYear}`
-  form.value.cycle_Desc = `ປີຮອບວຽນບັນຊີ ${targetYear}`
-  generatedPeriods.value = [] // Clear generated periods
-}
-
-function setCustomYear() {
-  showYearDialog.value = true
-}
-
-function applyCustomYear() {
-  setYearDates(customYear.value)
-  showYearDialog.value = false
+// Period generation preview function
+function getPreviewPeriods(): PeriodCode[] {
+  if (!cycleYear.value || !selectedPeriodType.value) return []
+  
+  const year = parseInt(cycleYear.value.toString())
+  
+  switch (selectedPeriodType.value) {
+    case 'monthly':
+      return generateMonthlyPeriods(year)
+    case 'quarterly':
+      return generateQuarterlyPeriods(year)
+    case 'half-yearly':
+      return generateHalfYearlyPeriods(year)
+    default:
+      return []
+  }
 }
 
 // Period generation functions
-function generatePeriods(type: 'monthly' | 'quarterly' | 'half-yearly') {
-  if (!form.value.StartDate || !form.value.EndDate || !form.value.fin_cycle) return
-  
-  generatingPeriods.value = type
-  generatedPeriods.value = []
-  
-  setTimeout(() => {
-    const startDate = new Date(form.value.StartDate)
-    const endDate = new Date(form.value.EndDate)
-    const year = startDate.getFullYear()
-    
-    switch (type) {
-      case 'monthly':
-        generatedPeriods.value = generateMonthlyPeriods(year)
-        break
-      case 'quarterly':
-        generatedPeriods.value = generateQuarterlyPeriods(year)
-        break
-      case 'half-yearly':
-        generatedPeriods.value = generateHalfYearlyPeriods(year)
-        break
-    }
-    
-    generatingPeriods.value = null
-  }, 500)
-}
-
 function generateMonthlyPeriods(year: number): PeriodCode[] {
   const periods: PeriodCode[] = []
   const monthNames = [
@@ -641,64 +487,14 @@ function generateHalfYearlyPeriods(year: number): PeriodCode[] {
   return periods
 }
 
-function getPeriodColor(type: 'monthly' | 'quarterly' | 'half-yearly'): string {
-  switch (type) {
-    case 'monthly': return 'amber-darken-2'
-    case 'quarterly': return 'amber-darken-2'
-    case 'half-yearly': return 'amber-darken-2'
-    default: return 'grey'
-  }
-}
-
-function getPeriodIcon(type: 'monthly' | 'quarterly' | 'half-yearly'): string {
-  switch (type) {
-    case 'monthly': return 'mdi-calendar-month-outline'
-    case 'quarterly': return 'mdi-calendar-range'
-    case 'half-yearly': return 'mdi-calendar-range-outline'
-    default: return 'mdi-calendar'
-  }
-}
-
-async function savePeriods() {
-  if (generatedPeriods.value.length === 0) return
-  
-  savingPeriods.value = true
-  try {
-    // Save all periods
-    const promises = generatedPeriods.value.map(period => 
-      axios.post('/api/percodes/', {
-        period_code: period.period_code,
-        PC_StartDate: period.PC_StartDate,
-        PC_EndDate: period.PC_EndDate,
-        Fin_cycle: period.Fin_cycle
-      }, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        }
-      })
-    )
-    
-    await Promise.all(promises)
-    
-    showSuccess.value = true
-    successMessage.value = `ບັນທຶກລາຍເດືອນສຳເລັດ ${generatedPeriods.value.length} ລາຍການ`
-    generatedPeriods.value = []
-    
-  } catch (error: any) {
-    showError.value = true
-    errorMessage.value = error.response?.data?.message || 'ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກລາຍເດືອນ'
-    console.error('Error saving periods:', error)
-  } finally {
-    savingPeriods.value = false
-  }
-}
-
+// Main submit function - handles both financial cycle and periods
 async function submitForm() {
-  if (!isValid.value) return
+  if (!isValid.value || !cycleYear.value) return
   
   loading.value = true
   try {
+    // Step 1: Create Financial Cycle
+    console.log('Creating financial cycle:', form.value)
     await axios.post('/api/fin-cycles/', form.value, {
       headers: {
         "Content-Type": "application/json",
@@ -706,10 +502,38 @@ async function submitForm() {
       },
     })
     
-    showSuccess.value = true
-    successMessage.value = 'ເພີ່ມຮອບວຽນບັນຊີສຳເລັດແລ້ວ!'
+    let totalCreated = 1 // Financial cycle created
+    let message = 'ສ້າງຮອບວຽນບັນຊີສຳເລັດແລ້ວ!'
     
-    // Reset form after success
+    // Step 2: Create Period Codes if selected
+    if (generatePeriods.value && selectedPeriodType.value) {
+      const periodsToCreate = getPreviewPeriods()
+      console.log('Creating periods:', periodsToCreate.length)
+      
+      // Create all periods
+      const periodPromises = periodsToCreate.map(period => 
+        axios.post('/api/percodes/', {
+          period_code: period.period_code,
+          PC_StartDate: period.PC_StartDate,
+          PC_EndDate: period.PC_EndDate,
+          Fin_cycle: period.Fin_cycle
+        }, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          }
+        })
+      )
+      
+      await Promise.all(periodPromises)
+      totalCreated += periodsToCreate.length
+      message = `ສ້າງຮອບວຽນບັນຊີແລະລາຍເດືອນສຳເລັດ! (${totalCreated} ລາຍການ)`
+    }
+    
+    showSuccess.value = true
+    successMessage.value = message
+    
+    // Redirect after success
     setTimeout(() => {
       router.push('/fincycle')
     }, 1500)
@@ -717,7 +541,7 @@ async function submitForm() {
   } catch (error: any) {
     showError.value = true
     errorMessage.value = error.response?.data?.message || 'ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກ'
-    console.error('Error creating financial cycle:', error)
+    console.error('Error creating financial cycle and periods:', error)
   } finally {
     loading.value = false
   }
@@ -772,23 +596,22 @@ function goBack() {
   opacity: 1;
 }
 
-/* Quick preset buttons */
-.v-btn--outlined {
-  border-radius: 6px;
+/* Switch and radio styling */
+.v-switch {
+  margin-bottom: 16px;
 }
 
-/* Date input styling */
-:deep(input[type="date"]) {
-  cursor: pointer;
+.v-radio-group :deep(.v-radio) {
+  margin-right: 24px;
 }
 
-/* Period cards animation */
-.v-card:hover {
-  transform: translateY(-2px);
+/* Readonly field styling */
+:deep(.v-field--readonly) {
+  opacity: 0.8;
 }
 
-/* Period generation buttons */
-.v-btn .v-btn__content {
-  flex-direction: column;
+/* Chip styling */
+.v-chip {
+  margin: 2px;
 }
 </style>
