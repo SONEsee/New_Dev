@@ -2,15 +2,25 @@
 const title = "ບົດລາຍງານຫັກຄ່າຫຼຸຍຫຽ້ນ";
 const AssetListStore = assetStore();
 const reportStore = useReportDeprecationStore();
+const devisionStore = UseCategoryStore();
 const masterStore = useMasterStore();
 const selecteAssetType = ref(null);
+const selecdevision = ref(null);
 const selectStatus = ref(null);
 const selectStartDate = ref("");
 const selectEndDate = ref("");
-
 const searchQuery = ref("");
 const isLoading = ref(false);
-
+const branch = computed(() => {
+  const data = devisionStore.categories;
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (data && typeof data === "object") {
+    return [data];
+  }
+  return [];
+});
 const assetTypeList = computed(() => {
   const data = AssetListStore.response_asset_list;
   if (Array.isArray(data)) {
@@ -43,14 +53,10 @@ const reportResponse = computed(() => {
 });
 
 watch(selecteAssetType, async (newValue) => {
+  reportStore.isLoading = true;
   try {
-    isLoading.value = true;
-    if (newValue) {
-      reportStore.form_filter_report_deprecaton.asset_type_id = newValue;
-      await reportStore.getReportDeprecation();
-    } else {
-      reportStore.form_filter_report_deprecaton.asset_type_id = null;
-    }
+    reportStore.form_filter_report_deprecaton.asset_type_id = newValue;
+    await reportStore.getReportDeprecation();
   } catch (error) {
     CallSwal({
       icon: "error",
@@ -58,20 +64,15 @@ watch(selecteAssetType, async (newValue) => {
       text: "ເກີດຂໍ້ຜິດພາດໃນການອັບເດດປະເພດຊັບສິນ",
     });
   } finally {
-    isLoading.value = false;
+    reportStore.isLoading = false;
   }
 });
 watch(selectStatus, async (newValue) => {
   try {
     isLoading.value = true;
-    if (newValue && typeof newValue === "string") {
-      reportStore.form_filter_report_deprecaton.asset_status = (
-        newValue as string
-      ).toLowerCase();
-      await reportStore.getReportDeprecation();
-    } else {
-      reportStore.form_filter_report_deprecaton.asset_status = null;
-    }
+
+    reportStore.form_filter_report_deprecaton.asset_status = newValue;
+    await reportStore.getReportDeprecation();
   } catch (error) {
     console.error("Error updating status:", error);
     CallSwal({
@@ -83,41 +84,36 @@ watch(selectStatus, async (newValue) => {
     isLoading.value = false;
   }
 });
-watch([selectStartDate, selectEndDate], async ([startDate, endDate]) => {
-  if (startDate && endDate && selecteAssetType.value && selectStatus.value) {
-    try {
-      isLoading.value = true;
-      reportStore.form_filter_report_deprecaton.start_date = startDate;
-      reportStore.form_filter_report_deprecaton.end_date = endDate;
-      await reportStore.getReportDeprecation();
-    } catch (error) {
-      console.error("Error updating date range:", error);
-      CallSwal({
-        icon: "error",
-        title: "ເກີດຂໍ້ຜິດພາດ",
-        text: "ເກີດຂໍ້ຜິດພາດໃນການອັບເດດຊ່ວງວັນທີ",
-      });
-    } finally {
-      isLoading.value = false;
-    }
+watch(selecdevision, async (newValue) => {
+  reportStore.isLoading = true;
+  try {
+    reportStore.form_filter_report_deprecaton.division_id = newValue;
+    await reportStore.getReportDeprecation();
+  } catch (error) {
+    CallSwal({
+      icon: "error",
+      title: "ຜິດພາດ",
+      text: "ບໍ່ສາມາດດືງຂໍ້ມູນໄດ້",
+    });
   }
 });
-
-const clearFilters = () => {
-  selecteAssetType.value = null;
-  selectStatus.value = null;
-  selectStartDate.value = "";
-  selectEndDate.value = "";
-  searchQuery.value = "";
-  reportStore.form_filter_report_deprecaton = {
-    asset_type_id: null,
-    asset_status: null,
-    start_date: "",
-    end_date: "",
-    
-  };
-  reportStore.getReportDeprecation()
-};
+watch([selectStartDate, selectEndDate], async ([startDate, endDate]) => {
+  try {
+    isLoading.value = true;
+    reportStore.form_filter_report_deprecaton.start_date = startDate;
+    reportStore.form_filter_report_deprecaton.end_date = endDate;
+    await reportStore.getReportDeprecation();
+  } catch (error) {
+    console.error("Error updating date range:", error);
+    CallSwal({
+      icon: "error",
+      title: "ເກີດຂໍ້ຜິດພາດ",
+      text: "ເກີດຂໍ້ຜິດພາດໃນການອັບເດດຊ່ວງວັນທີ",
+    });
+  } finally {
+    isLoading.value = false;
+  }
+});
 
 const exportReport = () => {
   if (reportResponse.value.length === 0) {
@@ -132,16 +128,11 @@ const exportReport = () => {
   console.log("Exporting report...", reportResponse.value);
 };
 
-onMounted(async () => {
-  try {
-    await Promise.all([
-      masterStore.getPuamsue1(),
-      reportStore.getReportDeprecation(),
-      AssetListStore.GetAssetList(),
-    ]);
-  } catch (error) {
-    console.error("Error loading initial data:", error);
-  }
+onMounted(() => {
+  masterStore.getPuamsue1(),
+    reportStore.getReportDeprecation(),
+    AssetListStore.GetAssetList();
+  devisionStore.GetListData();
 });
 const formatNumber = (value: any) => {
   if (!value && value !== 0) return "0";
@@ -165,7 +156,7 @@ const formatNumber = (value: any) => {
 <template>
   <div class="pa-4">
     <GlobalTextTitleLine :title="title" />
-
+    <!-- <pre>{{ branch }}</pre> -->
     <v-card class="mb-4">
       <v-card-title>
         <v-icon left>mdi-filter-variant</v-icon>
@@ -175,15 +166,14 @@ const formatNumber = (value: any) => {
         <v-row>
           <v-col cols="12" md="3">
             <v-autocomplete
-              :items="assetTypeList"
+              v-model="selecteAssetType"
               item-title="asset_name_la"
               item-value="coa_id"
-              v-model="selecteAssetType"
+              :items="assetTypeList"
               label="ເລືອກປະເພດຊັບສິນ"
               clearable
-              :loading="isLoading"
+              :loading="reportStore.isLoading"
               prepend-inner-icon="mdi-database-search"
-              :search-input.sync="searchQuery"
               no-data-text="ບໍ່ພົບຂໍ້ມູນ"
               variant="outlined"
               density="compact"
@@ -191,8 +181,7 @@ const formatNumber = (value: any) => {
               <template v-slot:item="{ props, item }">
                 <v-list-item
                   v-bind="props"
-                  :title="item.raw.asset_name_la"
-                  :subtitle="`ID: ${item.raw.coa_id}`"
+                  :title="`${item.raw.asset_name_la}-${item.raw.coa_id}`"
                 >
                   <template v-slot:prepend>
                     <v-avatar size="small" color="primary">
@@ -205,7 +194,7 @@ const formatNumber = (value: any) => {
           </v-col>
 
           <v-col cols="12" md="3">
-            <v-select
+            <v-autocomplete
               variant="outlined"
               density="compact"
               v-model="selectStatus"
@@ -215,7 +204,46 @@ const formatNumber = (value: any) => {
               label="ເລືອກສະຖານະ"
               clearable
               prepend-inner-icon="mdi-check-circle"
-            ></v-select>
+            >
+              <template v-slot:item="{ props, item }">
+                <v-list-item
+                  v-bind="props"
+                  :title="`${item.raw.MC_name_la}-${item.raw.MC_code}`"
+                >
+                  <template v-slot:prepend>
+                    <v-avatar size="small" color="primary">
+                      <v-icon>mdi-package-variant</v-icon>
+                    </v-avatar>
+                  </template>
+                </v-list-item>
+              </template>
+            </v-autocomplete>
+          </v-col>
+          <v-col cols="12" md="2">
+            <v-autocomplete
+              v-model="selecdevision"
+              :items="branch"
+              clearable
+              item-title="division_name_la"
+              item-value="div_id"
+              label="ເລືອກຕາມພະແນກ"
+              variant="outlined"
+              density="compact"
+              prepend-inner-icon="mdi-source-branch"
+            >
+              <template v-slot:item="{ props, item }">
+                <v-list-item
+                  v-bind="props"
+                  :title="`${item.raw.division_name_la}-${item.raw.div_id}`"
+                >
+                  <template v-slot:prepend>
+                    <v-avatar size="small" color="primary">
+                      <v-icon>mdi-source-branch</v-icon>
+                    </v-avatar>
+                  </template>
+                </v-list-item>
+              </template>
+            </v-autocomplete>
           </v-col>
 
           <v-col cols="12" md="2">
@@ -238,16 +266,6 @@ const formatNumber = (value: any) => {
               variant="outlined"
               density="compact"
             ></v-text-field>
-          </v-col>
-          <v-col cols="12" md="2">
-            <v-btn
-              color="error"
-              variant="outlined"
-              @click="clearFilters"
-              prepend-icon="mdi-filter-remove"
-            >
-              ລ້າງການກອງ
-            </v-btn>
           </v-col>
         </v-row>
 
@@ -274,7 +292,7 @@ const formatNumber = (value: any) => {
               color="primary"
               @click="
                 goPath(
-                  `/property/report/prin_report_deprecation?status=${selectStatus}&type=${selecteAssetType}&start=${selectStartDate}&end=${selectEndDate}`
+                  `/property/report/prin_report_deprecation?status=${selectStatus}&type=${selecteAssetType}&branch=${selecdevision}&start=${selectStartDate}&end=${selectEndDate}`
                 )
               "
             >
@@ -293,7 +311,7 @@ const formatNumber = (value: any) => {
           <p class="mt-2">ກຳລັງໂຫຼດຂໍ້ມູນ...</p>
         </div>
         <div v-else-if="reportResponse.length !== 0">
-          <v-table 
+          <v-table
             style="border: 1px solid"
             class="rounded-lg text-no-wrap"
             fixed-header

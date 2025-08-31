@@ -8,7 +8,8 @@ export interface ReportDeprecationRespons {
   asset_status: string | null;
   start_date: string;
   end_date: string;
-  devision: string | null;
+  division_id: string | null;
+  asset_list_id: string | null;
 }
 export interface Datum {
     asset_list_id:           string;

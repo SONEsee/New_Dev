@@ -6,6 +6,57 @@ const masterStore = useMasterStore();
 const assetStores = assetStore();
 const faAssetStoreInstance = faAssetStore();
 const typeAssetStore = propertyStore();
+const selecAssetType = ref("");
+const selecStatus = ref("");
+const selecAuth = ref("");
+watch(selecAuth, async (newValue) => {
+  faAssetStoreInstance.isLoading = true;
+  try {
+    faAssetStoreInstance.filter_data_assetlist_id.filter.Auth_Status = newValue;
+    faAssetStoreInstance.GetFaAssetList();
+  } catch (error) {
+    CallSwal({
+      icon: "error",
+      title: "ຜິດພາດ",
+      text: "ເກີດຂໍ້ຜິດພາດໃນການດືງຂໍ້ມູນ",
+    });
+  } finally {
+    faAssetStoreInstance.isLoading = false;
+  }
+});
+watch(selecStatus, async (newValue) => {
+  faAssetStoreInstance.isLoading;
+  try {
+    faAssetStoreInstance.filter_data_assetlist_id.filter.asset_status =
+      newValue;
+    faAssetStoreInstance.GetFaAssetList();
+  } catch (error) {
+    CallSwal({
+      icon: "error",
+      title: "ຜິດພາດ",
+      text: "ເກີດຂໍ້ຜິດພາດໃນການດືງຂໍ້ມູນ",
+    });
+  } finally {
+    faAssetStoreInstance.isLoading = false;
+  }
+});
+watch(selecAssetType, async (newValue) => {
+  faAssetStoreInstance.isLoading = true;
+  try {
+    faAssetStoreInstance.filter_data_assetlist_id.filter.asset_type_id =
+      newValue;
+    faAssetStoreInstance.GetFaAssetList();
+  } catch (error) {
+    CallSwal({
+      icon: "error",
+      title: "ເກີດຈໍ້ຜິດພາດ",
+      text: "ບໍ່ສາມາດດຶງຂໍ້ມູນນີ້ໄດ້",
+    });
+  } finally {
+    faAssetStoreInstance.isLoading = false;
+  }
+  // faAssetStoreInstance.GetFaAssetList();
+});
 const masterdata = computed(() => {
   const response = masterStore.resposne_status_puamsuepuamkrsang;
   return response?.MasterCodes ?? [];
@@ -206,15 +257,15 @@ const headers = computed(() => [
     class: "text-center",
   },
 
-  {
-    title: "ຂັ້ນຕອນດຳເນີນການ",
-    value: "asset_status",
-    align: "center",
-    sortable: true,
-    filterable: true,
-    width: "120px",
-    class: "text-center",
-  },
+  // {
+  //   title: "ຂັ້ນຕອນດຳເນີນການ",
+  //   value: "asset_status",
+  //   align: "center",
+  //   sortable: true,
+  //   filterable: true,
+  //   width: "120px",
+  //   class: "text-center",
+  // },
   {
     title: "ສະຖານະອານຸມັດ",
     value: "Auth_Status",
@@ -320,39 +371,43 @@ const filteredData = computed(() => {
     // ຟັງຊັນຊ່ວຍກຳນົດລຳດັບຄວາມສຳຄັນ
     const getPriority = (item) => {
       // ຄວາມສຳຄັນສູງສຸດ: UC + Auth_Status_ARC = U + Auth_Status = U
-      if (item.asset_status === 'UC' && 
-          item.Auth_Status_ARC === 'U' && 
-          item.Auth_Status === 'U') {
+      if (
+        item.asset_status === "UC" &&
+        item.Auth_Status_ARC === "U" &&
+        item.Auth_Status === "U"
+      ) {
         return 1;
       }
-      
+
       // ຄວາມສຳຄັນກາງ: UC ອື່ນໆ
-      if (item.asset_status === 'UC') {
+      if (item.asset_status === "UC") {
         return 2;
       }
-      
+
       // ຄວາມສຳຄັນຕ່ຳ: ສະຖານະອື່ນໆ
       return 3;
     };
-    
+
     const priorityA = getPriority(a);
     const priorityB = getPriority(b);
-    
+
     // ຈັດຮຽງຕາມລຳດັບຄວາມສຳຄັນ
     if (priorityA !== priorityB) {
       return priorityA - priorityB;
     }
-    
+
     // ຖ້າມີຄວາມສຳຄັນເທົ່າກັນ, ຈັດຮຽງຕາມ ID (ເກົ່າກວ່າກ່ອນ)
     if (a.asset_list_id && b.asset_list_id) {
       return parseInt(a.asset_list_id) - parseInt(b.asset_list_id);
     }
-    
+
     // ຫຼື ຈັດຮຽງຕາມວັນທີ່ (ຖ້າມີ)
     if (a.asset_date && b.asset_date) {
-      return new Date(a.asset_date).getTime() - new Date(b.asset_date).getTime();
+      return (
+        new Date(a.asset_date).getTime() - new Date(b.asset_date).getTime()
+      );
     }
-    
+
     return 0;
   });
 });
@@ -458,9 +513,9 @@ onMounted(async () => {
     masterStore.getStatus();
     typeAssetStore.GetPropertyCategoryById();
     faAssetStoreInstance.GetFaAssetList();
-    assetStores.GetAssetList();
+    // assetStores.GetAssetList();
     typeAssetStore.GetPropertyCategoryById();
-    faAssetStoreInstance.GetFaAssetList();
+    faAssetStoreInstance.GetFaAssetList1();
     masterStore.getPuamsue();
 
     initializeRole();
@@ -565,6 +620,12 @@ const getAuthStatusColor = (authStatusCode: string) => {
   };
   return colors[authStatusCode as keyof typeof colors] || "grey";
 };
+const StatusData = [
+  { title: "ທັງໝົດ", value: null },
+  { title: "ອານຸມັດແລ້ວ", value: "A" },
+  { title: "ອານຸມັດແລ້ວ", value: "U" },
+  
+];
 </script>
 
 <template>
@@ -596,34 +657,86 @@ const getAuthStatusColor = (authStatusCode: string) => {
             </v-btn>
           </div>
         </v-col>
-        <v-col cols="12" md="3" class="text-no-wrap">
+        <v-col cols="12" md="2" class="text-no-wrap">
           <v-autocomplete
             v-model="selectedassetCode"
             :items="response || []"
             item-title="asset_name_la"
+            prepend-inner-icon="mdi-format-list-bulleted-type"
             item-value="coa_id"
             label="ເລືອກຕາມປະເພດຊັບສົມບັດຍອ່ຍ"
+           
             variant="outlined"
             density="compact"
-            clearable
             placeholder="ເລືອກສະຖານະ"
-            :loading="loading"
-          ></v-autocomplete>
+            :loading="faAssetStoreInstance.isLoading"
+          >
+            <template v-slot:item="{ props, item }">
+              <v-list-item
+                v-bind="props"
+                :title="`${item.raw.asset_name_la}(${item.raw.coa_id})`"
+              >
+                <template v-slot:prepend>
+                  <v-avatar size="small" color="primary">
+                    <v-icon>mdi-format-list-bulleted-type</v-icon>
+                  </v-avatar>
+                </template>
+              </v-list-item>
+            </template>
+          </v-autocomplete>
         </v-col>
 
-        <v-col cols="12" md="3" class="text-no-wrap">
+        <v-col cols="12" md="2" class="text-no-wrap">
           <v-autocomplete
             v-model="selectedStatus"
+            prepend-inner-icon="mdi-list-status"
             :items="masterdata"
             item-title="MC_name_la"
             item-value="MC_code"
             label="ສະຖານະຊັບສົມບັດ"
+            
             variant="outlined"
             density="compact"
-            clearable
             placeholder="ເລືອກສະຖານະ"
-            :loading="loading"
-          ></v-autocomplete>
+            :loading="faAssetStoreInstance.isLoading"
+          >
+            <template v-slot:item="{ props, item }">
+              <v-list-item
+                v-bind="props"
+                :title="`${item.raw.MC_name_la}(${item.raw.MC_code})`"
+              >
+                <template v-slot:prepend>
+                  <v-avatar size="small" color="primary">
+                    <v-icon>mdi-list-status</v-icon>
+                  </v-avatar>
+                </template>
+              </v-list-item>
+            </template>
+          </v-autocomplete>
+        </v-col>
+        <v-col cols="12" md="2">
+          <v-autocomplete
+          prepend-inner-icon="mdi-star-four-points-outline"
+          variant="outlined"
+          density="compact"
+          :loading="faAssetStoreInstance.isLoading"
+            :items="StatusData"
+            item-title="title"
+            item-value="value"
+            v-model="selecAuth"
+            label="ເລືອກຕາມການອານຸມັດ"
+            clearable
+          >
+          <template v-slot:item="{props, item}">
+            <v-list-item v-bind="props" :title="`${item.raw.title}(${item.raw.value})`">
+              <template v-slot:prepend>
+                <v-avatar size="smaill" color="primary">
+                  <v-icon>mdi-star-four-points-outline</v-icon>
+                </v-avatar>
+              </template>
+            </v-list-item>
+          </template>
+        </v-autocomplete>
         </v-col>
 
         <v-col cols="12" md="2">
@@ -653,7 +766,7 @@ const getAuthStatusColor = (authStatusCode: string) => {
       </v-row>
 
       <v-data-table
-      :loading="faAssetStoreInstance.isLoading"
+        :loading="faAssetStoreInstance.isLoading"
         :headers="headers"
         :items="filteredData || []"
         class="text-no-wrap"

@@ -5,6 +5,14 @@ import { CallSwal, goPath } from "#build/imports";
 export const faAssetStore = defineStore("faAsset", {
   state() {
     return {
+      filter_data_assetlist_id:{
+        filter:{
+          asset_type_id:"",
+          Auth_Status:"U",
+          asset_status:""
+        },
+        isLoading:false,
+      },
       response_fa_asset_data: null as FaAssetModel.FaAsset | null,
       response_fa_asset_list: null as FaAssetModel.FaAsset[] | null,
       response_fa_asset_detail: null as FaAssetModel.FaAsset | null,
@@ -482,6 +490,31 @@ export const faAssetStore = defineStore("faAsset", {
         const res = await axios.get<FaAssetModel.FaAsset[]>(
           `/api/asset_list/`,
           {
+           
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+        if (res.status === 200) {
+          this.response_fa_asset_list = res.data;
+        }
+      } catch (error) {
+        console.error("Error fetching fa asset list:", error);
+      } finally {
+        this.isLoading = false;
+      }
+    },
+    async GetFaAssetList1() {
+      this.isLoading = true;
+      try {
+        const res = await axios.get<FaAssetModel.FaAsset[]>(
+          `/api/asset_list/`,
+          {
+            params:{
+              ...this.filter_data_assetlist_id.filter
+            },
             headers: {
               "Content-Type": "application/json",
               Authorization: `Bearer ${localStorage.getItem("token")}`,

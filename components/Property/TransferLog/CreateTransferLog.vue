@@ -1,12 +1,23 @@
 <script setup lang="ts">
 import { useRoute } from "vue-router";
 const route = useRoute();
+const devisionStore = UseCategoryStore();
 const id = route.query.asset_list_id as string;
 const form = ref();
 const faasetStore = faAssetStore();
 const transaction = useTransactionLogStore();
 const location = locationStore();
 const employee = useEmployeeStore();
+const branchData = computed(()=>{
+  const data = devisionStore.categories;
+  if(Array.isArray(data)){
+    return data
+  }
+  if(data && typeof data ==="object"){
+    return [data]
+  }
+  return []
+});
 const employees = computed(() => {
   const data = employee.respose_data_employee;
 
@@ -50,6 +61,7 @@ onMounted(() => {
   faasetStore.GetFaAssetDetail(id);
   location.GetLocationList();
   employee.GetEmployee();
+  devisionStore.GetListData();
 });
 const title = "ບັນທຶກການໂອນຍ້າຍຊັບສົມບັດ";
 </script>
@@ -61,7 +73,7 @@ const title = "ບັນທຶກການໂອນຍ້າຍຊັບສົ�
         <v-col cols="12">
           <GlobalTextTitleLine :title="title" />
         </v-col>
-        <!-- <pre>{{ employees }}</pre> -->
+        <!-- <pre>{{ branchData }}</pre> -->
         <v-col cols="12" class="">
           <v-row>
             <v-col cols="12">
@@ -197,6 +209,16 @@ const title = "ບັນທຶກການໂອນຍ້າຍຊັບສົ�
                       />
                     </v-col>
                     <v-col cols="4">
+                      <label>ພະແນກທີ່ຈະຍ້າຍໄປ:</label>
+                      <v-autocomplete
+                      :items="branchData"
+                      item-title="division_name_la"
+                      item-value="div_id"
+                        v-model="request.division"
+                        variant="outlined"
+                        density="compact"
+                        class="formatted-number-input"
+                      ></v-autocomplete>
                       <label>ເຫດຜົນໃນການໂອນຍ້າຍ:</label>
                       <v-text-field
                         v-model="request.transfer_reason"
@@ -307,15 +329,15 @@ const title = "ບັນທຶກການໂອນຍ້າຍຊັບສົ�
             </v-col>
 
             <v-col cols="12" class="d-flex flex-wrap justify-center mt-6">
-              <!-- <v-btn
+              <v-btn
                 color="error"
                 variant="outlined"
-                @click="goBack"
+                @click="goPath('/property/transfer_log')"
                 class="mr-2"
-                :disabled="faAssetStoreInstance.isLoading"
+                
               >
                 ຍົກເລີກ
-              </v-btn> -->
+              </v-btn>
 
               <v-btn
                 color="primary"

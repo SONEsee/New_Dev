@@ -2,7 +2,9 @@
 const reportStore = useReportDeprecationStore();
 const AssetListStore = assetStore();
 const masterStore = useMasterStore();
+const devisionStore = UseCategoryStore();
 const route = useRoute();
+
 const assetype = computed(() => {
   const data = AssetListStore.response_asset_list;
   if (Array.isArray(data)) {
@@ -29,7 +31,12 @@ const type = computed(() => {
   const parsed = Number(typeValue);
   return isNaN(parsed) ? NaN : parsed;
 });
-
+const branch = computed(() => {
+  const branchValue = route.query.branch;
+  return branchValue && branchValue !== "null" && branchValue !== "undefined"
+    ? branchValue
+    : NaN;
+});
 const status = computed(() => {
   const statusValue = route.query.status;
   return statusValue && statusValue !== "null" && statusValue !== "undefined"
@@ -74,7 +81,6 @@ const reportData = computed(() => {
   return [];
 });
 
-// Calculated totals
 const totalAssetValue = computed(() => {
   return reportData.value.reduce(
     (sum, item) => sum + parseFloat(item.asset_value || "0"),
@@ -317,9 +323,11 @@ watch(
     const cleanStatus = getCleanString(newQuery.status);
     const cleanStart = getCleanString(newQuery.start);
     const cleanEnd = getCleanString(newQuery.end);
+    const cleaBranch = getCleanString(newQuery.branch);
 
     reportStore.form_filter_report_deprecaton.asset_type_id = cleanType;
     reportStore.form_filter_report_deprecaton.asset_status = cleanStatus;
+    reportStore.form_filter_report_deprecaton.division_id = cleaBranch;
     reportStore.form_filter_report_deprecaton.start_date = cleanStart ?? "";
     reportStore.form_filter_report_deprecaton.end_date = cleanEnd ?? "";
 
@@ -338,50 +346,31 @@ const statusInfo = computed(() => {
 const statusName = computed(() => {
   return statusInfo.value ? statusInfo.value.MC_name_la : status.value;
 });
-
-const typeinfo = computed(()=>{
+const branchInfo = computed(() => {
+  const data = devisionStore.categories;
+  if (!data || !Array.isArray(data) || !branch.value) return null;
+  return data.find((item) => item.div_id === branch.value);
+});
+const branchName = computed(() => {
+  return branchInfo.value ? branchInfo.value.division_name_la : branch.value;
+});
+const typeinfo = computed(() => {
   const data = AssetListStore.response_asset_list;
-  if(!data || !Array.isArray(data)|| !type.value)return null
-  return data.find((item)=> item.coa_id === type.value)
-})
-const typeName = computed(()=>{
-  return typeinfo.value ? typeinfo.value.asset_name_la :type.value
-})
+  if (!data || !Array.isArray(data) || !type.value) return null;
+  return data.find((item) => item.coa_id === type.value);
+});
+const typeName = computed(() => {
+  return typeinfo.value ? typeinfo.value.asset_name_la : type.value;
+});
 onMounted(() => {
   masterStore.getPuamsue1();
   AssetListStore.GetAssetList();
+  devisionStore.GetListData();
 });
 </script>
 
 <template>
   <div class="report-container">
-    <div class="text-center">
-      <p><b>ສາທາລະນະລັດ ປະຊາທິປະໄຕ ປະຊາຊົນລາວ</b></p>
-
-      <p><b>ສັນຕິພາບ ເອກະລາດ ປະຊາທິປະໄຕ ເອກະພາບ ວັດທະນາຖາວອນ</b></p>
-    </div>
-    <div>
-      <v-row>
-        <v-col cols="6" md="6" class="text-center">
-          <img src="../../../assets/img/logo.png" alt="" width="100" />
-          <h4>ບໍລິສັດລັດ ບໍລິຫານໜີ້ ແລະ ຊັບສິນ ຈຳກັດຜູ້ດຽວ</h4>
-        </v-col>
-        <v-col cols="6" md="6" class="align-end">
-          <div class="text-end align-end">
-            <p>
-              <strong>ວັນທີ່ລາຍງານ:</strong>
-              {{ new Date().toLocaleDateString("lo-LA") }}
-            </p>
-            <p>ເລກທີເອກະສານ:...............</p>
-            <p></p>
-          </div>
-        </v-col>
-      </v-row>
-    </div>
-    <div class="report-header">
-      <h1 class="report-title">ບົດລາຍງານຊັບສິນຄົງທີ່</h1>
-    </div>
-
     <div class="export-actions">
       <button @click="printReport" class="export-btn print-btn">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -410,14 +399,48 @@ onMounted(() => {
         ສົ່ງອອກ Excel
       </button>
     </div>
+    <div class="text-center">
+      <p><b>ສາທາລະນະລັດ ປະຊາທິປະໄຕ ປະຊາຊົນລາວ</b></p>
+
+      <p><b>ສັນຕິພາບ ເອກະລາດ ປະຊາທິປະໄຕ ເອກະພາບ ວັດທະນາຖາວອນ</b></p>
+    </div>
+    <div>
+      <v-row>
+        <v-col cols="6" md="6" class="d-flex text-start">
+          <div class="text-center">
+            <img src="../../../assets/img/logo.png" alt="" width="100" />
+            <h4>ບໍລິສັດລັດ ບໍລິຫານໜີ້ ແລະ ຊັບສິນ ຈຳກັດຜູ້ດຽວ</h4>
+          </div>
+        </v-col>
+        <v-col cols="6" md="6" class="align-end">
+          <div class="text-end align-end">
+            <p>
+              <strong>ວັນທີ່ລາຍງານ:</strong>
+              {{ new Date().toLocaleDateString("lo-LA") }}
+            </p>
+            <p>ເລກທີເອກະສານ:...............</p>
+            <p></p>
+          </div>
+        </v-col>
+      </v-row>
+    </div>
+    <div class="report-header">
+      <h1 class="report-title">ບົດລາຍງານຊັບສິນຄົງທີ່</h1>
+    </div>
+
     <div
       class="filter-info"
       v-if="type !== null || status !== null || start || end"
     >
       <div class="filter-grid">
-        <div v-if="!isNaN(type)"><strong>ປະເພດຊັບສິນ:</strong> {{ typeName }}</div>
+        <div v-if="!isNaN(type)">
+          <strong>ປະເພດຊັບສິນ:</strong> {{ typeName }}
+        </div>
         <div v-if="status && status !== 'NaN'">
           <strong>ສະຖານະ:</strong> {{ statusName }}
+        </div>
+        <div v-if="status && status !== 'NaN'">
+          <strong>ພະແນກ:</strong> {{ branchName }}
         </div>
         <div v-if="start"><strong>ວັນທີ່ເລີ່ມຕົ້ນ:</strong> {{ start }}</div>
         <div v-if="end"><strong>ວັນທີ່ສິ້ນສຸດ:</strong> {{ end }}</div>
