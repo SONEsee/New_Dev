@@ -211,6 +211,12 @@ onMounted(() => {
           </template>
         </v-autocomplete>
       </v-col>
+      <v-col cols="12" md="2" class="text-end
+      ">
+        <v-btn color="primary" @click="goPath('/property/dispalso/create')">
+          ສະສາງຊັບສົມບັດ
+        </v-btn>
+      </v-col>
     </v-row>
     <!-- <v-row>
       <v-col cols="6">
