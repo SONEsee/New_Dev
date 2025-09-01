@@ -5,6 +5,7 @@ export const useEmployeeStore = defineStore("employee",{
         return{
             respose_data_employee: null as EmployeeModel.EmployeeRespons | null,
             isloading: false,
+           
         }
     },
     actions:{
@@ -16,7 +17,7 @@ export const useEmployeeStore = defineStore("employee",{
                         "Content-Type": "application/json",
                         Authorization: `Bearer ${localStorage.getItem("token")}`,
                     },
-                });if(res.status == 200){
+                });if(res.status === 200){
                     this.respose_data_employee =res.data
                 }
             } catch (error) {

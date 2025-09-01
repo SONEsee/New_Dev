@@ -33,14 +33,20 @@ const request = dispalsoStore.from_create_disposal;
 const dataList = computed(() => {
   const data = faasetStore.response_fa_asset_list;
   let asset = [];
-  if(Array.isArray(data)){
-    return (asset = data)
-  }else if(data && typeof data ==="object"){
-    return (asset = [data])
-  }else{
-    return []
+  if (Array.isArray(data)) {
+    return (asset = data);
+  } else if (data && typeof data === "object") {
+    return (asset = [data]);
+  } else {
+    return [];
   }
-  return asset.filter((item)=>item.asset.asset_status !== "UC" || item.Auth_Status === "A" || item.Auth_Status_ARC === "A" || item.asset.asset_status !== "DS");
+  return asset.filter(
+    (item) =>
+      item.asset.asset_status !== "UC" ||
+      item.Auth_Status === "A" ||
+      item.Auth_Status_ARC === "A" ||
+      item.asset.asset_status !== "DS"
+  );
 });
 const handelSubmit = async () => {
   try {
@@ -99,14 +105,6 @@ onMounted(() => {
               ></v-list-item>
             </template>
           </v-autocomplete>
-<<<<<<< HEAD
-          <v-text-field
-            v-model="request.disposal_value"
-            label="ມູນຄ່າການຖອນ"
-            variant="outlined"
-            density="compact"
-          >
-=======
           <v-autocomplete
             v-model="request.disposal_type"
             label="ປະເພດການຊຳລະສະສາງ"
@@ -130,7 +128,6 @@ onMounted(() => {
             label="ຄ່າໃຊ້ຈ່າຍໃນການຖອນ"
             type="number"
           >
->>>>>>> f4a864e562d2896cd34dd46b736eb79472ebc537
           </v-text-field>
         </v-col>
         <v-col cols="12" md="3">

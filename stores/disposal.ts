@@ -3,6 +3,15 @@ import { ReportDispalso } from "~/models";
 export const useDispoalStore = defineStore("disposal", {
   state() {
     return {
+       fiter_data_disposal:{
+                query: {
+                    disposal_type: "",
+                    gain_loss: "",
+                    asset_list_id: "",
+                },
+                isloading: false,
+                error: null as string | null,
+            },
       respons_data_dispalso: null as ReportDispalso.DisposalRespons | null,
       isLoading: false,
       from_create_disposal: {
@@ -58,26 +67,54 @@ export const useDispoalStore = defineStore("disposal", {
         this.isLoading = false;
       }
     },
-    async getDispalso(){
+    async getDispalso() {
       this.isLoading = true;
       try {
-        const res = await axios.get<ReportDispalso.DisposalRespons>(`/api/asset_list_diposal/`,{
-          headers:{
-            "Content-Type":"application/json",
-            Authorization:`Bearer ${localStorage.getItem("token")}`
+        const res = await axios.get<ReportDispalso.DisposalRespons>(
+          `/api/asset_list_diposal/`,
+          {
+            params:{
+              ...this.fiter_data_disposal.query
+            },
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
           }
-        });if(res.status===200){
-          this.respons_data_dispalso = res.data
+        );
+        if (res.status === 200) {
+          this.respons_data_dispalso = res.data;
         }
       } catch (error) {
         CallSwal({
-          icon:"error",
-          title:"ເກີດຂໍ້ຜິດພາດ",
-          text:`ບໍ່ສາມາດດືງຂໍ້ມູນໄດ້ ${error}`
-        })
-      }finally{
+          icon: "error",
+          title: "ເກີດຂໍ້ຜິດພາດ",
+          text: `ບໍ່ສາມາດດືງຂໍ້ມູນໄດ້ ${error}`,
+        });
+    }finally {
         this.isLoading = false;
-      }
     }
+    }
+    // async getDispalso(){
+    //   this.isLoading = true;
+    //   try {
+    //     const res = await axios.get<ReportDispalso.DisposalRespons>(`/api/asset_list_diposal/`,{
+    //        headers: {
+    //           "Content-Type": "application/json",
+    //           Authorization: `Bearer ${localStorage.getItem("token")}`,
+    //         },
+    //     });if(res.status===200){
+    //       this.respons_data_dispalso = res.data
+    //     }
+    //   } catch (error) {
+    //     CallSwal({
+    //       icon:"error",
+    //       title:"ເກີດຂໍ້ຜິດພາດ",
+    //       text:`ບໍ່ສາມາດດືງຂໍ້ມູນໄດ້ ${error}`
+    //     })
+    //   }finally{
+    //     this.isLoading = false;
+    //   }
+    // }
   },
 });
