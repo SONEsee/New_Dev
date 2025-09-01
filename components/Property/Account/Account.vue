@@ -179,7 +179,7 @@ const headers = computed(() => [
       ]
     : []),
   
-]);
+ ] as any);
 
 const mockData = ref([
   {
