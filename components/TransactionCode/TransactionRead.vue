@@ -16,7 +16,7 @@ const search = ref('')
 const selectedStatus = ref('all')
 const selectedAuthStatus = ref('all')
 const page = ref(1)
-const itemsPerPage = ref(10)
+const itemsPerPage = ref<number | string>(10)
 const sortBy = ref<{ key: string; order: 'asc' | 'desc' }>({ key: 'trn_code', order: 'asc' })
 
 // Delete dialog state
@@ -109,15 +109,14 @@ const filteredCodes = computed(() => {
   return filtered
 })
 
-const paginatedCodes = computed(() => {
-  const start = (page.value - 1) * itemsPerPage.value
-  const end = start + itemsPerPage.value
-  return filteredCodes.value.slice(start, end)
-})
-
-const totalPages = computed(() => 
-  Math.ceil(filteredCodes.value.length / itemsPerPage.value)
-)
+// Items per page options for Vuetify default pagination
+const itemsPerPageOptions = [
+  { value: 10, title: '10' },
+  { value: 25, title: '25' },  
+  { value: 50, title: '50' },
+  { value: 100, title: '100' },
+  { value: -1, title: 'ທັງໝົດ' }
+]
 
 const headers = [
   { title: 'ລະຫັດທຸລະກຳ', key: 'trn_code', align: 'start', width: '200px' },
@@ -346,15 +345,19 @@ watch([selectedStatus, selectedAuthStatus], () => {
           {{ error }}
         </v-alert>
 
-        <!-- Enhanced Data Table -->
+        <!-- Enhanced Data Table with Default Pagination -->
         <v-data-table
           :headers="headers"
-          :items="paginatedCodes"
+          :items="filteredCodes"
           :loading="loading"
+          :items-per-page="itemsPerPage"
+          :page="page"
+          :items-per-page-options="itemsPerPageOptions"
           class="elevation-0 rounded-lg custom-table"
           item-value="trn_code"
           hover
-          hide-default-footer
+          @update:page="page = $event"
+          @update:items-per-page="itemsPerPage = $event"
         >
           <!-- Transaction Code Column -->
           <template #item.trn_code="{ item }">
@@ -371,7 +374,6 @@ watch([selectedStatus, selectedAuthStatus], () => {
               </v-avatar>
               <div>
                 <div class="font-weight-medium">{{ item.trn_code }}</div>
-                
               </div>
               <v-btn
                 icon="mdi-content-copy"
@@ -399,7 +401,6 @@ watch([selectedStatus, selectedAuthStatus], () => {
                 {{ item.trn_Desc_en }}
               </v-tooltip>
               <div v-else class="font-weight-medium">{{ item.trn_Desc_en || '-' }}</div>
-             
             </div>
           </template>
 
@@ -407,7 +408,6 @@ watch([selectedStatus, selectedAuthStatus], () => {
           <template #item.trn_Desc_la="{ item }">
             <div>
               <div class="font-weight-medium">{{ item.trn_Desc_la || '-' }}</div>
-          
             </div>
           </template>
 
@@ -500,37 +500,6 @@ watch([selectedStatus, selectedAuthStatus], () => {
             </div>
           </template>
         </v-data-table>
-
-        <!-- Custom Pagination -->
-        <div class="d-flex align-center justify-space-between mt-4 pt-4" style="border-top: 1px solid rgb(var(--v-theme-surface-variant));">
-          <div class="text-caption text-grey">
-            ສະແດງ {{ (page - 1) * itemsPerPage + 1 }} - 
-            {{ Math.min(page * itemsPerPage, filteredCodes.length) }} 
-            ຈາກ {{ filteredCodes.length }} ລາຍການ
-          </div>
-          <div class="d-flex align-center gap-4">
-            <div class="d-flex align-center">
-              <span class="text-caption text-grey mr-2">ລາຍການຕໍ່ໜ້າ:</span>
-              <v-select
-                v-model="itemsPerPage"
-                :items="[10, 25, 50, 100]"
-                density="compact"
-                variant="outlined"
-                hide-details
-                style="width: 80px"
-                @update:model-value="page = 1"
-              />
-            </div>
-            <v-pagination
-              v-if="totalPages > 1"
-              v-model="page"
-              :length="totalPages"
-              :total-visible="5"
-              rounded="circle"
-              size="small"
-            />
-          </div>
-        </div>
       </v-card-text>
     </v-card>
 

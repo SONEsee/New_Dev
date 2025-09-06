@@ -282,8 +282,8 @@
       </v-card>
     </v-dialog>
 
-    <!-- Details Dialog -->
-    <v-dialog v-model="detailsDialog" max-width="600">
+    <!-- Enhanced Details Dialog with History -->
+    <v-dialog v-model="detailsDialog" max-width="1000">
       <v-card class="rounded-lg">
         <v-card-title class="pa-6 pb-4">
           <div class="d-flex align-center">
@@ -291,72 +291,184 @@
             <span class="text-h6 font-weight-bold">ລາຍລະອຽດອັດຕາແລກປ່ຽນ</span>
           </div>
         </v-card-title>
+        
         <v-card-text class="pa-6 pt-0" v-if="selectedItem">
-          <v-row>
-            <v-col cols="12" md="6">
-              <v-list class="pa-0">
-                <v-list-item class="px-0">
-                  <template #prepend>
-                    <v-icon color="brown">mdi-currency-usd</v-icon>
-                  </template>
-                  <v-list-item-title>ສະກຸນເງິນ</v-list-item-title>
-                  <v-list-item-subtitle>{{ selectedItem.ccy_code }}</v-list-item-subtitle>
-                </v-list-item>
-                
-                <v-list-item class="px-0">
-                  <template #prepend>
-                    <v-icon color="brown">mdi-trending-up</v-icon>
-                  </template>
-                  <v-list-item-title>ອັດຕາຊື້</v-list-item-title>
-                  <v-list-item-subtitle>{{ formatCurrency(selectedItem.Buy_Rate) }}</v-list-item-subtitle>
-                </v-list-item>
-                
-                <v-list-item class="px-0">
-                  <template #prepend>
-                    <v-icon color="brown">mdi-trending-down</v-icon>
-                  </template>
-                  <v-list-item-title>ອັດຕາຂາຍ</v-list-item-title>
-                  <v-list-item-subtitle>{{ formatCurrency(selectedItem.Sale_Rate) }}</v-list-item-subtitle>
-                </v-list-item>
-              </v-list>
-            </v-col>
-            <v-col cols="12" md="6">
-              <v-list class="pa-0">
-                <v-list-item class="px-0">
-                  <template #prepend>
-                    <v-icon color="brown">mdi-calculator</v-icon>
-                  </template>
-                  <v-list-item-title>ຄ່າຕ່າງ (Spread)</v-list-item-title>
-                  <v-list-item-subtitle>{{ formatCurrency(selectedItem.Sale_Rate - selectedItem.Buy_Rate) }}</v-list-item-subtitle>
-                </v-list-item>
-                
-                <v-list-item class="px-0">
-                  <template #prepend>
-                    <v-icon color="brown">mdi-calendar</v-icon>
-                  </template>
-                  <v-list-item-title>ວັນທີສ້າງ</v-list-item-title>
-                  <v-list-item-subtitle>{{ formatDate(selectedItem.Maker_DT_Stamp) }} {{ formatTime(selectedItem.Maker_DT_Stamp) }}</v-list-item-subtitle>
-                </v-list-item>
-                
-                <v-list-item class="px-0">
-                  <template #prepend>
-                    <v-icon color="brown">mdi-check-circle</v-icon>
-                  </template>
-                  <v-list-item-title>ສະຖານະ INT</v-list-item-title>
-                  <v-list-item-subtitle>{{ mapAuthStatus(selectedItem.INT_Auth_Status) }}</v-list-item-subtitle>
-                </v-list-item>
-                
-                <v-list-item class="px-0">
-                  <template #prepend>
-                    <v-icon color="brown">mdi-shield-check</v-icon>
-                  </template>
-                  <v-list-item-title>ສະຖານະອະນຸມັດ</v-list-item-title>
-                  <v-list-item-subtitle>{{ mapAuthStatus(selectedItem.Auth_Status) }}</v-list-item-subtitle>
-                </v-list-item>
-              </v-list>
-            </v-col>
-          </v-row>
+          <!-- Current Details -->
+          <v-card variant="outlined" class="mb-6">
+            <v-card-title class="pa-4 pb-2">
+              <v-icon class="mr-2" color="primary">mdi-currency-usd</v-icon>
+              ຂໍ້ມູນປັດຈຸບັນ
+            </v-card-title>
+            <v-card-text class="pa-4 pt-2">
+              <v-row>
+                <v-col cols="12" md="6">
+                  <v-list class="pa-0">
+                    <v-list-item class="px-0">
+                      <template #prepend>
+                        <v-icon color="brown">mdi-currency-usd</v-icon>
+                      </template>
+                      <v-list-item-title>ສະກຸນເງິນ</v-list-item-title>
+                      <v-list-item-subtitle>{{ selectedItem.ccy_code }}</v-list-item-subtitle>
+                    </v-list-item>
+                    
+                    <v-list-item class="px-0">
+                      <template #prepend>
+                        <v-icon color="brown">mdi-trending-up</v-icon>
+                      </template>
+                      <v-list-item-title>ອັດຕາຊື້</v-list-item-title>
+                      <v-list-item-subtitle>{{ formatCurrency(selectedItem.Buy_Rate) }}</v-list-item-subtitle>
+                    </v-list-item>
+                    
+                    <v-list-item class="px-0">
+                      <template #prepend>
+                        <v-icon color="brown">mdi-trending-down</v-icon>
+                      </template>
+                      <v-list-item-title>ອັດຕາຂາຍ</v-list-item-title>
+                      <v-list-item-subtitle>{{ formatCurrency(selectedItem.Sale_Rate) }}</v-list-item-subtitle>
+                    </v-list-item>
+                  </v-list>
+                </v-col>
+                <v-col cols="12" md="6">
+                  <v-list class="pa-0">
+                    <v-list-item class="px-0">
+                      <template #prepend>
+                        <v-icon color="brown">mdi-calculator</v-icon>
+                      </template>
+                      <v-list-item-title>ຄ່າຕ່າງ (Spread)</v-list-item-title>
+                      <v-list-item-subtitle>{{ formatCurrency(selectedItem.Sale_Rate - selectedItem.Buy_Rate) }}</v-list-item-subtitle>
+                    </v-list-item>
+                    
+                    <v-list-item class="px-0">
+                      <template #prepend>
+                        <v-icon color="brown">mdi-calendar</v-icon>
+                      </template>
+                      <v-list-item-title>ວັນທີສ້າງ</v-list-item-title>
+                      <v-list-item-subtitle>{{ formatDate(selectedItem.Maker_DT_Stamp) }} {{ formatTime(selectedItem.Maker_DT_Stamp) }}</v-list-item-subtitle>
+                    </v-list-item>
+                    
+                    <v-list-item class="px-0">
+                      <template #prepend>
+                        <v-icon color="brown">mdi-check-circle</v-icon>
+                      </template>
+                      <v-list-item-title>ສະຖານະ INT</v-list-item-title>
+                      <v-list-item-subtitle>{{ mapAuthStatus(selectedItem.INT_Auth_Status) }}</v-list-item-subtitle>
+                    </v-list-item>
+                    
+                    <v-list-item class="px-0">
+                      <template #prepend>
+                        <v-icon color="brown">mdi-shield-check</v-icon>
+                      </template>
+                      <v-list-item-title>ສະຖານະອະນຸມັດ</v-list-item-title>
+                      <v-list-item-subtitle>{{ mapAuthStatus(selectedItem.Auth_Status) }}</v-list-item-subtitle>
+                    </v-list-item>
+                  </v-list>
+                </v-col>
+              </v-row>
+            </v-card-text>
+          </v-card>
+
+          <!-- History Section -->
+          <v-card variant="outlined">
+            <v-card-title class="pa-4 pb-2">
+              <div class="d-flex align-center justify-space-between w-100">
+                <div class="d-flex align-center">
+                  <v-icon class="mr-2" color="info">mdi-history</v-icon>
+                  ປະຫວັດການແກ້ໄຂ
+                </div>
+                <v-btn
+                  size="small"
+                  variant="text"
+                  color="primary"
+                  @click="fetchHistoryData"
+                  :loading="historyLoading"
+                  prepend-icon="mdi-refresh"
+                >
+                  ໂຫຼດປະຫວັດ
+                </v-btn>
+              </div>
+            </v-card-title>
+            
+            <v-card-text class="pa-0">
+              <v-data-table
+                :headers="historyHeaders"
+                :items="historyItems"
+                :loading="historyLoading"
+                class="elevation-0"
+                item-value="id"
+                density="compact"
+                :items-per-page="5"
+              >
+                <!-- Buy Rate Column -->
+                <template #item.Buy_Rate="{ item }">
+                  <div class="text-right font-weight-bold text-success">
+                    {{ formatCurrency(item.Buy_Rate) }}
+                  </div>
+                </template>
+
+                <!-- Sale Rate Column -->
+                <template #item.Sale_Rate="{ item }">
+                  <div class="text-right font-weight-bold text-error">
+                    {{ formatCurrency(item.Sale_Rate) }}
+                  </div>
+                </template>
+
+                <!-- Spread Column -->
+                <template #item.spread="{ item }">
+                  <v-chip
+                    :color="getSpreadColor(item.Sale_Rate - item.Buy_Rate)"
+                    variant="tonal"
+                    size="x-small"
+                    class="font-weight-medium"
+                  >
+                    {{ formatCurrency(item.Sale_Rate - item.Buy_Rate) }}
+                  </v-chip>
+                </template>
+
+                <!-- Date Column -->
+                <template #item.Maker_DT_Stamp="{ item }">
+                  <div class="text-center">
+                    <div class="text-caption font-weight-medium">
+                      {{ formatDate(item.Maker_DT_Stamp) }}
+                    </div>
+                    <div class="text-caption text-grey">
+                      {{ formatTime(item.Maker_DT_Stamp) }}
+                    </div>
+                  </div>
+                </template>
+
+                <!-- Status Column -->
+                <template #item.Auth_Status="{ item }">
+                  <v-chip
+                    :color="getAuthStatusColor(item.Auth_Status)"
+                    variant="tonal"
+                    size="x-small"
+                    class="font-weight-medium"
+                  >
+                    {{ mapAuthStatus(item.Auth_Status) }}
+                  </v-chip>
+                </template>
+
+                <!-- Loading Slot -->
+                <template #loading>
+                  <v-skeleton-loader type="table-row@3" />
+                </template>
+
+                <!-- No Data Slot -->
+                <template #no-data>
+                  <div class="text-center pa-4">
+                    <v-icon size="32" color="grey-lighten-2" class="mb-2">
+                      mdi-history
+                    </v-icon>
+                    <p class="text-body-2 text-grey-lighten-1">
+                      ບໍ່ມີປະຫວັດການແກ້ໄຂ
+                    </p>
+                  </div>
+                </template>
+              </v-data-table>
+            </v-card-text>
+          </v-card>
         </v-card-text>
+        
         <v-card-actions class="pa-6 pt-0">
           <v-spacer />
           <v-btn
@@ -394,6 +506,10 @@ const deleteDialog = ref(false)
 const detailsDialog = ref(false)
 const itemToDelete = ref<ExcRateModel.ExcRateResponse | null>(null)
 const selectedItem = ref<ExcRateModel.ExcRateResponse | null>(null)
+
+// History related
+const historyItems = ref<any[]>([])
+const historyLoading = ref(false)
 
 const headers = [
   { 
@@ -445,6 +561,40 @@ const headers = [
     sortable: false,
     align: 'center' as const,
     width: '140px'
+  }
+]
+
+const historyHeaders = [
+  { 
+    title: 'ອັດຕາຊື້', 
+    key: 'Buy_Rate',
+    align: 'end' as const,
+    width: '100px'
+  },
+  { 
+    title: 'ອັດຕາຂາຍ', 
+    key: 'Sale_Rate',
+    align: 'end' as const,
+    width: '100px'
+  },
+  { 
+    title: 'ຄ່າຕ່າງ', 
+    key: 'spread',
+    align: 'center' as const,
+    width: '80px',
+    sortable: false
+  },
+  { 
+    title: 'ວັນທີ', 
+    key: 'Maker_DT_Stamp',
+    align: 'center' as const,
+    width: '120px'
+  },
+  { 
+    title: 'ສະຖານະ', 
+    key: 'Auth_Status',
+    align: 'center' as const,
+    width: '100px'
   }
 ]
 
@@ -506,7 +656,7 @@ const getAuthStatusColor = (status: string) => {
 
 const mapAuthStatus = (status: string) => {
   switch (status) {
-    case 'A': return 'ອະນຽມັດແລ້ວ'
+    case 'A': return 'ອະນຸມັດແລ້ວ'
     case 'P': return 'ລໍຖ້າອະນຸມັດ'
     case 'R': return 'ປະຕິເສດ'
     default: return status || '-'
@@ -518,9 +668,11 @@ const confirmDelete = (item: ExcRateModel.ExcRateResponse) => {
   deleteDialog.value = true
 }
 
-const viewDetails = (item: ExcRateModel.ExcRateResponse) => {
+const viewDetails = async (item: ExcRateModel.ExcRateResponse) => {
   selectedItem.value = item
   detailsDialog.value = true
+  // Fetch history when dialog opens
+  await fetchHistoryData()
 }
 
 const deleteItem = async () => {
@@ -557,6 +709,29 @@ const fetchData = async () => {
     console.error('Error fetching data:', error)
   } finally {
     loading.value = false
+  }
+}
+
+const fetchHistoryData = async () => {
+  if (!selectedItem.value?.ccy_code) return
+  
+  historyLoading.value = true
+  try {
+    const res = await axios.get(
+      `api/exchange-rate-history-for-ccy/${selectedItem.value.ccy_code}/`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    )
+    historyItems.value = res.data
+  } catch (error) {
+    console.error('Error fetching history data:', error)
+    historyItems.value = []
+  } finally {
+    historyLoading.value = false
   }
 }
 
