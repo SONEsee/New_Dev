@@ -41,6 +41,7 @@ export interface FaAsset{
     Auth_Status:             string;
     asset_type_id:           number;
     asset_location_id:       number;
+    C_dpac:       number;
     supplier_id:             number;
     asset_ac_by:             string;
     Maker_Id:                string;
