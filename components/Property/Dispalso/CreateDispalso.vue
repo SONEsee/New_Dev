@@ -8,15 +8,28 @@ const form = ref();
 const rout = useRoute();
 const type = rout.query.type as string;
 
-const dpsData = computed(()=>{
+const formatNumber = (value: string | number) => {
+  if (!value) return "";
+  const num = parseFloat(value.toString().replace(/,/g, ""));
+  if (isNaN(num)) return "";
+  return new Intl.NumberFormat("en-US").format(num);
+};
+
+const parseNumber = (value: string) => {
+  if (!value) return "";
+  return value.replace(/,/g, "");
+};
+
+const dpsData = computed(() => {
   const data = masterType.respons_data_status_dps;
-  if(Array.isArray(data)){
-    return data
-  }if(data && typeof data ==="object"){
-    return [data]
+  if (Array.isArray(data)) {
+    return data;
   }
-  return []
-})
+  if (data && typeof data === "object") {
+    return [data];
+  }
+  return [];
+});
 
 const masterData = computed(() => {
   const data = masterType.respons_data_status_nuw1;
@@ -79,134 +92,149 @@ const getComparisonValue = computed(() => {
   if (!request.asset_list_id || !Array.isArray(dataList.value)) {
     return 0;
   }
-  
+
   const selectedAsset = dataList.value.find(
-    item => item.asset_list_id === request.asset_list_id
+    (item) => item.asset_list_id === request.asset_list_id
   );
-  
+
   if (!selectedAsset) return 0;
-  
-  if (type === 'expired') {
-    // ກໍລະນີຄົບກຳນົດ: ໃຊ້ asset_salvage_value (ມູນຄ່າຊາກ)
-    return parseFloat(selectedAsset.asset_salvage_value || '0');
+
+  if (type === "expired") {
+    return parseFloat(selectedAsset.asset_salvage_value || "0");
   } else {
-    // ກໍລະນີບໍ່ຄົບກຳນົດ: asset_value - asset_accu_dpca_value
-    const assetValue = parseFloat(selectedAsset.asset_value || '0');
-    const accuDpca = parseFloat(selectedAsset.asset_accu_dpca_value || '0');
+    const assetValue = parseFloat(selectedAsset.asset_value || "0");
+    const accuDpca = parseFloat(selectedAsset.asset_accu_dpca_value || "0");
     return assetValue - accuDpca;
   }
 });
 
-// ສ້າງ computed property ສຳລັບດຶງ options ຈາກ dpsData
 const disposalStatusOptions = computed(() => {
   if (!Array.isArray(dpsData.value) || dpsData.value.length === 0) {
     return [];
   }
-  
-  // ກັ່ນຕອງຕາມປະເພດ (expired ຫຼື not_expired)
-  const filteredData = dpsData.value.filter(item => {
-    if (type === 'expired') {
-      // ສຳລັບຄົບກຳນົດ: DPS01, DPS02, DPS03, DPS04
-      return ['DPS01', 'DPS02', 'DPS03', 'DPS04'].includes(item.MC_code);
+
+  const filteredData = dpsData.value.filter((item) => {
+    if (type === "expired") {
+      return ["DPS01", "DPS02", "DPS03", "DPS04"].includes(item.MC_code);
     } else {
-      // ສຳລັບບໍ່ຄົບກຳນົດ: DPS05, DPS06, DPS07, DPS08
-      return ['DPS05', 'DPS06', 'DPS07', 'DPS08'].includes(item.MC_code);
+      return ["DPS05", "DPS06", "DPS07", "DPS08"].includes(item.MC_code);
     }
   });
-  
-  return filteredData.map(item => ({
+
+  return filteredData.map((item) => ({
     title: item.MC_name_la,
     value: item.MC_code,
     detail: item.MC_detail,
-    bol_code: item.BOL_code
+    bol_code: item.BOL_code,
   }));
 });
 
-// ອັບເດດ calculateGainLoss ເພື່ອໃຊ້ logic ທີ່ສາມາດ map ກັບ DPS codes
 const calculateGainLoss = computed(() => {
-  const proceeds = parseFloat(request.disposal_proceeds || '0');
+  const proceeds = parseFloat(parseNumber(request.disposal_proceeds) || "0");
   const comparisonValue = getComparisonValue.value;
-  
-  // ກວດສອບວ່າມີຂໍ້ມູນພຽງພໍ່ບໍ່
+
   if (!request.asset_list_id || proceeds === 0) {
     return {
-      status: '',
-      label: 'ກະລຸນາເລືອກຊັບສິນ ແລະ ໃສ່ລາຍຮັບຈາກການຂາຍ',
-      color: 'info'
+      status: "",
+      label: "ກະລຸນາເລືອກຊັບສິນ ແລະ ໃສ່ລາຍຮັບຈາກການຂາຍ",
+      color: "info",
     };
   }
-  
-  if (type === 'expired') {
-    // ກໍລະນີຄົບກຳນົດ: ທຽບກັບ asset_salvage_value (ມູນຄ່າຊາກ)
+
+  if (type === "expired") {
     if (proceeds > comparisonValue) {
       return {
-        status: 'DPS02', // ກຳໄລ
-        label: 'ຊັບສົມບັດຄົງທີ່ຄົບອາຍຸ ແລະຂາຍໄດ້ກຳໄລ',
-        color: 'success'
+        status: "DPS02",
+        label: "ຊັບສົມບັດຄົງທີ່ຄົບອາຍຸ ແລະຂາຍໄດ້ກຳໄລ",
+        color: "success",
       };
     } else if (proceeds === comparisonValue) {
       return {
-        status: 'DPS01', // ເທົ່າທຶນ
-        label: 'ຊັບສົມບັດຄົງທີ່ ຄົບອາຍຸ ແລະ ຂາຍໄດ້ເທົ່າທຶນ',
-        color: 'warning'
+        status: "DPS01",
+        label: "ຊັບສົມບັດຄົງທີ່ ຄົບອາຍຸ ແລະ ຂາຍໄດ້ເທົ່າທຶນ",
+        color: "warning",
       };
     } else {
       return {
-        status: 'DPS03', // ຂາດທຶນ
-        label: 'ຊັບສົມບັດຄົງທີ່ຄົບອາຍຸ ແລະ ຂາຍຂາດທຶນ',
-        color: 'error'
+        status: "DPS03",
+        label: "ຊັບສົມບັດຄົງທີ່ຄົບອາຍຸ ແລະ ຂາຍຂາດທຶນ",
+        color: "error",
       };
     }
   } else {
-    // ກໍລະນີບໍ່ຄົບກຳນົດ: ທຽບກັບ (asset_value - asset_accu_dpca_value)
     if (proceeds > comparisonValue) {
       return {
-        status: 'DPS06', // ກຳໄລ
-        label: 'ສະສາງບໍ່ຄົບກຳນົດມີກຳໄລ',
-        color: 'success'
+        status: "DPS06",
+        label: "ສະສາງບໍ່ຄົບກຳນົດມີກຳໄລ",
+        color: "success",
       };
     } else if (proceeds === comparisonValue) {
       return {
-        status: 'DPS05', // ເທົ່າທຶນ
-        label: 'ສະສາງບໍ່ຄົບກຳນົດເທົ່າທຶນ',
-        color: 'warning'
+        status: "DPS05",
+        label: "ສະສາງບໍ່ຄົບກຳນົດເທົ່າທຶນ",
+        color: "warning",
       };
     } else {
       return {
-        status: 'DPS07', // ຂາດທຶນ
-        label: 'ສະສາງບໍ່ຄົບກຳນົດຂາດທຶນ',
-        color: 'error'
+        status: "DPS07",
+        label: "ສະສາງບໍ່ຄົບກຳນົດຂາດທຶນ",
+        color: "error",
       };
     }
   }
 });
 
-// ເພີ່ມ method ສຳລັບກໍລະນີທີ່ user ເລືອກວ່າບໍ່ຂາຍ
 const handleNonSaleDisposal = () => {
-  if (type === 'expired') {
-    request.gain_loss = 'DPS04';
+  if (type === "expired") {
+    request.gain_loss = "DPS04";
   } else {
-    request.gain_loss = 'DPS08';
+    request.gain_loss = "DPS08";
   }
-  // ຖ້າບໍ່ຂາຍ ກໍໃຫ້ clear disposal_proceeds
-  request.disposal_proceeds = '0';
+
+  request.disposal_proceeds = "";
 };
 
-// ອັບເດດ watch ເພື່ອຮອງຮັບກໍລະນີທີ່ບໍ່ມີການຂາຍ ແລະ ສະແດງຂໍ້ມູນການຄິດໄລ່
-watch([() => request.disposal_proceeds, () => request.asset_list_id], () => {
-  if (request.asset_list_id) {
-    if (request.disposal_proceeds && parseFloat(request.disposal_proceeds) > 0) {
-      // ມີການຂາຍ - auto assign ສະຖານະຕາມການຄິດໄລ່
-      const result = calculateGainLoss.value;
-      if (result.status) {
-        request.gain_loss = result.status;
+// Handle number input formatting
+const handleDisposalCostInput = (event: any) => {
+  const value = event.target.value;
+  const rawValue = parseNumber(value);
+  request.disposal_cost = rawValue;
+  event.target.value = formatNumber(rawValue);
+};
+
+const handleDisposalValueInput = (event: any) => {
+  const value = event.target.value;
+  const rawValue = parseNumber(value);
+  request.disposal_value = rawValue;
+  event.target.value = formatNumber(rawValue);
+};
+
+const handleDisposalProceedsInput = (event: any) => {
+  const value = event.target.value;
+  const rawValue = parseNumber(value);
+  request.disposal_proceeds = rawValue;
+  event.target.value = formatNumber(rawValue);
+};
+
+watch(
+  [() => request.disposal_proceeds, () => request.asset_list_id],
+  () => {
+    if (request.asset_list_id) {
+      if (
+        request.disposal_proceeds &&
+        parseFloat(parseNumber(request.disposal_proceeds)) > 0
+      ) {
+        const result = calculateGainLoss.value;
+        if (result.status) {
+          request.gain_loss = result.status;
+        }
+      } else {
+        request.gain_loss = "";
       }
-    } else {
-      // ຖ້າບໍ່ມີ disposal_proceeds ຫຼື = 0 ກໍ່ clear gain_loss
-      request.gain_loss = '';
     }
-  }
-}, { immediate: true });
+  },
+  { immediate: true }
+);
 
 const handelSubmit = async () => {
   try {
@@ -221,6 +249,30 @@ const handelSubmit = async () => {
         cancelButtonText: "ຍົກເລີກ",
       });
       if (notification.isConfirmed) {
+        const selecAcount = dpsData.value.find(
+          (item) => item.MC_code === request.gain_loss
+        );
+        if (selecAcount) {
+          dispalsoStore.from_create_disposal.dps_account =
+            selecAcount.MC_detail;
+          console.log(
+            "dps_account:",
+            dispalsoStore.from_create_disposal.dps_account
+          );
+        }
+        const selectedAsset = dataList.value.find(
+          (item) => item.asset_list_id === request.asset_list_id
+        );
+
+        if (selectedAsset) {
+          dispalsoStore.from_create_disposal.asset_list_code =
+            selectedAsset.asset_list_code;
+          console.log(
+            "Asset:",
+            dispalsoStore.from_create_disposal.asset_list_code
+          );
+        }
+
         await dispalsoStore.CreateDispalso();
       }
     }
@@ -255,7 +307,7 @@ onMounted(() => {
 <template>
   <div class="pa-4">
     <GlobalTextTitleLine :title="title" />
-    
+    <pre>{{ dpsData }}</pre>
     <v-form ref="form" @submit.prevent="handelSubmit">
       <v-row>
         <v-col cols="12">
@@ -271,9 +323,10 @@ onMounted(() => {
             </p>
           </div>
         </v-col>
-        
+
         <v-col cols="12" md="3">
           <v-autocomplete
+            :loading="faasetStore.isLoading"
             v-model="request.asset_list_id"
             label="ລາຍການຊັບສີນ"
             :items="dataList"
@@ -289,7 +342,7 @@ onMounted(() => {
               ></v-list-item>
             </template>
           </v-autocomplete>
-          
+
           <v-autocomplete
             v-model="request.disposal_type"
             label="ປະເພດການຊຳລະສະສາງ"
@@ -306,17 +359,18 @@ onMounted(() => {
               ></v-list-item>
             </template>
           </v-autocomplete>
-          
+
           <v-text-field
             variant="outlined"
             density="compact"
-            v-model="request.disposal_cost"
+            :model-value="formatNumber(request.disposal_cost)"
+            @input="handleDisposalCostInput"
             label="ຄ່າໃຊ້ຈ່າຍໃນການຖອນ"
-            type="number"
+            type="text"
           >
           </v-text-field>
         </v-col>
-        
+
         <v-col cols="12" md="3">
           <v-text-field
             variant="outlined"
@@ -325,16 +379,17 @@ onMounted(() => {
             label="ຈຸດປະສົງການຖອນ"
           >
           </v-text-field>
-          
+
           <v-text-field
-            v-model="request.disposal_value"
+            :model-value="formatNumber(request.disposal_value)"
+            @input="handleDisposalValueInput"
             label="ມູນຄ່າການຖອນ"
             variant="outlined"
             density="compact"
-            type="number"
+            type="text"
           >
           </v-text-field>
-          
+
           <v-autocomplete
             v-model="request.gain_loss"
             label="ສະຖານະການຖອນ"
@@ -352,10 +407,9 @@ onMounted(() => {
               ></v-list-item>
             </template>
           </v-autocomplete>
-          
-          <!-- ເພີ່ມປຸ່ມສຳລັບກໍລະນີບໍ່ຂາຍ -->
+
           <div class="mt-2">
-            <v-btn 
+            <v-btn
               v-if="type === 'expired'"
               @click="handleNonSaleDisposal"
               variant="outlined"
@@ -365,7 +419,7 @@ onMounted(() => {
             >
               ສະສາງແບບບໍ່ໄດ້ຂາຍອອກ
             </v-btn>
-            <v-btn 
+            <v-btn
               v-if="type === 'not_expired'"
               @click="handleNonSaleDisposal"
               variant="outlined"
@@ -377,7 +431,7 @@ onMounted(() => {
             </v-btn>
           </div>
         </v-col>
-        
+
         <v-col cols="12" md="3">
           <v-text-field
             variant="outlined"
@@ -386,7 +440,7 @@ onMounted(() => {
             label="ເຫດຜົນການຖອນ"
           >
           </v-text-field>
-          
+
           <v-autocomplete
             v-model="request.disposal_by"
             label="ຜູ້ຖອນ"
@@ -403,7 +457,7 @@ onMounted(() => {
               ></v-list-item>
             </template>
           </v-autocomplete>
-          
+
           <v-text-field
             type="date"
             variant="outlined"
@@ -413,7 +467,7 @@ onMounted(() => {
           >
           </v-text-field>
         </v-col>
-        
+
         <v-col cols="12" md="3">
           <v-text-field
             variant="outlined"
@@ -422,17 +476,17 @@ onMounted(() => {
             label="ຊື່ຜູ້ຊື້ (ກໍລະນີຂາຍ)"
           >
           </v-text-field>
-          
+
           <v-text-field
             variant="outlined"
             density="compact"
-            v-model="request.disposal_proceeds"
+            :model-value="formatNumber(request.disposal_proceeds)"
+            @input="handleDisposalProceedsInput"
             label="ລາຍຮັບຈາກການຂາຍ"
-            type="number"
+            type="text"
           >
           </v-text-field>
-          
-          <!-- ສະແດງຄ່າທີ່ໃຊ້ໃນການທຽບໃນການຄິດໄລ່ ແລະ ສະຖານະປະຈຸບັນ -->
+
           <div v-if="request.asset_list_id" class="mt-2">
             <v-card variant="outlined" density="compact">
               <v-card-text class="py-2">
@@ -440,39 +494,55 @@ onMounted(() => {
                   <strong>ຂໍ້ມູນການຄິດໄລ່:</strong>
                 </div>
                 <div class="text-caption">
-                  ມູນຄ່າທີ່ໃຊ້ທຽບ: 
+                  ມູນຄ່າທີ່ໃຊ້ທຽບ:
                   <span class="font-weight-bold text-primary">
-                    {{ new Intl.NumberFormat('en-US').format(getComparisonValue) }} LAK
+                    {{
+                      new Intl.NumberFormat("en-US").format(getComparisonValue)
+                    }}
+                    LAK
                   </span>
-                  <span class="text-grey" style="font-size: 10px;">
-                    {{ type === 'expired' ? '(ມູນຄ່າຊາກ)' : '(ມູນຄ່າຄົງເຫຼືອ)' }}
+                  <span class="text-grey" style="font-size: 10px">
+                    {{
+                      type === "expired" ? "(ມູນຄ່າຊາກ)" : "(ມູນຄ່າຄົງເຫຼືອ)"
+                    }}
                   </span>
                 </div>
                 <div class="text-caption">
-                  ລາຍຮັບຈາກການຂາຍ: 
+                  ລາຍຮັບຈາກການຂາຍ:
                   <span class="font-weight-bold text-secondary">
-                    {{ new Intl.NumberFormat('en-US').format(parseFloat(request.disposal_proceeds || '0')) }} LAK
+                    {{
+                      new Intl.NumberFormat("en-US").format(
+                        parseFloat(
+                          parseNumber(request.disposal_proceeds) || "0"
+                        )
+                      )
+                    }}
+                    LAK
                   </span>
                 </div>
               </v-card-text>
             </v-card>
           </div>
-          
+
           <v-alert
-            v-if="request.asset_list_id && request.disposal_proceeds && parseFloat(request.disposal_proceeds) > 0"
+            v-if="
+              request.asset_list_id &&
+              request.disposal_proceeds &&
+              parseFloat(parseNumber(request.disposal_proceeds)) > 0
+            "
             :color="calculateGainLoss.color"
             variant="tonal"
             density="compact"
             class="mt-2"
           >
             <div class="text-caption">
-              <strong>ສະຖານະການຄິດໄລ່:</strong><br>
+              <strong>ສະຖານະການຄິດໄລ່:</strong><br />
               {{ calculateGainLoss.label }}
             </div>
           </v-alert>
         </v-col>
       </v-row>
-      
+
       <v-col cols="12">
         <div class="d-flex justify-center">
           <v-btn type="submit" color="primary">ບັນທຶກ</v-btn>
