@@ -23,7 +23,7 @@
               </v-avatar>
               <div>
                 <h1 class="text-h3 font-weight-bold mb-1 header-title">
-                  {{ isBackDateMode ? 'ການປິດບັນຊີຍ້ອນຫຼັງ' : 'ການກວດສອບກ່ອນປິດບັນຊີ' }}
+                  {{ isBackDateMode ? 'ການປິດບັນຊີຍ້ອນຫຼັງວັນທີ' : 'ການກວດສອບກ່ອນປິດບັນຊີ' }} {{ displayDate }}
                 </h1>
                 <p class="text-h6 opacity-90">
                   {{ isBackDateMode ? 'Back-Date EOD Processing' : 'Pre-EOD Validation Check' }}
@@ -33,7 +33,7 @@
           </v-col>
           <v-col cols="auto">
             <div class="d-flex align-center ga-4">
-              <v-chip
+              <!-- <v-chip
                 size="large"
                 color="rgba(255,255,255,0.2)"
                 variant="flat"
@@ -41,8 +41,8 @@
                 class="px-4 date-chip"
               >
                 <span class="font-weight-bold">{{ displayDate }}</span>
-              </v-chip>
-              <v-chip
+              </v-chip> -->
+              <!-- <v-chip
                 v-if="isBackDateMode"
                 size="large"
                 color="warning"
@@ -51,7 +51,7 @@
                 class="px-4 back-date-chip"
               >
                 <span class="font-weight-bold">ຍ້ອນຫຼັງ</span>
-              </v-chip>
+              </v-chip> -->
               <v-btn
                 size="large"
                 :color="canStartEOD ? 'success' : 'error'"
@@ -2066,10 +2066,10 @@ const getEODButtonText = (): string => {
   }
   
   if (canStartEOD.value) {
-    return isBackDateMode.value ? 'ສາມາດປິດບັນຊີຍ້ອນຫຼັງໄດ້' : 'ສາມາດປິດບັນຊີໄດ້'
+    return isBackDateMode.value ? 'ດໍາເນີນການປິດບັນຊີຍ້ອນຫຼັງ' : 'ດໍາເນີນການປິດບັນຊີ'
   }
   
-  return isBackDateMode.value ? 'ບໍ່ສາມາດປິດບັນຊີຍ້ອນຫຼັງໄດ້' : 'ບໍ່ສາມາດປິດບັນຊີໄດ້'
+  return isBackDateMode.value ? 'ບໍ່ສາມາດດໍາເນີນການປິດບັນຊີ' : 'ບໍ່ສາມາດດໍາເນີນການປິດບັນຊີ'
 }
 
 // Utility Methods

@@ -839,14 +839,14 @@ onMounted(async () => {
 
 /* Entry No Header - Sticky Column */
 .entry-no-header {
-  width: 100px;
-  min-width: 100px;
-  max-width: 100px;
+  width: 70px;
+  min-width: 70px;
+  max-width: 70px;
 }
 
 .amount-header {
-  width: 120px;
-  min-width: 120px;
+  width: 100px;
+  min-width: 100px;
 }
 
 /* Sticky Column */
@@ -893,9 +893,9 @@ onMounted(async () => {
 
 /* Entry No Cell - Now Module Cell */
 .entry-no-cell {
-  width: 80px;
-  min-width: 80px;
-  max-width: 80px;
+  width: 60px;
+  min-width: 60px;
+  max-width: 60px;
   text-align: center;
   font-weight: 500;
   background: white;
@@ -903,8 +903,8 @@ onMounted(async () => {
 
 /* New cell types */
 .trn-code-cell {
-  width: 80px;
-  min-width: 80px;
+  width: 60px;
+  min-width: 60px;
   text-align: center;
 }
 
@@ -915,8 +915,8 @@ onMounted(async () => {
 }
 
 .period-cell {
-  width: 80px;
-  min-width: 80px;
+  width: 60px;
+  min-width: 60px;
   text-align: center;
 }
 
@@ -926,13 +926,13 @@ onMounted(async () => {
 }
 
 .ref-sub-cell {
-  width: 180px;
-  min-width: 180px;
+  width: 120px;
+  min-width: 120px;
 }
 
 .account-relative-cell {
-  width: 150px;
-  min-width: 150px;
+  width: 100px;
+  min-width: 100px;
 }
 
 .account-relative-value {
@@ -975,8 +975,8 @@ onMounted(async () => {
 }
 
 .account-full-cell {
-  width: 160px;
-  min-width: 160px;
+  width: 70px;
+  min-width: 70px;
 }
 
 .account-full-value {
@@ -986,8 +986,8 @@ onMounted(async () => {
 
 /* Date Cell */
 .date-cell {
-  width: 100px;
-  min-width: 100px;
+  width: 80px;
+  min-width: 80px;
   text-align: center;
 }
 
