@@ -461,13 +461,19 @@ const statistics = computed(() => {
     total: data.length,
   };
 });
-const NameDisplay = (name:any)=>{
-  if(!name || name.asset_name_la || name.asset_code) {
-    return "ທັງໝົດ"
+const NameDisplay = (name: any) => {
+  if (!name || !name.asset_name_la || !name.asset_code) {
+    return "ທັງໝົດ";
   }
-  return `${name.asset_name_la} - ${name.asset_code}`
+  return `${name.asset_name_la} - ${name.asset_code}`;
+};
 
-}
+const nameDisplayStatus = (items: any) => {
+  if (!items || !items.title || !items.value) {
+    return "ທັໝົດ";
+  }
+  return `${items.title} - ${items.value}`;
+};
 onMounted(async () => {
   accountMethodStoreInstance.GetAccountMethodList();
   mainTypeStore.GetAssetTypes();
@@ -517,31 +523,55 @@ onMounted(async () => {
           <v-autocomplete
             v-model="selectedAccType"
             :items="mainType"
-            item-title="asset_name_la"
+            :item-title="NameDisplay"
             item-value="asset_code"
             label="ປະເພດທຸລະກຳ"
             variant="outlined"
             density="compact"
             placeholder="ເລືອກປະເພດທຸລະກຳ"
             :loading="loading"
+            prepend-inner-icon="mdi-format-list-bulleted-type"
           >
-          <template v-slot:item="{item, props}">
-            <v-list-item v-bind="props" :title="`${item.raw.asset_name_la}(${item.raw.asset_code})`"></v-list-item>
-          </template>
-        </v-autocomplete>
+            <template v-slot:item="{ item, props }">
+              <v-list-item
+                v-bind="props"
+                :title="`${item.raw.asset_name_la}(${item.raw.asset_code})`"
+              >
+              <template v-slot:prepend>
+                <v-avatar size="small" color="primary">
+                  <v-icon>mdi-format-list-bulleted-type</v-icon>
+                </v-avatar>
+              </template>
+            </v-list-item>
+            </template>
+          </v-autocomplete>
         </v-col>
         <v-col cols="12" md="3" class="text-no-wrap">
           <v-autocomplete
             v-model="selectedStatus"
             :items="dataFilter"
-            item-title="title"
+            :item-title="nameDisplayStatus"
             item-value="value"
             label="ສະຖານະ"
             variant="outlined"
+            prepend-inner-icon="mdi-list-status"
             density="compact"
             placeholder="ເລືອກສະຖານະ"
             :loading="loading"
-          ></v-autocomplete>
+          >
+            <template v-slot:item="{ item, props }">
+              <v-list-item
+                v-bind="props"
+                :title="`${item.raw.title}(${item.raw.value})`"
+              >
+              <template v-slot:prepend>
+                <v-avatar size="small" color="primary">
+                  <v-icon>mdi-list-status</v-icon>
+                </v-avatar>
+              </template>
+              </v-list-item>
+            </template>
+          </v-autocomplete>
         </v-col>
 
         <v-col cols="12" md="2">
