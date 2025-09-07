@@ -1245,6 +1245,12 @@ onBeforeUnmount(() => {
     console.error("Error during component unmount:", error);
   }
 });
+const nameDisplay = (item:any)=>{
+  if(!item || !item.MC_name_la || !item.MC_code){
+    return "ທັງໝົດ"
+  };
+  return `${item.MC_name_la}(${item.MC_code})`
+}
 </script>
 <template>
   <div class="gl-approved-master">
@@ -1367,9 +1373,9 @@ onBeforeUnmount(() => {
                 hide-details
               ></v-text-field>
             </v-col>
-
+<!-- <pre>{{ responscerrency }}</pre> -->
             <v-col cols="12" md="2">
-              <v-select
+              <v-autocomplete
                 v-model="filters.Ccy_cd"
                 :items="responscerrency"
                 item-title="ccy_code"
@@ -1381,14 +1387,16 @@ onBeforeUnmount(() => {
                 @update:model-value="handleFilterChange"
                 hide-details
                 :loading="loadingReferences"
-              ></v-select>
+              >
+            </v-autocomplete>
             </v-col>
 
-            <v-col cols="12" md="2">
-              <v-select
+            <v-col cols="12" md="3">
+              <v-autocomplete
                 v-model="filters.Auth_Status"
+                prepend-inner-icon="mdi-format-list-bulleted-type"
                 :items="status"
-                item-title="MC_name_la"
+                :item-title="nameDisplay"
                 item-value="MC_code"
                 label="ສະຖານະອະນຸມັດ"
                 variant="outlined"
@@ -1397,7 +1405,17 @@ onBeforeUnmount(() => {
                 @update:model-value="setAuthStatusFilter"
                 hide-details
                 :loading="loadingReferences"
-              ></v-select>
+              >
+              <template v-slot:item="{props, item}">
+                <v-list-item v-bind="props" :title="`${item.raw.MC_name_la}(${item.raw.MC_code})`">
+                  <template v-slot:prepend>
+                    <v-avatar size="small" color="primary">
+                      <v-icon>mdi-format-list-bulleted-type</v-icon>
+                    </v-avatar>
+                  </template>
+                </v-list-item>
+              </template>
+            </v-autocomplete>
             </v-col>
 
           

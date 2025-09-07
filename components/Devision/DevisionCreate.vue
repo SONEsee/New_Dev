@@ -245,7 +245,7 @@ const header = computed(() => {
       width: "120px",
       class: "text-center",
       cellClass: "text-center",
-      filter: (value, query, item) => {
+      filter: (value:any, query:any, item:any) => {
         if (!query) return true;
         const statusText = value === "Y" ? "ເປີດໃຊ້ງານ" : "ປິດໃຊ້ງານ";
         return statusText.includes(query);
@@ -294,10 +294,11 @@ const header = computed(() => {
       width: "80px",
     }] : []),
   ];
-});
+}) as any;
 </script>
 
 <template>
+  <div class="pa-4">
   <GlobalTextTitleLine :title="`${title} (${formatnumber(response_data?.length ?? 0)})`" />
 
   <v-col cols="12">
@@ -431,5 +432,5 @@ const header = computed(() => {
         />
       </template>
     </v-data-table>
-  </v-col>
+  </v-col></div>
 </template>

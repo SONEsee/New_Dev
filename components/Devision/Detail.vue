@@ -16,6 +16,7 @@ onMounted(() => {
 const title = ref("ລາຍລະອຽດພະແນກ / Detail of Division");
 </script>
 <template>
+  <div class="pa-4">
   <v-col cols="12">
     <GlobalTextTitleLine :title="title" />
   </v-col>
@@ -77,5 +78,5 @@ const title = ref("ລາຍລະອຽດພະແນກ / Detail of Division"
         </v-col>
       </v-row>
     </v-form>
-  </section>
+  </section></div>
 </template>
