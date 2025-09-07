@@ -13,6 +13,15 @@ export const faAssetStore = defineStore("faAsset", {
         },
         isLoading:false,
       },
+      filter_data_assetlist_id1:{
+        filter:{
+          asset_type_id:"",
+          Auth_Status:"",
+          asset_status:"",
+          useful_life_status:""
+        },
+        isLoading:false,
+      },
       response_fa_asset_data: null as FaAssetModel.FaAsset | null,
       response_fa_asset_list: null as FaAssetModel.FaAsset[] | null,
       response_fa_asset_detail: null as FaAssetModel.FaAsset | null,
@@ -514,6 +523,30 @@ export const faAssetStore = defineStore("faAsset", {
           {
             params:{
               ...this.filter_data_assetlist_id.filter
+            },
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+        if (res.status === 200) {
+          this.response_fa_asset_list = res.data;
+        }
+      } catch (error) {
+        console.error("Error fetching fa asset list:", error);
+      } finally {
+        this.isLoading = false;
+      }
+    },
+    async GetFaAssetList2() {
+      this.isLoading = true;
+      try {
+        const res = await axios.get<FaAssetModel.FaAsset[]>(
+          `/api/asset_list/`,
+          {
+            params:{
+              ...this.filter_data_assetlist_id1.filter
             },
             headers: {
               "Content-Type": "application/json",
