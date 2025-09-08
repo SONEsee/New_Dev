@@ -6,7 +6,7 @@ export interface AccoutMethodRespons {
     acc_type:          string;
     debit_account_id:  string;
     credit_account_id: string;
-    amount:            string;
+    amount:            number;
     transaction_date:  Date;
     description:       string;
     journal_entry_id:  string;

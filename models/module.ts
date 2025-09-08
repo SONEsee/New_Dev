@@ -13,6 +13,8 @@ export interface ModuleResponsItems {
     created_date:   string;
     modified_by:    null;
     modified_date:  null;
+    Record_Status:  string;
+    Auth_Status:    string;
 }
 export interface ModuleDetailRespons {
     module_Id:      string;

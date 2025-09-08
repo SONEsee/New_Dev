@@ -212,8 +212,18 @@ const res = computed(() => {
   return [data];
 });
 
+// const menuItems = computed(() => {
+//   return subMenuStore.respone_main_menu_data || [];
+// });
 const menuItems = computed(() => {
-  return subMenuStore.respone_main_menu_data || [];
+  const data = subMenuStore.respone_main_menu_data;
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (data && typeof data === "object") {
+    return [data];
+  }
+  return [];
 });
 
 const loadDataAndApplyFilter = async () => {
@@ -293,7 +303,7 @@ const header = computed(() => {
       align: "center",
       sortable: true,
       filterable: true,
-      sort: (a, b) => {
+      sort: (a: any, b: any) => {
         return a.menu_id.localeCompare(b.menu_id);
       },
     },
@@ -305,36 +315,40 @@ const header = computed(() => {
       filterable: false,
       class: "text-center",
     },
-    
-    ...(canRecordStatus.value? [{
-      title: "ສະຖານະ",
-      value: "Record_Status",
-      align: "center",
-      sortable: true,
-      filterable: true,
-      width: "10px", 
-      class: "text-center",
-      cellClass: "text-center",
-      filter: (value, query, item) => {
-        if (!query) return true;
-        const statusText = value === "Y" ? "ເປີດໃຊ້ງານ" : "ປິດໃຊ້ງານ";
-        return statusText.includes(query);
-      },
-    },]:[]),
-     ...(canView.value
-  ? [
-      {
-        title: "ເບິ່ງ",
-        value: "weiw", 
-        align: "center",
-        sortable: false,
-        filterable: false,
-        class: "text-center",
-        cellClass: "text-center",
-        width: "80px", 
-      },
-    ]
-  : []),
+
+    ...(canRecordStatus.value
+      ? [
+          {
+            title: "ສະຖານະ",
+            value: "Record_Status",
+            align: "center",
+            sortable: true,
+            filterable: true,
+            width: "10px",
+            class: "text-center",
+            cellClass: "text-center",
+            filter: (value: any, query: any, item: any) => {
+              if (!query) return true;
+              const statusText = value === "Y" ? "ເປີດໃຊ້ງານ" : "ປິດໃຊ້ງານ";
+              return statusText.includes(query);
+            },
+          },
+        ]
+      : []),
+    ...(canView.value
+      ? [
+          {
+            title: "ເບິ່ງ",
+            value: "weiw",
+            align: "center",
+            sortable: false,
+            filterable: false,
+            class: "text-center",
+            cellClass: "text-center",
+            width: "80px",
+          },
+        ]
+      : []),
     {
       title: "ແກ້ໄຂ",
       value: "edit",
@@ -343,7 +357,7 @@ const header = computed(() => {
       filterable: false,
       class: "text-center",
       cellClass: "text-center",
-      width: "50px", 
+      width: "50px",
     },
     {
       title: "ລົບ",
@@ -353,7 +367,7 @@ const header = computed(() => {
       filterable: false,
       class: "text-center",
       cellClass: "text-center",
-      width: "10px", 
+      width: "10px",
     },
     ...(canAuthorize.value
       ? [
@@ -365,13 +379,12 @@ const header = computed(() => {
             filterable: false,
             class: "text-center",
             cellClass: "text-center",
-            width: "10px", 
+            width: "10px",
           },
         ]
       : []),
-   
   ];
-});
+}) as any;
 
 const goToCreateSubMenu = () => {
   if (selecteMainMenu.value && selecteMainMenu.value.menu_id) {
@@ -390,186 +403,195 @@ const clearSavedSelection = () => {
 defineExpose({
   clearSavedSelection,
 });
+const displayMainmuenu = (item: any) => {
+  if (!item || !item.menu_id || !item.sub_menu_name_la) {
+    return "ທັງໝົດ";
+  }
+  return `${item.menu_name_la}-${item.menu_id}`;
+};
 </script>
 
 <template>
-  <GlobalTextTitleLine :title="title" />
+  <div class="pa-4">
+    <GlobalTextTitleLine :title="title" />
 
-  <v-col cols="12">
-    <v-row>
-      <v-col cols="12" md="3">
-        <div class="d-flex">
-          <v-btn color="primary" @click="goToCreateSubMenu()" v-if="canAdd"
-            ><v-icon icon="mdi-plus"></v-icon> ເພີ່ມປະເພດ</v-btn
+    <v-col cols="12">
+      <v-row>
+        <v-col cols="12" md="3">
+          <div class="d-flex">
+            <v-btn color="primary" @click="goToCreateSubMenu()" v-if="canAdd"
+              ><v-icon icon="mdi-plus"></v-icon> ເພີ່ມປະເພດ</v-btn
+            >
+          </div>
+        </v-col>
+        <!-- <pre>{{ menuItems }}</pre> -->
+        <v-col cols="12" md="7" class="text-no-wrap">
+          <v-autocomplete
+            width=""
+            v-model="selecteMainMenu"
+            density="compact"
+            label="ເລືອກເມນູຫຼັກ"
+            :items="menuItems"
+            item-value="menu_id"
+            item-title="menu_name_la"
+            variant="outlined"
+            clearable
+            placeholder="ເລືອກເມນູຫຼັກ"
+            return-object
+            :loading="subMenuStore.isloading"
           >
-        </div>
-      </v-col>
+            <template v-slot:item="{ props, item }">
+              <v-list-item
+                v-bind="props"
+                :title="`${item.raw.menu_name_la}-${item.raw.menu_id}`"
+              >
+              <template v-slot:prepend>
+                <v-avatar size="small" color="primary">
+                  <v-icon>mdi-format-list-bulleted-type</v-icon>
+                </v-avatar>
+              </template>
+              </v-list-item>
+            </template>
+          </v-autocomplete>
+        </v-col>
 
-      <v-col cols="12" md="7" class="text-no-wrap">
-        <v-autocomplete
-          width=""
-          v-model="selecteMainMenu"
-          density="compact"
-          label="ເລືອກເມນູຫຼັກ"
-          :items="menuItems"
-          item-value="menu_id"
-          item-title="sub_menu_name_la"
-          variant="outlined"
-          clearable
-          placeholder="ເລືອກເມນູຫຼັກ"
-          return-object
-          :loading="subMenuStore.isloading"
-        >
-          <template v-slot:selection="{ item }">
-            {{ item.raw.menu_name_la }}-{{ item.raw.menu_id }}
-          </template>
-
-          <template v-slot:item="{ props, item }">
-            <v-list-item
-              v-bind="props"
-              :subtitle="`ID: ${item.raw.menu_id}`"
-              :title="item.raw.menu_name_la"
-            />
-          </template>
-        </v-autocomplete>
-      </v-col>
-
-      <v-col cols="12" md="2">
-        <v-btn
-          color="secondary"
-          variant="outlined"
-          @click="clearFilters"
-          :loading="subMenuStore.isloading"
-          block
-        >
-          <v-icon class="mr-2">mdi-filter-remove</v-icon>
-          ເຄລຍການກັ່ນຕອງ
-        </v-btn>
-      </v-col>
-    </v-row>
-
-    <v-data-table :headers="header" :items="res || []" class="text-no-wrap">
-      <template v-slot:header.sub_menu_id="{ column }">
-        <v-icon start>mdi-identifier</v-icon>
-        <b style="color: blue">{{ column.title }}</b>
-      </template>
-
-      <template v-slot:header.sub_menu_name_la="{ column }">
-        <b style="color: blue"> {{ column.title }}</b>
-      </template>
-      <template v-slot:header.sub_menu_name_en="{ column }">
-        <b style="color: blue"> {{ column.title }}</b>
-      </template>
-      <template v-slot:header.sub_menu_order="{ column }">
-        <b style="color: blue"> {{ column.title }}</b>
-      </template>
-      <template v-slot:header.menu_id="{ column }">
-        <b style="color: blue"> {{ column.title }}</b>
-      </template>
-      <template v-slot:header.created_date="{ column }">
-        <b style="color: blue"> {{ column.title }}</b>
-      </template>
-      <template v-slot:header.Record_Status="{ column }">
-        <b style="color: blue"> {{ column.title }}</b>
-      </template>
-      <template v-slot:header.edit="{ column }">
-        <b style="color: blue"> {{ column.title }}</b>
-      </template>
-      <template v-slot:header.weiw="{ column }">
-        <b style="color: blue"> {{ column.title }}</b>
-      </template>
-      <template v-slot:header.delete="{ column }">
-        <b style="color: blue"> {{ column.title }}</b>
-      </template>
-      <template v-slot:header.confirm="{ column }">
-        <b style="color: blue"> {{ column.title }}</b>
-      </template>
-
-      <template v-slot:item.created_date="{ item }">
-        {{ dayjs(item.created_date).format("DD/MM/YYYY") }}
-      </template>
-      <template v-slot:item.Record_Status="{ item }">
-        <div >
-        <v-btn
-          v-if="item.Record_Status === 'O'"
-          flat
-          @click="updatRecodeStatusof(item.sub_menu_id)"
-        >
-          <v-icon color="info">mdi-toggle-switch</v-icon>
-        </v-btn>
-        <v-btn
-          v-if="item.Record_Status === 'C'"
-          flat
-          @click="updatRecodeStatus(item.sub_menu_id)"
-        >
-          <v-icon color="error">mdi-toggle-switch-off-outline</v-icon>
-        </v-btn></div>
-        
-      </template>
-      <template v-slot:item.no="{ item, index }">
-        {{ index + 1 }}
-      </template>
-      <template v-slot:item.menu_id="item" class="text-center">
-        <div class="text-center">
-          <p>{{ item.item.menu?.menu_name_la || "No Data" }}</p>
-
-          <p>
-            {{ item.item.menu?.menu_id || "ບໍ່ມີຂໍ້ມູນ" }}
-          </p>
-        </div>
-      </template>
-
-      <template v-slot:item.confirm="{ item }">
-        <div class="d-flex align-center">
+        <v-col cols="12" md="2">
           <v-btn
-            @click="unupdateAdproveStatus(item.sub_menu_id)"
+            color="secondary"
+            variant="outlined"
+            @click="clearFilters"
+            :loading="subMenuStore.isloading"
+            block
+          >
+            <v-icon class="mr-2">mdi-filter-remove</v-icon>
+            ເຄລຍການກັ່ນຕອງ
+          </v-btn>
+        </v-col>
+      </v-row>
+
+      <v-data-table :headers="header" :items="res || []" class="text-no-wrap">
+        <template v-slot:header.sub_menu_id="{ column }">
+          <v-icon start>mdi-identifier</v-icon>
+          <b style="color: blue">{{ column.title }}</b>
+        </template>
+
+        <template v-slot:header.sub_menu_name_la="{ column }">
+          <b style="color: blue"> {{ column.title }}</b>
+        </template>
+        <template v-slot:header.sub_menu_name_en="{ column }">
+          <b style="color: blue"> {{ column.title }}</b>
+        </template>
+        <template v-slot:header.sub_menu_order="{ column }">
+          <b style="color: blue"> {{ column.title }}</b>
+        </template>
+        <template v-slot:header.menu_id="{ column }">
+          <b style="color: blue"> {{ column.title }}</b>
+        </template>
+        <template v-slot:header.created_date="{ column }">
+          <b style="color: blue"> {{ column.title }}</b>
+        </template>
+        <template v-slot:header.Record_Status="{ column }">
+          <b style="color: blue"> {{ column.title }}</b>
+        </template>
+        <template v-slot:header.edit="{ column }">
+          <b style="color: blue"> {{ column.title }}</b>
+        </template>
+        <template v-slot:header.weiw="{ column }">
+          <b style="color: blue"> {{ column.title }}</b>
+        </template>
+        <template v-slot:header.delete="{ column }">
+          <b style="color: blue"> {{ column.title }}</b>
+        </template>
+        <template v-slot:header.confirm="{ column }">
+          <b style="color: blue"> {{ column.title }}</b>
+        </template>
+
+        <template v-slot:item.created_date="{ item }">
+          {{ dayjs(item.created_date).format("DD/MM/YYYY") }}
+        </template>
+        <template v-slot:item.Record_Status="{ item }">
+          <div>
+            <v-btn
+              v-if="item.Record_Status === 'O'"
+              flat
+              @click="updatRecodeStatusof(item.sub_menu_id)"
+            >
+              <v-icon color="info">mdi-toggle-switch</v-icon>
+            </v-btn>
+            <v-btn
+              v-if="item.Record_Status === 'C'"
+              flat
+              @click="updatRecodeStatus(item.sub_menu_id)"
+            >
+              <v-icon color="error">mdi-toggle-switch-off-outline</v-icon>
+            </v-btn>
+          </div>
+        </template>
+        <template v-slot:item.no="{ item, index }">
+          {{ index + 1 }}
+        </template>
+        <template v-slot:item.menu_id="item" class="text-center">
+          <div class="text-center">
+            <p>{{ item.item.menu?.menu_name_la || "No Data" }}</p>
+
+            <p>
+              {{ item.item.menu?.menu_id || "ບໍ່ມີຂໍ້ມູນ" }}
+            </p>
+          </div>
+        </template>
+
+        <template v-slot:item.confirm="{ item }">
+          <div class="d-flex align-center">
+            <v-btn
+              @click="unupdateAdproveStatus(item.sub_menu_id)"
+              class="text-primary"
+              v-if="item.Auth_Status === 'A'"
+              flat
+            >
+              <v-icon icon="mdi-toggle-switch" color="primary"></v-icon>
+            </v-btn>
+            <v-btn
+              @click="updateAdproveStatus(item.sub_menu_id)"
+              class="text-error"
+              v-if="item.Auth_Status === 'U'"
+              flat
+            >
+              <v-icon
+                icon="mdi-toggle-switch-off-outline"
+                color="error"
+              ></v-icon>
+            </v-btn>
+          </div>
+        </template>
+
+        <template v-slot:item.weiw="{ item }">
+          <v-btn
+            small
+            flat
             class="text-primary"
-            v-if="item.Auth_Status === 'A'"
-            flat
-          >
-            <v-icon icon="mdi-toggle-switch" color="primary"></v-icon>
-          </v-btn>
+            icon="mdi-eye-outline"
+            @click="goPath(`/submenu/detail?sub_menu_id=${item.sub_menu_id}`)"
+          />
+        </template>
+        <template v-slot:item.edit="{ item }">
           <v-btn
-            @click="updateAdproveStatus(item.sub_menu_id)"
-            class="text-error"
-            v-if="item.Auth_Status === 'U'"
+            small
             flat
-          >
-            <v-icon icon="mdi-toggle-switch-off-outline" color="error"></v-icon>
-          </v-btn>
-        </div>
-      </template>
-
-      <template v-slot:item.weiw="{ item }">
-        <v-btn
-          
-          small
-          flat
-          class="text-primary"
-          icon="mdi-eye-outline"
-          @click="goPath(`/submenu/detail?sub_menu_id=${item.sub_menu_id}`)"
-        />
-      </template>
-      <template v-slot:item.edit="{ item }">
-        <v-btn
-          
-          small
-          flat
-          class="text-info"
-          icon="mdi-pen"
-          @click="goPath(`/submenu/edit?sub_menu_id=${item.sub_menu_id}`)"
-        />
-      </template>
-      <template v-slot:item.delete="{ item }">
-        <v-btn
-          
-          small
-          flat
-          class="text-error"
-          icon="mdi-delete-outline"
-          @click="onDeleteType(item.sub_menu_id)"
-        />
-      </template>
-    </v-data-table>
-  </v-col>
+            class="text-info"
+            icon="mdi-pen"
+            @click="goPath(`/submenu/edit?sub_menu_id=${item.sub_menu_id}`)"
+          />
+        </template>
+        <template v-slot:item.delete="{ item }">
+          <v-btn
+            small
+            flat
+            class="text-error"
+            icon="mdi-delete-outline"
+            @click="onDeleteType(item.sub_menu_id)"
+          />
+        </template>
+      </v-data-table>
+    </v-col>
+  </div>
 </template>

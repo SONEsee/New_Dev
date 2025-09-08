@@ -6,6 +6,15 @@ const faasetStore = faAssetStore();
 const seleMaster = ref("");
 const selecGross = ref("");
 const selectAssetList = ref("");
+const dpsData = computed(()=>{
+  const data = masterType.respons_data_status_dps;
+  if(Array.isArray(data)){
+    return data
+  }if(data && typeof data ==="object"){
+    return [data]
+  }
+  return []
+})
 const assetList = computed(() => {
   const data = faasetStore.response_fa_asset_list;
   let asset: any[] = [];
@@ -107,13 +116,18 @@ const headers = [
   { title: "ປະເພດການຖອນ", key: "disposal_type" },
   { title: "ຈຸດປະສົງການຖອນ", key: "disposal_purpose" },
   { title: "ຜົນໄດ້ຮັບ", key: "gain_loss" },
-  { title: "ຄ່າໃຊ້ຈ່າຍໃນການຖອນ", key: "disposal_cost" },
+  // { title: "ຄ່າໃຊ້ຈ່າຍໃນການຖອນ", key: "disposal_cost" },
   { title: "ລາຍຮັບຈາກການຂາຍ", key: "disposal_proceeds" },
   { title: "ເຫດຜົນການຖອນ", key: "disposal_reason" },
 ] as any;
 const formatNumber = (num: any) => {
   return new Intl.NumberFormat("en-US").format(num);
 };
+const nameGross = (dataName:string)=>{
+  if(!dataName || !Array.isArray(dpsData.value))return "-";
+  const dataItem = dpsData.value.find((item)=>item.MC_code === dataName);
+  return dataItem ? dataItem.MC_name_la : "-";
+}
 const gainLoss = [
   { title: "ກຳໄລ", value: "ROIP" },
   { title: "ຂາດທຶນ", value: "ROIN" },
@@ -121,13 +135,14 @@ const gainLoss = [
 onMounted(() => {
   dispalsoStore.getDispalso();
   masterType.getDT();
+  masterType.getDPS();
   faasetStore.GetFaAssetList();
 });
 </script>
 
 <template>
   <div class="pa-4">
-    <!-- <pre>{{ assetList }}</pre> -->
+    <!-- <pre>{{ dpsData }}</pre> -->
     <global-text-title-line :title="title" />
     <v-row>
       <v-col cols="12" md="3">
@@ -186,9 +201,9 @@ onMounted(() => {
       </v-col>
       <v-col cols="12" md="3">
         <v-autocomplete
-          :items="gainLoss"
-          item-title="title"
-          item-value="value"
+          :items="dpsData"
+          item-title="MC_name_la"
+          item-value="MC_code"
           v-model="selecGross"
           variant="outlined"
           density="compact"
@@ -200,7 +215,7 @@ onMounted(() => {
           <template v-slot:item="{ props, item }">
             <v-list-item
               v-bind="props"
-              :title="`${item.raw.title}(${item.raw.value})`"
+              :title="`${item.raw.MC_name_la}(${item.raw.MC_code})`"
             >
               <template v-slot:prepend>
                 <v-avatar size="small" color="primary">
@@ -229,7 +244,7 @@ onMounted(() => {
       </v-col>
     </v-row> -->
 
-    <v-data-table :items="dataDispalso" :headers="headers">
+    <v-data-table :items="dataDispalso" :headers="headers" class="text-no-wrap">
       <!-- Header templates -->
       <template v-slot:header.disposal_type="{ column }">
         <b style="color: blue">{{ column.title }}</b>
@@ -254,7 +269,7 @@ onMounted(() => {
       </template>
 
       <template v-slot:item.asset_list_id="{ item }">
-        <v-chip flat>{{ item.asset_list_id }}</v-chip>
+        <v-chip flat variant="outlined" size="small">{{ item.asset_list_id }}</v-chip>
       </template>
 
       <template v-slot:item.disposal_type="{ item }">
@@ -266,13 +281,14 @@ onMounted(() => {
       </template>
 
       <template v-slot:item.gain_loss="{ item }">
-        <!-- {{ item.gain_loss || "-" }} -->
-        <div v-if="item.gain_loss === 'ROIP'" style="color: green">
+        
+        <v-chip flat color="success" variant="outlined" size="small">{{ nameGross(item.gain_loss) || "-" }}</v-chip>
+        <!-- <div v-if="item.gain_loss === 'ROIP'" style="color: green">
           <v-chip flat>ກຳໄລ</v-chip>
         </div>
         <div v-if="item.gain_loss === 'ROIN'" style="color: red">
           <v-chip flat>ຂາດທຶນ</v-chip>
-        </div>
+        </div> -->
       </template>
 
       <template v-slot:item.disposal_cost="{ item }">

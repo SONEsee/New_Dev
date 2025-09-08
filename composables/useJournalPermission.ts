@@ -1,15 +1,28 @@
 // composables/useJournalPermission.ts
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, readonly } from 'vue'
 import type { Ref } from 'vue'
 import axios from '@/helpers/axios'
 
-// TypeScript interfaces
+// TypeScript interfaces for the new EOD API response
+interface CurrentEodInfo {
+  date_id: number
+  eod_process_date: string
+  next_working_day: string
+  eod_status: 'Y' | 'N'
+}
+
 interface JournalPermissionResponse {
   available: boolean
   reason: string
+  target_date: string
+  is_back_date: boolean
+  back_value_enabled: boolean
+  current_eod: CurrentEodInfo
+  // Keep backward compatibility with old bypass_info if needed
   bypass_info?: {
     working_day_bypassed: boolean
     eod_check_bypassed: boolean
+    back_value_date?: string
   }
 }
 
@@ -25,11 +38,17 @@ interface UseJournalPermissionReturn {
   pending: Ref<boolean>
   error: Ref<JournalPermissionError | null>
   
-  // Computed
+  // Computed - existing
   isAvailable: Ref<boolean>
   permissionReason: Ref<string>
   isBypassActive: Ref<boolean>
-  bypassInfo: Ref<{ working_day_bypassed: boolean; eod_check_bypassed: boolean } | null>
+  bypassInfo: Ref<{ working_day_bypassed: boolean; eod_check_bypassed: boolean; back_value_date?: string } | null>
+  
+  // Computed - new EOD fields
+  targetDate: Ref<string | null>
+  isBackDate: Ref<boolean>
+  backValueEnabled: Ref<boolean>
+  currentEod: Ref<CurrentEodInfo | null>
   
   // Methods
   checkPermission: () => Promise<void>
@@ -107,24 +126,38 @@ export const useJournalPermission = (options: JournalPermissionOptions = {}): Us
     }
   }
   
-  // Main function to check journal permission
+  // Main function to check journal permission using EOD endpoint
   const checkPermission = async (): Promise<void> => {
     try {
       pending.value = true
       error.value = null
       
-      const response = await axios.get('api/end-of-day-journal/check/', {
+      console.log('Checking journal permission via EOD endpoint...')
+      
+      const response = await axios.get('/api/end-of-day-journal/check/', {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
         }
       })
       
-      // Assuming your axios helper returns response.data directly
+      console.log('EOD permission check response:', response.data)
+      
+      // Store the response data
       data.value = response.data
+      
+      // Create backward compatibility bypass_info from the new structure
+      if (response.data) {
+        data.value.bypass_info = {
+          working_day_bypassed: response.data.available || false,
+          eod_check_bypassed: response.data.back_value_enabled || false,
+          back_value_date: response.data.target_date || undefined
+        }
+      }
       
       // Check if permission is denied and auto-redirect is enabled
       if (!response.data.available && autoRedirect.value) {
+        console.log('Permission denied, scheduling auto-redirect...')
         // Delay before redirect to allow user to read the message
         setTimeout(() => {
           navigateToErrorPage(response.data.reason)
@@ -184,7 +217,7 @@ export const useJournalPermission = (options: JournalPermissionOptions = {}): Us
   // Alias for checkPermission to refresh data
   const refresh = checkPermission
   
-  // Computed properties for easier access
+  // Existing computed properties
   const isAvailable = computed<boolean>(() => {
     return data.value?.available ?? false
   })
@@ -194,21 +227,55 @@ export const useJournalPermission = (options: JournalPermissionOptions = {}): Us
   })
   
   const isBypassActive = computed<boolean>(() => {
+    // Check both old bypass_info and new structure
     const bypass = data.value?.bypass_info
-    return !!(bypass?.working_day_bypassed || bypass?.eod_check_bypassed)
+    const newStructure = data.value?.back_value_enabled || data.value?.available
+    return !!(bypass?.working_day_bypassed || bypass?.eod_check_bypassed || newStructure)
   })
   
   const bypassInfo = computed(() => {
     return data.value?.bypass_info ?? null
   })
 
+  // New computed properties for EOD data
+  const targetDate = computed<string | null>(() => {
+    return data.value?.target_date ?? null
+  })
+
+  const isBackDate = computed<boolean>(() => {
+    return data.value?.is_back_date ?? false
+  })
+
+  const backValueEnabled = computed<boolean>(() => {
+    return data.value?.back_value_enabled ?? false
+  })
+
+  const currentEod = computed<CurrentEodInfo | null>(() => {
+    return data.value?.current_eod ?? null
+  })
+
   // Watch for permission changes and auto-redirect if needed
   watch(isAvailable, (newValue) => {
     if (!newValue && autoRedirect.value && data.value) {
       // Permission became unavailable, redirect after delay
+      console.log('Permission status changed to unavailable, scheduling redirect...')
       setTimeout(() => {
         navigateToErrorPage(permissionReason.value)
       }, redirectDelay)
+    }
+  })
+
+  // Watch for target date changes and log
+  watch(targetDate, (newTargetDate) => {
+    if (newTargetDate) {
+      console.log('Target date updated:', newTargetDate, 'Is back date:', isBackDate.value, 'Back value enabled:', backValueEnabled.value)
+    }
+  })
+
+  // Watch for back value enabled changes and log 
+  watch(backValueEnabled, (newValue) => {
+    if (newValue !== undefined) {
+      console.log('Back value enabled changed:', newValue)
     }
   })
   
@@ -218,11 +285,17 @@ export const useJournalPermission = (options: JournalPermissionOptions = {}): Us
     pending: readonly(pending),
     error: readonly(error),
     
-    // Computed
+    // Computed - existing
     isAvailable: readonly(isAvailable),
     permissionReason: readonly(permissionReason),
     isBypassActive: readonly(isBypassActive),
     bypassInfo: readonly(bypassInfo),
+    
+    // Computed - new EOD fields
+    targetDate: readonly(targetDate),
+    isBackDate: readonly(isBackDate),
+    backValueEnabled: readonly(backValueEnabled),
+    currentEod: readonly(currentEod),
     
     // Methods
     checkPermission,
@@ -249,6 +322,7 @@ export const useJournalPermissionWithAutoRefresh = (
   const startAutoRefresh = () => {
     stopAutoRefresh() // Clear existing timer
     refreshTimer = setInterval(() => {
+      console.log('Auto-refreshing journal permission...')
       checkPermission()
     }, intervalMs)
   }
@@ -257,17 +331,20 @@ export const useJournalPermissionWithAutoRefresh = (
     if (refreshTimer) {
       clearInterval(refreshTimer)
       refreshTimer = null
+      console.log('Stopped auto-refresh for journal permission')
     }
   }
   
   // Auto refresh on mount (client-side only)
   onMounted(() => {
+    console.log('Starting journal permission auto-refresh')
     checkPermission() // Initial check
     startAutoRefresh()
   })
   
   // Cleanup on unmount
   onUnmounted(() => {
+    console.log('Cleaning up journal permission auto-refresh')
     stopAutoRefresh()
   })
   
@@ -288,4 +365,32 @@ export const useJournalPermissionWithRedirect = (
     redirectPath,
     redirectDelay
   })
+}
+
+// Utility function to format date for display
+export const formatEodDate = (dateString: string | null): string => {
+  if (!dateString) return ''
+  
+  try {
+    const date = new Date(dateString)
+    return date.toLocaleDateString('lo-LA', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    })
+  } catch {
+    return dateString
+  }
+}
+
+// Utility function to get EOD status display text
+export const getEodStatusText = (status: 'Y' | 'N' | undefined): string => {
+  switch (status) {
+    case 'Y':
+      return 'ສຳເລັດແລ້ວ' // Completed
+    case 'N':
+      return 'ກຳລັງດຳເນີນການ' // In progress
+    default:
+      return 'ບໍ່ຮູ້ສະຖານະ' // Unknown status
+  }
 }

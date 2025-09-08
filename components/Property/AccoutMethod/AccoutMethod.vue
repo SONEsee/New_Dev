@@ -3,17 +3,17 @@ import { ref, onMounted, computed } from "vue";
 import { CallSwal } from "#build/imports";
 import { useRoute } from "vue-router";
 import dayjs from "#build/dayjs.imports.mjs";
-const mainTypeStore = assetStore()
-const mainType = computed(()=>{
+const mainTypeStore = assetStore();
+const mainType = computed(() => {
   const data = mainTypeStore.response_asset_types;
-  if(Array.isArray(data)){
-    return data
+  if (Array.isArray(data)) {
+    return data;
   }
-  if(data && typeof data === "object"){
-    return [data]
+  if (data && typeof data === "object") {
+    return [data];
   }
-  return []
-})
+  return [];
+});
 const route = useRoute();
 const sub_menu_id = route.query.sub_menu_id as string;
 
@@ -24,16 +24,16 @@ const assetlist = computed(() => {
     return item.Auth_Status === "A" && item.Auth_Status_ARC === "A";
   });
 });
-const detailassetlis = computed(()=>{
+const detailassetlis = computed(() => {
   const data = assetListStore.response_fa_asset_list;
-  if(Array.isArray(data)){
-    return data
+  if (Array.isArray(data)) {
+    return data;
   }
-  if(data && typeof data === "object"){
-    return [data]
+  if (data && typeof data === "object") {
+    return [data];
   }
-  return []
-})
+  return [];
+});
 const dataFilter = ref([
   {
     title: "ທັງໝົດ",
@@ -47,15 +47,13 @@ const dataFilter = ref([
     title: "ປຶດໃຊ້ງານ",
     value: "C",
   },
-])
+]);
 const accountMethodStoreInstance = accountMethodStore();
 const mockData = computed(() => {
   return accountMethodStoreInstance.response_account_method_list || [];
 });
 const handleSubmit = async (item: any) => {
   try {
-  
-
     const notification = await CallSwal({
       title: "ຢືນຢັນ",
       text: `ທ່ານຕ້ອງການສະຖານະວິທີການບັນຊີນີ້ໃຊ່ບໍ່?`,
@@ -65,7 +63,9 @@ const handleSubmit = async (item: any) => {
       showCancelButton: true,
     });
     if (notification.isConfirmed) {
-      await accountMethodStoreInstance.UpdateAccountMethodStatus(item.mapping_id);
+      await accountMethodStoreInstance.UpdateAccountMethodStatus(
+        item.mapping_id
+      );
     }
   } catch (error) {
     console.error("Error submitting form:", error);
@@ -73,8 +73,6 @@ const handleSubmit = async (item: any) => {
 };
 const handleSubmitof = async (item: any) => {
   try {
-  
-
     const notification = await CallSwal({
       title: "ຢືນຢັນ",
       text: `ທ່ານຕ້ອງການສະຖານະວິທີການບັນຊີນີ້ໃຊ່ບໍ່?`,
@@ -84,7 +82,9 @@ const handleSubmitof = async (item: any) => {
       showCancelButton: true,
     });
     if (notification.isConfirmed) {
-      await accountMethodStoreInstance.UpdateAccountMethodStatusof(item.mapping_id);
+      await accountMethodStoreInstance.UpdateAccountMethodStatusof(
+        item.mapping_id
+      );
     }
   } catch (error) {
     console.error("Error submitting form:", error);
@@ -125,176 +125,180 @@ const accTypes = [
   { title: "ຖອນຈຳໜ່າຍ", value: "DISPOSAL" },
 ];
 
-const headers = computed(() => [
-  // {
-  //   title: "Mapping ID",
-  //   value: "mapping_id",
-  //   align: "start",
-  //   sortable: true,
-  //   filterable: true,
-  //   width: "120px",
-  //   class: "text-primary font-weight-bold",
-  // },
-  {
-    title: "Ref ID",
-    value: "ref_id",
-    align: "center",
-    sortable: true,
-    filterable: true,
-    width: "100px",
-    class: "text-center",
-  },
-  {
-    title: "ຊື່ຊັບສົມບັດ",
-    value: "acc_type",
-    align: "center",
-    sortable: true,
-    filterable: true,
-    width: "140px",
-    class: "text-center",
-  },
-  // {
-  //   title: "Asset ID",
-  //   value: "asset_id",
-  //   align: "center",
-  //   sortable: true,
-  //   filterable: true,
-  //   width: "100px",
-  //   class: "text-center",
-  // },
-  {
-    title: "ບັນຊີເດບິດ",
-    value: "debit_account_id",
-    align: "center",
-    sortable: true,
-    filterable: true,
-    width: "150px",
-    class: "text-center",
-  },
-  {
-    title: "ບັນຊີເຄຣດິດ",
-    value: "credit_account_id",
-    align: "center",
-    sortable: true,
-    filterable: true,
-    width: "150px",
-    class: "text-center",
-  },
-  {
-    title: "ຍອດເງິນ",
-    value: "amount",
-    align: "end",
-    sortable: true,
-    filterable: false,
-    width: "130px",
-    class: "text-end",
-  },
-  {
-    title: "ວັນທີ່ທຸລະກຳ",
-    value: "transaction_date",
-    align: "center",
-    sortable: true,
-    filterable: false,
-    width: "150px",
-    class: "text-center",
-  },
-  // {
-  //   title: "Journal Entry",
-  //   value: "journal_entry_id",
-  //   align: "center",
-  //   sortable: false,
-  //   filterable: true,
-  //   width: "140px",
-  //   class: "text-center",
-  // },
-  ...(canRecordStatus.value
-    ? [
-        {
-          title: "ສະຖານະ",
-          value: "Record_Status",
-          align: "center",
-          sortable: true,
-          filterable: true,
-          width: "120px",
-          class: "text-center",
-        },
-      ]
-    : []),
-  ...(canView.value
-    ? [
-        {
-          title: "ເບິ່ງ",
-          value: "view",
-          align: "center",
-          sortable: false,
-          filterable: false,
-          width: "80px",
-          class: "text-center",
-        },
-      ]
-    : []),
-  ...(canEdit.value
-    ? [
-        {
-          title: "ແກ້ໄຂ",
-          value: "edit",
-          align: "center",
-          sortable: false,
-          filterable: false,
-          width: "80px",
-          class: "text-center",
-        },
-      ]
-    : []),
-  ...(canDelete.value
-    ? [
-        {
-          title: "ລົບ",
-          value: "delete",
-          align: "center",
-          sortable: false,
-          filterable: false,
-          width: "80px",
-          class: "text-center",
-        },
-      ]
-    : []),
-]);
-
+const headers = computed(
+  () =>
+    [
+      // {
+      //   title: "Mapping ID",
+      //   value: "mapping_id",
+      //   align: "start",
+      //   sortable: true,
+      //   filterable: true,
+      //   width: "120px",
+      //   class: "text-primary font-weight-bold",
+      // },
+      {
+        title: "Ref ID",
+        value: "ref_id",
+        align: "center",
+        sortable: true,
+        filterable: true,
+        width: "100px",
+        class: "text-center",
+      },
+      {
+        title: "ຊື່ຊັບສົມບັດ",
+        value: "acc_type",
+        align: "center",
+        sortable: true,
+        filterable: true,
+        width: "140px",
+        class: "text-center",
+      },
+      // {
+      //   title: "Asset ID",
+      //   value: "asset_id",
+      //   align: "center",
+      //   sortable: true,
+      //   filterable: true,
+      //   width: "100px",
+      //   class: "text-center",
+      // },
+      {
+        title: "ບັນຊີເດບິດ",
+        value: "debit_account_id",
+        align: "center",
+        sortable: true,
+        filterable: true,
+        width: "150px",
+        class: "text-center",
+      },
+      {
+        title: "ບັນຊີເຄຣດິດ",
+        value: "credit_account_id",
+        align: "center",
+        sortable: true,
+        filterable: true,
+        width: "150px",
+        class: "text-center",
+      },
+      {
+        title: "ຍອດເງິນ",
+        value: "amount",
+        align: "end",
+        sortable: true,
+        filterable: false,
+        width: "130px",
+        class: "text-end",
+      },
+      {
+        title: "ວັນທີ່ທຸລະກຳ",
+        value: "transaction_date",
+        align: "center",
+        sortable: true,
+        filterable: false,
+        width: "150px",
+        class: "text-center",
+      },
+      // {
+      //   title: "Journal Entry",
+      //   value: "journal_entry_id",
+      //   align: "center",
+      //   sortable: false,
+      //   filterable: true,
+      //   width: "140px",
+      //   class: "text-center",
+      // },
+      ...(canRecordStatus.value
+        ? [
+            {
+              title: "ສະຖານະ",
+              value: "Record_Status",
+              align: "center",
+              sortable: true,
+              filterable: true,
+              width: "120px",
+              class: "text-center",
+            },
+          ]
+        : []),
+      ...(canView.value
+        ? [
+            {
+              title: "ເບິ່ງ",
+              value: "view",
+              align: "center",
+              sortable: false,
+              filterable: false,
+              width: "80px",
+              class: "text-center",
+            },
+          ]
+        : []),
+      ...(canEdit.value
+        ? [
+            {
+              title: "ແກ້ໄຂ",
+              value: "edit",
+              align: "center",
+              sortable: false,
+              filterable: false,
+              width: "80px",
+              class: "text-center",
+            },
+          ]
+        : []),
+      ...(canDelete.value
+        ? [
+            {
+              title: "ລົບ",
+              value: "delete",
+              align: "center",
+              sortable: false,
+              filterable: false,
+              width: "80px",
+              class: "text-center",
+            },
+          ]
+        : []),
+    ] as any
+);
 
 const mappedData = computed(() => {
   const accountMethods = mockData.value || [];
   const assetDetails = detailassetlis.value || [];
-  
-  return accountMethods.map(method => {
-   
-    const matchedAsset = assetDetails.find(asset => 
-      asset.asset_list_id === method.ref_id
+
+  return accountMethods.map((method) => {
+    const matchedAsset = assetDetails.find(
+      (asset) => asset.asset_list_id === method.ref_id
     );
-    
+
     return {
       ...method,
-     
+
       asset_detail: matchedAsset || null,
-      
-      asset_name: matchedAsset?.asset_id_detail?.asset_name_la || '-',
-      asset_code: matchedAsset?.asset_id_detail?.asset_code || '-',
-      asset_spec: matchedAsset?.asset_spec || '-',
-      location_name: matchedAsset?.location_detail?.location_name_la || '-',
-      supplier_name: matchedAsset?.supplier_detail?.supplier_name || '-',
-      asset_value: matchedAsset?.asset_value || '0',
-      asset_status: matchedAsset?.asset_status_detail?.MC_name_la || '-'
+
+      asset_name: matchedAsset?.asset_id_detail?.asset_name_la || "-",
+      asset_code: matchedAsset?.asset_id_detail?.asset_code || "-",
+      asset_spec: matchedAsset?.asset_spec || "-",
+      location_name: matchedAsset?.location_detail?.location_name_la || "-",
+      supplier_name: matchedAsset?.supplier_detail?.supplier_name || "-",
+      asset_value: matchedAsset?.asset_value || "0",
+      asset_status: matchedAsset?.asset_status_detail?.MC_name_la || "-",
     };
   });
 });
 
-
 const filteredData = computed(() => {
   let data = mappedData.value;
-  
+
   if (selectedAccType.value !== "all") {
-    data = data.filter((item) => item.asset_detail.asset_id_detail.asset_code === selectedAccType.value);
+    data = data.filter(
+      (item) =>
+        item.asset_detail?.asset_id_detail?.asset_code === selectedAccType.value
+    );
   }
+
   if (selectedStatus.value !== "all") {
     data = data.filter((item) => item.Record_Status === selectedStatus.value);
   }
@@ -318,6 +322,35 @@ const filteredData = computed(() => {
 
   return data;
 });
+// const filteredData = computed(() => {
+//   let data = mappedData.value;
+
+//   if (selectedAccType.value !== "all") {
+//     data = data.filter((item) => item.asset_detail.asset_id_detail.asset_code === selectedAccType.value);
+//   }
+//   if (selectedStatus.value !== "all") {
+//     data = data.filter((item) => item.Record_Status === selectedStatus.value);
+//   }
+
+//   if (search.value) {
+//     data = data.filter(
+//       (item) =>
+//         item.mapping_id.toString().includes(search.value) ||
+//         item.ref_id.toString().includes(search.value) ||
+//         item.debit_account_id
+//           .toLowerCase()
+//           .includes(search.value.toLowerCase()) ||
+//         item.credit_account_id
+//           .toLowerCase()
+//           .includes(search.value.toLowerCase()) ||
+//         item.description?.toLowerCase().includes(search.value.toLowerCase()) ||
+//         item.asset_name?.toLowerCase().includes(search.value.toLowerCase()) ||
+//         item.asset_spec?.toLowerCase().includes(search.value.toLowerCase())
+//     );
+//   }
+
+//   return data;
+// });
 // const filteredData = computed(() => {
 //   let data = mockData.value;
 // const maindata = assetListStore.response_fa_asset_detail;
@@ -426,21 +459,30 @@ const statistics = computed(() => {
   const data = filteredData.value;
   return {
     total: data.length,
-    
   };
 });
+const NameDisplay = (name: any) => {
+  if (!name || !name.asset_name_la || !name.asset_code) {
+    return "ທັງໝົດ";
+  }
+  return `${name.asset_name_la} - ${name.asset_code}`;
+};
 
+const nameDisplayStatus = (items: any) => {
+  if (!items || !items.title || !items.value) {
+    return "ທັໝົດ";
+  }
+  return `${items.title} - ${items.value}`;
+};
 onMounted(async () => {
   accountMethodStoreInstance.GetAccountMethodList();
   mainTypeStore.GetAssetTypes();
- 
+  initializeRole();
+  roleStore.GetRoleDetail();
+  assetListStore.GetFaAssetList();
   loading.value = true;
+  await new Promise((resolve) => setTimeout(resolve, 500));
   try {
-    initializeRole();
-    roleStore.GetRoleDetail();
-    assetListStore.GetFaAssetList();
-  
-    await new Promise((resolve) => setTimeout(resolve, 500));
   } catch (error) {
     errorMessage.value = "ເກີດຂໍ້ຜິດພາດໃນການໂຫຼດຂໍ້ມູນ";
     showError.value = true;
@@ -459,8 +501,7 @@ onMounted(async () => {
         <!-- <v-col cols="6"><pre>{{ filteredData }}</pre></v-col> -->
         <!-- <v-col cols="6"><pre>{{ mainType }}</pre></v-col> -->
       </v-row>
-     
- 
+
       <v-row>
         <v-col cols="12" md="2">
           <div class="d-flex">
@@ -479,32 +520,58 @@ onMounted(async () => {
         </v-col>
 
         <v-col cols="12" md="3" class="text-no-wrap">
-          <v-select
+          <v-autocomplete
             v-model="selectedAccType"
             :items="mainType"
-            item-title="asset_name_la"
+            :item-title="NameDisplay"
             item-value="asset_code"
             label="ປະເພດທຸລະກຳ"
             variant="outlined"
             density="compact"
-            clearable
             placeholder="ເລືອກປະເພດທຸລະກຳ"
             :loading="loading"
-          ></v-select>
+            prepend-inner-icon="mdi-format-list-bulleted-type"
+          >
+            <template v-slot:item="{ item, props }">
+              <v-list-item
+                v-bind="props"
+                :title="`${item.raw.asset_name_la}(${item.raw.asset_code})`"
+              >
+              <template v-slot:prepend>
+                <v-avatar size="small" color="primary">
+                  <v-icon>mdi-format-list-bulleted-type</v-icon>
+                </v-avatar>
+              </template>
+            </v-list-item>
+            </template>
+          </v-autocomplete>
         </v-col>
         <v-col cols="12" md="3" class="text-no-wrap">
-          <v-select
+          <v-autocomplete
             v-model="selectedStatus"
             :items="dataFilter"
-            item-title="title"
+            :item-title="nameDisplayStatus"
             item-value="value"
             label="ສະຖານະ"
             variant="outlined"
+            prepend-inner-icon="mdi-list-status"
             density="compact"
-            clearable
             placeholder="ເລືອກສະຖານະ"
             :loading="loading"
-          ></v-select>
+          >
+            <template v-slot:item="{ item, props }">
+              <v-list-item
+                v-bind="props"
+                :title="`${item.raw.title}(${item.raw.value})`"
+              >
+              <template v-slot:prepend>
+                <v-avatar size="small" color="primary">
+                  <v-icon>mdi-list-status</v-icon>
+                </v-avatar>
+              </template>
+              </v-list-item>
+            </template>
+          </v-autocomplete>
         </v-col>
 
         <v-col cols="12" md="2">
@@ -532,9 +599,9 @@ onMounted(async () => {
           </v-btn>
         </v-col>
       </v-row>
-<!-- <pre>{{ detailassetlis }}</pre> -->
- <!-- <pre>{{  }}</pre> -->
-      
+      <!-- <pre>{{ detailassetlis }}</pre> -->
+      <!-- <pre>{{  }}</pre> -->
+
       <v-data-table
         :headers="headers"
         :items="filteredData || []"
@@ -672,8 +739,6 @@ onMounted(async () => {
         <template v-slot:item.transaction_date="{ item }">
           {{ dayjs(item.transaction_date).format("DD/MM/YYYY ") }}
         </template>
-
-       
 
         <template v-slot:item.Record_Status="{ item }">
           <div>

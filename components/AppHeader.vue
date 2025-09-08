@@ -879,10 +879,10 @@ const onLogout = async () => {
 
     clearLocalStorage()
     router.push("/login")
-  } catch (err) {
+  } catch (err:any) {
     console.error("Error during logout:", err.response?.data)
     clearLocalStorage()
-    window.location.href = "/login"
+    window.location.href = "/login" 
   }
 }
 

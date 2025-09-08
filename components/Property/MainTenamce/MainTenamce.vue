@@ -1,8 +1,35 @@
 <script setup lang="ts">
 import { useBarcode } from "~/composables/useBarcode";
+const selecassetType = ref("");
 const title = "ບໍາລຸງຮັກສາຊັບສິນ";
 const faAssetStoreInstance = faAssetStore();
-
+const assetTypeStore = assetStore();
+watch(selecassetType, async (newValue) => {
+  faAssetStoreInstance.isLoading = true;
+  try {
+    faAssetStoreInstance.filter_data_assetlist_id1.filter.asset_type_id =
+      newValue;
+    await faAssetStoreInstance.GetFaAssetList2();
+  } catch (error) {
+    CallSwal({
+      icon: "error",
+      title: "ບໍ່ສາມາດດືງຊໍ້ມູນໄດ້",
+      text: "ກະລຸນາລອງໃຫມ່ຂໍ້ມູນການດືງຊໍ້ມູນໄດ້",
+    });
+  } finally {
+    faAssetStoreInstance.isLoading = false;
+  }
+});
+const assetTypeData = computed(() => {
+  const data = assetTypeStore.response_asset_list;
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (data && typeof data === "object") {
+    return [data];
+  }
+  return [];
+});
 const { generateBarcode, generateBarcodeBase64, generateBarcodeSVG } =
   useBarcode();
 
@@ -31,7 +58,8 @@ const FaAassetData = computed(() => {
   return dataArray.filter((item) => item.asset_status === "AC");
 });
 onMounted(() => {
-  faAssetStoreInstance.GetFaAssetList();
+  faAssetStoreInstance.GetFaAssetList2();
+  assetTypeStore.GetAssetList();
 });
 
 const header = [
@@ -150,7 +178,12 @@ const printBarcode = () => {
     printWindow?.print();
   }, 100);
 };
-
+const nameTypeDisplay = (item: any) => {
+  if (!item || !item.asset_name_la || !item.coa_id) {
+    return "ທັງໝົດ";
+  }
+  return `${item.asset_name_la}-${item.coa_id}`;
+};
 const downloadBarcode = () => {
   if (!selectedAsset.value) return;
 
@@ -177,8 +210,38 @@ const items = [
 <template>
   <div class="pa-4">
     <v-row>
-      <v-col cols="12" md="6"><GlobalTextTitleLine :title="title" /></v-col>
-      <v-col cols="12" md="6">
+      <v-col cols="12" md="12"><GlobalTextTitleLine :title="title" /></v-col>
+      
+    </v-row>
+    <v-row>
+      
+      <v-col cols="3">
+        <v-autocomplete
+          label="ເລືອກຕາມປະເພດຊັບສົມບັດ"
+          density="compact"
+          clearable
+          variant="outlined"
+          v-model="selecassetType"
+          :items="assetTypeData"
+          item-value="coa_id"
+          :item-title="nameTypeDisplay"
+        >
+          <template v-slot:item="{ props, item }">
+            <v-list-item
+              v-bind="props"
+              :title="`${item.raw.asset_name_la}(${item.raw.coa_id})`"
+            >
+              <template v-slot:prepend>
+                <v-avatar size="small" color="primary">
+                  <v-icon size="small">mdi-package-variant</v-icon>
+                </v-avatar>
+              </template>
+            </v-list-item>
+          </template>
+        </v-autocomplete>
+      </v-col>
+      <v-col cols="12" md="9" class="d-flex justify-end">
+        <v-col cols="12" md="6">
         <div class="d-flex justify-end">
           <v-menu>
             <template v-slot:activator="{ props }">
@@ -203,8 +266,8 @@ const items = [
           </v-menu>
         </div>
       </v-col>
+      </v-col>
     </v-row>
-
     <v-data-table
       :headers="header"
       :items="FaAassetData"

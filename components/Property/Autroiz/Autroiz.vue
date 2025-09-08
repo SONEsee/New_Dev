@@ -1,70 +1,238 @@
-<script setup>
-import { ref, reactive, computed, onMounted, watch } from "vue";
+<script setup lang="ts">
+import { ref, reactive, computed, onMounted, onBeforeUnmount, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import axios from "@/helpers/axios";
 import Swal from "sweetalert2";
 import { debounce } from "lodash";
 import { useRolePermissions } from "@/composables/useRolePermissions";
+
+// ===== TYPE DEFINITIONS =====
+interface JournalItem {
+  JRNLLog_id: string | number;
+  Reference_No: string;
+  Txn_code?: string;
+  Addl_text?: string;
+  Fcy_Amount: number;
+  Lcy_Amount?: number;
+  Value_date: string;
+  Auth_Status: 'A' | 'R' | 'U' | 'P';
+  Maker_Id: string;
+  Maker_DT_Stamp: string;
+  module_id?: string;
+  module_name_la?: string;
+  ccy_code?: string;
+  Ccy_cd?: string;
+  maker_name?: string;
+  jrnl_log_ac?: {
+    Ac_relatives: string;
+  };
+}
+
+interface DepreciationItem {
+  aldm_id: string | number;
+  asset_list_id: string;
+  Auth_Status: 'A' | 'R' | 'U' | 'P';
+  Maker_DT_Stamp: string;
+}
+
+interface CurrencyItem {
+  ccy_code: string;
+  ccy_name?: string;
+}
+
+interface StatusItem {
+  MC_code: string;
+  MC_name_la: string;
+}
+
+interface ModuleItem {
+  module_Id: string;
+  module_name_la: string;
+}
+
+interface DateFilterType {
+  value: 'all' | 'date' | 'range' | 'month' | 'year';
+  text: string;
+  icon: string;
+}
+
+interface MonthItem {
+  value: number;
+  text: string;
+}
+
+interface YearItem {
+  value: number;
+  text: string;
+}
+
+interface User {
+  user_id: string;
+  name?: string;
+}
+
+interface FilterChip {
+  key: string;
+  label: string;
+  icon: string;
+}
+
+interface Pagination {
+  currentPage: number;
+  pageSize: number;
+  totalPages: number;
+  totalItems: number;
+}
+
+interface Summary {
+  total: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+  correction: number;
+}
+
+interface Filters {
+  search: string;
+  module_id: string | null;
+  Ccy_cd: string | null;
+  Auth_Status: string | null;
+  dateFilterType: 'all' | 'date' | 'range' | 'month' | 'year';
+  specificDate: string;
+  dateFrom: string;
+  dateTo: string;
+  selectedMonth: number;
+  selectedYear: number;
+}
+
+interface ApiResponse {
+  results?: JournalItem[];
+  count?: number;
+  page_info?: {
+    total_pages: number;
+  };
+  summary?: Partial<Summary>;
+  reference_data?: {
+    modules?: ModuleItem[];
+    currencies?: CurrencyItem[];
+    auth_status_options?: StatusItem[];
+  };
+}
+
+// ===== COMPONENT LIFECYCLE STATE =====
+const isComponentMounted = ref<boolean>(true);
+
+// ===== STORE COMPOSABLES =====
 const mainStore = useFassetLidtDescription();
 const derpicationStore = useFassetLidtDescription();
 const cerrency = useCerrencyStore();
 const masterStore = useMasterStore();
 const jurnalStore = useJournalStor();
 
-const datadevcription = computed(() => {
-  const data = derpicationStore.respons_data_driscription_main;
-  let processedData = [];
+// ===== COMPUTED PROPERTIES WITH PROPER TYPES AND ERROR HANDLING =====
+const datadevcription = computed((): DepreciationItem[] => {
+  try {
+    const data = derpicationStore?.respons_data_driscription_main;
+    let processedData: any[] = [];
 
-  if (Array.isArray(data)) {
-    processedData = data;
-  } else if (data && typeof data === "object") {
-    processedData = [data];
+    if (Array.isArray(data)) {
+      processedData = data.filter(item => item != null);
+    } else if (data && typeof data === "object") {
+      processedData = [data];
+    }
+
+    // Transform data to match interface with type assertion
+    return processedData
+      .filter((item: any) => item && (item.Auth_Status === "U" || item.Auth_Status === "P"))
+      .map((item: any): DepreciationItem => {
+        // Ensure Maker_DT_Stamp is properly handled
+        let makerDate = item.Maker_DT_Stamp;
+        if (makerDate instanceof Date) {
+          makerDate = makerDate.toISOString();
+        }
+
+        return {
+          aldm_id: item.aldm_id,
+          asset_list_id: item.asset_list_id,
+          asset_list_id_detail: item.asset_list_id_detail,
+          dpca_year: item.dpca_year,
+          dpca_month: item.dpca_month,
+          dpca_amount: item.dpca_amount,
+          dpca_cum_amount: item.dpca_cum_amount,
+          dpca_date: item.dpca_date,
+          dpca_remark: item.dpca_remark,
+          dpca_status: item.dpca_status,
+          dpca_type: item.dpca_type,
+          Auth_Status: item.Auth_Status,
+          Maker_DT_Stamp: makerDate,
+          Maker_Id: item.Maker_Id,
+          Checker_DT_Stamp: item.Checker_DT_Stamp,
+          Checker_Id: item.Checker_Id,
+          ...item // Include any additional properties
+        };
+      });
+  } catch (error) {
+    console.error("Error in datadevcription computed:", error);
+    return [];
   }
-
-  return processedData.filter(
-    (item) => item.Auth_Status === "U" || item.Auth_Status === "P"
-  );
 });
 
-const datajurnal = computed(() => {
-  const data = jurnalStore.response_journal_list;
-  if (Array.isArray(data)) {
-    return data;
+const datajurnal = computed((): JournalItem[] => {
+  try {
+    const data = jurnalStore?.response_journal_list;
+    if (Array.isArray(data)) {
+      return data.filter(item => item != null) as JournalItem[];
+    }
+    if (data && typeof data === "object") {
+      return [data as any] ;
+    }
+    return [];
+  } catch (error) {
+    console.error("Error in datajurnal computed:", error);
+    return [];
   }
-  if (data && typeof data === "object") {
-    return [data];
-  }
-  return [];
 });
 
-const status = computed(() => {
-  const data = masterStore.respone_data_master.MasterCodes || [];
-  if (Array.isArray(data)) {
-    return data;
+const status = computed((): StatusItem[] => {
+  try {
+    const data = masterStore?.respone_data_master?.MasterCodes  || [];
+    if (Array.isArray(data)) {
+      return data.filter(item => item != null) as StatusItem[];
+    }
+    if (data && typeof data === "object") {
+      return [data as StatusItem];
+    }
+    return [];
+  } catch (error) {
+    console.error("Error in status computed:", error);
+    return [];
   }
-  if (data && typeof data === "object") {
-    return [data];
-  }
-  return [];
 });
 
-const responscerrency = computed(() => {
-  const data = cerrency.respons_cerrency_data;
-  if (Array.isArray(data)) {
-    return data;
+const responscerrency = computed((): CurrencyItem[] => {
+  try {
+    const data = cerrency?.respons_cerrency_data;
+    if (Array.isArray(data)) {
+      return data.filter(item => item != null) as CurrencyItem[];
+    }
+    if (data && typeof data === "object") {
+      return [data as CurrencyItem];
+    }
+    return [];
+  } catch (error) {
+    console.error("Error in responscerrency computed:", error);
+    return [];
   }
-  if (data && typeof data === "object") {
-    return [data];
-  }
-  return [];
 });
 
+// ===== ROUTER & ROUTE =====
 const route = useRoute();
 const router = useRouter();
 
-const submenu_id = route.query.sub_menu_id || "GL_NOTE_CAP";
+const submenu_id = (route.query.sub_menu_id as string) || "GL_NOTE_CAP";
 console.log("Submenu ID:", submenu_id);
 
+// ===== PERMISSIONS =====
 const {
   initializeRole,
   canView,
@@ -75,11 +243,13 @@ const {
   permissions,
 } = useRolePermissions();
 
+// ===== PERFORMANCE TRACKER =====
 const performanceTracker = {
+  startTime: 0,
   start() {
     this.startTime = performance.now();
   },
-  end(operation) {
+  end(operation: string) {
     const duration = performance.now() - this.startTime;
     console.log(`⚡ ${operation}: ${duration.toFixed(2)}ms`);
     if (duration > 500) {
@@ -88,42 +258,46 @@ const performanceTracker = {
   },
 };
 
-const loading = ref(false);
-const loadingReferences = ref(false);
-const items = ref([]);
-const modules = ref([]);
-const currencies = ref([]);
-const authStatusOptions = ref([]);
+// ===== REACTIVE STATE =====
+const loading = ref<boolean>(false);
+const loadingReferences = ref<boolean>(false);
+const items = ref<JournalItem[]>([]);
+const modules = ref<ModuleItem[]>([]);
+const currencies = ref<CurrencyItem[]>([]);
+const authStatusOptions = ref<StatusItem[]>([]);
 
-// ປ່ຽນເປັນ aldm_id ແທນ JRNLLog_id
-const selectedItems = ref([]);
-const selectAll = ref(false);
+const selectedItems = ref<(string | number)[]>([]);
+const selectAll = ref<boolean>(false);
 
-const referenceDataCache = new Map();
+const referenceDataCache = new Map<string, { data: any; timestamp: number }>();
 const CACHE_DURATION = 5 * 60 * 1000;
 
-const currentUser = computed(() => {
+// ===== CURRENT USER =====
+const currentUser = computed((): User | null => {
   try {
     const userData = localStorage.getItem("user");
-    return userData ? JSON.parse(userData) : null;
+    return userData ? JSON.parse(userData) as User : null;
   } catch (error) {
     console.error("Error parsing user data:", error);
     return null;
   }
 });
 
+// ===== DATE CONSTANTS =====
 const today = new Date().toISOString().slice(0, 10);
 const currentYear = new Date().getFullYear();
 const currentMonth = new Date().getMonth() + 1;
 
-const pagination = reactive({
+// ===== PAGINATION =====
+const pagination = reactive<Pagination>({
   currentPage: 1,
   pageSize: 25,
   totalPages: 0,
   totalItems: 0,
 });
 
-const dateFilterTypes = ref([
+// ===== FILTER OPTIONS =====
+const dateFilterTypes = ref<DateFilterType[]>([
   { value: "all", text: "ທັງໝົດ", icon: "mdi-calendar-multiple" },
   { value: "date", text: "ວັນທີສະເພາະ", icon: "mdi-calendar" },
   { value: "range", text: "ໄລຍະວັນທີ", icon: "mdi-calendar-range" },
@@ -131,7 +305,7 @@ const dateFilterTypes = ref([
   { value: "year", text: "ປີ", icon: "mdi-calendar-year" },
 ]);
 
-const months = ref([
+const months = ref<MonthItem[]>([
   { value: 1, text: "ມັງກອນ" },
   { value: 2, text: "ກຸມພາ" },
   { value: 3, text: "ມີນາ" },
@@ -146,14 +320,15 @@ const months = ref([
   { value: 12, text: "ທັນວາ" },
 ]);
 
-const years = ref(
+const years = ref<YearItem[]>(
   Array.from({ length: 8 }, (_, i) => currentYear - 5 + i).map((year) => ({
     value: year,
     text: year.toString(),
   }))
 );
 
-const filters = reactive({
+// ===== FILTERS =====
+const filters = reactive<Filters>({
   search: "",
   module_id: null,
   Ccy_cd: null,
@@ -166,7 +341,8 @@ const filters = reactive({
   selectedYear: currentYear,
 });
 
-const summary = reactive({
+// ===== SUMMARY =====
+const summary = reactive<Summary>({
   total: 0,
   pending: 0,
   approved: 0,
@@ -174,359 +350,508 @@ const summary = reactive({
   correction: 0,
 });
 
-// ແມັບຂໍ້ມູນເພື່ອຫາ aldm_id ທີ່ກ່ຽວຂ້ອງ
-const getMatchedAldmId = (item) => {
-  if (!item.jrnl_log_ac?.Ac_relatives || !item.Maker_DT_Stamp) {
+// ===== HELPER FUNCTIONS WITH ERROR HANDLING =====
+const getMatchedAldmId = (item: JournalItem | null | undefined): string | number | null => {
+  try {
+    if (!item || !item.jrnl_log_ac?.Ac_relatives || !item.Maker_DT_Stamp) {
+      return null;
+    }
+
+    const itemDate = item.Maker_DT_Stamp.split('T')[0];
+    
+    const matched = datadevcription.value.find((dep: DepreciationItem) => {
+      if (!dep || !dep.Maker_DT_Stamp) return false;
+      
+      try {
+        const depDate = dep.Maker_DT_Stamp.split('T')[0];
+        return dep.asset_list_id === item.jrnl_log_ac!.Ac_relatives &&
+               depDate === itemDate &&
+               dep.Auth_Status === "U" &&
+               item.Auth_Status === "U";
+      } catch (err) {
+        console.warn("Error comparing dates:", err);
+        return false;
+      }
+    });
+    
+    return matched ? matched.aldm_id : null;
+  } catch (error) {
+    console.error("Error in getMatchedAldmId:", error);
     return null;
   }
-
-  // ຈັດຟໍແມັດວັນທີຈາກ item
-  const itemDate = item.Maker_DT_Stamp.split('T')[0]; // "2025-08-13"
-  
-  // ຫາ datadevcription ທີ່ແມັບກັບ item
-  const matched = datadevcription.value.find(dep => {
-    if (!dep.Maker_DT_Stamp) return false;
-    
-    const depDate = dep.Maker_DT_Stamp.split('T')[0];
-    return dep.asset_list_id === item.jrnl_log_ac.Ac_relatives &&
-           depDate === itemDate &&
-           dep.Auth_Status === "U" &&
-           item.Auth_Status === "U";
-  });
-  
-  return matched ? matched.aldm_id : null;
 };
 
-// ຫາ items ທີ່ສາມາດເລືອກໄດ້ (ມີ aldm_id ທີ່ແມັບກັນ)
-const selectableItems = computed(() => {
-  return items.value.filter((item) => {
-    return item.Auth_Status !== "A" && getMatchedAldmId(item) !== null;
-  });
+const selectableItems = computed((): JournalItem[] => {
+  try {
+    return items.value.filter((item: JournalItem) => {
+      return item && item.Auth_Status !== "A" && getMatchedAldmId(item) !== null;
+    });
+  } catch (error) {
+    console.error("Error in selectableItems computed:", error);
+    return [];
+  }
 });
 
-// ເຊັກວ່າ item ນີ້ຖືກເລືອກຢູ່ບໍ່
-const isItemSelected = (item) => {
-  const aldmId = getMatchedAldmId(item);
-  return aldmId ? selectedItems.value.includes(aldmId) : false;
-};
-
-// ເຊັກວ່າ item ນີ້ສາມາດເລືອກໄດ້ບໍ່
-const isItemSelectable = (item) => {
-  return item.Auth_Status !== "A" && getMatchedAldmId(item) !== null;
-};
-
-// ສະລັບການເລືອກ item
-const toggleItemSelection = (item) => {
-  if (!isItemSelectable(item)) return;
-
-  const aldmId = getMatchedAldmId(item);
-  if (!aldmId) return;
-
-  const index = selectedItems.value.indexOf(aldmId);
-  if (index > -1) {
-    selectedItems.value.splice(index, 1);
-  } else {
-    selectedItems.value.push(aldmId);
+const isItemSelected = (item: JournalItem | null | undefined): boolean => {
+  try {
+    if (!item) return false;
+    const aldmId = getMatchedAldmId(item);
+    return aldmId ? selectedItems.value.includes(aldmId) : false;
+  } catch (error) {
+    console.error("Error in isItemSelected:", error);
+    return false;
   }
-  updateSelectAllState();
 };
 
-// ເລືອກທັງໝົດ
-const toggleSelectAll = () => {
-  if (selectAll.value) {
-    selectedItems.value = selectableItems.value
-      .map(item => getMatchedAldmId(item))
-      .filter(aldmId => aldmId !== null);
-  } else {
+const isItemSelectable = (item: JournalItem | null | undefined): boolean => {
+  try {
+    if (!item) return false;
+    return item.Auth_Status !== "A" && getMatchedAldmId(item) !== null;
+  } catch (error) {
+    console.error("Error in isItemSelectable:", error);
+    return false;
+  }
+};
+
+const toggleItemSelection = (item: JournalItem | null | undefined): void => {
+  try {
+    if (!item || !isItemSelectable(item)) return;
+
+    const aldmId = getMatchedAldmId(item);
+    if (!aldmId) return;
+
+    const index = selectedItems.value.indexOf(aldmId);
+    if (index > -1) {
+      selectedItems.value.splice(index, 1);
+    } else {
+      selectedItems.value.push(aldmId);
+    }
+    updateSelectAllState();
+  } catch (error) {
+    console.error("Error in toggleItemSelection:", error);
+  }
+};
+
+const toggleSelectAll = (): void => {
+  try {
+    if (selectAll.value) {
+      selectedItems.value = selectableItems.value
+        .map((item: JournalItem) => getMatchedAldmId(item))
+        .filter((aldmId): aldmId is string | number => aldmId !== null);
+    } else {
+      selectedItems.value = [];
+    }
+  } catch (error) {
+    console.error("Error in toggleSelectAll:", error);
+  }
+};
+
+const updateSelectAllState = (): void => {
+  try {
+    const selectableAldmIds = selectableItems.value
+      .map((item: JournalItem) => getMatchedAldmId(item))
+      .filter((aldmId): aldmId is string | number => aldmId !== null);
+      
+    if (selectableAldmIds.length === 0) {
+      selectAll.value = false;
+    } else {
+      selectAll.value = selectableAldmIds.every((aldmId: string | number) =>
+        selectedItems.value.includes(aldmId)
+      );
+    }
+  } catch (error) {
+    console.error("Error in updateSelectAllState:", error);
+  }
+};
+
+const clearSelection = (): void => {
+  try {
     selectedItems.value = [];
-  }
-};
-
-
-const updateSelectAllState = () => {
-  const selectableAldmIds = selectableItems.value
-    .map(item => getMatchedAldmId(item))
-    .filter(aldmId => aldmId !== null);
-    
-  if (selectableAldmIds.length === 0) {
     selectAll.value = false;
-  } else {
-    selectAll.value = selectableAldmIds.every(aldmId =>
-      selectedItems.value.includes(aldmId)
-    );
+  } catch (error) {
+    console.error("Error in clearSelection:", error);
   }
 };
 
-
-const clearSelection = () => {
-  selectedItems.value = [];
-  selectAll.value = false;
-};
-
+// ===== WATCHERS WITH ERROR HANDLING =====
 watch(
   [items, selectedItems],
   () => {
-    updateSelectAllState();
+    try {
+      if (isComponentMounted.value) {
+        updateSelectAllState();
+      }
+    } catch (error) {
+      console.error("Error in items/selectedItems watch:", error);
+    }
   },
   { deep: true }
 );
 
-const hasActiveFilters = computed(() => {
-  return (
-    filters.search ||
-    filters.module_id ||
-    filters.Ccy_cd ||
-    filters.Auth_Status ||
-    filters.dateFilterType !== "all"
-  );
+// ===== COMPUTED PROPERTIES FOR FILTERS =====
+const hasActiveFilters = computed((): boolean => {
+  try {
+    return !!(
+      filters.search ||
+      filters.module_id ||
+      filters.Ccy_cd ||
+      filters.Auth_Status ||
+      filters.dateFilterType !== "all"
+    );
+  } catch (error) {
+    console.error("Error in hasActiveFilters computed:", error);
+    return false;
+  }
 });
 
-const activeFilterChips = computed(() => {
-  const chips = [];
+const activeFilterChips = computed((): FilterChip[] => {
+  try {
+    const chips: FilterChip[] = [];
 
-  if (filters.search) {
-    chips.push({
-      key: "search",
-      label: `ຄົ້ນຫາ: ${filters.search}`,
-      icon: "mdi-magnify",
-    });
-  }
-
-  if (filters.module_id) {
-    const module = modules.value.find((m) => m.module_Id === filters.module_id);
-    chips.push({
-      key: "module_id",
-      label: `ໂມດູນ: ${module?.module_name_la || filters.module_id}`,
-      icon: "mdi-view-module",
-    });
-  }
-
-  if (filters.Ccy_cd) {
-    chips.push({
-      key: "Ccy_cd",
-      label: `ສະກຸນເງິນ: ${filters.Ccy_cd}`,
-      icon: "mdi-currency-usd",
-    });
-  }
-
-  if (filters.Auth_Status) {
-    const status = authStatusOptions.value.find(
-      (s) => s.value === filters.Auth_Status
-    );
-    chips.push({
-      key: "Auth_Status",
-      label: `ສະຖານະ: ${status?.text || filters.Auth_Status}`,
-      icon: "mdi-check-circle",
-    });
-  }
-
-  if (filters.dateFilterType !== "all") {
-    const dateType = dateFilterTypes.value.find(
-      (d) => d.value === filters.dateFilterType
-    );
-    let dateLabel = dateType?.text || "";
-
-    if (filters.dateFilterType === "date" && filters.specificDate) {
-      dateLabel += `: ${formatDate(filters.specificDate)}`;
-    } else if (
-      filters.dateFilterType === "range" &&
-      (filters.dateFrom || filters.dateTo)
-    ) {
-      const from = filters.dateFrom ? formatDate(filters.dateFrom) : "...";
-      const to = filters.dateTo ? formatDate(filters.dateTo) : "...";
-      dateLabel += `: ${from} - ${to}`;
-    } else if (
-      filters.dateFilterType === "month" &&
-      filters.selectedMonth &&
-      filters.selectedYear
-    ) {
-      const month = months.value.find((m) => m.value === filters.selectedMonth);
-      dateLabel += `: ${month?.text} ${filters.selectedYear}`;
-    } else if (filters.dateFilterType === "year" && filters.selectedYear) {
-      dateLabel += `: ${filters.selectedYear}`;
+    if (filters.search) {
+      chips.push({
+        key: "search",
+        label: `ຄົ້ນຫາ: ${filters.search}`,
+        icon: "mdi-magnify",
+      });
     }
 
-    chips.push({
-      key: "dateFilter",
-      label: dateLabel,
-      icon: "mdi-calendar",
-    });
-  }
+    if (filters.module_id) {
+      const module = modules.value.find((m: ModuleItem) => m.module_Id === filters.module_id);
+      chips.push({
+        key: "module_id",
+        label: `ໂມດູນ: ${module?.module_name_la || filters.module_id}`,
+        icon: "mdi-view-module",
+      });
+    }
 
-  return chips;
+    if (filters.Ccy_cd) {
+      chips.push({
+        key: "Ccy_cd",
+        label: `ສະກຸນເງິນ: ${filters.Ccy_cd}`,
+        icon: "mdi-currency-usd",
+      });
+    }
+
+    if (filters.Auth_Status) {
+      const statusItem = authStatusOptions.value.find(
+        (s: StatusItem) => s.MC_code === filters.Auth_Status
+      );
+      chips.push({
+        key: "Auth_Status",
+        label: `ສະຖານະ: ${statusItem?.MC_name_la || filters.Auth_Status}`,
+        icon: "mdi-check-circle",
+      });
+    }
+
+    if (filters.dateFilterType !== "all") {
+      const dateType = dateFilterTypes.value.find(
+        (d: DateFilterType) => d.value === filters.dateFilterType
+      );
+      let dateLabel = dateType?.text || "";
+
+      if (filters.dateFilterType === "date" && filters.specificDate) {
+        dateLabel += `: ${formatDate(filters.specificDate)}`;
+      } else if (
+        filters.dateFilterType === "range" &&
+        (filters.dateFrom || filters.dateTo)
+      ) {
+        const from = filters.dateFrom ? formatDate(filters.dateFrom) : "...";
+        const to = filters.dateTo ? formatDate(filters.dateTo) : "...";
+        dateLabel += `: ${from} - ${to}`;
+      } else if (
+        filters.dateFilterType === "month" &&
+        filters.selectedMonth &&
+        filters.selectedYear
+      ) {
+        const month = months.value.find((m: MonthItem) => m.value === filters.selectedMonth);
+        dateLabel += `: ${month?.text} ${filters.selectedYear}`;
+      } else if (filters.dateFilterType === "year" && filters.selectedYear) {
+        dateLabel += `: ${filters.selectedYear}`;
+      }
+
+      chips.push({
+        key: "dateFilter",
+        label: dateLabel,
+        icon: "mdi-calendar",
+      });
+    }
+
+    return chips;
+  } catch (error) {
+    console.error("Error in activeFilterChips computed:", error);
+    return [];
+  }
 });
 
+// ===== API FUNCTIONS WITH ERROR HANDLING =====
+const approveSelected = async (): Promise<void> => {
+  try {
+    if (!isComponentMounted.value) return;
+    
+    const aldmIds = selectedItems.value;
+    if (aldmIds.length === 0) {
+      console.warn("No items selected for approval");
+      return;
+    }
 
-const approveSelected = async ()=>{
-  try {
-    const aldmIds = selectedItems.value;
-    mainStore.confirm_form_mark.aldm_ids = aldmIds
+    mainStore.confirm_form_mark.aldm_ids = aldmIds as number[];
     await mainStore.postConfirm();
-    selectedItems.value = [];
-  } catch (error) {
     
+    if (isComponentMounted.value) {
+      selectedItems.value = [];
+      await loadData(false);
+    }
+  } catch (error) {
+    console.error("Error approving selected items:", error);
+    if (isComponentMounted.value) {
+      Swal.fire({
+        icon: "error",
+        title: "ຂໍ້ຜິດພາດ",
+        text: "ບໍ່ສາມາດອະນຸມັດລາຍການໄດ້",
+        confirmButtonText: "ຕົກລົງ",
+      });
+    }
   }
-}
-const rejectSelected = async ()=>{
+};
+
+const rejectSelected = async (): Promise<void> => {
   try {
-    const aldmIds = selectedItems.value;
-    mainStore.reject_form_mark.aldm_ids = aldmIds
-    await mainStore.postReject();
-    selectedItems.value = [];
-  } catch (error) {
+    if (!isComponentMounted.value) return;
     
+    const aldmIds = selectedItems.value;
+    if (aldmIds.length === 0) {
+      console.warn("No items selected for rejection");
+      return;
+    }
+
+    mainStore.reject_form_mark.aldm_ids = aldmIds as number[];
+    await mainStore.postReject();
+    
+    if (isComponentMounted.value) {
+      selectedItems.value = [];
+      await loadData(false);
+    }
+  } catch (error) {
+    console.error("Error rejecting selected items:", error);
+    if (isComponentMounted.value) {
+      Swal.fire({
+        icon: "error",
+        title: "ຂໍ້ຜິດພາດ",
+        text: "ບໍ່ສາມາດປະຕິເສດລາຍການໄດ້",
+        confirmButtonText: "ຕົກລົງ",
+      });
+    }
   }
-}
+};
+
+// ===== TABLE HEADERS =====
 const headers = [
   {
     title: "",
     key: "checkbox",
     sortable: false,
     width: "50px",
-    align: "center",
+    align: "center" as const,
   },
   { title: "ໂມດູນ", key: "module_id", sortable: false },
   { title: "ລະຫັດ", key: "Txn_code", sortable: false },
   { title: "ເລກອ້າງອີງ", key: "Reference_No", sortable: false },
   { title: "ເນື້ອໃນ", key: "Addl_text", sortable: false },
-  { title: "ຈຳນວນເງິນ", key: "Fcy_Amount", align: "end", sortable: false },
+  { title: "ຈຳນວນເງິນ", key: "Fcy_Amount", align: "end" as const, sortable: false },
   { title: "ຜູ້ສ້າງ", key: "maker_name", sortable: false },
   { title: "ວັນທີ", key: "Value_date", sortable: false },
   { title: "ສະຖານະ", key: "Auth_Status", sortable: false },
-  { title: "ການກະທຳ", key: "actions", sortable: false, align: "center" },
+  { title: "ການກະທຳ", key: "actions", sortable: false, align: "center" as const },
 ];
 
+// ===== UTILITY FUNCTIONS =====
 const getAuthHeaders = () => ({
   headers: {
     Authorization: `Bearer ${localStorage.getItem("token")}`,
   },
 });
 
-const getCachedData = (key) => {
-  const cached = referenceDataCache.get(key);
-  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-    return cached.data;
+const getCachedData = (key: string): any => {
+  try {
+    const cached = referenceDataCache.get(key);
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+      return cached.data;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error getting cached data:", error);
+    return null;
   }
-  return null;
 };
 
-const setCachedData = (key, data) => {
-  referenceDataCache.set(key, { data, timestamp: Date.now() });
+const setCachedData = (key: string, data: any): void => {
+  try {
+    referenceDataCache.set(key, { data, timestamp: Date.now() });
+  } catch (error) {
+    console.error("Error setting cached data:", error);
+  }
 };
 
-const getDateFilterLabel = () => {
-  const type = dateFilterTypes.value.find(
-    (d) => d.value === filters.dateFilterType
-  );
-  return type?.text || "ເລືອກວັນທີ";
+// ===== DATE & FILTER FUNCTIONS =====
+const getDateFilterLabel = (): string => {
+  try {
+    const type = dateFilterTypes.value.find(
+      (d: DateFilterType) => d.value === filters.dateFilterType
+    );
+    return type?.text || "ເລືອກວັນທີ";
+  } catch (error) {
+    console.error("Error in getDateFilterLabel:", error);
+    return "ເລືອກວັນທີ";
+  }
 };
 
-const onDateFilterTypeChange = () => {
-  clearDateFilterValues();
-  handleFilterChange();
+const onDateFilterTypeChange = (): void => {
+  try {
+    clearDateFilterValues();
+    handleFilterChange();
+  } catch (error) {
+    console.error("Error in onDateFilterTypeChange:", error);
+  }
 };
 
-const clearDateFilterValues = () => {
-  filters.specificDate = "";
-  filters.dateFrom = "";
-  filters.dateTo = "";
-  filters.selectedMonth = currentMonth;
-  filters.selectedYear = currentYear;
+const clearDateFilterValues = (): void => {
+  try {
+    filters.specificDate = "";
+    filters.dateFrom = "";
+    filters.dateTo = "";
+    filters.selectedMonth = currentMonth;
+    filters.selectedYear = currentYear;
+  } catch (error) {
+    console.error("Error in clearDateFilterValues:", error);
+  }
 };
 
-const clearDateFilter = () => {
-  filters.dateFilterType = "all";
-  clearDateFilterValues();
-  handleFilterChange();
+const clearDateFilter = (): void => {
+  try {
+    filters.dateFilterType = "all";
+    clearDateFilterValues();
+    handleFilterChange();
+  } catch (error) {
+    console.error("Error in clearDateFilter:", error);
+  }
 };
 
-const removeFilter = (filterKey) => {
-  switch (filterKey) {
-    case "search":
-      filters.search = "";
-      break;
-    case "module_id":
-      filters.module_id = null;
-      break;
-    case "Ccy_cd":
-      filters.Ccy_cd = null;
-      break;
-    case "Auth_Status":
-      filters.Auth_Status = null;
-      break;
-    case "dateFilter":
-      clearDateFilter();
+const removeFilter = (filterKey: string): void => {
+  try {
+    switch (filterKey) {
+      case "search":
+        filters.search = "";
+        break;
+      case "module_id":
+        filters.module_id = null;
+        break;
+      case "Ccy_cd":
+        filters.Ccy_cd = null;
+        break;
+      case "Auth_Status":
+        filters.Auth_Status = null;
+        break;
+      case "dateFilter":
+        clearDateFilter();
+        return;
+    }
+    handleFilterChange();
+  } catch (error) {
+    console.error("Error in removeFilter:", error);
+  }
+};
+
+const clearAllFilters = (): void => {
+  try {
+    filters.search = "";
+    filters.module_id = null;
+    filters.Ccy_cd = null;
+    filters.Auth_Status = null;
+    clearDateFilter();
+  } catch (error) {
+    console.error("Error in clearAllFilters:", error);
+  }
+};
+
+const viewDetails = (item: JournalItem | null | undefined): void => {
+  try {
+    if (!item || !item.Reference_No) {
+      console.warn("Invalid item for viewing details");
       return;
+    }
+    
+    const detailUrl = `/property/autoriz/oneaddprove?Reference_No=${item.Reference_No}&sub_menu_id=${submenu_id}`;
+    router.push(detailUrl);
+  } catch (error) {
+    console.error("Error in viewDetails:", error);
   }
-  handleFilterChange();
 };
 
-const clearAllFilters = () => {
-  filters.search = "";
-  filters.module_id = null;
-  filters.Ccy_cd = null;
-  filters.Auth_Status = null;
-  clearDateFilter();
+const buildDateParams = (): Record<string, string> => {
+  try {
+    const params: Record<string, string> = {};
+
+    switch (filters.dateFilterType) {
+      case "date":
+        if (filters.specificDate) {
+          params.Value_date = filters.specificDate;
+        }
+        break;
+
+      case "range":
+        if (filters.dateFrom) {
+          params.Value_date__gte = filters.dateFrom;
+        }
+        if (filters.dateTo) {
+          params.Value_date__lte = filters.dateTo;
+        }
+        break;
+
+      case "month":
+        if (filters.selectedMonth && filters.selectedYear) {
+          const firstDay = new Date(
+            filters.selectedYear,
+            filters.selectedMonth - 1,
+            1
+          );
+          const lastDay = new Date(
+            filters.selectedYear,
+            filters.selectedMonth,
+            0
+          );
+
+          params.Value_date__gte = firstDay.toISOString().slice(0, 10);
+          params.Value_date__lte = lastDay.toISOString().slice(0, 10);
+        }
+        break;
+
+      case "year":
+        if (filters.selectedYear) {
+          params.Value_date__gte = `${filters.selectedYear}-01-01`;
+          params.Value_date__lte = `${filters.selectedYear}-12-31`;
+        }
+        break;
+
+      case "all":
+      default:
+        break;
+    }
+
+    return params;
+  } catch (error) {
+    console.error("Error in buildDateParams:", error);
+    return {};
+  }
 };
 
-const viewDetails = (item) => {
-  const detailUrl = `/property/autoriz/oneaddprove?Reference_No=${item.Reference_No}&sub_menu_id=${submenu_id}`;
-  router.push(detailUrl);
-};
-
-const buildDateParams = () => {
-  const params = {};
-
-  switch (filters.dateFilterType) {
-    case "date":
-      if (filters.specificDate) {
-        params.Value_date = filters.specificDate;
-      }
-      break;
-
-    case "range":
-      if (filters.dateFrom) {
-        params.Value_date__gte = filters.dateFrom;
-      }
-      if (filters.dateTo) {
-        params.Value_date__lte = filters.dateTo;
-      }
-      break;
-
-    case "month":
-      if (filters.selectedMonth && filters.selectedYear) {
-        const firstDay = new Date(
-          filters.selectedYear,
-          filters.selectedMonth - 1,
-          1
-        );
-        const lastDay = new Date(
-          filters.selectedYear,
-          filters.selectedMonth,
-          0
-        );
-
-        params.Value_date__gte = firstDay.toISOString().slice(0, 10);
-        params.Value_date__lte = lastDay.toISOString().slice(0, 10);
-      }
-      break;
-
-    case "year":
-      if (filters.selectedYear) {
-        params.Value_date__gte = `${filters.selectedYear}-01-01`;
-        params.Value_date__lte = `${filters.selectedYear}-12-31`;
-      }
-      break;
-
-    case "all":
-    default:
-      break;
+// ===== MAIN DATA LOADING FUNCTION =====
+const loadData = async (resetPage: boolean = true): Promise<void> => {
+  if (!isComponentMounted.value) {
+    console.log("Component unmounted, skipping loadData");
+    return;
   }
 
-  return params;
-};
-
-const loadData = async (resetPage = true) => {
   try {
     performanceTracker.start();
     loading.value = true;
@@ -536,13 +861,13 @@ const loadData = async (resetPage = true) => {
       clearSelection();
     }
 
-    const params = {
+    const params: Record<string, any> = {
       show_all: canAuthorize.value ? "true" : "false",
       page: pagination.currentPage,
       page_size: pagination.pageSize,
     };
 
-    if (filters.search) params.search = filters.search;
+    if (filters.search?.trim()) params.search = filters.search.trim();
     if (filters.module_id) params.module_id = filters.module_id;
     if (filters.Ccy_cd) params.Ccy_cd = filters.Ccy_cd;
     if (filters.Auth_Status) params.Auth_Status = filters.Auth_Status;
@@ -553,42 +878,47 @@ const loadData = async (resetPage = true) => {
     params.delete_stat__ne = "D";
     params.ordering = "-Maker_DT_Stamp";
 
+    if (!isComponentMounted.value) return;
+
     const response = await axios.get("/api/journal-log-ard/init-data/", {
       params,
       ...getAuthHeaders(),
     });
 
-    const data = response.data;
+    if (!isComponentMounted.value) return;
 
-    items.value = response.data.results;
-    Object.assign(summary, response.data.summary);
-    pagination.totalItems = response.data.count;
-    pagination.totalPages = response.data.page_info.total_pages;
+    const data: ApiResponse = response.data;
 
-    items.value = data.results || [];
+    if (data && isComponentMounted.value) {
+      items.value = Array.isArray(data.results) ? 
+        data.results.filter(item => item != null) : [];
+      
+      if (data.summary && typeof data.summary === 'object') {
+        Object.assign(summary, data.summary);
+      }
+      
+      pagination.totalItems = Number(data.count) || 0;
+      pagination.totalPages = Number(data.page_info?.total_pages) || 1;
 
-    pagination.totalItems = data.count || 0;
-    pagination.totalPages = data.page_info?.total_pages || 1;
+      if (data.reference_data && typeof data.reference_data === 'object') {
+        modules.value = Array.isArray(data.reference_data.modules) ? 
+          data.reference_data.modules.filter(item => item != null) : [];
+        currencies.value = Array.isArray(data.reference_data.currencies) ? 
+          data.reference_data.currencies.filter(item => item != null) : [];
+        authStatusOptions.value = Array.isArray(data.reference_data.auth_status_options) ? 
+          data.reference_data.auth_status_options.filter(item => item != null) : [];
 
-    if (data.summary) {
-      Object.assign(summary, data.summary);
-    }
-
-    if (data.reference_data) {
-      modules.value = data.reference_data.modules || [];
-      currencies.value = data.reference_data.currencies || [];
-      authStatusOptions.value = data.reference_data.auth_status_options || [];
-
-      setCachedData("reference_data", data.reference_data);
+        setCachedData("reference_data", data.reference_data);
+      }
     }
 
     console.log(
       `✅ Loaded ${items.value.length} items (Page ${pagination.currentPage}/${pagination.totalPages})`
     );
 
-    // ເພີ່ມການ debug ເພື່ອເຊັກການແມັບ
+    // Debug mapping check
     console.log("🔍 Mapping check:");
-    items.value.forEach(item => {
+    items.value.forEach((item: JournalItem) => {
       const aldmId = getMatchedAldmId(item);
       if (aldmId) {
         console.log(`✅ Mapped: JRNLLog_id ${item.JRNLLog_id} → aldm_id ${aldmId}`);
@@ -600,31 +930,41 @@ const loadData = async (resetPage = true) => {
     performanceTracker.end("Data Loading");
   } catch (error) {
     console.error("❌ Error loading data:", error);
-    Swal.fire({
-      icon: "error",
-      title: "ຂໍ້ຜິດພາດ",
-      text: "ບໍ່ສາມາດໂຫຼດຂໍ້ມູນໄດ້",
-      confirmButtonText: "ຕົກລົງ",
-    });
+    
+    if (isComponentMounted.value) {
+      Swal.fire({
+        icon: "error",
+        title: "ຂໍ້ຜິດພາດ",
+        text: "ບໍ່ສາມາດໂຫຼດຂໍ້ມູນໄດ້",
+        confirmButtonText: "ຕົກລົງ",
+      });
+    }
   } finally {
-    loading.value = false;
+    if (isComponentMounted.value) {
+      loading.value = false;
+    }
   }
 };
 
-const loadReferenceData = async () => {
-  const cached = getCachedData("reference_data");
-  if (cached) {
-    modules.value = cached.modules || [];
-    currencies.value = cached.currencies || [];
-    authStatusOptions.value = cached.auth_status_options || [];
-    console.log("📦 Using cached reference data");
-    return;
-  }
+const loadReferenceData = async (): Promise<void> => {
+  try {
+    const cached = getCachedData("reference_data");
+    if (cached) {
+      modules.value = cached.modules || [];
+      currencies.value = cached.currencies || [];
+      authStatusOptions.value = cached.auth_status_options || [];
+      console.log("📦 Using cached reference data");
+      return;
+    }
 
-  console.log("🔄 Reference data will be loaded with main data");
+    console.log("🔄 Reference data will be loaded with main data");
+  } catch (error) {
+    console.error("Error in loadReferenceData:", error);
+  }
 };
 
-const getStatusColor = (status) => {
+// ===== UTILITY FUNCTIONS FOR DISPLAY =====
+const getStatusColor = (status: string): string => {
   switch (status) {
     case "A":
       return "success";
@@ -639,7 +979,7 @@ const getStatusColor = (status) => {
   }
 };
 
-const getStatusIcon = (status) => {
+const getStatusIcon = (status: string): string => {
   switch (status) {
     case "A":
       return "mdi-check-circle";
@@ -654,7 +994,7 @@ const getStatusIcon = (status) => {
   }
 };
 
-const getStatusText = (status) => {
+const getStatusText = (status: string): string => {
   switch (status) {
     case "A":
       return "ອະນຸມັດແລ້ວ";
@@ -669,120 +1009,248 @@ const getStatusText = (status) => {
   }
 };
 
-const formatNumber = (num, decimals = 2) => {
-  if (!num) return "0.00";
-  return new Intl.NumberFormat("en-US", {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  }).format(num);
-};
-
-const formatDate = (date) => {
-  if (!date) return "-";
-  return new Date(date).toLocaleDateString("lo-LA");
-};
-
-const setAuthStatusFilter = (status) => {
-  filters.Auth_Status = status;
-  loadData();
-};
-
-const handleFilterChange = () => {
-  loadData();
-};
-
-const onPageChange = (page) => {
-  pagination.currentPage = page;
-  loadData(false);
-};
-
-const onPageSizeChange = (newSize) => {
-  pagination.pageSize = newSize;
-  pagination.currentPage = 1;
-  loadData(false);
-};
-
-const deleteItem = async (item) => {
-  const canDeleteItem =
-    canDelete.value &&
-    (canAuthorize.value || item.Maker_Id === currentUser.value?.user_id);
-
-  if (!canDeleteItem) {
-    Swal.fire({
-      icon: "warning",
-      title: "ບໍ່ມີສິດ",
-      text: "ທ່ານບໍ່ມີສິດລຶບລາຍການນີ້",
-      confirmButtonText: "ຕົກລົງ",
-    });
-    return;
+const formatNumber = (num: number | string | null | undefined, decimals: number = 2): string => {
+  try {
+    if (!num) return "0.00";
+    const numValue = typeof num === 'string' ? parseFloat(num) : num;
+    if (isNaN(numValue)) return "0.00";
+    
+    return new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }).format(numValue);
+  } catch (error) {
+    console.error("Error in formatNumber:", error);
+    return "0.00";
   }
+};
 
-  const result = await Swal.fire({
-    icon: "warning",
-    title: "ຢືນຢັນການລຶບ",
-    text: `ທ່ານຕ້ອງການລຶບລາຍການ ${item.Reference_No} ແທ້ບໍ?`,
-    showCancelButton: true,
-    confirmButtonText: "ລຶບ",
-    cancelButtonText: "ຍົກເລີກ",
-    confirmButtonColor: "#f44336",
-    cancelButtonColor: "#9e9e9e",
-  });
+const formatDate = (date: string | Date | null | undefined): string => {
+  try {
+    if (!date) return "-";
+    const dateObj = new Date(date);
+    if (isNaN(dateObj.getTime())) return "-";
+    
+    return dateObj.toLocaleDateString("lo-LA");
+  } catch (error) {
+    console.error("Error in formatDate:", error);
+    return "-";
+  }
+};
 
-  if (result.isConfirmed) {
-    try {
-      await axios.delete(
-        `/api/journal-log-master/${item.JRNLLog_id}/`,
-        getAuthHeaders()
-      );
+const setAuthStatusFilter = (status: string | null): void => {
+  try {
+    filters.Auth_Status = status;
+    loadData();
+  } catch (error) {
+    console.error("Error in setAuthStatusFilter:", error);
+  }
+};
 
+const handleFilterChange = (): void => {
+  try {
+    if (isComponentMounted.value) {
+      loadData();
+    }
+  } catch (error) {
+    console.error("Error in handleFilterChange:", error);
+  }
+};
+
+const onPageChange = (page: number): void => {
+  try {
+    pagination.currentPage = page;
+    loadData(false);
+  } catch (error) {
+    console.error("Error in onPageChange:", error);
+  }
+};
+
+const onPageSizeChange = (newSize: number): void => {
+  try {
+    pagination.pageSize = newSize;
+    pagination.currentPage = 1;
+    loadData(false);
+  } catch (error) {
+    console.error("Error in onPageSizeChange:", error);
+  }
+};
+
+const deleteItem = async (item: JournalItem | null | undefined): Promise<void> => {
+  try {
+    if (!item || !isComponentMounted.value) {
+      console.warn("Invalid item or component unmounted");
+      return;
+    }
+
+    const canDeleteItem =
+      canDelete.value &&
+      (canAuthorize.value || item.Maker_Id === currentUser.value?.user_id);
+
+    if (!canDeleteItem) {
       Swal.fire({
-        icon: "success",
-        title: "ສຳເລັດ",
-        text: "ລຶບລາຍການສຳເລັດແລ້ວ",
-        timer: 2000,
-        showConfirmButton: false,
-      });
-
-      loadData(false);
-    } catch (error) {
-      console.error("Error deleting item:", error);
-      Swal.fire({
-        icon: "error",
-        title: "ຂໍ້ຜິດພາດ",
-        text: "ບໍ່ສາມາດລຶບລາຍການໄດ້",
+        icon: "warning",
+        title: "ບໍ່ມີສິດ",
+        text: "ທ່ານບໍ່ມີສິດລຶບລາຍການນີ້",
         confirmButtonText: "ຕົກລົງ",
       });
+      return;
     }
+
+    const result = await Swal.fire({
+      icon: "warning",
+      title: "ຢືນຢັນການລຶບ",
+      text: `ທ່ານຕ້ອງການລຶບລາຍການ ${item.Reference_No} ແທ້ບໍ?`,
+      showCancelButton: true,
+      confirmButtonText: "ລຶບ",
+      cancelButtonText: "ຍົກເລີກ",
+      confirmButtonColor: "#f44336",
+      cancelButtonColor: "#9e9e9e",
+    });
+
+    if (result.isConfirmed && isComponentMounted.value) {
+      try {
+        await axios.delete(
+          `/api/journal-log-master/${item.JRNLLog_id}/`,
+          getAuthHeaders()
+        );
+
+        if (isComponentMounted.value) {
+          Swal.fire({
+            icon: "success",
+            title: "ສຳເລັດ",
+            text: "ລຶບລາຍການສຳເລັດແລ້ວ",
+            timer: 2000,
+            showConfirmButton: false,
+          });
+
+          loadData(false);
+        }
+      } catch (deleteError) {
+        console.error("Error deleting item:", deleteError);
+        if (isComponentMounted.value) {
+          Swal.fire({
+            icon: "error",
+            title: "ຂໍ້ຜິດພາດ",
+            text: "ບໍ່ສາມາດລຶບລາຍການໄດ້",
+            confirmButtonText: "ຕົກລົງ",
+          });
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error in deleteItem:", error);
   }
 };
 
-const exportData = () => {
-  Swal.fire({
-    icon: "info",
-    title: "ກຳລັງພັດທະນາ",
-    text: "ຟັງຊັນສົ່ງອອກຂໍ້ມູນກຳລັງພັດທະນາ",
-    confirmButtonText: "ຕົກລົງ",
-  });
+const exportData = (): void => {
+  try {
+    if (!isComponentMounted.value) return;
+    
+    Swal.fire({
+      icon: "info",
+      title: "ກຳລັງພັດທະນາ",
+      text: "ຟັງຊັນສົ່ງອອກຂໍ້ມູນກຳລັງພັດທະນາ",
+      confirmButtonText: "ຕົກລົງ",
+    });
+  } catch (error) {
+    console.error("Error in exportData:", error);
+  }
 };
 
-const searchDebounced = debounce(() => {
-  handleFilterChange();
+// ===== DEBOUNCED SEARCH =====
+const searchDebounced = debounce((): void => {
+  try {
+    handleFilterChange();
+  } catch (error) {
+    console.error("Error in searchDebounced:", error);
+  }
 }, 500);
 
-onMounted(async () => {
-  jurnalStore.getJurnallist();
-  cerrency.getDataCerrency();
-  masterStore.getStatus();
-  derpicationStore.getDataTotal();
+// ===== LIFECYCLE HOOKS =====
+onMounted(async (): Promise<void> => {
+  try {
+    console.log("Component mounting...");
+    isComponentMounted.value = true;
+    
+    // Safe store method calls with null checks
+    try {
+      if (jurnalStore?.getJurnallist) {
+        await jurnalStore.getJurnallist();
+      }
+    } catch (error) {
+      console.error("Error calling jurnalStore.getJurnallist:", error);
+    }
 
-  await initializeRole();
+    try {
+      if (cerrency?.getDataCerrency) {
+        await cerrency.getDataCerrency();
+      }
+    } catch (error) {
+      console.error("Error calling cerrency.getDataCerrency:", error);
+    }
 
-  await loadReferenceData();
+    try {
+      if (masterStore?.getStatus) {
+        await masterStore.getStatus();
+      }
+    } catch (error) {
+      console.error("Error calling masterStore.getStatus:", error);
+    }
 
-  if (canView.value) {
-    loadData();
+    try {
+      if (derpicationStore?.getDataTotal) {
+        await derpicationStore.getDataTotal();
+      }
+    } catch (error) {
+      console.error("Error calling derpicationStore.getDataTotal:", error);
+    }
+
+    try {
+      await initializeRole();
+    } catch (error) {
+      console.error("Error initializing role:", error);
+    }
+
+    try {
+      await loadReferenceData();
+    } catch (error) {
+      console.error("Error loading reference data:", error);
+    }
+
+    if (canView.value && isComponentMounted.value) {
+      try {
+        await loadData();
+      } catch (error) {
+        console.error("Error in initial loadData:", error);
+      }
+    }
+    
+    console.log("Component mounted successfully");
+  } catch (error) {
+    console.error("Error during component mount:", error);
   }
 });
+
+onBeforeUnmount(() => {
+  try {
+    console.log("Component unmounting...");
+    isComponentMounted.value = false;
+    
+    // Clean up any pending operations
+    clearSelection();
+    
+    console.log("Component unmounted successfully");
+  } catch (error) {
+    console.error("Error during component unmount:", error);
+  }
+});
+const nameDisplay = (item:any)=>{
+  if(!item || !item.MC_name_la || !item.MC_code){
+    return "ທັງໝົດ"
+  };
+  return `${item.MC_name_la}(${item.MC_code})`
+}
 </script>
 <template>
   <div class="gl-approved-master">
@@ -905,9 +1373,9 @@ onMounted(async () => {
                 hide-details
               ></v-text-field>
             </v-col>
-
+<!-- <pre>{{ responscerrency }}</pre> -->
             <v-col cols="12" md="2">
-              <v-select
+              <v-autocomplete
                 v-model="filters.Ccy_cd"
                 :items="responscerrency"
                 item-title="ccy_code"
@@ -919,14 +1387,16 @@ onMounted(async () => {
                 @update:model-value="handleFilterChange"
                 hide-details
                 :loading="loadingReferences"
-              ></v-select>
+              >
+            </v-autocomplete>
             </v-col>
 
-            <v-col cols="12" md="2">
-              <v-select
+            <v-col cols="12" md="3">
+              <v-autocomplete
                 v-model="filters.Auth_Status"
+                prepend-inner-icon="mdi-format-list-bulleted-type"
                 :items="status"
-                item-title="MC_name_la"
+                :item-title="nameDisplay"
                 item-value="MC_code"
                 label="ສະຖານະອະນຸມັດ"
                 variant="outlined"
@@ -935,7 +1405,17 @@ onMounted(async () => {
                 @update:model-value="setAuthStatusFilter"
                 hide-details
                 :loading="loadingReferences"
-              ></v-select>
+              >
+              <template v-slot:item="{props, item}">
+                <v-list-item v-bind="props" :title="`${item.raw.MC_name_la}(${item.raw.MC_code})`">
+                  <template v-slot:prepend>
+                    <v-avatar size="small" color="primary">
+                      <v-icon>mdi-format-list-bulleted-type</v-icon>
+                    </v-avatar>
+                  </template>
+                </v-list-item>
+              </template>
+            </v-autocomplete>
             </v-col>
 
           

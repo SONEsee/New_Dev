@@ -18,25 +18,25 @@
         {{ error ? error.message : permissionReason }}
       </div>
       
-      <!-- Bypass Info Display -->
-      <div v-if="bypassInfo" class="mt-3 pa-2 bg-grey-lighten-4 rounded">
+      <!-- Enhanced EOD Info Display -->
+      <div v-if="currentEod" class="mt-3 pa-2 bg-grey-lighten-4 rounded">
         <v-row dense>
           <v-col cols="6" md="3">
-            <v-chip size="small" :color="bypassInfo.working_day_bypassed ? 'success' : 'warning'" variant="flat">
-              <v-icon left size="small">mdi-cog</v-icon>
-              MOD_NO: {{ bypassInfo.working_day_bypassed ? 'Y' : 'N' }}
+            <v-chip size="small" :color="isAvailable ? 'success' : 'warning'" variant="flat">
+              <v-icon left size="small">mdi-calendar-check</v-icon>
+              EOD Status: {{ currentEod.eod_status === 'Y' ? 'Completed' : 'Open' }}
             </v-chip>
           </v-col>
           <v-col cols="6" md="3">
-            <v-chip size="small" :color="bypassInfo.eod_check_bypassed ? 'success' : 'info'" variant="flat">
+            <v-chip size="small" :color="backValueEnabled ? 'success' : 'info'" variant="flat">
               <v-icon left size="small">mdi-calendar-edit</v-icon>
-              BACK_VALUE: {{ bypassInfo.eod_check_bypassed ? 'Y' : 'N' }}
+              BACK_VALUE: {{ backValueEnabled ? 'Y' : 'N' }}
             </v-chip>
           </v-col>
           <v-col cols="12" md="6">
             <span class="text-caption text-grey-darken-1">
               <v-icon size="small" class="mr-1">mdi-information-outline</v-icon>
-              {{ bypassInfo.working_day_bypassed ? 'ອະນຸຍາດເຮັດວຽກໃນວັນພັກ' : 'ບໍ່ອະນຸຍາດເຮັດວຽກໃນວັນພັກ' }}
+              {{ isBackDate ? `ໃຊ້ວັນທີ່ຍ້ອນຫຼັງ: ${targetDate}` : `ວັນທີ່ປະຈຸບັນ: ${targetDate}` }}
             </span>
           </v-col>
         </v-row>
@@ -61,6 +61,10 @@
       <h2 class="page-title">
         <v-icon left color="primary">mdi-book-open-page-variant</v-icon>
         ລາຍການບັນທຶກບັນຊີ
+        <v-chip v-if="isBackDate" size="small" color="warning" variant="flat" class="ml-2">
+          <v-icon left size="small">mdi-history</v-icon>
+          Back Date Entry
+        </v-chip>
       </h2>
     </div>
 
@@ -86,16 +90,21 @@
                   prepend-inner-icon="mdi-calendar"
                   hide-details="auto"
                   :disabled="isValueDateDisabled"
-
+                  :class="{ 'value-date-disabled': isValueDateDisabled }"
                 >
                   <template #append-inner v-if="isValueDateDisabled">
-                    <v-tooltip text="ການກຳນົດຄ່າ BACK_VALUE ປິດການແກ້ໄຂວັນທີ່">
+                    <v-tooltip text="ວັນທີ່ຖືກກຳນົດໂດຍລະບົບ EOD">
                       <template #activator="{ props }">
                         <v-icon v-bind="props" size="small" color="warning">mdi-lock</v-icon>
                       </template>
                     </v-tooltip>
                   </template>
                 </v-text-field>
+                <!-- Date Info Display -->
+                <div v-if="targetDate" class="text-caption text-info mt-1 pl-2">
+                  <v-icon size="x-small" class="mr-1">mdi-calendar-today</v-icon>
+                  {{ isBackDate ? 'ວັນທີ່ຍ້ອນຫຼັງ' : 'ວັນທີ່ປະຈຸບັນ' }}: {{ formatDisplayDate(targetDate) }}
+                </div>
               </v-col>
 
               <v-col cols="12" md="2">
@@ -225,7 +234,7 @@
                   </template>
                   <template #item="{ props, item }">
                     <v-list-item v-bind="props">
-                      <template #append v-if="item.raw.fin_cycle.toString().includes(currentYear.toString())">
+                      <template #append v-if="item.raw.fin_cycle.toString().includes(getTargetYear().toString())">
                         <v-chip size="x-small" color="success" variant="flat">
                           <v-icon size="x-small">mdi-calendar-today</v-icon>
                           ປີນີ້
@@ -399,7 +408,6 @@
                         no-data-text="ບໍ່ມີຂໍ້ມູນບັນຊີ"
                         :disabled="loading.debitAccounts || !isAvailable"
                       >
-
                       </v-autocomplete>
                       <div v-if="entry.DebitAccount" class="text-caption text-grey-darken-1 pl-2 pb-1 text-styles">
                         {{ getAccountDesc(entry.DebitAccount, 'debit') }}
@@ -426,7 +434,6 @@
                         no-data-text="ບໍ່ມີຂໍ້ມູນບັນຊີ"
                         :disabled="loading.creditAccounts || !isAvailable"
                       >
-
                       </v-autocomplete>
                       <div v-if="entry.CreditAccount" class="text-caption text-grey-darken-1 pl-2 pb-1 text-styles">
                         {{ getAccountDesc(entry.CreditAccount, 'credit') }}
@@ -653,7 +660,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'  
 import axios from '@/helpers/axios'
@@ -662,15 +669,19 @@ import Swal from 'sweetalert2'
 // Router
 const router = useRouter()
 
-// Use the journal permission composable
+// Use the updated journal permission composable
 const {
   data: permissionData,
   pending,
   error,
   isAvailable,
   permissionReason,
-  isBypassActive,
+  targetDate,
+  isBackDate,
+  backValueEnabled,
+  currentEod,
   bypassInfo,
+  isBypassActive,
   checkPermission,
   refresh,
   clearError
@@ -684,10 +695,10 @@ const selectedTemplate = ref(null)
 const debitAccounts = ref([])
 const creditAccounts = ref([])
 
-// Computed property for value date disabled state based on bypass info
+// Computed property for value date disabled state
 const isValueDateDisabled = computed(() => {
-  // Enable value date input if BACK_VALUE bypass is active (eod_check_bypassed = true)
-  return bypassInfo.value ? !bypassInfo.value.eod_check_bypassed : true
+  // Disable value date input if we have a target date from the API
+  return !!targetDate.value
 })
 
 const journalData = reactive({
@@ -728,13 +739,37 @@ const finCycles = ref([])
 const periodCodes = ref([])
 const subTextSuggestions = ref([])
 
-const currentYear = computed(() => new Date().getFullYear())
-const currentMonth = computed(() => new Date().getMonth() + 1)
-const currentPeriodCode = computed(() => {
-  const year = currentYear.value
-  const month = currentMonth.value.toString().padStart(2, '0')
+// Updated computed properties to use target date
+const getTargetYear = () => {
+  if (targetDate.value) {
+    return new Date(targetDate.value).getFullYear()
+  }
+  return new Date().getFullYear()
+}
+
+const getTargetMonth = () => {
+  if (targetDate.value) {
+    return new Date(targetDate.value).getMonth() + 1
+  }
+  return new Date().getMonth() + 1
+}
+
+const getTargetPeriodCode = computed(() => {
+  const year = getTargetYear()
+  const month = getTargetMonth().toString().padStart(2, '0')
   return `${year}${month}`
 })
+
+// Helper method to format display date
+const formatDisplayDate = (dateString) => {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  return date.toLocaleDateString('lo-LA', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  })
+}
 
 const descriptionTemplates = ref([
   { label: 'ການໂອນເງິນ', main: 'ການໂອນເງິນລະຫວາງບັນຊີ', sub: 'ການໂອນເງິນປົກ຺ະຕິ' },
@@ -1481,18 +1516,20 @@ const loadFinCycles = async () => {
       cycle_display: `${cycle.fin_cycle} - ${cycle.cycle_Desc}`,
     }))
 
+    // Use target year instead of current year
+    const targetYear = getTargetYear()
     const currentCycle = finCycles.value.find(cycle =>
-      cycle.fin_cycle.toString() === currentYear.value.toString()
+      cycle.fin_cycle.toString() === targetYear.toString()
     )
     if (currentCycle) {
       journalData.fin_cycle = currentCycle.fin_cycle
       await loadPeriodCodes()
     } else {
-      console.warn('No financial cycle found for current year')
+      console.warn('No financial cycle found for target year:', targetYear)
       Swal.fire({
         icon: 'warning',
         title: 'ບໍ່ພົບຮອບການເງິນ',
-        text: `ບໍ່ພົບຮອບການເງິນສຳລັບປີ ${currentYear.value}`,
+        text: `ບໍ່ພົບຮອບການເງິນສຳລັບປີ ${targetYear}`,
         timer: 3000,
         showConfirmButton: false
       })
@@ -1504,6 +1541,7 @@ const loadFinCycles = async () => {
     loading.finCycles = false
   }
 }
+
 const loadPeriodCodes = async () => {
   if (!journalData.fin_cycle) {
     periodCodes.value = []
@@ -1521,18 +1559,20 @@ const loadPeriodCodes = async () => {
       period_display: formatPeriodDisplay(period.period_code),
     }))
 
+    // Use target period code instead of current period code
+    const targetPeriod = getTargetPeriodCode.value
     const currentPeriod = periodCodes.value.find(period => 
-      period.period_code === currentPeriodCode.value
+      period.period_code === targetPeriod
     )
     if (currentPeriod) {
       journalData.Period_code = currentPeriod.period_code
     } else {
-      console.warn('No period code found for current period:', currentPeriodCode.value)
+      console.warn('No period code found for target period:', targetPeriod)
       journalData.Period_code = periodCodes.value[0]?.period_code || null
       Swal.fire({
         icon: 'warning',
         title: 'ບໍ່ພົບລະຫັດໄລຍະ',
-        text: `ບໍ່ພົບລະຫັດໄລຍະສຳລັບ ${currentPeriodCode.value} ສະເພາະບໍ່ມີຂໍ້ມູນ`,
+        text: `ບໍ່ພົບລະຫັດໄລຍະສຳລັບ ${targetPeriod}`,
         timer: 3000,
         showConfirmButton: false
       })
@@ -1555,7 +1595,6 @@ const formatPeriodDisplay = (periodCode) => {
   const month = periodCode.substring(4, 6)
   return `${year}-${month}`
 }
-
 
 const refreshAutoSelection = async () => {
   try {
@@ -1626,7 +1665,6 @@ const submitJournal = async () => {
       if (entry.DebitAccount) {
         batchPayload.entries.push({
           Account: entry.DebitAccount,
-          // Account_no: getAccountCode(entry.DebitAccount),
           Account_no: buildAccountNo(entry.DebitAccount),
           Amount: amount,
           Dr_cr: 'D',
@@ -1638,7 +1676,6 @@ const submitJournal = async () => {
       if (entry.CreditAccount) {
         batchPayload.entries.push({
           Account: entry.CreditAccount,
-          // Account_no: getAccountCode(entry.CreditAccount),
           Account_no: buildAccountNo(entry.CreditAccount),
           Amount: amount,
           Dr_cr: 'C',
@@ -1685,169 +1722,84 @@ const submitJournal = async () => {
     const response = await axios.post('/api/journal-entries/batch_create/', batchPayload, getAuthHeaders())
 
     const result = await Swal.fire({
-    icon: 'success',
-    title: 'ສຳເລັດ!',
-    html: `
-      <div style="
-        text-align: left; 
-        font-family: 'Roboto', sans-serif;
-        color: #424242;
-        line-height: 1.5;
-        margin: 8px 0;
-      ">
+      icon: 'success',
+      title: 'ສຳເລັດ!',
+      html: `
         <div style="
-          background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-          border-radius: 8px;
-          padding: 16px;
-          border-left: 4px solid #4CAF50;
-          margin-bottom: 12px;
+          text-align: left; 
+          font-family: 'Roboto', sans-serif;
+          color: #424242;
+          line-height: 1.5;
+          margin: 8px 0;
         ">
-          <p style="margin: 6px 0; font-size: 14px;">
-            <span style="color: #666; font-weight: 500;">ເລກອ້າງອີງ:</span> 
-            <span style="color: #1976d2; font-weight: 600;">${response.data.reference_no || journalData.Reference_No}</span>
-          </p>
-          <p style="margin: 6px 0; font-size: 14px;">
-            <span style="color: #666; font-weight: 500;">ຈຳນວນລາຍການທີ່ສ້າງ:</span> 
-            <span style="color: #2e7d32; font-weight: 600;">${response.data.entries?.length || batchPayload.entries.length}</span>
-          </p>
-          <p style="margin: 6px 0; font-size: 14px;">
-            <span style="color: #666; font-weight: 500;">ຈຳນວນແຖວຟອມ:</span> 
-            <span style="color: #1976d2; font-weight: 600;">${journalEntries.value.length}</span>
-          </p>
+          <div style="
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            border-radius: 8px;
+            padding: 16px;
+            border-left: 4px solid #4CAF50;
+            margin-bottom: 12px;
+          ">
+            <p style="margin: 6px 0; font-size: 14px;">
+              <span style="color: #666; font-weight: 500;">ເລກອ້າງອີງ:</span> 
+              <span style="color: #1976d2; font-weight: 600;">${response.data.reference_no || journalData.Reference_No}</span>
+            </p>
+            <p style="margin: 6px 0; font-size: 14px;">
+              <span style="color: #666; font-weight: 500;">ຈຳນວນລາຍການທີ່ສ້າງ:</span> 
+              <span style="color: #2e7d32; font-weight: 600;">${response.data.entries?.length || batchPayload.entries.length}</span>
+            </p>
+            <p style="margin: 6px 0; font-size: 14px;">
+              <span style="color: #666; font-weight: 500;">ວັນທີ່ບັນທຶກ:</span> 
+              <span style="color: #1976d2; font-weight: 600;">${formatDisplayDate(journalData.Value_date)} ${isBackDate ? '(Back Date)' : ''}</span>
+            </p>
+          </div>
+          
+          <div style="
+            background: linear-gradient(135deg, #fff3e0 0%, #ffffff 100%);
+            border-radius: 8px;
+            padding: 16px;
+            border-left: 4px solid #FF9800;
+          ">
+            <p style="margin: 6px 0; font-size: 14px;">
+              <span style="color: #666; font-weight: 500;">ເດບິດລວມ:</span> 
+              <span style="color: #f57c00; font-weight: 600;">${formatNumber(totalDebit)} ${journalData.Ccy_cd}</span>
+            </p>
+            <p style="margin: 6px 0; font-size: 14px;">
+              <span style="color: #666; font-weight: 500;">ເຄຣດິດລວມ:</span> 
+              <span style="color: #f57c00; font-weight: 600;">${formatNumber(totalCredit)} ${journalData.Ccy_cd}</span>
+            </p>
+            <p style="margin: 6px 0; font-size: 14px;">
+              <span style="color: #666; font-weight: 500;">ລາຍການທີ່ມີລາຍລະອຽດ:</span> 
+              <span style="color: #1976d2; font-weight: 600;">${entriesWithDescription.value}/${journalEntries.value.length}</span>
+            </p>
+          </div>
         </div>
-        
-        <div style="
-          background: linear-gradient(135deg, #fff3e0 0%, #ffffff 100%);
-          border-radius: 8px;
-          padding: 16px;
-          border-left: 4px solid #FF9800;
-        ">
-          <p style="margin: 6px 0; font-size: 14px;">
-            <span style="color: #666; font-weight: 500;">ເດບິດລວມ:</span> 
-            <span style="color: #f57c00; font-weight: 600;">${formatNumber(totalDebit)} ${journalData.Ccy_cd}</span>
-          </p>
-          <p style="margin: 6px 0; font-size: 14px;">
-            <span style="color: #666; font-weight: 500;">ເຄຣດິດລວມ:</span> 
-            <span style="color: #f57c00; font-weight: 600;">${formatNumber(totalCredit)} ${journalData.Ccy_cd}</span>
-          </p>
-          <p style="margin: 6px 0; font-size: 14px;">
-            <span style="color: #666; font-weight: 500;">ລາຍການທີ່ມີລາຍລະອຽດ:</span> 
-            <span style="color: #1976d2; font-weight: 600;">${entriesWithDescription.value}/${journalEntries.value.length}</span>
-          </p>
-        </div>
-      </div>
-    `,
-    confirmButtonText: `<i class="mdi mdi-eye" style="margin-right: 6px;"></i>ເບິ່ງລາຍການ`,
-    
-    // Custom button colors using #E3F2FD template
-    confirmButtonColor: '#E8F5E8',
-    
-    // Clean dialog styling
-    width: '520px',
-    padding: '20px',  
-    timer: 1000,
-    timerProgressBar: true,
-    allowOutsideClick: false,
-    allowEscapeKey: true,
-    backdrop: 'rgba(0,0,0,0.4)',
-    
-    // Custom CSS for cleaner appearance
-    customClass: {
-      popup: 'clean-success-popup',
-      title: 'clean-success-title',
-      htmlContainer: 'clean-success-content',
-      actions: 'clean-success-actions',
-      confirmButton: 'clean-confirm-button',
-      timerProgressBar: 'clean-timer-bar'
-    },
-    
-    // Add custom styles
-    didOpen: () => {
-      // Inject custom CSS
-      const style = document.createElement('style');
-      style.innerHTML = `
-        .clean-success-popup {
-          border-radius: 12px !important;
-          box-shadow: 0 8px 32px rgba(0,0,0,0.12) !important;
-          font-family: 'Roboto', sans-serif !important;
-        }
-        
-        .clean-success-title {
-          font-size: 20px !important;
-          font-weight: 600 !important;
-          color: #2e7d32 !important;
-          margin-bottom: 12px !important;
-        }
-        
-        .clean-success-content {
-          margin: 0 !important;
-          padding: 0 8px !important;
-        }
-        
-        .clean-success-actions {
-          margin-top: 20px !important;
-          gap: 8px !important;
-          flex-wrap: wrap !important;
-          justify-content: center !important;
-        }
-        
-        .clean-confirm-button {
-          background: #FFF3E0 !important;
-          color: #f57c00 !important;
-          border: 1px solid #FFCC02 !important;
-          font-size: 13px !important;
-          padding: 8px 16px !important;
-          border-radius: 6px !important;
-          font-weight: 500 !important;
-          min-width: 120px !important;
-          height: 36px !important;
-          transition: all 0.2s ease !important;
-        }
-        
-        .clean-confirm-button:hover {
-          background: #FFCC02 !important;
-          color: #e65100 !important;
-          transform: translateY(-1px) !important;
-          box-shadow: 0 2px 8px rgba(245,124,0,0.2) !important;
-        }
-        
-        .clean-timer-bar {
-          background: linear-gradient(90deg, #4CAF50 0%, #81C784 100%) !important;
-          height: 3px !important;
-        }
-        
-        .swal2-icon.swal2-success {
-          border-color: #4CAF50 !important;
-          color: #4CAF50 !important;
-        }
-        
-        .swal2-icon.swal2-success .swal2-success-line {
-          background-color: #4CAF50 !important;
-        }
-        
-        .swal2-icon.swal2-success .swal2-success-ring {
-          border-color: #4CAF50 !important;
-        }
-      `;
-      document.head.appendChild(style);
+      `,
+      confirmButtonText: `<i class="mdi mdi-eye" style="margin-right: 6px;"></i>ເບິ່ງລາຍການ`,
+      confirmButtonColor: '#E8F5E8',
+      width: '520px',
+      padding: '20px',  
+      timer: 10000,
+      timerProgressBar: true,
+      allowOutsideClick: false,
+      allowEscapeKey: true,
+      backdrop: 'rgba(0,0,0,0.4)'
+    })
+
+    // Handle different button clicks
+    if (result.isConfirmed) {
+      // Navigate to view journals or journal list
+      await navigateToJournalList()
+    } else {
+      // Timer expired or other dismissal - go back to capture
+      await navigateToCapture()
     }
-  });
 
-  // Handle different button clicks
-  if (result.isConfirmed) {
-    // Navigate to view journals or journal list
-    await navigateToJournalList()
-  } else {
-    // Timer expired or other dismissal - go back to capture
-    await navigateToCapture()
-  }
-
-  // Generate new reference if in auto mode
-  if (autoReferenceMode.value) {
-    setTimeout(() => {
-      generateReference()
-    }, 500)
-  }
+    // Generate new reference if in auto mode
+    if (autoReferenceMode.value) {
+      setTimeout(() => {
+        generateReference()
+      }, 500)
+    }
 
     resetForm()
   } catch (error) {
@@ -1922,7 +1874,7 @@ const resetForm = () => {
     module_id: currentModule || 'GL',
     Ccy_cd: currentCurrency || 'LAK',
     Txn_code: currentTxnCode,
-    Value_date: new Date().toISOString().substr(0, 10),
+    Value_date: targetDate.value || new Date().toISOString().substr(0, 10),
     Addl_text: '',
     Addl_sub_text: '',
     fin_cycle: null,
@@ -1974,14 +1926,14 @@ watch(() => journalData.Value_date, async (newDate) => {
   const selectedDate = new Date(newDate)
   const selectedYear = selectedDate.getFullYear()
   const selectedPeriodCode = `${selectedYear}${String(selectedDate.getMonth() + 1).padStart(2, '0')}`
-  if (
-    selectedYear.toString() !== journalData.fin_cycle?.toString() ||
-    selectedPeriodCode !== journalData.Period_code
-  ) {
-    await loadFinCycles()
+  
+  if (selectedYear.toString() !== journalData.fin_cycle?.toString() ||
+      selectedPeriodCode !== journalData.Period_code) {
+    await loadFinCycles() // Auto-reload cycles/periods when date changes
   }
   updateReferenceNumber()
 })
+
 watch(() => journalData.Ccy_cd, onMainCurrencyChange)
 watch(() => journalData.fin_cycle, loadPeriodCodes)
 watch(() => journalData.Addl_text, updateSubTextSuggestions)
@@ -1993,6 +1945,38 @@ watch(exchangeRate, (newRate) => {
     }
   })
 })
+
+watch(targetDate, (newTargetDate) => {
+  if (newTargetDate) {
+    const oldValueDate = journalData.Value_date
+    journalData.Value_date = newTargetDate  // KEY CHANGE: Direct assignment
+    
+    console.log('Target date changed, updating Value_date:', {
+      old: oldValueDate,
+      new: newTargetDate,
+      isBackDate: isBackDate.value,
+      backValueEnabled: backValueEnabled.value
+    })
+    // ... notification logic
+  }
+}, { immediate: true })
+
+// NEW: Watch for back value enabled changes
+watch(backValueEnabled, (newValue) => {
+  console.log(`Back value ${newValue ? 'enabled' : 'disabled'}`)
+
+}, { immediate: true })
+
+// NEW: Watch for current EOD changes
+watch(currentEod, (newValue) => {
+  if (newValue) {
+    console.log('Current EOD info:', {
+      eod_process_date: newValue.eod_process_date,
+      eod_status: newValue.eod_status,
+      next_working_day: newValue.next_working_day
+    })
+  }
+}, { deep: true })
 
 // Watch for permission changes and show notifications
 watch(isAvailable, (newValue, oldValue) => {
