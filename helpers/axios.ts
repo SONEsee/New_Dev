@@ -1,7 +1,7 @@
 import Axios from "axios";
 
 const axios = Axios.create({
-  //Create key VITE_BASE_URL in file .env before development
+  
   baseURL: import.meta.env.VITE_BASE_URL,
   timeout: 12000000,
 });
@@ -9,7 +9,7 @@ const axios = Axios.create({
 // Add a request interceptor
 axios.interceptors.request.use(
   function (config) {
-    // Do something before request is sent
+  
     const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -21,7 +21,7 @@ axios.interceptors.request.use(
   }
 );
 
-// Add a response interceptor
+
 axios.interceptors.response.use(
   function (response) {
     return response;
