@@ -2,7 +2,20 @@
 import dayjs from "dayjs";
 const mainStore = useFassetLidtDescription();
 const assetStores = faAssetStore();
+const eodStore = useDateStore();
 const selectedItems = ref([]);
+
+const eod = computed(()=>{
+  const data =  eodStore.response_data_eod;
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (data && typeof data === "object") {
+    return [data];
+  }
+  return [];
+})
+
 const assetdata = computed(()=>{
   const data =  assetStores.response_fa_asset_list;
   if (Array.isArray(data)) {
@@ -23,6 +36,16 @@ const res = computed(() => {
     return [data];
   }
   return [];
+});
+
+// ເພີ່ມ computed ສຳລັບ EOD target date
+const eodTargetDate = computed(() => {
+  const eodData = eod.value[0]; // ເອົາ EOD ທຳອິດ
+  if (eodData && eodData.prev_working_day) {
+    return dayjs(eodData.prev_working_day).format("YYYY-MM-DD");
+  }
+  // ຖ້າບໍ່ມີ EOD ຫຼື prev_working_day ໃຫ້ໃຊ້ວັນປະຈຸບັນ
+  return dayjs().tz("Asia/Bangkok").format("YYYY-MM-DD");
 });
 
 // ສ້າງ computed ສຳລັບແມັບຂໍ້ມູນ
@@ -87,7 +110,8 @@ const mappedData = computed(() => {
           asset_value_remain_month: assetValueRemainMonth,
           asset_value_remain_begin: assetValueRemainBegin,
           accu_dpca_value_total: accuDpcaValueTotal,
-          calculation_method: cDpacValue === 0 ? 'C_dpac_zero' : 'C_dpac_has_value'
+          calculation_method: cDpacValue === 0 ? 'C_dpac_zero' : 'C_dpac_has_value',
+          eod_target_date: eodTargetDate.value // ເພີ່ມວັນທີ່ EOD ສຳລັບ debug
         }
       };
     }
@@ -122,11 +146,11 @@ const formatNumber = (num: any) => {
 const processBulkItems = async () => {
   mainStore.total_caculate.mapping_ids = selectedItems.value;
 
-  mainStore.total_caculate.target_date = dayjs()
-    .tz("Asia/Bangkok")
-    .format("YYYY-MM-DD");
+  // ປ່ຽນຈາກວັນປະຈຸບັນເປັນ prev_working_day ຂອງ EOD
+  mainStore.total_caculate.target_date = eodTargetDate.value;
 
   console.log("Bulk process data:", mainStore.total_caculate);
+  console.log("Using EOD target date:", eodTargetDate.value);
 
   await mainStore.postArreat();
 
@@ -138,6 +162,7 @@ const title = "ຫັກຄ່າຫຼູຍຫ້ຽນຍອ້ນຫຼັ�
 onMounted(() => {
   assetStores.GetFaAssetList();
   mainStore.getArrears();
+  eodStore.GetEOD();
 });
 </script>
 
@@ -148,6 +173,7 @@ onMounted(() => {
     <p>Asset Data Count: {{ assetdata.length }}</p>
     <p>Overdue Data Count: {{ res.length }}</p>
     <p>Mapped Data Count: {{ mappedData.length }}</p>
+    <p>EOD Target Date: {{ eodTargetDate }}</p>
   </div> -->
 
   <div
@@ -158,6 +184,8 @@ onMounted(() => {
     <div class="d-flex align-center justify-space-between">
       <span>
         📋 ເລືອກແລ້ວ: <strong>{{ selectedItems.length }}</strong> ລາຍການ
+        <br>
+        <small style="color: #666;">📅 ວັນທີ່ຫັກ: {{ dayjs(eodTargetDate).format('DD/MM/YYYY') }}</small>
       </span>
       <div>
         <v-btn
@@ -234,7 +262,21 @@ onMounted(() => {
 </v-col>
     
   </v-row>
+
+  <!-- ສະແດງຂໍ້ມູນ EOD ສຳລັບຢືນຢັນ -->
+  <div class="mb-4 pa-3" style="background-color: #f5f5f5; border-radius: 8px">
+    <div class="d-flex align-center">
+      <v-icon color="info" class="mr-2">mdi-calendar-clock</v-icon>
+      <span>
+        <strong>ວັນທີ່ຈະໃຊ້ໃນການຫັກ:</strong> 
+        {{ dayjs(eodTargetDate).format('DD/MM/YYYY (dddd)') }}
+        <small style="color: #666;">(EOD Previous Working Day)</small>
+      </span>
+    </div>
+  </div>
+
 <!-- <pre>{{ mappedData }}</pre> -->
+ <!-- <pre>{{ eod }}</pre> -->
   <v-data-table
     v-model="selectedItems"
     :items="mappedData"
@@ -313,7 +355,7 @@ onMounted(() => {
   <span v-if="item.due_end_date">
     {{ dayjs(item.due_end_date.split('/').reverse().join('-')).format('MM/YYYY') }}
     <span style="color: #666;"> ຫາ </span>
-    {{ dayjs().format('MM/YYYY') }}
+    {{ dayjs(eodTargetDate).format('MM/YYYY') }}
   </span>
   <span v-else>-</span>
 </template>
