@@ -38,19 +38,13 @@ const res = computed(() => {
   return [];
 });
 
-// ເພີ່ມ computed ສຳລັບ EOD target date
-const eodTargetDate = computed(() => {
-  const eodData = eod.value[0]; // ເອົາ EOD ທຳອິດ
-  if (eodData && eodData.prev_working_day) {
-    return dayjs(eodData.prev_working_day).format("YYYY-MM-DD");
-  }
-  // ຖ້າບໍ່ມີ EOD ຫຼື prev_working_day ໃຫ້ໃຊ້ວັນປະຈຸບັນ
-  return dayjs().tz("Asia/Bangkok").format("YYYY-MM-DD");
-});
-
 // ສ້າງ computed ສຳລັບແມັບຂໍ້ມູນ
 // ປັບປຸງການຄິດໄລ່ໃນ computed mappedData
 const mappedData = computed(() => {
+  // ດຶງ prev_working_day ຈາກ EOD
+  const eodData = eod.value[0]; // ເອົາ EOD ທຳອິດ
+  const prevWorkingDay = eodData?.prev_working_day ? dayjs(eodData.prev_working_day) : dayjs();
+  
   return res.value.map(overdueItem => {
     // ຫາ asset ທີ່ກົງກັນໂດຍໃຊ້ asset_id
     const matchedAsset = assetdata.value.find(asset => 
@@ -111,7 +105,9 @@ const mappedData = computed(() => {
           asset_value_remain_begin: assetValueRemainBegin,
           accu_dpca_value_total: accuDpcaValueTotal,
           calculation_method: cDpacValue === 0 ? 'C_dpac_zero' : 'C_dpac_has_value',
-          eod_target_date: eodTargetDate.value // ເພີ່ມວັນທີ່ EOD ສຳລັບ debug
+          // ເພີ່ມຂໍ້ມູນ EOD ສຳລັບ debug
+          prev_working_day: prevWorkingDay.format('YYYY-MM-DD'),
+          current_date: dayjs().format('YYYY-MM-DD')
         }
       };
     }
@@ -119,6 +115,7 @@ const mappedData = computed(() => {
     // ຖ້າບໍ່ພົບ asset ທີ່ກົງກັນ
     return {
       ...overdueItem,
+      overdue_months: overdueItem.overdue_months, // ຄງຄ່າເດີມ
       matched_asset: null,
       daily_depreciation: 0,
       calculated_overdue_amount: 0,
@@ -147,10 +144,15 @@ const processBulkItems = async () => {
   mainStore.total_caculate.mapping_ids = selectedItems.value;
 
   // ປ່ຽນຈາກວັນປະຈຸບັນເປັນ prev_working_day ຂອງ EOD
-  mainStore.total_caculate.target_date = eodTargetDate.value;
+  const eodData = eod.value[0];
+  const targetDate = eodData?.prev_working_day 
+    ? dayjs(eodData.prev_working_day).format("YYYY-MM-DD")
+    : dayjs().tz("Asia/Bangkok").format("YYYY-MM-DD");
+
+  mainStore.total_caculate.target_date = targetDate;
 
   console.log("Bulk process data:", mainStore.total_caculate);
-  console.log("Using EOD target date:", eodTargetDate.value);
+  console.log("Using EOD prev_working_day:", targetDate);
 
   await mainStore.postArreat();
 
@@ -173,7 +175,7 @@ onMounted(() => {
     <p>Asset Data Count: {{ assetdata.length }}</p>
     <p>Overdue Data Count: {{ res.length }}</p>
     <p>Mapped Data Count: {{ mappedData.length }}</p>
-    <p>EOD Target Date: {{ eodTargetDate }}</p>
+    <p>EOD prev_working_day: {{ eod[0]?.prev_working_day }}</p>
   </div> -->
 
   <div
@@ -184,8 +186,6 @@ onMounted(() => {
     <div class="d-flex align-center justify-space-between">
       <span>
         📋 ເລືອກແລ້ວ: <strong>{{ selectedItems.length }}</strong> ລາຍການ
-        <br>
-        <small style="color: #666;">📅 ວັນທີ່ຫັກ: {{ dayjs(eodTargetDate).format('DD/MM/YYYY') }}</small>
       </span>
       <div>
         <v-btn
@@ -212,6 +212,11 @@ onMounted(() => {
     <GlobalTextTitleLine :title="title" />
     <small style="color: #666">
       Selected mapping_ids: {{ selectedItems }}
+    </small>
+    <!-- ສະແດງວັນທີ່ກຳນົດ -->
+    <br>
+    <small style="color: #2196f3">
+      📅 ວັນທີ່ກຳນົດສຳລັບການຫັກ: {{ eod[0]?.prev_working_day ? dayjs(eod[0].prev_working_day).format('DD/MM/YYYY') : 'ວັນນີ້' }}
     </small>
   </div>
 
@@ -262,21 +267,18 @@ onMounted(() => {
 </v-col>
     
   </v-row>
-
-  <!-- ສະແດງຂໍ້ມູນ EOD ສຳລັບຢືນຢັນ -->
-  <div class="mb-4 pa-3" style="background-color: #f5f5f5; border-radius: 8px">
-    <div class="d-flex align-center">
-      <v-icon color="info" class="mr-2">mdi-calendar-clock</v-icon>
-      <span>
-        <strong>ວັນທີ່ຈະໃຊ້ໃນການຫັກ:</strong> 
-        {{ dayjs(eodTargetDate).format('DD/MM/YYYY (dddd)') }}
-        <small style="color: #666;">(EOD Previous Working Day)</small>
-      </span>
-    </div>
-  </div>
-
 <!-- <pre>{{ mappedData }}</pre> -->
- <!-- <pre>{{ eod }}</pre> -->
+ <!-- ສະແດງຂໍ້ມູນ EOD ສຳລັບ debug -->
+ <div class="mb-2 pa-2" style="background-color: #f8f9fa; border-radius: 4px; font-size: 12px;">
+   <strong>📅 EOD Info:</strong> 
+   <span v-if="eod[0]">
+     prev_working_day: {{ dayjs(eod[0].prev_working_day).format('DD/MM/YYYY HH:mm') }} |
+     date_id: {{ eod[0].date_id }} |
+     eod_time: {{ eod[0].eod_time }}
+   </span>
+   <span v-else style="color: #f44336">ບໍ່ມີຂໍ້ມູນ EOD</span>
+ </div>
+
   <v-data-table
     v-model="selectedItems"
     :items="mappedData"
@@ -355,7 +357,7 @@ onMounted(() => {
   <span v-if="item.due_end_date">
     {{ dayjs(item.due_end_date.split('/').reverse().join('-')).format('MM/YYYY') }}
     <span style="color: #666;"> ຫາ </span>
-    {{ dayjs(eodTargetDate).format('MM/YYYY') }}
+    {{ eod[0]?.prev_working_day ? dayjs(eod[0].prev_working_day).format('MM/YYYY') : dayjs().format('MM/YYYY') }}
   </span>
   <span v-else>-</span>
 </template>
@@ -369,23 +371,4 @@ onMounted(() => {
   </v-chip>
 </template>
   </v-data-table>
-
- 
-  <!-- <v-expansion-panels class="mt-4" v-if="mappedData.length > 0">
-    <v-expansion-panel>
-      <v-expansion-panel-title>
-        📊 ລາຍລະອຽດການຄິດໄລ່
-      </v-expansion-panel-title>
-      <v-expansion-panel-text>
-        <div v-for="item in mappedData.slice(0, 3)" :key="item.mapping_id" class="mb-3 pa-3" style="background-color: #f5f5f5; border-radius: 8px">
-          <h4>{{ item.asset_name }}</h4>
-          <p><strong>ມູນຄ່າເຫຼືອຕໍ່ເດືອນ:</strong> {{ formatNumber(item.asset_value_remainMonth) }} ກີບ</p>
-          <p><strong>ມູນຄ່າເຫຼືອຕໍ່ມື້:</strong> {{ formatNumber(Math.round(item.daily_depreciation)) }} ກີບ ({{ formatNumber(item.asset_value_remainMonth) }} ÷ 30)</p>
-          <p><strong>ຄ້າງ:</strong> {{ item.days_overdue }} ມື້</p>
-          <p><strong>ການຄິດໄລ່:</strong> {{ formatNumber(Math.round(item.daily_depreciation)) }} × {{ item.days_overdue }} = <strong style="color: #f44336">{{ formatNumber(Math.round(item.calculated_overdue_amount)) }} ກີບ</strong></p>
-        </div>
-        <p v-if="mappedData.length > 3" class="text-center">... ແລະອີກ {{ mappedData.length - 3 }} ລາຍການ</p>
-      </v-expansion-panel-text>
-    </v-expansion-panel>
-  </v-expansion-panels> -->
 </template>
