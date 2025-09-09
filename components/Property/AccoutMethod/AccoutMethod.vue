@@ -603,10 +603,11 @@ onMounted(async () => {
       <!-- <pre>{{  }}</pre> -->
 
       <v-data-table
+      
         :headers="headers"
         :items="filteredData || []"
         class="text-no-wrap"
-        :loading="loading"
+        :loading="assetListStore.isLoading"
       >
         <template v-slot:header.mapping_id="{ column }">
           <v-icon start>mdi-identifier</v-icon>
