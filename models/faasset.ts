@@ -22,7 +22,7 @@ export interface FaAsset{
     asset_salvage_value:     number;
     dpca_start_date:         null;
     dpca_end_date:           null;
-    accu_dpca_value_total:   null;
+    accu_dpca_value_total:   string;
     asset_accu_dpca_value:   string;
     asset_value_remain:      string;
     asset_value_remainMonth: string;
@@ -41,7 +41,7 @@ export interface FaAsset{
     Auth_Status:             string;
     asset_type_id:           number;
     asset_location_id:       number;
-    C_dpac:       number;
+    C_dpac:                  number;
     supplier_id:             number;
     asset_ac_by:             string;
     Maker_Id:                string;

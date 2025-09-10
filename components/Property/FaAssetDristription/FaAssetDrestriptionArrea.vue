@@ -38,27 +38,55 @@ const res = computed(() => {
   return [];
 });
 
-// ສ້າງ computed ສຳລັບແມັບຂໍ້ມູນ
-// ປັບປຸງການຄິດໄລ່ໃນ computed mappedData
+const StardDate = (apdc_start_date:any)=>{
+  if(!apdc_start_date || !Array.isArray(assetdata.value)) return "_";
+  const itemData = assetdata.value.find((item)=>item.asset_list_id === apdc_start_date);
+  return itemData ? itemData.dpca_start_date : "_";
+}
 const mappedData = computed(() => {
-  // ດຶງ prev_working_day ຈາກ EOD
-  const eodData = eod.value[0]; // ເອົາ EOD ທຳອິດ
+  
+  const eodData = eod.value[0]; 
   const prevWorkingDay = eodData?.prev_working_day ? dayjs(eodData.prev_working_day) : dayjs();
   
   return res.value.map(overdueItem => {
-    // ຫາ asset ທີ່ກົງກັນໂດຍໃຊ້ asset_id
+   
     const matchedAsset = assetdata.value.find(asset => 
       asset.asset_list_id === overdueItem.asset_id
     );
     
     if (matchedAsset) {
-      // ຄິດໄລ່ຄ່າທີ່ຕ້ອງການ: ການຄິດໄລ່ໃໝ່ຕາມເງື່ອນໄຂ
+      // ຄິດໄລ່ວັນຄ້າງໃໝ່ຈາກ due_end_date ຫາ prev_working_day
+      let actualOverdueDays = 0;
+      let actualOverdueMonths = 0;
+      let dueDate = null;
+      
+      if (overdueItem.due_end_date) {
+        // Parse due_end_date (format: DD/MM/YYYY)
+        const dueDateParts = overdueItem.due_end_date.split('/');
+        dueDate = dayjs(`${dueDateParts[2]}-${dueDateParts[1]}-${dueDateParts[0]}`);
+        
+        // ຄິດໄລ່ຄວາມແຕກຕ່າງເປັນວັນ ແລະ ເດືອນ
+        actualOverdueDays = prevWorkingDay.diff(dueDate, 'days');
+        actualOverdueMonths = prevWorkingDay.diff(dueDate, 'months'); // ໃຊ້ diff months ແທນ
+        
+        // ຖ້າຍັງບໍ່ເຖິງກຳນົດ ໃຫ້ເປັນ 0
+        if (actualOverdueDays < 0) {
+          actualOverdueDays = 0;
+          actualOverdueMonths = 0;
+        }
+      } else {
+        // ຖ້າບໍ່ມີ due_end_date ໃຊ້ຄ່າເດີມ
+        actualOverdueDays = overdueItem.overdue_months * 30;
+        actualOverdueMonths = overdueItem.overdue_months;
+      }
+
+     
       const dailyDepreciation = parseFloat(matchedAsset.asset_value_remainMonth) / 30;
       let calculatedAmount = 0;
       
-      // ເຊັກຄ່າ C_dpac
+      
       const cDpacValue = parseInt(matchedAsset.C_dpac) || 0;
-      const overdueMonthsFloor = Math.floor(overdueItem.overdue_months); // ບໍ່ນັບຫຼັງຈຸດ
+      const overdueMonthsFloor = Math.floor(actualOverdueMonths); 
       const assetValueRemainMonth = parseFloat(matchedAsset.asset_value_remainMonth);
       const assetValueRemainBegin = parseFloat(matchedAsset.asset_value_remainBegin);
       const accuDpcaValueTotal = parseFloat(matchedAsset.accu_dpca_value_total);
@@ -67,7 +95,7 @@ const mappedData = computed(() => {
       if (cDpacValue === 0) {
         // C_dpac ຍັງບໍ່ມີຄ່າ (ເທົ່າກັບ 0)
         if (overdueMonthsFloor >= totalMonths) {
-          // ຖ້າ overdue_months >= total_months ໃຫ້ໃຊ້ accu_dpca_value_total
+          
           calculatedAmount = accuDpcaValueTotal;
         } else {
           // ການຄິດໄລ່ປົກກະຕິ: (overdue_months - 1) * asset_value_remainMonth + asset_value_remainBegin
@@ -75,7 +103,7 @@ const mappedData = computed(() => {
           calculatedAmount = (adjustedMonths * assetValueRemainMonth) + assetValueRemainBegin;
         }
       } else {
-        // C_dpac ມີຄ່າແລ້ວ (ບໍ່ເທົ່າກັບ 0)
+        
         if (overdueMonthsFloor >= totalMonths) {
           // ຖ້າ overdue_months >= total_months ໃຫ້ໃຊ້ accu_dpca_value_total
           calculatedAmount = accuDpcaValueTotal;
@@ -87,6 +115,9 @@ const mappedData = computed(() => {
       
       return {
         ...overdueItem,
+        // ໃຊ້ວັນຄ້າງທີ່ຄິດໄລ່ໃໝ່
+        overdue_months: actualOverdueMonths,
+        overdue_days: actualOverdueDays,
         // ເພີ່ມຂໍ້ມູນຈາກ asset
         matched_asset: matchedAsset,
         daily_depreciation: dailyDepreciation,
@@ -100,14 +131,17 @@ const mappedData = computed(() => {
         debug_info: {
           c_dpac: cDpacValue,
           overdue_months_floor: overdueMonthsFloor,
+          actual_overdue_days: actualOverdueDays,
+          actual_overdue_months: actualOverdueMonths,
+          original_overdue_months: overdueItem.overdue_months,
+          due_end_date: overdueItem.due_end_date,
+          due_date_parsed: dueDate ? dueDate.format('YYYY-MM-DD') : null,
+          prev_working_day: prevWorkingDay.format('YYYY-MM-DD'),
           total_months: totalMonths,
           asset_value_remain_month: assetValueRemainMonth,
           asset_value_remain_begin: assetValueRemainBegin,
           accu_dpca_value_total: accuDpcaValueTotal,
-          calculation_method: cDpacValue === 0 ? 'C_dpac_zero' : 'C_dpac_has_value',
-          // ເພີ່ມຂໍ້ມູນ EOD ສຳລັບ debug
-          prev_working_day: prevWorkingDay.format('YYYY-MM-DD'),
-          current_date: dayjs().format('YYYY-MM-DD')
+          calculation_method: cDpacValue === 0 ? 'C_dpac_zero' : 'C_dpac_has_value'
         }
       };
     }
@@ -129,7 +163,7 @@ const headers = [
   { title: "ຊື່ຊັບສິນ", key: "asset_name" },
   // { title: "ມູນຄ່າເຫຼືອ/ເດືອນ", key: "asset_value_remainMonth" },
   // { title: "ຄ່າເສື່ອມ/ມື້", key: "daily_depreciation" },
-  { title: "ຄ້າງ (ມື້)", key: "overdue_months" },
+  { title: "ຄ້າງ (ເດືອນ)", key: "overdue_months" },
   { title: "ຈຳນວນເງິນທີ່ຈະຫັກ", key: "calculated_overdue_amount" },
   { title: "ຄືບໜ້າ", key: "completion_percentage" },
   { title: "ງວດທີ່ຈະຫັກ", key: "due_end_date" },
@@ -260,7 +294,7 @@ onMounted(() => {
       ຈຳນວນເງິນທີ່ຈະຫັກ
     </v-card-title>
     <div class="">
-      <h2 class="">{{ formatNumber(mappedData.filter(item => selectedItems.includes(item.mapping_id )).reduce((sum, item) => sum + (item.calculated_overdue_amount || 0), 0)) }}</h2>
+      <h2 class="">{{ formatNumber(mappedData.filter(item => selectedItems.includes(item.mapping_id)).reduce((sum, item) => sum + (item.calculated_overdue_amount || 0), 0)) }}</h2>
       <p>ກີບ</p>
     </div>
   </v-card>
@@ -327,6 +361,12 @@ onMounted(() => {
       <span style="color: #ff9800; font-weight: 500">
         {{ formatNumber(Math.round(item.daily_depreciation || 0)) }} ກີບ/ມື້
       </span>
+    </template>
+
+    <template v-slot:item.debug_formula="{ item }">
+      <small style="color: #666; font-size: 10px;">
+        {{ item.debug_info?.calculated_formula || 'N/A' }}
+      </small>
     </template>
 
     
