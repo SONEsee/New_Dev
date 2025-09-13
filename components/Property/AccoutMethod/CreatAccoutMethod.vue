@@ -111,7 +111,7 @@ const updateAccounts = () => {
       const typeCode = selectedAsset.asset_type_detail.type_code;
 
       const matchedCode = masterdatato.value.MasterCodes?.find(
-        (code) => code.MC_code === typeCode
+        (code:any) => code.MC_code === typeCode
       );
 
       if (matchedCode && matchedCode.MC_detail) {
@@ -135,7 +135,7 @@ const updateAccounts = () => {
 
               if (selectedAssetList.asset_value_remainBegin !== undefined) {
                 request.amount_start =
-                  selectedAssetList.asset_value_remainBegin;
+                  selectedAssetList.asset_value_remainBegin ;
               }
 
               if (selectedAssetList.asset_value_remainLast !== undefined) {
@@ -232,6 +232,7 @@ onMounted(() => {
             ລະຫັດປະເພດຊັບສົມບັດ <span class="text-error">*</span>
           </v-label>
           <v-autocomplete
+          :loading="assetStores.isLoading"
           class="pa-1"
             v-model="request.asset_id"
             density="compact"
@@ -259,6 +260,7 @@ onMounted(() => {
             ຊັບສົມບັດ <span class="text-error">*</span>
           </v-label>
           <v-autocomplete
+          :loading="assetListStore.isLoading"
           class="pa-1"
             v-model="request.ref_id"
             density="compact"
@@ -298,7 +300,7 @@ onMounted(() => {
         >
         <v-col cols="12" md="4" >
           <v-label class="mb-1">
-            ຍອດເງິນ <span class="text-error">*</span>
+            ຄ່າລຸ້ຍຫ້ຽນຕໍ່ເດືອນ <span class="text-error">*</span>
           </v-label>
           <v-text-field
           readonly
@@ -306,7 +308,7 @@ onMounted(() => {
             :model-value="formatNumber(request.amount || 0)"
             density="compact"
             variant="outlined"
-            label="ຍອດເງິນ"
+            label="ຄ່າລຸ້ຍຫ້ຽນຕໍ່ເດືອນ"
             placeholder="0.00"
             @input="handleNumberInput($event, 'amount')"
             @blur="handleNumberBlur"
@@ -328,7 +330,7 @@ onMounted(() => {
 
         <v-col cols="12" md="4" class="">
           <v-label class="mb-1">
-            ມູນຄ່າເລີ່ມຕົ້ນ <span class="text-error">*</span>
+            ຄ່າຫຼູຍຫ້ຽນຂອງເດືອນເລີ່ມຕົ້ນ <span class="text-error">*</span>
           </v-label>
           <v-text-field
           class="pa-1"
@@ -336,7 +338,7 @@ onMounted(() => {
             :model-value="formatNumber(request.amount_start || 0)"
             density="compact"
             variant="outlined"
-            label="ມູນຄ່າຕົ້ນ"
+            label="ຄ່າຫຼູຍຫ້ຽນຂອງເດືອນເລີ່ມຕົ້ນ"
             placeholder="0.00"
             @input="handleNumberInput($event, 'amount_start')"
             @blur="handleNumberBlur"
@@ -357,7 +359,25 @@ onMounted(() => {
         </v-col>
 
         <v-col cols="12" md="4">
+         
+
           <v-label class="mb-1">
+            ມູນຄ່າຫຼູຍຫ້ຽນຂອງເດືອນສຸດທ້າຍ <span class="text-error">*</span>
+          </v-label>
+          <v-text-field
+          class="pa-1"
+            readonly
+            :model-value="formatNumber(request.amount_end || 0)"
+            density="compact"
+            variant="outlined"
+            label="ມູນຄ່າຫຼູຍຫ້ຽນຂອງເດືອນສຸດທ້າຍ"
+            placeholder="0.00"
+            @input="handleNumberInput($event, 'amount_end')"
+            @blur="handleNumberBlur"
+            @focus="handleNumberFocus"
+          />
+
+           <v-label class="mb-1" style="display: none;">
             ວັນທີເຮັດຖຸລະກຳ <span class="text-error">*</span>
           </v-label>
           <v-text-field
@@ -369,22 +389,6 @@ onMounted(() => {
             label="ວັນທີເຮັດຖຸລະກຳ"
             placeholder="ວັນທີເຮັດຖຸລະກຳ"
             type="date"
-          />
-
-          <v-label class="mb-1">
-            ມູນຄ່າທ້າຍ <span class="text-error">*</span>
-          </v-label>
-          <v-text-field
-          class="pa-1"
-            readonly
-            :model-value="formatNumber(request.amount_end || 0)"
-            density="compact"
-            variant="outlined"
-            label="ມູນຄ່າທ້າຍ"
-            placeholder="0.00"
-            @input="handleNumberInput($event, 'amount_end')"
-            @blur="handleNumberBlur"
-            @focus="handleNumberFocus"
           />
         </v-col>
         <v-col cols="8"

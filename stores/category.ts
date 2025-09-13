@@ -16,6 +16,8 @@ interface Category {
   Once_Auth: string;
   Maker_Id: null;
   Checker_Id: null;
+  Record_Status: string;
+  created_date: string;
 }
 interface CategoryResponse {
   category: Category;

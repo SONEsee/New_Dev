@@ -24,6 +24,17 @@ const assetlist = computed(() => {
     return item.Auth_Status === "A" && item.Auth_Status_ARC === "A";
   });
 });
+const StardDate = (apdc_start_date:any)=>{
+  if(!apdc_start_date || !Array.isArray(assetlist.value)) return "_";
+  const itemData = assetlist.value.find((item)=>item.asset_list_id === apdc_start_date);
+  return itemData ? itemData.dpca_start_date : "_";
+}
+
+const start_value = (value:any)=>{
+  if(!value || !Array.isArray(assetlist.value)) return "-";
+  const itemData = assetlist.value.find((item)=> item.asset_list_id === value);
+  return itemData ? itemData.asset_value_remainBegin : "-"
+}
 const detailassetlis = computed(() => {
   const data = assetListStore.response_fa_asset_list;
   if (Array.isArray(data)) {
@@ -192,7 +203,16 @@ const headers = computed(
         class: "text-end",
       },
       {
-        title: "ວັນທີ່ທຸລະກຳ",
+        title: "ງວດຕົ້ນຂອງຄ່າຫຼູຍຫ້ຽນ",
+        value: "start",
+        align: "end",
+        sortable: true,
+        filterable: false,
+        width: "130px",
+        class: "text-end",
+      },
+      {
+        title: "ວັນເລີ່ມກັກຄ່າຫຼູ້ຍຫ້ຽນ",
         value: "transaction_date",
         align: "center",
         sortable: true,
@@ -461,13 +481,19 @@ const statistics = computed(() => {
     total: data.length,
   };
 });
-const NameDisplay = (name:any)=>{
-  if(!name || name.asset_name_la || name.asset_code) {
-    return "ທັງໝົດ"
+const NameDisplay = (name: any) => {
+  if (!name || !name.asset_name_la || !name.asset_code) {
+    return "ທັງໝົດ";
   }
-  return `${name.asset_name_la} - ${name.asset_code}`
+  return `${name.asset_name_la} - ${name.asset_code}`;
+};
 
-}
+const nameDisplayStatus = (items: any) => {
+  if (!items || !items.title || !items.value) {
+    return "ທັໝົດ";
+  }
+  return `${items.title} - ${items.value}`;
+};
 onMounted(async () => {
   accountMethodStoreInstance.GetAccountMethodList();
   mainTypeStore.GetAssetTypes();
@@ -517,31 +543,55 @@ onMounted(async () => {
           <v-autocomplete
             v-model="selectedAccType"
             :items="mainType"
-            item-title="asset_name_la"
+            :item-title="NameDisplay"
             item-value="asset_code"
             label="ປະເພດທຸລະກຳ"
             variant="outlined"
             density="compact"
             placeholder="ເລືອກປະເພດທຸລະກຳ"
             :loading="loading"
+            prepend-inner-icon="mdi-format-list-bulleted-type"
           >
-          <template v-slot:item="{item, props}">
-            <v-list-item v-bind="props" :title="`${item.raw.asset_name_la}(${item.raw.asset_code})`"></v-list-item>
-          </template>
-        </v-autocomplete>
+            <template v-slot:item="{ item, props }">
+              <v-list-item
+                v-bind="props"
+                :title="`${item.raw.asset_name_la}(${item.raw.asset_code})`"
+              >
+              <template v-slot:prepend>
+                <v-avatar size="small" color="primary">
+                  <v-icon>mdi-format-list-bulleted-type</v-icon>
+                </v-avatar>
+              </template>
+            </v-list-item>
+            </template>
+          </v-autocomplete>
         </v-col>
         <v-col cols="12" md="3" class="text-no-wrap">
           <v-autocomplete
             v-model="selectedStatus"
             :items="dataFilter"
-            item-title="title"
+            :item-title="nameDisplayStatus"
             item-value="value"
             label="ສະຖານະ"
             variant="outlined"
+            prepend-inner-icon="mdi-list-status"
             density="compact"
             placeholder="ເລືອກສະຖານະ"
             :loading="loading"
-          ></v-autocomplete>
+          >
+            <template v-slot:item="{ item, props }">
+              <v-list-item
+                v-bind="props"
+                :title="`${item.raw.title}(${item.raw.value})`"
+              >
+              <template v-slot:prepend>
+                <v-avatar size="small" color="primary">
+                  <v-icon>mdi-list-status</v-icon>
+                </v-avatar>
+              </template>
+              </v-list-item>
+            </template>
+          </v-autocomplete>
         </v-col>
 
         <v-col cols="12" md="2">
@@ -573,10 +623,11 @@ onMounted(async () => {
       <!-- <pre>{{  }}</pre> -->
 
       <v-data-table
+      
         :headers="headers"
         :items="filteredData || []"
         class="text-no-wrap"
-        :loading="loading"
+        :loading="assetListStore.isLoading"
       >
         <template v-slot:header.mapping_id="{ column }">
           <v-icon start>mdi-identifier</v-icon>
@@ -628,6 +679,9 @@ onMounted(async () => {
         </template>
 
         <template v-slot:header.delete="{ column }">
+          <b style="color: blue">{{ column.title }}</b>
+        </template>
+        <template v-slot:header.start="{ column }">
           <b style="color: blue">{{ column.title }}</b>
         </template>
 
@@ -698,6 +752,7 @@ onMounted(async () => {
             </div>
           </div>
         </template>
+        
 
         <template v-slot:item.amount="{ item }">
           <div class="text-end">
@@ -705,9 +760,14 @@ onMounted(async () => {
             <div class="text-caption text-grey">LAK</div>
           </div>
         </template>
+        <template v-slot:item.start="{ item }">
+          <div class="text-end">
+            {{ formatCurrency(start_value(item.ref_id)) }}
+          </div>
+        </template>
 
         <template v-slot:item.transaction_date="{ item }">
-          {{ dayjs(item.transaction_date).format("DD/MM/YYYY ") }}
+         {{ (StardDate(item.ref_id)) }}
         </template>
 
         <template v-slot:item.Record_Status="{ item }">
