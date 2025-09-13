@@ -623,7 +623,7 @@ const getAuthStatusColor = (authStatusCode: string) => {
 const StatusData = [
   { title: "ທັງໝົດ", value: null },
   { title: "ອານຸມັດແລ້ວ", value: "A" },
-  { title: "ອານຸມັດແລ້ວ", value: "U" },
+  { title: "ຍັງບໍ່ອານຸມັດ", value: "U" },
   
 ];
 </script>

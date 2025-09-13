@@ -7,72 +7,29 @@ const employee = useEmployeeStore();
 const form = ref();
 const rout = useRoute();
 const type = rout.query.type as string;
-const mapData = async () => {
-  if (type === "expired") {
-    const data = masterType.respons_data_gda;
-    if (Array.isArray(data)) {
-      return data;
-    }
-    if (data && typeof data === "object") {
-      return [data];
-    }
-    return [];
-  }
-  if (type === "not_expired") { // ແກ້ການສະກົດ
-    const data = masterType.respons_data_lda;
-    if (Array.isArray(data)) {
-      return data;
-    }
-    if (data && typeof data === "object") {
-      return [data];
-    }
-    return [];
-  }
-  return []; 
-};
 
-const displayData = computed(() => {
-  if (type === "expired") {
-    const data = masterType.respons_data_gda;
-    if (Array.isArray(data)) {
-      return data;
-    }
-    if (data && typeof data === "object") {
-      return [data];
-    }
-    return [];
+const gdaData = computed(() => {
+  const data = masterType.respons_data_gda;
+  if (Array.isArray(data)) {
+    return data;
   }
-  if (type === "not_expired") {
-    const data = masterType.respons_data_lda;
-    if (Array.isArray(data)) {
-      return data;
-    }
-    if (data && typeof data === "object") {
-      return [data];
-    }
-    return [];
+  if (data && typeof data === "object") {
+    return [data];
   }
   return [];
 });
-// const gdlData = computed(()=>{
-//   const data = masterType.respons_data_lda;
-//   if(Array.isArray(data)){
-//     return data
-//   }
-//   if(data && typeof data === "object") {
-//     return [data]
-//   }
-//   return []
-// });
-// const gdaData = computed(()=>{
-//   const data=  masterType.respons_data_gda;
-//   if(Array.isArray(data)){
-//     return data
-//   }if(data && typeof data === "object"){
-//     return [data]
-//   }
-//   return []
-// })
+
+const gdlData = computed(() => {
+  const data = masterType.respons_data_lda;
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (data && typeof data === "object") {
+    return [data];
+  }
+  return [];
+});
+
 const formatNumber = (value: string | number) => {
   if (!value) return "";
   const num = parseFloat(value.toString().replace(/,/g, ""));
@@ -153,6 +110,53 @@ const dataList = computed(() => {
   );
 });
 
+// ເພີ່ມ computed ສຳລັບກຳນົດປະເພດຊັບສິນ
+const selectedAssetType = computed(() => {
+  if (!request.asset_list_id || !Array.isArray(dataList.value)) {
+    return null;
+  }
+
+  const selectedAsset = dataList.value.find(
+    (item) => item.asset_list_id === request.asset_list_id
+  );
+
+  return selectedAsset?.asset_id_detail?.asset_type_detail?.is_tangible || null;
+});
+
+// ເພີ່ມ computed ສຳລັບດຶງບັນຊີກຳໄລທີ່ຖືກຕ້ອງ
+const getGainAccount = computed(() => {
+  const assetType = selectedAssetType.value;
+
+  if (!assetType) return null;
+
+  if (assetType === "1") {
+    // ຊັບສິນບໍ່ມີຕົວຕົນ (Intangible)
+    return gdaData.value.find((item) => item.MC_code === "GDI");
+  } else if (assetType === "2") {
+    // ຊັບສິນມີຕົວຕົນ (Tangible)
+    return gdaData.value.find((item) => item.MC_code === "GDT");
+  }
+
+  return null;
+});
+
+// ເພີ່ມ computed ສຳລັບດຶງບັນຊີຂາດທຶນທີ່ຖືກຕ້ອງ
+const getLossAccount = computed(() => {
+  const assetType = selectedAssetType.value;
+
+  if (!assetType) return null;
+
+  if (assetType === "1") {
+    // ຊັບສິນບໍ່ມີຕົວຕົນ (Intangible)
+    return gdlData.value.find((item) => item.MC_code === "LDI");
+  } else if (assetType === "2") {
+    // ຊັບສິນມີຕົວຕົນ (Tangible)
+    return gdlData.value.find((item) => item.MC_code === "LDT");
+  }
+
+  return null;
+});
+
 const getComparisonValue = computed(() => {
   if (!request.asset_list_id || !Array.isArray(dataList.value)) {
     return 0;
@@ -203,8 +207,12 @@ const calculateGainLoss = computed(() => {
       status: "",
       label: "ກະລຸນາເລືອກຊັບສິນ ແລະ ໃສ່ລາຍຮັບຈາກການຂາຍ",
       color: "info",
+      account: null,
     };
   }
+
+  const gainAccount = getGainAccount.value;
+  const lossAccount = getLossAccount.value;
 
   if (type === "expired") {
     if (proceeds > comparisonValue) {
@@ -212,18 +220,21 @@ const calculateGainLoss = computed(() => {
         status: "DPS02",
         label: "ຊັບສົມບັດຄົງທີ່ຄົບອາຍຸ ແລະຂາຍໄດ້ກຳໄລ",
         color: "success",
+        account: gainAccount,
       };
     } else if (proceeds === comparisonValue) {
       return {
         status: "DPS01",
         label: "ຊັບສົມບັດຄົງທີ່ ຄົບອາຍຸ ແລະ ຂາຍໄດ້ເທົ່າທຶນ",
         color: "warning",
+        account: null,
       };
     } else {
       return {
         status: "DPS03",
         label: "ຊັບສົມບັດຄົງທີ່ຄົບອາຍຸ ແລະ ຂາຍຂາດທຶນ",
         color: "error",
+        account: lossAccount,
       };
     }
   } else {
@@ -232,18 +243,21 @@ const calculateGainLoss = computed(() => {
         status: "DPS06",
         label: "ສະສາງບໍ່ຄົບກຳນົດມີກຳໄລ",
         color: "success",
+        account: gainAccount,
       };
     } else if (proceeds === comparisonValue) {
       return {
         status: "DPS05",
         label: "ສະສາງບໍ່ຄົບກຳນົດເທົ່າທຶນ",
         color: "warning",
+        account: null,
       };
     } else {
       return {
         status: "DPS07",
         label: "ສະສາງບໍ່ຄົບກຳນົດຂາດທຶນ",
         color: "error",
+        account: lossAccount,
       };
     }
   }
@@ -258,8 +272,6 @@ const handleNonSaleDisposal = () => {
 
   request.disposal_proceeds = "";
 };
-
-// Handle number input formatting
 const handleDisposalCostInput = (event: any) => {
   const value = event.target.value;
   const rawValue = parseNumber(value);
@@ -301,6 +313,7 @@ watch(
   { immediate: true }
 );
 
+// ປັບປຸງ handelSubmit function
 const handelSubmit = async () => {
   try {
     const isValid = form.value.validate();
@@ -313,6 +326,7 @@ const handelSubmit = async () => {
         confirmButtonText: "ຕົກລົງ",
         cancelButtonText: "ຍົກເລີກ",
       });
+
       if (notification.isConfirmed) {
         const selecAcount = dpsData.value.find(
           (item) => item.MC_code === request.gain_loss
@@ -325,6 +339,22 @@ const handelSubmit = async () => {
             dispalsoStore.from_create_disposal.dps_account
           );
         }
+
+        
+        const calculationResult = calculateGainLoss.value;
+        if (calculationResult.account ) {
+          dispalsoStore.from_create_disposal.gain_loss_account  =
+            calculationResult.account.MC_detail;
+          console.log(
+            "Gain/Loss Account:",
+            calculationResult.account.MC_detail
+          );
+          console.log(
+            "Asset Type:",
+            selectedAssetType.value === "1" ? "Intangible" : "Tangible"
+          );
+        }
+
         const selectedAsset = dataList.value.find(
           (item) => item.asset_list_id === request.asset_list_id
         );
@@ -359,10 +389,13 @@ watch(
   },
   { immediate: true }
 );
-const nameAsset = (nameAsset:any)=>{
-  if(!nameAsset || !nameAsset.asset_spec|| !nameAsset.asset_spec) return "ທັງໝົດ";
-  return `${nameAsset.asset_spec}(${nameAsset.asset_list_id})`
-}
+
+const nameAsset = (nameAsset: any) => {
+  if (!nameAsset || !nameAsset.asset_spec || !nameAsset.asset_spec)
+    return "ທັງໝົດ";
+  return `${nameAsset.asset_spec}(${nameAsset.asset_list_id})`;
+};
+
 onMounted(() => {
   masterType.getDT();
   faasetStore.GetFaAssetList();
@@ -377,12 +410,15 @@ onMounted(() => {
 <template>
   <div class="pa-4">
     <GlobalTextTitleLine :title="title" />
-    <!-- <pre>{{ gdaData }}</pre>
-    <pre>{{ gdlData }}</pre> -->
-    <pre>{{ displayData }}</pre>
+<pre>
+  {{ gdaData }}
+</pre>
+<pre>
+  {{ gdlData }}
+</pre>
     <v-form ref="form" @submit.prevent="handelSubmit">
       <v-row>
-        <v-col cols="12">
+         <v-col cols="12">
           <div class="d-flex justify-end aling-end">
             <p>
               ສະຖານະ:
@@ -393,9 +429,52 @@ onMounted(() => {
                 ຄົບກຳນົດການໃຊ້ງານ</v-chip
               >
             </p>
-            <p> ປະເພດ: {{  }}</p>
           </div>
         </v-col>
+<!--
+        <v-col cols="12" v-if="request.asset_list_id">
+          <v-card variant="outlined" class="mb-4">
+            <v-card-text>
+              <div class="d-flex justify-space-between align-center">
+                <div>
+                  <h6 class="text-h6 mb-2">ຂໍ້ມູນຊັບສິນທີ່ເລືອກ</h6>
+                  <p class="text-caption mb-1">
+                    ປະເພດຊັບສິນ:
+                    <v-chip
+                      :color="selectedAssetType === '1' ? 'blue' : 'green'"
+                      size="small"
+                      variant="outlined"
+                    >
+                      {{
+                        selectedAssetType === "1"
+                          ? "ບໍ່ມີຕົວຕົນ (Intangible)"
+                          : "ມີຕົວຕົນ (Tangible)"
+                      }}
+                    </v-chip>
+                  </p>
+                  <p class="text-caption mb-1">
+                    ບັນຊີກຳໄລ:
+                    <span class="font-weight-bold text-success">
+                      {{ getGainAccount?.MC_detail || "N/A" }}
+                    </span>
+                    <span class="text-grey">
+                      ({{ getGainAccount?.MC_name_la }})
+                    </span>
+                  </p>
+                  <p class="text-caption">
+                    ບັນຊີຂາດທຶນ:
+                    <span class="font-weight-bold text-error">
+                      {{ getLossAccount?.MC_detail || "N/A" }}
+                    </span>
+                    <span class="text-grey">
+                      ({{ getLossAccount?.MC_name_la }})
+                    </span>
+                  </p>
+                </div>
+              </div>
+            </v-card-text>
+          </v-card>
+        </v-col> -->
 
         <v-col cols="12" md="3">
           <v-autocomplete
@@ -597,6 +676,7 @@ onMounted(() => {
             </v-card>
           </div>
 
+          <!-- ປັບປຸງສ່ວນ alert ເພື່ອສະແດງບັນຊີທີ່ຈະໃຊ້ -->
           <v-alert
             v-if="
               request.asset_list_id &&
@@ -611,6 +691,14 @@ onMounted(() => {
             <div class="text-caption">
               <strong>ສະຖານະການຄິດໄລ່:</strong><br />
               {{ calculateGainLoss.label }}
+              <br />
+              <span v-if="calculateGainLoss.account" class="font-weight-bold">
+                ບັນຊີທີ່ໃຊ້: {{ calculateGainLoss.account.MC_detail }}
+                <br />
+                <span class="text-grey">{{
+                  calculateGainLoss.account.MC_name_la
+                }}</span>
+              </span>
             </div>
           </v-alert>
         </v-col>

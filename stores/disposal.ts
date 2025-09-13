@@ -32,6 +32,7 @@ export const useDispoalStore = defineStore("disposal", {
         disposal_ac_date: null,
         disposal_ac_datetime: null,
         disposal_ac_by: null,
+        gain_loss_account:""
       },
     };
   },
