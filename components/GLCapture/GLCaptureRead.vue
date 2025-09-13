@@ -40,6 +40,8 @@
       </div>
     </div>
 
+
+
     <!-- Permission Access Check -->
     <div v-if="!canView" class="permission-denied-state">
       <v-card class="text-center py-12" elevation="1">
@@ -98,8 +100,17 @@
                 hide-details :loading="loadingAuthStatus"></v-select>
             </v-col>
             <v-col cols="12" md="2">
-              <v-text-field v-model="filters.date" label="ວັນທີເລີ່ມ" type="date" variant="outlined" density="compact"
-                @update:model-value="handleFilterChange" hide-details></v-text-field>
+              <v-text-field 
+                v-model="filters.date" 
+                label="ວັນທີເລີ່ມ" 
+                type="date" 
+                variant="outlined" 
+                density="compact"
+                @update:model-value="handleFilterChange" 
+                hide-details
+                :hint="getDateHint()"
+                persistent-hint
+              ></v-text-field>
             </v-col>
             <v-col cols="12" md="1">
               <v-btn color="primary" variant="flat" @click="loadData" :loading="loading" block size="small">
@@ -362,12 +373,13 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from '@/helpers/axios'
 import Swal from 'sweetalert2'
 import { debounce } from 'lodash'
 import { useRolePermissions } from '@/composables/useRolePermissions'
+import { useJournalPermission, formatEodDate } from '@/composables/useJournalPermission'
 
 // Router
 const route = useRoute()
@@ -392,6 +404,12 @@ const {
   permissions
 } = useRolePermissions()
 
+// Journal Permission - Initialize composable
+const journalPermission = useJournalPermission({
+  autoRedirect: false, // We'll handle redirect manually if needed
+  redirectPath: '/glcapture/permission-denied'
+})
+
 // State
 const loading = ref(false)
 const loadingAuthStatus = ref(false)
@@ -414,15 +432,21 @@ const currentUser = computed(() => {
   }
 })
 
-const today = new Date().toISOString().slice(0, 10) // 'YYYY-MM-DD'
+// Get default date - use target date from journal permission if available, otherwise today
+const getDefaultDate = () => {
+  if (journalPermission.targetDate.value) {
+    return new Date(journalPermission.targetDate.value).toISOString().slice(0, 10)
+  }
+  return new Date().toISOString().slice(0, 10)
+}
 
-// Filters
+// Filters - initialize with computed default date
 const filters = reactive({
   search: '',
   module_id: null,
   Ccy_cd: null,
   Auth_Status: 'U', // Default to pending approval
-  date: today,
+  date: getDefaultDate(),
 })
 
 // Summary
@@ -433,6 +457,35 @@ const summary = reactive({
   rejected: 0,
   correction: 0
 })
+
+// Watch for target date changes and update filter date accordingly
+watch(
+  () => journalPermission.targetDate.value,
+  (newTargetDate) => {
+    if (newTargetDate) {
+      const formattedDate = new Date(newTargetDate).toISOString().slice(0, 10)
+      console.log('Target date updated, setting filter date to:', formattedDate)
+      filters.date = formattedDate
+      // Optionally reload data when target date changes
+      if (canView.value) {
+        handleFilterChange()
+      }
+    }
+  },
+  { immediate: true }
+)
+
+// Method to get date hint text
+const getDateHint = () => {
+  if (journalPermission.targetDate.value) {
+    if (journalPermission.isBackDate.value) {
+      return `ວັນທີຍ້ອນຫຼັງ: ${formatEodDate(journalPermission.targetDate.value)}`
+    } else {
+        return `ວັນທີເປົ້າໝາຍ: ${formatEodDate(journalPermission.targetDate.value)}`
+      }
+  }
+  return 'ວັນທີປັດຈຸບັນ'
+}
 
 // Table headers
 const headers = [
@@ -655,6 +708,7 @@ const getModuleName = (moduleId) => {
   const module = modules.value.find(m => m.module_Id === moduleId)
   return module ? module.module_name_la : moduleId
 }
+
 // FIXED: Load filtered data for table (ARD already excluded by backend)
 const loadData = async () => {
   try {
@@ -747,13 +801,13 @@ const handleFilterChange = () => {
   loadData()
 }
 
-// Method to clear all filters
+// Method to clear all filters with updated default date logic
 const clearAllFilters = () => {
   filters.search = ''
   filters.module_id = null
   filters.Ccy_cd = null
   filters.Auth_Status = 'U' // Reset to default
-  filters.date = today
+  filters.date = getDefaultDate() // Use updated default date function
   loadData()
 }
 
@@ -850,6 +904,9 @@ onMounted(async () => {
   await initializeRole()
   roleStore.GetRoleDetail()
 
+  // Initialize journal permission check
+  await journalPermission.checkPermission()
+
   // Debug permissions
   console.log('Permissions initialized:', {
     canAdd: canAdd.value,
@@ -858,6 +915,13 @@ onMounted(async () => {
     canDelete: canDelete.value,
     canAuthorize: canAuthorize.value,
     permissions: permissions.value
+  })
+
+  console.log('Journal permission status:', {
+    isAvailable: journalPermission.isAvailable.value,
+    targetDate: journalPermission.targetDate.value,
+    isBackDate: journalPermission.isBackDate.value,
+    reason: journalPermission.permissionReason.value
   })
 
   // Load reference data concurrently
@@ -869,6 +933,7 @@ onMounted(async () => {
 
   // Set default filter to 'U' (pending approval) - already set in reactive definition
   console.log('Default filter set to:', filters.Auth_Status)
+  console.log('Default date filter set to:', filters.date)
 
   // Load main data (only if user has view permission)
   if (canView.value) {
