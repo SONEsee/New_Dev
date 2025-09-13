@@ -7,7 +7,72 @@ const employee = useEmployeeStore();
 const form = ref();
 const rout = useRoute();
 const type = rout.query.type as string;
+const mapData = async () => {
+  if (type === "expired") {
+    const data = masterType.respons_data_gda;
+    if (Array.isArray(data)) {
+      return data;
+    }
+    if (data && typeof data === "object") {
+      return [data];
+    }
+    return [];
+  }
+  if (type === "not_expired") { // ແກ້ການສະກົດ
+    const data = masterType.respons_data_lda;
+    if (Array.isArray(data)) {
+      return data;
+    }
+    if (data && typeof data === "object") {
+      return [data];
+    }
+    return [];
+  }
+  return []; 
+};
 
+const displayData = computed(() => {
+  if (type === "expired") {
+    const data = masterType.respons_data_gda;
+    if (Array.isArray(data)) {
+      return data;
+    }
+    if (data && typeof data === "object") {
+      return [data];
+    }
+    return [];
+  }
+  if (type === "not_expired") {
+    const data = masterType.respons_data_lda;
+    if (Array.isArray(data)) {
+      return data;
+    }
+    if (data && typeof data === "object") {
+      return [data];
+    }
+    return [];
+  }
+  return [];
+});
+// const gdlData = computed(()=>{
+//   const data = masterType.respons_data_lda;
+//   if(Array.isArray(data)){
+//     return data
+//   }
+//   if(data && typeof data === "object") {
+//     return [data]
+//   }
+//   return []
+// });
+// const gdaData = computed(()=>{
+//   const data=  masterType.respons_data_gda;
+//   if(Array.isArray(data)){
+//     return data
+//   }if(data && typeof data === "object"){
+//     return [data]
+//   }
+//   return []
+// })
 const formatNumber = (value: string | number) => {
   if (!value) return "";
   const num = parseFloat(value.toString().replace(/,/g, ""));
@@ -294,20 +359,27 @@ watch(
   },
   { immediate: true }
 );
-
+const nameAsset = (nameAsset:any)=>{
+  if(!nameAsset || !nameAsset.asset_spec|| !nameAsset.asset_spec) return "ທັງໝົດ";
+  return `${nameAsset.asset_spec}(${nameAsset.asset_list_id})`
+}
 onMounted(() => {
   masterType.getDT();
   faasetStore.GetFaAssetList();
   employee.GetEmployee();
   masterType.getEP();
   masterType.getDPS();
+  masterType.getLDA();
+  masterType.getGDA();
 });
 </script>
 
 <template>
   <div class="pa-4">
     <GlobalTextTitleLine :title="title" />
-    <pre>{{ dpsData }}</pre>
+    <!-- <pre>{{ gdaData }}</pre>
+    <pre>{{ gdlData }}</pre> -->
+    <pre>{{ displayData }}</pre>
     <v-form ref="form" @submit.prevent="handelSubmit">
       <v-row>
         <v-col cols="12">
@@ -321,6 +393,7 @@ onMounted(() => {
                 ຄົບກຳນົດການໃຊ້ງານ</v-chip
               >
             </p>
+            <p> ປະເພດ: {{  }}</p>
           </div>
         </v-col>
 
@@ -330,7 +403,7 @@ onMounted(() => {
             v-model="request.asset_list_id"
             label="ລາຍການຊັບສີນ"
             :items="dataList"
-            item-title="asset_spec"
+            :item-title="nameAsset"
             item-value="asset_list_id"
             variant="outlined"
             density="compact"
