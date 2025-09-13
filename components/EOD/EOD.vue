@@ -163,9 +163,9 @@
               </template>
               <div class="mt-2">
                 <p>{{ isBackDateMode ? `ສາມາດປະມວນຜົນ EOD ສຳລັບວັນທີ ${targetDate} ໄດ້` : 'ທຸກສິ່ງທຸກຢ່າງພ້ອມແລ້ວ ສາມາດເລີ່ມການປິດບັນຊີໄດ້' }}</p>
-                <p class="text-body-2 mt-1">
-                  ຈະປະມວນຜົນ {{ readyEODFunctionsCount }} ຟັງຊັນ EOD{{ isBackDateMode ? ` ສຳລັບວັນທີ ${targetDate}` : '' }}
-                </p>
+                  <p class="text-body-2 mt-1">
+                    ຈະປະມວນຜົນ {{ readyEOCFunctionsCount }} ຟັງຊັນ EOC{{ isBackDateMode ? ` ສຳລັບວັນທີ ${targetDate}` : '' }}
+                  </p>
               </div>
             </v-alert>
           </v-col>
@@ -719,183 +719,207 @@
 
         <!-- Function EOD -->
         <v-col cols="6">
-          <v-card 
-            elevation="6" 
-            rounded="xl" 
-            class="validation-card"
-            :color="!allEODFunctionsReady ? 'warning-lighten-5' : 'success-lighten-5'"
-          >
-            <v-card-title class="pa-6 pb-0">
-              <div class="d-flex align-center justify-space-between w-100">
-                <div class="d-flex align-center">
-                  <v-avatar 
-                    size="56" 
-                    :color="!allEODFunctionsReady ? 'warning-lighten-4' : 'success-lighten-4'" 
-                    class="mr-3 section-avatar"
-                  >
-                    <v-icon :color="!allEODFunctionsReady ? 'warning-darken-2' : 'success-darken-2'" size="28">
-                      {{ !allEODFunctionsReady ? 'mdi-function-variant' : 'mdi-check-circle' }}
-                    </v-icon>
-                  </v-avatar>
-                  <div>
-                    <h2 class="text-h5 font-weight-bold section-title">ຟັງຊັນປິດບັນຊີປະຈຳວັນ</h2>
-                    <p class="text-body-2 text-medium-emphasis">EOD Functions Status</p>
-                  </div>
-                </div>
-                <div class="d-flex align-center ga-3">
-                  <v-chip 
-                    :color="allEODFunctionsReady ? 'success' : 'warning'" 
-                    variant="flat" 
-                    size="small"
-                    :prepend-icon="allEODFunctionsReady ? 'mdi-check' : 'mdi-cog'"
-                    class="count-chip"
-                  >
-                    {{ readyEODFunctionsCount }}/{{ eodFunctionsCount }} ພ້ອມ
-                  </v-chip>
+    <v-card 
+      elevation="6" 
+      rounded="xl" 
+      class="validation-card"
+      :color="!allEOCFunctionsReady ? 'warning-lighten-5' : 'success-lighten-5'"
+    >
+      <v-card-title class="pa-6 pb-0">
+        <div class="d-flex align-center justify-space-between w-100">
+          <div class="d-flex align-center">
+            <v-avatar 
+              size="56" 
+              :color="!allEOCFunctionsReady ? 'warning-lighten-4' : 'success-lighten-4'" 
+              class="mr-3 section-avatar"
+            >
+              <v-icon :color="!allEOCFunctionsReady ? 'warning-darken-2' : 'success-darken-2'" size="28">
+                {{ !allEOCFunctionsReady ? 'mdi-function-variant' : 'mdi-check-circle' }}
+              </v-icon>
+            </v-avatar>
+            <div>
+              <h2 class="text-h5 font-weight-bold section-title">ຟັງຊັນປິດບັນຊີ EOC</h2>
+              <p class="text-body-2 text-medium-emphasis">EOC Functions (EOD/EOM/EOY)</p>
+            </div>
+          </div>
+          <div class="d-flex align-center ga-3">
+            <v-chip 
+              :color="allEOCFunctionsReady ? 'success' : 'warning'" 
+              variant="flat" 
+              size="small"
+              :prepend-icon="allEOCFunctionsReady ? 'mdi-check' : 'mdi-cog'"
+              class="count-chip"
+            >
+              {{ readyEOCFunctionsCount }}/{{ eocFunctionsCount }} ພ້ອມ
+            </v-chip>
+            <v-btn
+              color="primary"
+              variant="outlined"
+              size="small"
+              @click="refreshEODFunctions"
+              prepend-icon="mdi-refresh"
+              rounded="lg"
+              class="refresh-btn"
+              :loading="loadingEODFunctions"
+            >
+              ອັບເດດ
+            </v-btn>
+            <v-btn
+              :color="showEODFunctionDetails ? 'primary' : 'grey'"
+              :variant="showEODFunctionDetails ? 'flat' : 'outlined'"
+              size="small"
+              @click="toggleEODFunctionDetails"
+              :prepend-icon="showEODFunctionDetails ? 'mdi-eye-off' : 'mdi-eye'"
+              rounded="lg"
+              class="toggle-button"
+            >
+              {{ showEODFunctionDetails ? 'ເຊື່ອງ' : 'ເບິ່ງ' }}
+            </v-btn>
+          </div>
+        </div>
+      </v-card-title>
+      
+      <v-card-text class="pa-6">
+        <v-expand-transition>
+          <div v-show="showEODFunctionDetails">
+            <v-data-table
+              :headers="eocFunctionHeaders"
+              :items="eocFunctionsFiltered"
+              class="elevation-2 rounded-lg data-table"
+              hide-default-footer
+              :loading="loadingEODFunctions"
+              no-data-text="ບໍ່ມີຟັງຊັນ EOC"
+              item-value="eoc_id"
+            >
+              <template v-slot:loading>
+                <v-skeleton-loader type="table-row@3" />
+              </template>
+              <template v-slot:item.eoc_seq_no="{ item }">
+                <v-chip 
+                  color="info" 
+                  variant="flat" 
+                  size="small"
+                  class="sequence-chip"
+                >
+                  {{ item.eoc_seq_no }}
+                </v-chip>
+              </template>
+              <template v-slot:item.eoc_type="{ item }">
+                <v-chip
+                  :color="getEOCTypeColor(item.eoc_type)"
+                  :prepend-icon="getEOCTypeIcon(item.eoc_type)"
+                  variant="flat"
+                  size="small"
+                  class="status-chip"
+                >
+                  {{ item.eoc_type }}
+                </v-chip>
+              </template>
+              <template v-slot:item.Record_Status="{ item }">
+                <v-chip
+                  :color="getEODFunctionStatusColor(item.Record_Status)"
+                  :prepend-icon="getEODFunctionStatusIcon(item.Record_Status)"
+                  variant="flat"
+                  size="small"
+                  class="status-chip"
+                >
+                  {{ getEODFunctionStatusText(item.Record_Status) }}
+                </v-chip>
+              </template>
+              <template v-slot:item.Auth_Status="{ item }">
+                <v-chip
+                  :color="getJournalStatusColor(item.Auth_Status)"
+                  :prepend-icon="getJournalStatusIcon(item.Auth_Status)"
+                  variant="flat"
+                  size="small"
+                  class="status-chip"
+                >
+                  {{ getJournalStatusText(item.Auth_Status) }}
+                </v-chip>
+              </template>
+              <template v-slot:item.execution_status="{ item }">
+                <v-chip
+                  :color="getExecutionStatusColor(item)"
+                  :prepend-icon="getExecutionStatusIcon(item)"
+                  variant="flat"
+                  size="small"
+                  class="status-chip"
+                >
+                  {{ getExecutionStatusText(item) }}
+                </v-chip>
+              </template>
+              <!-- <template v-slot:item.Maker_DT_Stamp="{ item }">
+                <span class="time-text">{{ formatDateTime(item.Maker_DT_Stamp) }}</span>
+              </template> -->
+              <template v-slot:item.actions="{ item }">
+                <div class="d-flex ga-1">
                   <v-btn
-                    color="primary"
-                    variant="outlined"
+                    v-if="canExecuteFunction(item)"
+                    color="success"
+                    variant="text"
                     size="small"
-                    @click="refreshEODFunctions"
-                    prepend-icon="mdi-refresh"
-                    rounded="lg"
-                    class="refresh-btn"
-                    :loading="loadingEODFunctions"
-                  >
-                    ອັບເດດ
-                  </v-btn>
+                    icon="mdi-play"
+                    @click="executeEODFunction(item)"
+                    title="ດຳເນີນການ"
+                    class="action-button"
+                    :loading="item.executing"
+                  ></v-btn>
                   <v-btn
-                    :color="showEODFunctionDetails ? 'primary' : 'grey'"
-                    :variant="showEODFunctionDetails ? 'flat' : 'outlined'"
+                    v-if="canToggleFunction(item)"
+                    :color="item.Record_Status === 'O' ? 'warning' : 'success'"
+                    variant="text"
                     size="small"
-                    @click="toggleEODFunctionDetails"
-                    :prepend-icon="showEODFunctionDetails ? 'mdi-eye-off' : 'mdi-eye'"
-                    rounded="lg"
-                    class="toggle-button"
-                  >
-                    {{ showEODFunctionDetails ? 'ເຊື່ອງ' : 'ເບິ່ງ' }}
-                  </v-btn>
+                    :icon="item.Record_Status === 'O' ? 'mdi-pause' : 'mdi-play-circle'"
+                    @click="toggleEODFunction(item)"
+                    :title="item.Record_Status === 'O' ? 'ປິດຟັງຊັນ' : 'ເປີດຟັງຊັນ'"
+                    class="action-button"
+                  ></v-btn>
+                  <v-btn
+                    color="info"
+                    variant="text"
+                    size="small"
+                    icon="mdi-eye"
+                    @click="viewEODFunctionDetails(item)"
+                    title="ເບິ່ງລາຍລະອຽດ"
+                    class="action-button"
+                  ></v-btn>
                 </div>
+              </template>
+            </v-data-table>
+          </div>
+        </v-expand-transition>
+        <v-expand-transition>
+          <div v-show="!showEODFunctionDetails" class="text-center py-4">
+            <v-icon :color="allEOCFunctionsReady ? 'success' : 'warning'" size="48" class="mb-2">
+              {{ allEOCFunctionsReady ? 'mdi-check-circle' : 'mdi-cog' }}
+            </v-icon>
+            <p class="text-h6 font-weight-medium">
+              {{ readyEOCFunctionsCount }}/{{ eocFunctionsCount }} ຟັງຊັນພ້ອມປະມວນຜົນ
+            </p>
+            <div v-if="!allEOCFunctionsReady" class="text-body-2 text-grey mt-1">
+              <p>ພ້ອມປະມວນຜົນ: {{ readyEOCFunctionsCount }}</p>
+              <p>ປິດ: {{ closedEOCFunctionsCount }}</p>
+              <p>ຍັງບໍ່ອະນຸມັດ: {{ unauthorizedEOCFunctionsCount }}</p>
+            </div>
+            <div v-if="eocTypeBreakdown.length > 0" class="mt-2">
+              <div class="d-flex justify-center ga-2">
+                <v-chip
+                  v-for="type in eocTypeBreakdown"
+                  :key="type.type"
+                  :color="getEOCTypeColor(type.type)"
+                  variant="flat"
+                  size="small"
+                >
+                  {{ type.type }}: {{ type.count }}
+                </v-chip>
               </div>
-            </v-card-title>
-            
-            <v-card-text class="pa-6">
-              <v-expand-transition>
-                <div v-show="showEODFunctionDetails">
-                  <v-data-table
-                    :headers="eodFunctionHeaders"
-                    :items="eodFunctionsFiltered"
-                    class="elevation-2 rounded-lg data-table"
-                    hide-default-footer
-                    :loading="loadingEODFunctions"
-                    no-data-text="ບໍ່ມີຟັງຊັນ EOD"
-                    item-value="eoc_id"
-                  >
-                    <template v-slot:loading>
-                      <v-skeleton-loader type="table-row@3" />
-                    </template>
-                    <template v-slot:item.eoc_seq_no="{ item }">
-                      <v-chip 
-                        color="info" 
-                        variant="flat" 
-                        size="small"
-                        class="sequence-chip"
-                      >
-                        {{ item.eoc_seq_no }}
-                      </v-chip>
-                    </template>
-                    <template v-slot:item.Record_Status="{ item }">
-                      <v-chip
-                        :color="getEODFunctionStatusColor(item.Record_Status)"
-                        :prepend-icon="getEODFunctionStatusIcon(item.Record_Status)"
-                        variant="flat"
-                        size="small"
-                        class="status-chip"
-                      >
-                        {{ getEODFunctionStatusText(item.Record_Status) }}
-                      </v-chip>
-                    </template>
-                    <template v-slot:item.Auth_Status="{ item }">
-                      <v-chip
-                        :color="getJournalStatusColor(item.Auth_Status)"
-                        :prepend-icon="getJournalStatusIcon(item.Auth_Status)"
-                        variant="flat"
-                        size="small"
-                        class="status-chip"
-                      >
-                        {{ getJournalStatusText(item.Auth_Status) }}
-                      </v-chip>
-                    </template>
-                    <template v-slot:item.execution_status="{ item }">
-                      <v-chip
-                        :color="getExecutionStatusColor(item)"
-                        :prepend-icon="getExecutionStatusIcon(item)"
-                        variant="flat"
-                        size="small"
-                        class="status-chip"
-                      >
-                        {{ getExecutionStatusText(item) }}
-                      </v-chip>
-                    </template>
-                    <template v-slot:item.Maker_DT_Stamp="{ item }">
-                      <span class="time-text">{{ formatDateTime(item.Maker_DT_Stamp) }}</span>
-                    </template>
-                    <template v-slot:item.actions="{ item }">
-                      <div class="d-flex ga-1">
-                        <v-btn
-                          v-if="canExecuteFunction(item)"
-                          color="success"
-                          variant="text"
-                          size="small"
-                          icon="mdi-play"
-                          @click="executeEODFunction(item)"
-                          title="ດຳເນີນການ"
-                          class="action-button"
-                          :loading="item.executing"
-                        ></v-btn>
-                        <v-btn
-                          v-if="canToggleFunction(item)"
-                          :color="item.Record_Status === 'O' ? 'warning' : 'success'"
-                          variant="text"
-                          size="small"
-                          :icon="item.Record_Status === 'O' ? 'mdi-pause' : 'mdi-play-circle'"
-                          @click="toggleEODFunction(item)"
-                          :title="item.Record_Status === 'O' ? 'ປິດຟັງຊັນ' : 'ເປີດຟັງຊັນ'"
-                          class="action-button"
-                        ></v-btn>
-                        <v-btn
-                          color="info"
-                          variant="text"
-                          size="small"
-                          icon="mdi-eye"
-                          @click="viewEODFunctionDetails(item)"
-                          title="ເບິ່ງລາຍລະອຽດ"
-                          class="action-button"
-                        ></v-btn>
-                      </div>
-                    </template>
-                  </v-data-table>
-                </div>
-              </v-expand-transition>
-              <v-expand-transition>
-                <div v-show="!showEODFunctionDetails" class="text-center py-4">
-                  <v-icon :color="allEODFunctionsReady ? 'success' : 'warning'" size="48" class="mb-2">
-                    {{ allEODFunctionsReady ? 'mdi-check-circle' : 'mdi-cog' }}
-                  </v-icon>
-                  <p class="text-h6 font-weight-medium">
-                    {{ readyEODFunctionsCount }}/{{ eodFunctionsCount }} ຟັງຊັນພ້ອມປະມວນຜົນ
-                  </p>
-                  <div v-if="!allEODFunctionsReady" class="text-body-2 text-grey mt-1">
-                    <p>ພ້ອມປະມວນຜົນ: {{ readyEODFunctionsCount }}</p>
-                    <p>ປິດ: {{ closedEODFunctionsCount }}</p>
-                    <p>ຍັງບໍ່ອະນຸມັດ: {{ unauthorizedEODFunctionsCount }}</p>
-                  </div>
-                </div>
-              </v-expand-transition>
-            </v-card-text>
-          </v-card>
-        </v-col>
-      </v-row>
+            </div>
+          </div>
+        </v-expand-transition>
+      </v-card-text>
+    </v-card>
+  </v-col>
+</v-row>
 <!-- Missing EOD Dates Alert -->
 <v-expand-transition>
   <v-row v-if="missingEODDates.length > 0" class="mb-4">
@@ -1309,12 +1333,13 @@ const activeUserHeaders = [
   { title: 'ການດຳເນີນການ', key: 'actions', width: '100px', sortable: false }
 ]
 
-const eodFunctionHeaders = [
+const eocFunctionHeaders = [
   { title: 'ລຳດັບ', key: 'eoc_seq_no', width: '40px' },
   { title: 'ຊື່ຟັງຊັນ', key: 'function_name', width:'120px' },
+  { title: 'ປະເພດ', key: 'eoc_type', width: '80px' }, // Add EOC Type column
   { title: 'ສະຖານະບັນທຶກ', key: 'Record_Status', width: '120px' },
   { title: 'ສະຖານະອະນຸມັດ', key: 'Auth_Status', width: '120px' },
-  { title: 'ວັນທີບັນທຶກ', key: 'Maker_DT_Stamp', width: '150px' },
+  // { title: 'ວັນທີບັນທຶກ', key: 'Maker_DT_Stamp', width: '150px' },
   { title: 'ການດຳເນີນການ', key: 'actions', width: '150px', sortable: false }
 ]
 
@@ -1323,36 +1348,57 @@ const backValueEnabled = ref(false)
 
 
 // Computed properties for EOD Functions
-const eodFunctionsFiltered = computed(() => {
+const eocFunctionsFiltered = computed(() => {
   // Ensure eodFunctions.value is an array before calling filter
   if (!Array.isArray(eodFunctions.value)) {
     console.warn('eodFunctions.value is not an array:', eodFunctions.value)
     return []
   }
-  return eodFunctions.value.filter(func => func.eoc_type === 'EOD')
+  // Filter to include EOD, EOM, and EOY types
+  return eodFunctions.value.filter(func => 
+    func.eoc_type === 'EOD' || func.eoc_type === 'EOM' || func.eoc_type === 'EOY'
+  )
 })
 
-const eodFunctionsCount = computed(() => {
-  return eodFunctionsFiltered.value.length
+const eocFunctionsCount = computed(() => {
+  return eocFunctionsFiltered.value.length
 })
 
-const readyEODFunctionsCount = computed(() => {
-  return eodFunctionsFiltered.value.filter(func => 
+const readyEOCFunctionsCount = computed(() => {
+  return eocFunctionsFiltered.value.filter(func => 
     func.Record_Status === 'O' && func.Auth_Status === 'A'
   ).length
 })
 
-const closedEODFunctionsCount = computed(() => {
-  return eodFunctionsFiltered.value.filter(func => func.Record_Status === 'C').length
+const closedEOCFunctionsCount = computed(() => {
+  return eocFunctionsFiltered.value.filter(func => func.Record_Status === 'C').length
 })
 
-const unauthorizedEODFunctionsCount = computed(() => {
-  return eodFunctionsFiltered.value.filter(func => func.Auth_Status === 'U').length
+const unauthorizedEOCFunctionsCount = computed(() => {
+  return eocFunctionsFiltered.value.filter(func => func.Auth_Status === 'U').length
 })
 
-const allEODFunctionsReady = computed(() => {
-  if (eodFunctionsCount.value === 0) return true
-  return readyEODFunctionsCount.value === eodFunctionsCount.value
+const allEOCFunctionsReady = computed(() => {
+  if (eocFunctionsCount.value === 0) return true
+  return readyEOCFunctionsCount.value === eocFunctionsCount.value
+})
+
+const eocTypeBreakdown = computed(() => {
+  if (!Array.isArray(eocFunctionsFiltered.value)) return []
+  
+  const breakdown = {}
+  eocFunctionsFiltered.value.forEach(func => {
+    if (breakdown[func.eoc_type]) {
+      breakdown[func.eoc_type]++
+    } else {
+      breakdown[func.eoc_type] = 1
+    }
+  })
+  
+  return Object.keys(breakdown).map(type => ({
+    type,
+    count: breakdown[type]
+  })).sort((a, b) => a.type.localeCompare(b.type))
 })
 
 // Main computed properties
@@ -1367,12 +1413,11 @@ const canStartEOD = computed((): boolean => {
     ? false // Allow back-date EOD with other users (special permission)
     : activeUsers.value.some(session => session.user_id !== currentUser.value)
   
-  // EOD can start even if not all functions are ready - we'll execute only the ready ones
-  const hasReadyEODFunctions = readyEODFunctionsCount.value > 0
+  // EOC can start even if not all functions are ready - we'll execute only the ready ones
+  const hasReadyEOCFunctions = readyEOCFunctionsCount.value > 0
   
-  return (isWorkingDay.value || isBackDateMode.value) && !hasPendingJournals && !hasOtherActiveUsers && hasReadyEODFunctions
+  return (isWorkingDay.value || isBackDateMode.value) && !hasPendingJournals && !hasOtherActiveUsers && hasReadyEOCFunctions
 })
-
 const pendingIssues = computed(() => {
   const issues = []
   if (!isWorkingDay.value && !isBackDateMode.value) {
@@ -1391,11 +1436,37 @@ const pendingIssues = computed(() => {
     issues.push(`ມີຜູ້ໃຊ້ອື່ນທີ່ຍັງເຂົ້າໃຊ້ລະບົບຢູ່ (${otherActiveUsersCount} ຄົນ)`)
   }
   
-  if (readyEODFunctionsCount.value === 0) {
-    issues.push('ບໍ່ມີຟັງຊັນ EOD ທີ່ພ້ອມປະມວນຜົນ')
+  if (readyEOCFunctionsCount.value === 0) {
+    issues.push('ບໍ່ມີຟັງຊັນ EOC ທີ່ພ້ອມປະມວນຜົນ')
   }
   return issues
 })
+
+const getEOCTypeColor = (type: string): string => {
+  switch(type) {
+    case 'EOD':
+      return 'primary'
+    case 'EOM':
+      return 'secondary'
+    case 'EOY':
+      return 'accent'
+    default:
+      return 'grey'
+  }
+}
+
+const getEOCTypeIcon = (type: string): string => {
+  switch(type) {
+    case 'EOD':
+      return 'mdi-calendar-today'
+    case 'EOM':
+      return 'mdi-calendar-month'
+    case 'EOY':
+      return 'mdi-calendar-star'
+    default:
+      return 'mdi-calendar'
+  }
+}
 
 const hasPendingJournals = computed(() => {
   // Ensure pendingJournals.value is an array before calling filter
@@ -1472,11 +1543,14 @@ const totalPreviousAmount = computed(() => {
 
 // Function execution helpers
 const canExecuteFunction = (func: EODFunction): boolean => {
-  return func.Record_Status === 'O' && func.Auth_Status === 'A' && func.eoc_type === 'EOD'
+  return func.Record_Status === 'O' && 
+         func.Auth_Status === 'A' && 
+         (func.eoc_type === 'EOD' || func.eoc_type === 'EOM' || func.eoc_type === 'EOY')
 }
 
 const canToggleFunction = (func: EODFunction): boolean => {
-  return func.Auth_Status === 'A' && func.eoc_type === 'EOD'
+  return func.Auth_Status === 'A' && 
+         (func.eoc_type === 'EOD' || func.eoc_type === 'EOM' || func.eoc_type === 'EOY')
 }
 
 // API Methods
