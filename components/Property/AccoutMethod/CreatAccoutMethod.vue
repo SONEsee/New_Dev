@@ -90,7 +90,13 @@ const handleNumberBlur = (event: Event) => {
     target.value = formatNumber(numValue);
   }
 };
-
+const StardDate = (apdc_start_date: any) => {
+  if (!apdc_start_date || !Array.isArray(assetlist.value)) return "_";
+  const itemData = assetlist.value.find(
+    (item) => item.asset_list_id === apdc_start_date
+  );
+  return itemData ? itemData.dpca_start_date : "_";
+};
 const handleNumberFocus = (event: Event) => {
   const target = event.target as HTMLInputElement;
   const value = target.value;
@@ -376,6 +382,10 @@ onMounted(() => {
             @blur="handleNumberBlur"
             @focus="handleNumberFocus"
           />
+          <v-label class="mb-1">
+            ວັນທີ່ເລີ່ມຫັກ <span class="text-error">*</span>
+          </v-label>
+          <GlobalCardTitle :title="'ວັນທີ່ເລີ່ມຫັກ'" :text="StardDate(request.ref_id)" />
 
            <v-label class="mb-1" style="display: none;">
             ວັນທີເຮັດຖຸລະກຳ <span class="text-error">*</span>
