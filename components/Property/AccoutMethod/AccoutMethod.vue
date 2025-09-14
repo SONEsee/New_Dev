@@ -546,7 +546,7 @@ onMounted(async () => {
             </v-btn>
           </div>
         </v-col>
-<pre>{{ mainType }}</pre>
+<!-- <pre>{{ mainType }}</pre> -->
         <v-col cols="12" md="3" class="text-no-wrap">
           <v-autocomplete
             v-model="selectedAccType"
