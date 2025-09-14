@@ -614,10 +614,17 @@ const profileImageUrl = computed(() => {
   let imageUrl = user.profile_picture
   
   // If it's a relative URL, make it absolute
-  if (imageUrl.startsWith('/media/') || imageUrl.startsWith('media/')) {
-    const baseUrl = axios.defaults.baseURL || 'http://127.0.0.1:8000'
-    imageUrl = `${baseUrl.replace(/\/$/, '')}/${imageUrl.replace(/^\//, '')}`
-  }
+  // if (imageUrl.startsWith('/media/') || imageUrl.startsWith('media/')) {
+  //   const baseUrl = axios.defaults.baseURL || 'http://127.0.0.1:8000'
+  //   imageUrl = `${baseUrl.replace(/\/$/, '')}/${imageUrl.replace(/^\//, '')}`
+  // }
+
+  // If it's a relative URL, make it absolute
+if (imageUrl.startsWith('/media/') || imageUrl.startsWith('media/')) {
+  // Use the baseURL from helpers/axios directly
+  const baseUrl = axios.defaults.baseURL || 'http://127.0.0.1:8000'
+  imageUrl = `${baseUrl.replace(/\/$/, '')}/${imageUrl.replace(/^\//, '')}`
+}
   
   return imageUrl
 })
