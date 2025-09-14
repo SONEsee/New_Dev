@@ -411,10 +411,10 @@ export const accountMethodStore = defineStore("accountMethod", {
   },
 
   getters: {
-    accountMethodsByType: (state) => {
+    accountMethodsByType: (state:any) => {
       if (!state.response_account_method_list) return {};
 
-      return state.response_account_method_list.reduce((acc, method) => {
+      return state.response_account_method_list.reduce((acc:any, method:any) => {
         if (!acc[method.acc_type]) {
           acc[method.acc_type] = [];
         }

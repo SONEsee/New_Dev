@@ -16,12 +16,12 @@ const history = computed(() => {
 const header = [
   { title: "ລະຫັດ", value: "aldim_id" },
   { title: "ງວດທີ່ຫັກ", value: "dpca_month" },
-  { title: "ຈຳນວນລາຍການທີ່ຫັກ", value: "C_dpca" },
+  { title: "ຈຳນວນລາຍການທີ່ຫັກ", value: "C_dpca", align: "center" },
   { title: "ມູນຄ່າທີ່ຫັກ", value: "dpca_value" },
   { title: "ສະຖານະ", value: "dpca_status" },
   { title: "ມື້ຫັກ", value: "Maker_DT_Stamp" },
   { title: "ລາຍລະອຽດ", value: "actions" },
-];
+] as any;
 const responseData = computed(() => {
   return depreciationStore.respons_data_calculated;
 });
@@ -49,7 +49,7 @@ const tab = ref("monthly");
 const totaldata = computed(() => {
   const data = depreciationStore.respons_data_driscription_main;
   if (Array.isArray(data)) {
-    return data.filter((item) => item?.Auth_Status === "R"); 
+    return data.filter((item) => item?.Auth_Status === "R");
   }
   if (data && typeof data === "object") {
     return data.Auth_Status === "R" ? [data] : [];
@@ -84,7 +84,6 @@ const handleNotificationClick = () => {
 
 <template>
   <v-container fluid>
-   
     <div color="#E3F2FD" class="rounded-lg pa-4" style="border: 1px solid blue">
       <v-row v-if="isLoading">
         <v-col cols="12" class="text-center">
@@ -100,20 +99,22 @@ const handleNotificationClick = () => {
       <v-row v-else-if="responseData && responseData.data">
         <v-col cols="12">
           <v-card align-tabs="center">
-     <v-tabs 
-  align-tabs="center" 
-  v-model="tab" 
-  color="#0D47A1" 
-  bg-color="#BBDEFB"
-  selected-class="bg-primary text-white"
->
-  <v-tab value="one">
-    ຫັກຄ່າຫຼູ້ຍຫ້ຽນປະຈຳເດືອນ -
-    {{ responseData.data.target_period.month_name_la }}
-    {{ responseData.data.target_period.year }}
-  </v-tab>
-  <v-tab value="two"> <v-icon>mdi-history</v-icon>ຫັກຄ່າຫຼູ້ຍຫ້ຽນຍອ້ນຫຼັງ</v-tab>
-</v-tabs>
+            <v-tabs
+              align-tabs="center"
+              v-model="tab"
+              color="#0D47A1"
+              bg-color="#BBDEFB"
+              selected-class="bg-primary text-white"
+            >
+              <v-tab value="one">
+                ຫັກຄ່າຫຼູ້ຍຫ້ຽນປະຈຳເດືອນ -
+                {{ responseData.data.target_period.month_name_la }}
+                {{ responseData.data.target_period.year }}
+              </v-tab>
+              <v-tab value="two">
+                <v-icon>mdi-history</v-icon>ຫັກຄ່າຫຼູ້ຍຫ້ຽນຍອ້ນຫຼັງ</v-tab
+              >
+            </v-tabs>
 
             <v-card-text>
               <v-tabs-window v-model="tab">
@@ -182,7 +183,8 @@ const handleNotificationClick = () => {
                             </td>
                             <td class="pa-4">
                               <div class="text-h5 text-error font-weight-bold">
-                                {{ total(responseData.data.up_to_date_items) }} ₭
+                                {{ total(responseData.data.up_to_date_items) }}
+                                ₭
                               </div>
                               <div class="text-body-2 text-grey-600">
                                 ລາຍການທີ່ຕ້ອງຫັກ
@@ -273,12 +275,29 @@ const handleNotificationClick = () => {
                 <template v-slot:item.Maker_DT_Stamp="{ item }">
                   {{ dayjs(item.Maker_DT_Stamp).format("DD/MM/YYYY") }}
                 </template>
+                <template v-slot:item.C_dpca="{ item }">
+                  <div class="text-center">
+                    <v-chip color="info">{{ item.C_dpca }}</v-chip>
+                  </div>
+                </template>
+                <template v-slot:item.dpca_status="{ item }">
+                  <v-chip color="success" v-if="item.dpca_status === 'SUCCESS'" variant="flat" size="small">
+                    ສຳເລັດແລ້ວ
+                  </v-chip>
+                  <v-chip color="error" v-if="item.dpca_status === 'FAILED'" variant="flat" size="small">
+                    ຍັງບໍ່ສຳເລັດ
+                  </v-chip>
+                </template>
                 <template v-slot:item.dpca_value="{ item }">
                   {{ Number(item.dpca_value).toLocaleString("en-US") }}
                 </template>
                 <template v-slot:item.actions="{ item }">
                   <v-btn
-                    color="primary"
+                    prepend-icon="mdi-eye"
+                    class="border-md"
+                    color="blue-lighten-4"
+                    flat
+                    style="border-color: blue 1px solid"
                     @click="
                       goPath(
                         `/property/faassetdetription/list?deptription_id=${item.aldim_id}`
