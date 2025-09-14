@@ -28,7 +28,7 @@ export interface SubRespons {
     success:        boolean;
     message:        string;
     gl_master_info: GlMasterInfo;
-    data:           Datum[];
+    data:           Datum;
 }
 
 export interface Datum {
