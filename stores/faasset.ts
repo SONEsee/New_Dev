@@ -226,7 +226,7 @@ export const faAssetStore = defineStore("faAsset", {
             showConfirmButton: false,
           });
           setTimeout(() => {
-            // goPath("/property/realizetheproperty");
+            goPath("/property/realizetheproperty");
           }, 1500);
         }
       } catch (error: any) {
@@ -268,11 +268,11 @@ export const faAssetStore = defineStore("faAsset", {
         if (res.status === 200 || res.status === 201) {
           if (showSuccessMessage) {
             CallSwal({
-              // title: "ສຳເລັດ",
-              // text: "ສຳເລັດການສ້າງ Journal Entry",
-              // icon: "success",
-              // showCancelButton: false,
-              // showConfirmButton: false,
+              title: "ສຳເລັດ",
+              text: "ສຳເລັດການສ້າງ Journal Entry",
+              icon: "success",
+              showCancelButton: false,
+              showConfirmButton: false,
             });
           }
 
