@@ -8,6 +8,9 @@ export const useMasterStore = defineStore("master", {
       respone_data_sub:null as MasterModel.Datum | null,
       resposne_status_puamsuepuamkrsang:null as MasterModel.MasterCode | null,
       respons_data_status_nuw :null as MasterModel.MasterCode | null,
+      respons_data_lda :null as MasterModel.MasterCode | null,
+      respons_data_gda: null as MasterModel.MasterCode | null,
+      respons_data_type_of_play: null as MasterModel.MasterCode | null,
       respons_data_status_dps :null as MasterModel.MasterCode | null,
       respons_data_status_nuw1 :null as MasterModel.MasterCode | null,
       resposne_status_setting:null as MasterModel.MasterCode | null,
@@ -21,6 +24,27 @@ export const useMasterStore = defineStore("master", {
     };
   },
   actions: {
+    async getTypeOfplay(){
+      this.isloading = true;
+      try {
+        const res = await axios.get<MasterModel.MasterRespons>(`/api/master-types/tree/TOP/`,{
+          headers:{
+            "Content-Type":"application/json",
+            Authorization:`Bearer ${localStorage.getItem("access_token")}`
+          }
+        });if(res.status ===200){
+          this.respons_data_type_of_play = res.data.MasterCodes;
+        }
+      } catch (error) {
+        CallSwal({
+          icon:"error",
+          title: "ຜຶດພາດ",
+          text: "ບໍ່ສາມາດດືງຂໍມູນປະເພດການຈ່າຍໄດ້."
+        })
+      }finally{
+        this.isloading = false;
+      }
+    },
     async getModelData() {
       this.isloading = true;
       this.error = null;
@@ -122,6 +146,48 @@ export const useMasterStore = defineStore("master", {
         console.error(error);
       }
     },
+   async getGDA(){
+      this.isloading = true;
+      try {
+        const res = await axios.get<MasterModel.MasterRespons>(`api/master-types/tree/GDA/`,{
+          headers:{
+            "Content-Type":"application/json",
+            Authorization: `Bearer ${localStorage.getItem("access_token")}`
+          }
+        });if(res.status === 200){
+          this.respons_data_gda = res.data.MasterCodes;
+        }
+      } catch (error) {
+        CallSwal({
+          title: "Error",
+          text: "ການດຶງຂໍ້ມູນຜິດພາດ.",
+          icon: "error",
+        })
+      }finally{
+        this.isloading = false;
+      }
+    },
+   async getLDA(){
+      this.isloading = true;
+      try {
+        const res = await axios.get<MasterModel.MasterRespons>(`api/master-types/tree/LDA/`,{
+          headers:{
+            "Content-Type":"application/json",
+            Authorization: `Bearer ${localStorage.getItem("access_token")}`
+          }
+        });if(res.status === 200){
+          this.respons_data_lda = res.data.MasterCodes;
+        }
+      } catch (error) {
+        CallSwal({
+          title: "Error",
+          text: "ການດຶງຂໍ້ມູນຜິດພາດ.",
+          icon: "error",
+        })
+      }finally{
+        this.isloading = false;
+      }
+    },
     async getEP() {
       this.isloading = true;
       this.error = null;
@@ -182,7 +248,7 @@ export const useMasterStore = defineStore("master", {
       this.isloading = true;
       this.error = null;
       try {
-        const res = await axios.get<MasterModel.Datum>(
+        const res = await axios.get<MasterModel.SubRespons>(
           `/api/glsub-tree-all/`,
           {
             headers: {
@@ -195,7 +261,7 @@ export const useMasterStore = defineStore("master", {
           }
         );
         if (res.status === 200) {
-          this.respone_data_sub = res.data
+          this.respone_data_sub = res.data.data
           console.log("Master data fetched successfully:", this.respone_data_master);
           this.isloading = false;
         }

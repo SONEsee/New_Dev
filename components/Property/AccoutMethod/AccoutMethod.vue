@@ -24,17 +24,19 @@ const assetlist = computed(() => {
     return item.Auth_Status === "A" && item.Auth_Status_ARC === "A";
   });
 });
-const StardDate = (apdc_start_date:any)=>{
-  if(!apdc_start_date || !Array.isArray(assetlist.value)) return "_";
-  const itemData = assetlist.value.find((item)=>item.asset_list_id === apdc_start_date);
+const StardDate = (apdc_start_date: any) => {
+  if (!apdc_start_date || !Array.isArray(assetlist.value)) return "_";
+  const itemData = assetlist.value.find(
+    (item) => item.asset_list_id === apdc_start_date
+  );
   return itemData ? itemData.dpca_start_date : "_";
-}
+};
 
-const start_value = (value:any)=>{
-  if(!value || !Array.isArray(assetlist.value)) return "-";
-  const itemData = assetlist.value.find((item)=> item.asset_list_id === value);
-  return itemData ? itemData.asset_value_remainBegin : "-"
-}
+const start_value = (value: any) => {
+  if (!value || !Array.isArray(assetlist.value)) return "-";
+  const itemData = assetlist.value.find((item) => item.asset_list_id === value);
+  return itemData ? itemData.asset_value_remainBegin : "-";
+};
 const detailassetlis = computed(() => {
   const data = assetListStore.response_fa_asset_list;
   if (Array.isArray(data)) {
@@ -557,12 +559,12 @@ onMounted(async () => {
                 v-bind="props"
                 :title="`${item.raw.asset_name_la}(${item.raw.asset_code})`"
               >
-              <template v-slot:prepend>
-                <v-avatar size="small" color="primary">
-                  <v-icon>mdi-format-list-bulleted-type</v-icon>
-                </v-avatar>
-              </template>
-            </v-list-item>
+                <template v-slot:prepend>
+                  <v-avatar size="small" color="primary">
+                    <v-icon>mdi-format-list-bulleted-type</v-icon>
+                  </v-avatar>
+                </template>
+              </v-list-item>
             </template>
           </v-autocomplete>
         </v-col>
@@ -584,11 +586,11 @@ onMounted(async () => {
                 v-bind="props"
                 :title="`${item.raw.title}(${item.raw.value})`"
               >
-              <template v-slot:prepend>
-                <v-avatar size="small" color="primary">
-                  <v-icon>mdi-list-status</v-icon>
-                </v-avatar>
-              </template>
+                <template v-slot:prepend>
+                  <v-avatar size="small" color="primary">
+                    <v-icon>mdi-list-status</v-icon>
+                  </v-avatar>
+                </template>
               </v-list-item>
             </template>
           </v-autocomplete>
@@ -623,7 +625,6 @@ onMounted(async () => {
       <!-- <pre>{{  }}</pre> -->
 
       <v-data-table
-      
         :headers="headers"
         :items="filteredData || []"
         class="text-no-wrap"
@@ -752,7 +753,6 @@ onMounted(async () => {
             </div>
           </div>
         </template>
-        
 
         <template v-slot:item.amount="{ item }">
           <div class="text-end">
@@ -762,12 +762,12 @@ onMounted(async () => {
         </template>
         <template v-slot:item.start="{ item }">
           <div class="text-end">
-            {{ formatCurrency(start_value(item.ref_id)) }}
+            {{ formatCurrency(parseFloat(start_value(item.ref_id)) || 0) }}
           </div>
         </template>
 
         <template v-slot:item.transaction_date="{ item }">
-         {{ (StardDate(item.ref_id)) }}
+          {{ StardDate(item.ref_id) }}
         </template>
 
         <template v-slot:item.Record_Status="{ item }">

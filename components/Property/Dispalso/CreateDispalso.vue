@@ -1,13 +1,79 @@
 <script setup lang="ts">
+import { types } from "util";
+
 const title = "ຊຳລະສະສາງຊັບສົມບັດ";
 const dispalsoStore = useDispoalStore();
 const faasetStore = faAssetStore();
 const masterType = useMasterStore();
 const employee = useEmployeeStore();
+const selectTypeOfPlay = ref("");
 const form = ref();
 const rout = useRoute();
 const type = rout.query.type as string;
+watch(selectTypeOfPlay, async (newValue, oldValue) => {
+  if (newValue !== oldValue && oldValue !== undefined) {
+    request.account_tupe_of_play = "";
+    console.log("Cleared account selection due to payment type change");
+  }
 
+  if (newValue) {
+    masterType.isloading = true;
+    try {
+      masterType.res_pons_filter.query.gl_code = newValue;
+      await masterType.getSubData();
+    } catch (error) {
+      CallSwal({
+        icon: "error",
+        title: "ຂໍ້ຜິດພາດ",
+        text: "ບໍ່ສາມາດດຶງຂໍ້ມູນຂອງເລກບັນຊີການຈ່າຍໄດ້",
+      });
+    } finally {
+      masterType.isloading = false;
+    }
+  } else {
+    request.account_tupe_of_play = "";
+  }
+});
+const accountTypeOfplay = computed(() => {
+  const data = masterType.respone_data_sub;
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (data && typeof data === "object") {
+    return [data];
+  }
+});
+const gdaData = computed(() => {
+  const data = masterType.respons_data_gda;
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (data && typeof data === "object") {
+    return [data];
+  }
+  return [];
+});
+
+const gdlData = computed(() => {
+  const data = masterType.respons_data_lda;
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (data && typeof data === "object") {
+    return [data];
+  }
+  return [];
+});
+const TypeOfPlayData = computed(() => {
+  const data = masterType.respons_data_type_of_play;
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (data && typeof data === "object") {
+    return [data];
+  }
+  return [];
+});
 const formatNumber = (value: string | number) => {
   if (!value) return "";
   const num = parseFloat(value.toString().replace(/,/g, ""));
@@ -68,6 +134,7 @@ const typeData = computed(() => {
 });
 
 const request = dispalsoStore.from_create_disposal;
+console.log("Request Data:", request);
 
 const dataList = computed(() => {
   const data = faasetStore.response_fa_asset_list;
@@ -86,6 +153,46 @@ const dataList = computed(() => {
       item.Auth_Status_ARC === "A" ||
       item.asset.asset_status !== "DS"
   );
+});
+
+const selectedAssetType = computed(() => {
+  if (!request.asset_list_id || !Array.isArray(dataList.value)) {
+    return null;
+  }
+
+  const selectedAsset = dataList.value.find(
+    (item) => item.asset_list_id === request.asset_list_id
+  );
+
+  return selectedAsset?.asset_id_detail?.asset_type_detail?.is_tangible || null;
+});
+
+const getGainAccount = computed(() => {
+  const assetType = selectedAssetType.value;
+
+  if (!assetType) return null;
+
+  if (assetType === "1") {
+    return gdaData.value.find((item) => item.MC_code === "GDI");
+  } else if (assetType === "2") {
+    return gdaData.value.find((item) => item.MC_code === "GDT");
+  }
+
+  return null;
+});
+
+const getLossAccount = computed(() => {
+  const assetType = selectedAssetType.value;
+
+  if (!assetType) return null;
+
+  if (assetType === "1") {
+    return gdlData.value.find((item) => item.MC_code === "LDI");
+  } else if (assetType === "2") {
+    return gdlData.value.find((item) => item.MC_code === "LDT");
+  }
+
+  return null;
 });
 
 const getComparisonValue = computed(() => {
@@ -138,8 +245,12 @@ const calculateGainLoss = computed(() => {
       status: "",
       label: "ກະລຸນາເລືອກຊັບສິນ ແລະ ໃສ່ລາຍຮັບຈາກການຂາຍ",
       color: "info",
+      account: null,
     };
   }
+
+  const gainAccount = getGainAccount.value;
+  const lossAccount = getLossAccount.value;
 
   if (type === "expired") {
     if (proceeds > comparisonValue) {
@@ -147,18 +258,21 @@ const calculateGainLoss = computed(() => {
         status: "DPS02",
         label: "ຊັບສົມບັດຄົງທີ່ຄົບອາຍຸ ແລະຂາຍໄດ້ກຳໄລ",
         color: "success",
+        account: gainAccount,
       };
     } else if (proceeds === comparisonValue) {
       return {
         status: "DPS01",
         label: "ຊັບສົມບັດຄົງທີ່ ຄົບອາຍຸ ແລະ ຂາຍໄດ້ເທົ່າທຶນ",
         color: "warning",
+        account: null,
       };
     } else {
       return {
         status: "DPS03",
         label: "ຊັບສົມບັດຄົງທີ່ຄົບອາຍຸ ແລະ ຂາຍຂາດທຶນ",
         color: "error",
+        account: lossAccount,
       };
     }
   } else {
@@ -167,18 +281,21 @@ const calculateGainLoss = computed(() => {
         status: "DPS06",
         label: "ສະສາງບໍ່ຄົບກຳນົດມີກຳໄລ",
         color: "success",
+        account: gainAccount,
       };
     } else if (proceeds === comparisonValue) {
       return {
         status: "DPS05",
         label: "ສະສາງບໍ່ຄົບກຳນົດເທົ່າທຶນ",
         color: "warning",
+        account: null,
       };
     } else {
       return {
         status: "DPS07",
         label: "ສະສາງບໍ່ຄົບກຳນົດຂາດທຶນ",
         color: "error",
+        account: lossAccount,
       };
     }
   }
@@ -193,8 +310,6 @@ const handleNonSaleDisposal = () => {
 
   request.disposal_proceeds = "";
 };
-
-// Handle number input formatting
 const handleDisposalCostInput = (event: any) => {
   const value = event.target.value;
   const rawValue = parseNumber(value);
@@ -235,7 +350,6 @@ watch(
   },
   { immediate: true }
 );
-
 const handelSubmit = async () => {
   try {
     const isValid = form.value.validate();
@@ -248,6 +362,7 @@ const handelSubmit = async () => {
         confirmButtonText: "ຕົກລົງ",
         cancelButtonText: "ຍົກເລີກ",
       });
+
       if (notification.isConfirmed) {
         const selecAcount = dpsData.value.find(
           (item) => item.MC_code === request.gain_loss
@@ -260,6 +375,21 @@ const handelSubmit = async () => {
             dispalsoStore.from_create_disposal.dps_account
           );
         }
+console.log(dispalsoStore.from_create_disposal)
+        const calculationResult = calculateGainLoss.value;
+        if (calculationResult.account) {
+          dispalsoStore.from_create_disposal.gain_loss_account =
+            calculationResult.account.MC_detail;
+          console.log(
+            "Gain/Loss Account:",
+            calculationResult.account.MC_detail
+          );
+          console.log(
+            "Asset Type:",
+            selectedAssetType.value === "1" ? "Intangible" : "Tangible"
+          );
+        }
+
         const selectedAsset = dataList.value.find(
           (item) => item.asset_list_id === request.asset_list_id
         );
@@ -295,19 +425,51 @@ watch(
   { immediate: true }
 );
 
+const nameAsset = (nameAsset: any) => {
+  if (!nameAsset || !nameAsset.asset_spec || !nameAsset.asset_spec)
+    return "ທັງໝົດ";
+  return `${nameAsset.asset_spec}(${nameAsset.asset_list_id})`;
+};
+const TypeOfPlayDisplay = (item: any) => {
+  if (!item || !item.MC_name_la || !item.MC_code) return "ທັງໝົດ";
+  return `${item.MC_name_la}(${item.MC_code})`;
+};
+
+const selecAccountOfPlay = computed(() => {
+  const setlectAccout = request.account_tupe_of_play;
+  if (
+    !setlectAccout ||
+    !accountTypeOfplay.value ||
+    !Array.isArray(accountTypeOfplay.value)
+  ) {
+    return null;
+  }
+  return accountTypeOfplay.value.find(
+    (item) => item.glsub_code === setlectAccout
+  );
+});
 onMounted(() => {
   masterType.getDT();
   faasetStore.GetFaAssetList();
   employee.GetEmployee();
   masterType.getEP();
   masterType.getDPS();
+  masterType.getLDA();
+  masterType.getGDA();
+  masterType.getTypeOfplay();
 });
 </script>
 
 <template>
   <div class="pa-4">
     <GlobalTextTitleLine :title="title" />
-    <pre>{{ dpsData }}</pre>
+    <!-- <pre>{{ accountTypeOfplay }}</pre> -->
+    <!-- <pre>
+  {{ gdaData }}
+</pre>
+<pre>
+  {{ gdlData }}
+</pre> -->
     <v-form ref="form" @submit.prevent="handelSubmit">
       <v-row>
         <v-col cols="12">
@@ -323,6 +485,50 @@ onMounted(() => {
             </p>
           </div>
         </v-col>
+        <!--
+        <v-col cols="12" v-if="request.asset_list_id">
+          <v-card variant="outlined" class="mb-4">
+            <v-card-text>
+              <div class="d-flex justify-space-between align-center">
+                <div>
+                  <h6 class="text-h6 mb-2">ຂໍ້ມູນຊັບສິນທີ່ເລືອກ</h6>
+                  <p class="text-caption mb-1">
+                    ປະເພດຊັບສິນ:
+                    <v-chip
+                      :color="selectedAssetType === '1' ? 'blue' : 'green'"
+                      size="small"
+                      variant="outlined"
+                    >
+                      {{
+                        selectedAssetType === "1"
+                          ? "ບໍ່ມີຕົວຕົນ (Intangible)"
+                          : "ມີຕົວຕົນ (Tangible)"
+                      }}
+                    </v-chip>
+                  </p>
+                  <p class="text-caption mb-1">
+                    ບັນຊີກຳໄລ:
+                    <span class="font-weight-bold text-success">
+                      {{ getGainAccount?.MC_detail || "N/A" }}
+                    </span>
+                    <span class="text-grey">
+                      ({{ getGainAccount?.MC_name_la }})
+                    </span>
+                  </p>
+                  <p class="text-caption">
+                    ບັນຊີຂາດທຶນ:
+                    <span class="font-weight-bold text-error">
+                      {{ getLossAccount?.MC_detail || "N/A" }}
+                    </span>
+                    <span class="text-grey">
+                      ({{ getLossAccount?.MC_name_la }})
+                    </span>
+                  </p>
+                </div>
+              </div>
+            </v-card-text>
+          </v-card>
+        </v-col> -->
 
         <v-col cols="12" md="3">
           <v-autocomplete
@@ -330,7 +536,7 @@ onMounted(() => {
             v-model="request.asset_list_id"
             label="ລາຍການຊັບສີນ"
             :items="dataList"
-            item-title="asset_spec"
+            :item-title="nameAsset"
             item-value="asset_list_id"
             variant="outlined"
             density="compact"
@@ -353,6 +559,23 @@ onMounted(() => {
             density="compact"
           >
             <template v-slot:item="{ props, item }">
+              <v-list-item
+                v-bind="props"
+                :title="`${item.raw.MC_name_la}(${item.raw.MC_code})`"
+              ></v-list-item>
+            </template>
+          </v-autocomplete>
+          <v-autocomplete
+            v-model="selectTypeOfPlay"
+            :loading="masterType.isloading"
+            label="ປະເພດການຈ່າຍ"
+            density="compact"
+            variant="outlined"
+            :items="TypeOfPlayData"
+            :item-title="TypeOfPlayDisplay"
+            item-value="MC_code"
+          >
+            <template v-slot:item="{ item, props }">
               <v-list-item
                 v-bind="props"
                 :title="`${item.raw.MC_name_la}(${item.raw.MC_code})`"
@@ -389,6 +612,20 @@ onMounted(() => {
             type="text"
           >
           </v-text-field>
+          <span class="text-caption text-success" v-if="selecAccountOfPlay">{{
+            selecAccountOfPlay.glsub_Desc_la
+          }}</span>
+          <v-autocomplete
+            :items="accountTypeOfplay"
+            :loading="masterType.isloading"
+            v-model="request.account_tupe_of_play"
+            item-title="glsub_code"
+            item-value="glsub_code"
+            label="ເລືອກບັນຊີຕາມປະເພດການຈ່າຍ"
+            variant="outlined"
+            density="compact"
+          >
+          </v-autocomplete>
 
           <v-autocomplete
             v-model="request.gain_loss"
@@ -538,6 +775,14 @@ onMounted(() => {
             <div class="text-caption">
               <strong>ສະຖານະການຄິດໄລ່:</strong><br />
               {{ calculateGainLoss.label }}
+              <br />
+              <span v-if="calculateGainLoss.account" class="font-weight-bold">
+                ບັນຊີທີ່ໃຊ້: {{ calculateGainLoss.account.MC_detail }}
+                <br />
+                <span class="text-grey">{{
+                  calculateGainLoss.account.MC_name_la
+                }}</span>
+              </span>
             </div>
           </v-alert>
         </v-col>

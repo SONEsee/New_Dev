@@ -269,7 +269,7 @@ onMounted(() => {
       </template>
 
       <template v-slot:item.asset_list_id="{ item }">
-        <v-chip flat variant="outlined" size="small">{{ item.asset_list_id }}</v-chip>
+        <v-chip flat variant="outlined" size="small" >{{ item.asset_list_id }}</v-chip>
       </template>
 
       <template v-slot:item.disposal_type="{ item }">
