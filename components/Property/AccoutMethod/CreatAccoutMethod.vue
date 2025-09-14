@@ -7,6 +7,7 @@ const accounStore = accountMethodStore();
 const masterStettingStore = useMasterStore();
 const assetListStore = faAssetStore();
 const masterStore = useMasterStore();
+const route = useRoute();
 const cat = computed(() => {
   return masterStettingStore.respone_data_cat;
 });
@@ -117,7 +118,7 @@ const updateAccounts = () => {
       const typeCode = selectedAsset.asset_type_detail.type_code;
 
       const matchedCode = masterdatato.value.MasterCodes?.find(
-        (code:any) => code.MC_code === typeCode
+        (code: any) => code.MC_code === typeCode
       );
 
       if (matchedCode && matchedCode.MC_detail) {
@@ -141,7 +142,7 @@ const updateAccounts = () => {
 
               if (selectedAssetList.asset_value_remainBegin !== undefined) {
                 request.amount_start =
-                  selectedAssetList.asset_value_remainBegin ;
+                  selectedAssetList.asset_value_remainBegin;
               }
 
               if (selectedAssetList.asset_value_remainLast !== undefined) {
@@ -188,7 +189,6 @@ const handleSubmit = async () => {
   if (isValid) {
     request.credit_account_id = creditAccount.value;
     request.debit_account_id = debitAccount.value;
-    
 
     console.log("ຂໍ້ມູນທີ່ຈະສົ່ງ:", request);
 
@@ -204,9 +204,27 @@ const handleSubmit = async () => {
 const asset = computed(() => {
   return assetStores.response_asset_list;
 });
+// watch(
+//   () => route.query.asset_id,
+//   (newValue) => {
+//     if (newValue) {
+//       accounStore.form_create_account_method.asset_id = Number(newValue);
+//     }
+//   },
+//   { immediate: true }
+// );
 
+watch(
+  () => route.query.asset_id,
+  (newValue) => {
+    if (newValue) {
+      request.asset_id = Number(newValue);
+    }
+  },
+  { immediate: true }
+);
 onMounted(() => {
-  request.transaction_date = new Date().toISOString().split('T')[0] as any
+  request.transaction_date = new Date().toISOString().split("T")[0] as any;
   assetStores.GetAssetList();
   masterStettingStore.getSetting();
   masterStettingStore.getCAT();
@@ -238,8 +256,8 @@ onMounted(() => {
             ລະຫັດປະເພດຊັບສົມບັດ <span class="text-error">*</span>
           </v-label>
           <v-autocomplete
-          :loading="assetStores.isLoading"
-          class="pa-1"
+            :loading="assetStores.isLoading"
+            class="pa-1"
             v-model="request.asset_id"
             density="compact"
             label="ລະຫັດປະເພດຊັບສົມບັດ"
@@ -256,8 +274,7 @@ onMounted(() => {
             <template v-slot:item="{ props, item }">
               <v-list-item
                 v-bind="props"
-                :title="item.raw.asset_name_la"
-                :subtitle="`ລະຫັດ: ${item.raw.asset_code}`"
+                :title="`${item.raw.asset_name_la} (${item.raw.asset_code})`"
               />
             </template> </v-autocomplete
         ></v-col>
@@ -266,8 +283,8 @@ onMounted(() => {
             ຊັບສົມບັດ <span class="text-error">*</span>
           </v-label>
           <v-autocomplete
-          :loading="assetListStore.isLoading"
-          class="pa-1"
+            :loading="assetListStore.isLoading"
+            class="pa-1"
             v-model="request.ref_id"
             density="compact"
             variant="outlined"
@@ -301,16 +318,14 @@ onMounted(() => {
               </v-list-item>
             </template>
           </v-autocomplete>
-          
-          </v-col
-        >
-        <v-col cols="12" md="4" >
+        </v-col>
+        <v-col cols="12" md="4">
           <v-label class="mb-1">
             ຄ່າລຸ້ຍຫ້ຽນຕໍ່ເດືອນ <span class="text-error">*</span>
           </v-label>
           <v-text-field
-          readonly
-          class="pa-1"
+            readonly
+            class="pa-1"
             :model-value="formatNumber(request.amount || 0)"
             density="compact"
             variant="outlined"
@@ -324,7 +339,7 @@ onMounted(() => {
             ບັນຊີເຄດິດ (Cr) <span class="text-error">*</span>
           </v-label>
           <v-text-field
-          class="pa-1"
+            class="pa-1"
             v-model="creditAccount"
             density="compact"
             variant="outlined"
@@ -339,7 +354,7 @@ onMounted(() => {
             ຄ່າຫຼູຍຫ້ຽນຂອງເດືອນເລີ່ມຕົ້ນ <span class="text-error">*</span>
           </v-label>
           <v-text-field
-          class="pa-1"
+            class="pa-1"
             readonly
             :model-value="formatNumber(request.amount_start || 0)"
             density="compact"
@@ -354,7 +369,7 @@ onMounted(() => {
             ບັນຊີເດບິດ (Dr) <span class="text-error">*</span>
           </v-label>
           <v-text-field
-          class="pa-1"
+            class="pa-1"
             readonly
             v-model="debitAccount"
             density="compact"
@@ -365,13 +380,11 @@ onMounted(() => {
         </v-col>
 
         <v-col cols="12" md="4">
-         
-
           <v-label class="mb-1">
             ມູນຄ່າຫຼູຍຫ້ຽນຂອງເດືອນສຸດທ້າຍ <span class="text-error">*</span>
           </v-label>
           <v-text-field
-          class="pa-1"
+            class="pa-1"
             readonly
             :model-value="formatNumber(request.amount_end || 0)"
             density="compact"
@@ -382,20 +395,17 @@ onMounted(() => {
             @blur="handleNumberBlur"
             @focus="handleNumberFocus"
           />
-          <v-label class="mb-1">
-            ວັນທີ່ເລີ່ມຫັກ <span class="text-error">*</span>
-          </v-label>
 
+          <GlobalCardTitle
+            :title="'ວັນທີ່ເລີ່ມຫັກ'"
+            :text="StardDate(request.ref_id)"
+          />
 
-
-          
-          <GlobalCardTitle :title="'ວັນທີ່ເລີ່ມຫັກ'" :text="StardDate(request.ref_id)" />
-
-           <v-label class="mb-1" style="display: none;">
+          <v-label class="mb-1" style="display: none">
             ວັນທີເຮັດຖຸລະກຳ <span class="text-error">*</span>
           </v-label>
           <v-text-field
-          style="display: none;"
+            style="display: none"
             readonly
             v-model="request.transaction_date"
             density="compact"
@@ -410,13 +420,12 @@ onMounted(() => {
             ລາຍລະອຽດ <span class="text-error">*</span>
           </v-label>
           <v-textarea
-          class="pa-1"
+            class="pa-1"
             v-model="request.description"
             density="compact"
             variant="outlined"
             label="ລາຍລະອຽດ"
             placeholder="ລາຍລະອຽດ"
-            
         /></v-col>
 
         <v-col cols="12" class="d-flex flex-wrap justify-center">

@@ -496,6 +496,11 @@ const nameDisplayStatus = (items: any) => {
   }
   return `${items.title} - ${items.value}`;
 };
+const selecColId = computed(()=>{
+  if(!selectedAccType || !mainType.value) return null
+  const selecItem = mainType.value.find((item) => item.asset_code === selectedAccType.value);
+  return selecItem ? selecItem.coa_id :null
+})
 onMounted(async () => {
   accountMethodStoreInstance.GetAccountMethodList();
   mainTypeStore.GetAssetTypes();
@@ -512,6 +517,7 @@ onMounted(async () => {
     loading.value = false;
   }
 });
+
 </script>
 
 <template>
@@ -531,7 +537,7 @@ onMounted(async () => {
               color="primary"
               @click="
                 goPath(
-                  `/property/accountmethod/create?sub_menu_id=${sub_menu_id}`
+                  `/property/accountmethod/create?sub_menu_id=${sub_menu_id}&asset_id=${selecColId}`
                 )
               "
               v-if="canAdd"
@@ -540,7 +546,7 @@ onMounted(async () => {
             </v-btn>
           </div>
         </v-col>
-
+<pre>{{ mainType }}</pre>
         <v-col cols="12" md="3" class="text-no-wrap">
           <v-autocomplete
             v-model="selectedAccType"

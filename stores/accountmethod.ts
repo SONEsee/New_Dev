@@ -19,7 +19,7 @@ export const accountMethodStore = defineStore("accountMethod", {
         mapping_id: null as number | null,
         ref_id: "" as string | null,
         acc_type: "ASSET" as "ASSET" | "DEPRECIATION" | "DISPOSAL" | "",
-        asset_id: null as number | null,
+        asset_id:  null as number | null,
         debit_account_id: "",
         credit_account_id: "",
         amount: 0,
