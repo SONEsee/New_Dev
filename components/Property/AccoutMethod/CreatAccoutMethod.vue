@@ -385,6 +385,10 @@ onMounted(() => {
           <v-label class="mb-1">
             ວັນທີ່ເລີ່ມຫັກ <span class="text-error">*</span>
           </v-label>
+
+
+
+          
           <GlobalCardTitle :title="'ວັນທີ່ເລີ່ມຫັກ'" :text="StardDate(request.ref_id)" />
 
            <v-label class="mb-1" style="display: none;">
