@@ -8,10 +8,10 @@ const valid = ref();
 const form = ref();
 const id = Number(route.query.mapping_id) || 0;
 const selectedAssetId = ref((route.query.mapping_id as string) || null);
-const DisplayGl = (item:any) =>{
-  if(!item || !item.asset_spec || !item.asset_list_id) return "ທັງໝົດ";
+const DisplayGl = (item: any) => {
+  if (!item || !item.asset_spec || !item.asset_list_id) return "ທັງໝົດ";
   return `${item.asset_spec} (${item.asset_list_id})`;
-}
+};
 const accountMethodStoreInstance = accountMethodStore();
 const assetListStore = faAssetStore();
 
@@ -84,12 +84,15 @@ watch(selectedAssetId, async (newAssetId: any) => {
     }
   }
 });
-watch(()=> route.query.asset_id, async (newValue)=>{
-  if(newValue){
-    selectedAssetId.value = newValue as string;
-
-  }
-}, {immediate: true})
+watch(
+  () => route.query.asset_id,
+  async (newValue) => {
+    if (newValue) {
+      selectedAssetId.value = newValue as string;
+    }
+  },
+  { immediate: true }
+);
 watch(
   [
     () => accountMethodStoreInstance.response_account_method_detail,
@@ -175,7 +178,7 @@ const title = "ລາຍລະອຽດການຕັ້ງຄ່າທືກ�
 <template>
   <div class="pa-4">
     <GlobalTextTitleLine :title="title" />
-    <!-- <pre> {{ dataupdate }}</pre> -->
+
     <v-card class="mb-4" variant="outlined">
       <v-card-title class="text-h6 pb-2 bg-primary">
         <v-icon class="mr-2">mdi-format-list-bulleted</v-icon>
