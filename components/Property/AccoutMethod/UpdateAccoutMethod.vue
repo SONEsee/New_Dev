@@ -8,7 +8,10 @@ const valid = ref();
 const form = ref();
 const id = Number(route.query.mapping_id) || 0;
 const selectedAssetId = ref((route.query.mapping_id as string) || null);
-
+const DisplayGl = (item:any) =>{
+  if(!item || !item.asset_spec || !item.asset_list_id) return "ທັງໝົດ";
+  return `${item.asset_spec} (${item.asset_list_id})`;
+}
 const accountMethodStoreInstance = accountMethodStore();
 const assetListStore = faAssetStore();
 
@@ -177,7 +180,7 @@ const title = "ລາຍລະອຽດການຕັ້ງຄ່າທືກ�
         <v-autocomplete
           v-model="selectedAssetId"
           :items="totaldata"
-          item-title="asset_spec"
+          :item-title="DisplayGl"
           item-value="asset_list_id"
           variant="outlined"
           density="compact"
@@ -186,17 +189,12 @@ const title = "ລາຍລະອຽດການຕັ້ງຄ່າທືກ�
           :loading="!totaldata.length"
           prepend-inner-icon="mdi-magnify"
         >
-          <template #item="{ item, props }">
-            <v-list-item v-bind="props">
-              <template #prepend>
-                <v-icon color="primary">mdi-package-variant</v-icon>
-              </template>
-              <v-list-item-subtitle>
-                ID: {{ item.raw.asset_list_id }}
-              </v-list-item-subtitle>
-            </v-list-item>
+          <template v-slot:item="{ item, props }">
+            <v-list-item
+              v-bind="props"
+              :title="`${item.raw.asset_spec}(${item.raw.asset_list_id})`"
+            ></v-list-item>
           </template>
-
           <template #no-data>
             <v-list-item>
               <v-list-item-title>ບໍ່ພົບຂໍ້ມູນຊັບສົມບັດ</v-list-item-title>

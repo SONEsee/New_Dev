@@ -19,7 +19,7 @@ export const accountMethodStore = defineStore("accountMethod", {
         mapping_id: null as number | null,
         ref_id: "" as string | null,
         acc_type: "ASSET" as "ASSET" | "DEPRECIATION" | "DISPOSAL" | "",
-        asset_id: null as number | null,
+        asset_id:  null as number | null,
         debit_account_id: "",
         credit_account_id: "",
         amount: 0,
@@ -411,10 +411,10 @@ export const accountMethodStore = defineStore("accountMethod", {
   },
 
   getters: {
-    accountMethodsByType: (state) => {
+    accountMethodsByType: (state:any) => {
       if (!state.response_account_method_list) return {};
 
-      return state.response_account_method_list.reduce((acc, method) => {
+      return state.response_account_method_list.reduce((acc:any, method:any) => {
         if (!acc[method.acc_type]) {
           acc[method.acc_type] = [];
         }

@@ -9,7 +9,7 @@
               <h2 class="text-h5 font-weight-medium text-primary">
                 {{ title }}
               </h2>
-              <p class="text-body-2 text-medium-emphasis mt-1">
+              <p class="text-body-2 text-medium-emphasis mt-1 text-styles">
                 ແກ້ໄຂຂໍ້ມູນສ່ວນຕົວ ແລະ ການຕັ້ງຄ່າບັນຊີຜູ້ໃຊ້
               </p>
             </div>
@@ -19,7 +19,7 @@
               :loading="userStore.loading"
               :disabled="!isFormValid"
               @click="submitForm"
-              class="px-8"
+              class="px-8 text-styles"
             >
               <v-icon start>mdi-content-save</v-icon>
               ບັນທຶກການປ່ຽນແປງ
@@ -36,7 +36,7 @@
           <v-col cols="12" md="4">
             <v-card variant="outlined" class="pa-6 text-center h-100">
               <div class="profile-section">
-                <h3 class="text-h6 mb-4">ຮູບໂປຣໄຟລ້</h3>
+                <h3 class="text-h6 mb-4 text-styles">ຮູບໂປຣໄຟລ້</h3>
                 
                 <div class="profile-avatar-container mb-4">
                   <v-avatar
@@ -96,7 +96,7 @@
           <!-- Form Fields Section -->
           <v-col cols="12" md="8">
             <v-card variant="outlined" class="pa-6">
-              <h3 class="text-h6 mb-6">ຂໍ້ມູນຜູ້ໃຊ້</h3>
+              <h3 class="text-h6 mb-6 text-styles">ຂໍ້ມູນຜູ້ໃຊ້</h3>
               
               <v-row>
                 <!-- User ID -->
@@ -251,6 +251,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import type { VForm } from 'vuetify/components'
+import axios from '@/helpers/axios'
 
 // Stores
 const userStore = UserStore()
@@ -370,11 +371,44 @@ const onFileChange = (event: Event): void => {
   }
 }
 
+// const submitForm = async (): Promise<void> => {
+//   if (!form.value) return
+  
+//   const { valid } = await form.value.validate()
+  
+//   if (valid) {
+//     const confirmation = await CallSwal({
+//       icon: "warning",
+//       title: "ຢືນຢັນການແກ້ໄຂ",
+//       text: "ທ່ານຕ້ອງການບັນທຶກການປ່ຽນແປງນີ້ແມ່ນບໍ່?",
+//       showCancelButton: true,
+//       confirmButtonText: "ບັນທຶກ",
+//       cancelButtonText: "ຍົກເລີກ"
+//     })
+    
+//     if (confirmation.isConfirmed) {
+//       await userStore.UpdateUser(user_id)
+//     }
+//   }
+// }
+
 const submitForm = async (): Promise<void> => {
   if (!form.value) return
-  
+
   const { valid } = await form.value.validate()
-  
+  let refreshToken =
+      localStorage.getItem("refresh") ||
+      localStorage.getItem("refreshToken") ||
+      localStorage.getItem("refresh_token")
+
+    if (!refreshToken) {
+      const userStr = localStorage.getItem("user")
+      if (userStr) {
+        const user = JSON.parse(userStr)
+        refreshToken = user.refresh || user.refreshToken || user.refresh_token
+      }
+    }
+
   if (valid) {
     const confirmation = await CallSwal({
       icon: "warning",
@@ -384,9 +418,22 @@ const submitForm = async (): Promise<void> => {
       confirmButtonText: "ບັນທຶກ",
       cancelButtonText: "ຍົກເລີກ"
     })
-    
+
     if (confirmation.isConfirmed) {
       await userStore.UpdateUser(user_id)
+      // Logout and delete session after successful update
+      await axios.post('/api/logout/', {
+        refresh: refreshToken,
+      }, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      })
+      localStorage.removeItem("token")
+      localStorage.removeItem("user")
+      // Redirect to login page
+      window.location.href = "/login"
     }
   }
 }

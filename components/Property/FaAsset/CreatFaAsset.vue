@@ -1042,6 +1042,7 @@ onMounted(async () => {
                       >
 
                       <v-autocomplete
+                      :loading="faAssetStoreInstance.isLoading"
                         v-model="
                           faAssetStoreInstance.form_create_fa_asset
                             .asset_type_id

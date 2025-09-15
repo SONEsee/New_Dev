@@ -45,6 +45,7 @@ import * as EmployeeModel from "./employee";
 import * as AssetListDrisTionModel from "./faassetlistdiscription";
 import * as jernalModel from "./devjernal";
 import * as  MantananceModel from "./mantanance"
+import * as DateEODModel from "./eoddate"
 export {
   UserModel,
   UsermeModel,
@@ -89,6 +90,7 @@ export {
   MantananceModel,
   ReportDeprecationModel,
   ReportDispalso,
+  DateEODModel,
   
   // RoleMasterModel
 };

@@ -2,7 +2,20 @@
 import dayjs from "dayjs";
 const mainStore = useFassetLidtDescription();
 const assetStores = faAssetStore();
+const eodStore = useDateStore();
 const selectedItems = ref([]);
+
+const eod = computed(()=>{
+  const data =  eodStore.response_data_eod;
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (data && typeof data === "object") {
+    return [data];
+  }
+  return [];
+})
+
 const assetdata = computed(()=>{
   const data =  assetStores.response_fa_asset_list;
   if (Array.isArray(data)) {
@@ -25,23 +38,55 @@ const res = computed(() => {
   return [];
 });
 
-// ສ້າງ computed ສຳລັບແມັບຂໍ້ມູນ
-// ປັບປຸງການຄິດໄລ່ໃນ computed mappedData
+const StardDate = (apdc_start_date:any)=>{
+  if(!apdc_start_date || !Array.isArray(assetdata.value)) return "_";
+  const itemData = assetdata.value.find((item)=>item.asset_list_id === apdc_start_date);
+  return itemData ? itemData.dpca_start_date : "_";
+}
 const mappedData = computed(() => {
+  
+  const eodData = eod.value[0]; 
+  const prevWorkingDay = eodData?.prev_working_day ? dayjs(eodData.prev_working_day) : dayjs();
+  
   return res.value.map(overdueItem => {
-    // ຫາ asset ທີ່ກົງກັນໂດຍໃຊ້ asset_id
+   
     const matchedAsset = assetdata.value.find(asset => 
       asset.asset_list_id === overdueItem.asset_id
     );
     
     if (matchedAsset) {
-      // ຄິດໄລ່ຄ່າທີ່ຕ້ອງການ: ການຄິດໄລ່ໃໝ່ຕາມເງື່ອນໄຂ
+      // ຄິດໄລ່ວັນຄ້າງໃໝ່ຈາກ due_end_date ຫາ prev_working_day
+      let actualOverdueDays = 0;
+      let actualOverdueMonths = 0;
+      let dueDate = null;
+      
+      if (overdueItem.due_end_date) {
+        // Parse due_end_date (format: DD/MM/YYYY)
+        const dueDateParts = overdueItem.due_end_date.split('/');
+        dueDate = dayjs(`${dueDateParts[2]}-${dueDateParts[1]}-${dueDateParts[0]}`);
+        
+        // ຄິດໄລ່ຄວາມແຕກຕ່າງເປັນວັນ ແລະ ເດືອນ
+        actualOverdueDays = prevWorkingDay.diff(dueDate, 'days');
+        actualOverdueMonths = prevWorkingDay.diff(dueDate, 'months'); // ໃຊ້ diff months ແທນ
+        
+        // ຖ້າຍັງບໍ່ເຖິງກຳນົດ ໃຫ້ເປັນ 0
+        if (actualOverdueDays < 0) {
+          actualOverdueDays = 0;
+          actualOverdueMonths = 0;
+        }
+      } else {
+        // ຖ້າບໍ່ມີ due_end_date ໃຊ້ຄ່າເດີມ
+        actualOverdueDays = overdueItem.overdue_months * 30;
+        actualOverdueMonths = overdueItem.overdue_months;
+      }
+
+     
       const dailyDepreciation = parseFloat(matchedAsset.asset_value_remainMonth) / 30;
       let calculatedAmount = 0;
       
-      // ເຊັກຄ່າ C_dpac
+      
       const cDpacValue = parseInt(matchedAsset.C_dpac) || 0;
-      const overdueMonthsFloor = Math.floor(overdueItem.overdue_months); // ບໍ່ນັບຫຼັງຈຸດ
+      const overdueMonthsFloor = Math.floor(actualOverdueMonths); 
       const assetValueRemainMonth = parseFloat(matchedAsset.asset_value_remainMonth);
       const assetValueRemainBegin = parseFloat(matchedAsset.asset_value_remainBegin);
       const accuDpcaValueTotal = parseFloat(matchedAsset.accu_dpca_value_total);
@@ -50,7 +95,7 @@ const mappedData = computed(() => {
       if (cDpacValue === 0) {
         // C_dpac ຍັງບໍ່ມີຄ່າ (ເທົ່າກັບ 0)
         if (overdueMonthsFloor >= totalMonths) {
-          // ຖ້າ overdue_months >= total_months ໃຫ້ໃຊ້ accu_dpca_value_total
+          
           calculatedAmount = accuDpcaValueTotal;
         } else {
           // ການຄິດໄລ່ປົກກະຕິ: (overdue_months - 1) * asset_value_remainMonth + asset_value_remainBegin
@@ -58,7 +103,7 @@ const mappedData = computed(() => {
           calculatedAmount = (adjustedMonths * assetValueRemainMonth) + assetValueRemainBegin;
         }
       } else {
-        // C_dpac ມີຄ່າແລ້ວ (ບໍ່ເທົ່າກັບ 0)
+        
         if (overdueMonthsFloor >= totalMonths) {
           // ຖ້າ overdue_months >= total_months ໃຫ້ໃຊ້ accu_dpca_value_total
           calculatedAmount = accuDpcaValueTotal;
@@ -70,6 +115,9 @@ const mappedData = computed(() => {
       
       return {
         ...overdueItem,
+        // ໃຊ້ວັນຄ້າງທີ່ຄິດໄລ່ໃໝ່
+        overdue_months: actualOverdueMonths,
+        overdue_days: actualOverdueDays,
         // ເພີ່ມຂໍ້ມູນຈາກ asset
         matched_asset: matchedAsset,
         daily_depreciation: dailyDepreciation,
@@ -83,6 +131,12 @@ const mappedData = computed(() => {
         debug_info: {
           c_dpac: cDpacValue,
           overdue_months_floor: overdueMonthsFloor,
+          actual_overdue_days: actualOverdueDays,
+          actual_overdue_months: actualOverdueMonths,
+          original_overdue_months: overdueItem.overdue_months,
+          due_end_date: overdueItem.due_end_date,
+          due_date_parsed: dueDate ? dueDate.format('YYYY-MM-DD') : null,
+          prev_working_day: prevWorkingDay.format('YYYY-MM-DD'),
           total_months: totalMonths,
           asset_value_remain_month: assetValueRemainMonth,
           asset_value_remain_begin: assetValueRemainBegin,
@@ -95,6 +149,7 @@ const mappedData = computed(() => {
     // ຖ້າບໍ່ພົບ asset ທີ່ກົງກັນ
     return {
       ...overdueItem,
+      overdue_months: overdueItem.overdue_months, // ຄງຄ່າເດີມ
       matched_asset: null,
       daily_depreciation: 0,
       calculated_overdue_amount: 0,
@@ -108,7 +163,7 @@ const headers = [
   { title: "ຊື່ຊັບສິນ", key: "asset_name" },
   // { title: "ມູນຄ່າເຫຼືອ/ເດືອນ", key: "asset_value_remainMonth" },
   // { title: "ຄ່າເສື່ອມ/ມື້", key: "daily_depreciation" },
-  { title: "ຄ້າງ (ມື້)", key: "overdue_months" },
+  { title: "ຄ້າງ (ເດືອນ)", key: "overdue_months" },
   { title: "ຈຳນວນເງິນທີ່ຈະຫັກ", key: "calculated_overdue_amount" },
   { title: "ຄືບໜ້າ", key: "completion_percentage" },
   { title: "ງວດທີ່ຈະຫັກ", key: "due_end_date" },
@@ -122,11 +177,16 @@ const formatNumber = (num: any) => {
 const processBulkItems = async () => {
   mainStore.total_caculate.mapping_ids = selectedItems.value;
 
-  mainStore.total_caculate.target_date = dayjs()
-    .tz("Asia/Bangkok")
-    .format("YYYY-MM-DD");
+  // ປ່ຽນຈາກວັນປະຈຸບັນເປັນ prev_working_day ຂອງ EOD
+  const eodData = eod.value[0];
+  const targetDate = eodData?.prev_working_day 
+    ? dayjs(eodData.prev_working_day).format("YYYY-MM-DD")
+    : dayjs().tz("Asia/Bangkok").format("YYYY-MM-DD");
+
+  mainStore.total_caculate.target_date = targetDate;
 
   console.log("Bulk process data:", mainStore.total_caculate);
+  console.log("Using EOD prev_working_day:", targetDate);
 
   await mainStore.postArreat();
 
@@ -138,6 +198,7 @@ const title = "ຫັກຄ່າຫຼູຍຫ້ຽນຍອ້ນຫຼັ�
 onMounted(() => {
   assetStores.GetFaAssetList();
   mainStore.getArrears();
+  eodStore.GetEOD();
 });
 </script>
 
@@ -148,6 +209,7 @@ onMounted(() => {
     <p>Asset Data Count: {{ assetdata.length }}</p>
     <p>Overdue Data Count: {{ res.length }}</p>
     <p>Mapped Data Count: {{ mappedData.length }}</p>
+    <p>EOD prev_working_day: {{ eod[0]?.prev_working_day }}</p>
   </div> -->
 
   <div
@@ -184,6 +246,11 @@ onMounted(() => {
     <GlobalTextTitleLine :title="title" />
     <small style="color: #666">
       Selected mapping_ids: {{ selectedItems }}
+    </small>
+    <!-- ສະແດງວັນທີ່ກຳນົດ -->
+    <br>
+    <small style="color: #2196f3">
+      📅 ວັນທີ່ກຳນົດສຳລັບການຫັກ: {{ eod[0]?.prev_working_day ? dayjs(eod[0].prev_working_day).format('DD/MM/YYYY') : 'ວັນນີ້' }}
     </small>
   </div>
 
@@ -227,7 +294,7 @@ onMounted(() => {
       ຈຳນວນເງິນທີ່ຈະຫັກ
     </v-card-title>
     <div class="">
-      <h2 class="">{{ formatNumber(mappedData.filter(item => selectedItems.includes(item.mapping_id )).reduce((sum, item) => sum + (item.calculated_overdue_amount || 0), 0)) }}</h2>
+      <h2 class="">{{ formatNumber(mappedData.filter(item => selectedItems.includes(item.mapping_id)).reduce((sum, item) => sum + (item.calculated_overdue_amount || 0), 0)) }}</h2>
       <p>ກີບ</p>
     </div>
   </v-card>
@@ -235,6 +302,17 @@ onMounted(() => {
     
   </v-row>
 <!-- <pre>{{ mappedData }}</pre> -->
+ <!-- ສະແດງຂໍ້ມູນ EOD ສຳລັບ debug -->
+ <div class="mb-2 pa-2" style="background-color: #f8f9fa; border-radius: 4px; font-size: 12px;">
+   <strong>📅 EOD Info:</strong> 
+   <span v-if="eod[0]">
+     prev_working_day: {{ dayjs(eod[0].prev_working_day).format('DD/MM/YYYY HH:mm') }} |
+     date_id: {{ eod[0].date_id }} |
+     eod_time: {{ eod[0].eod_time }}
+   </span>
+   <span v-else style="color: #f44336">ບໍ່ມີຂໍ້ມູນ EOD</span>
+ </div>
+
   <v-data-table
     v-model="selectedItems"
     :items="mappedData"
@@ -285,6 +363,12 @@ onMounted(() => {
       </span>
     </template>
 
+    <template v-slot:item.debug_formula="{ item }">
+      <small style="color: #666; font-size: 10px;">
+        {{ item.debug_info?.calculated_formula || 'N/A' }}
+      </small>
+    </template>
+
     
     <template v-slot:item.calculated_overdue_amount="{ item }">
       <strong style="color: #f44336; font-size: 16px">
@@ -313,7 +397,7 @@ onMounted(() => {
   <span v-if="item.due_end_date">
     {{ dayjs(item.due_end_date.split('/').reverse().join('-')).format('MM/YYYY') }}
     <span style="color: #666;"> ຫາ </span>
-    {{ dayjs().format('MM/YYYY') }}
+    {{ eod[0]?.prev_working_day ? dayjs(eod[0].prev_working_day).format('MM/YYYY') : dayjs().format('MM/YYYY') }}
   </span>
   <span v-else>-</span>
 </template>
@@ -327,23 +411,4 @@ onMounted(() => {
   </v-chip>
 </template>
   </v-data-table>
-
- 
-  <!-- <v-expansion-panels class="mt-4" v-if="mappedData.length > 0">
-    <v-expansion-panel>
-      <v-expansion-panel-title>
-        📊 ລາຍລະອຽດການຄິດໄລ່
-      </v-expansion-panel-title>
-      <v-expansion-panel-text>
-        <div v-for="item in mappedData.slice(0, 3)" :key="item.mapping_id" class="mb-3 pa-3" style="background-color: #f5f5f5; border-radius: 8px">
-          <h4>{{ item.asset_name }}</h4>
-          <p><strong>ມູນຄ່າເຫຼືອຕໍ່ເດືອນ:</strong> {{ formatNumber(item.asset_value_remainMonth) }} ກີບ</p>
-          <p><strong>ມູນຄ່າເຫຼືອຕໍ່ມື້:</strong> {{ formatNumber(Math.round(item.daily_depreciation)) }} ກີບ ({{ formatNumber(item.asset_value_remainMonth) }} ÷ 30)</p>
-          <p><strong>ຄ້າງ:</strong> {{ item.days_overdue }} ມື້</p>
-          <p><strong>ການຄິດໄລ່:</strong> {{ formatNumber(Math.round(item.daily_depreciation)) }} × {{ item.days_overdue }} = <strong style="color: #f44336">{{ formatNumber(Math.round(item.calculated_overdue_amount)) }} ກີບ</strong></p>
-        </div>
-        <p v-if="mappedData.length > 3" class="text-center">... ແລະອີກ {{ mappedData.length - 3 }} ລາຍການ</p>
-      </v-expansion-panel-text>
-    </v-expansion-panel>
-  </v-expansion-panels> -->
 </template>
