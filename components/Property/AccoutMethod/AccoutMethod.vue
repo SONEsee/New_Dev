@@ -817,7 +817,7 @@ onMounted(async () => {
             icon="mdi-pen"
             @click="
               goPath(
-                `/property/accountmethod/edit?mapping_id=${item.mapping_id}`
+                `/property/accountmethod/edit?mapping_id=${item.mapping_id}&&asset_id=${item.ref_id}`
               )
             "
           />

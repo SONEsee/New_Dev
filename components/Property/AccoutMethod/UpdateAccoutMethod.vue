@@ -84,7 +84,12 @@ watch(selectedAssetId, async (newAssetId: any) => {
     }
   }
 });
+watch(()=> route.query.asset_id, async (newValue)=>{
+  if(newValue){
+    selectedAssetId.value = newValue as string;
 
+  }
+}, {immediate: true})
 watch(
   [
     () => accountMethodStoreInstance.response_account_method_detail,
