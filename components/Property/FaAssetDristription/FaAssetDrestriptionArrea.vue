@@ -43,120 +43,6 @@ const StardDate = (apdc_start_date:any)=>{
   const itemData = assetdata.value.find((item)=>item.asset_list_id === apdc_start_date);
   return itemData ? itemData.dpca_start_date : "_";
 }
-// const mappedData = computed(() => {
-  
-//   const eodData = eod.value[0]; 
-//   const prevWorkingDay = eodData?.prev_working_day ? dayjs(eodData.prev_working_day) : dayjs();
-  
-//   return res.value.map(overdueItem => {
-   
-//     const matchedAsset = assetdata.value.find(asset => 
-//       asset.asset_list_id === overdueItem.asset_id
-//     );
-    
-//     if (matchedAsset) {
-//       // ຄິດໄລ່ວັນຄ້າງໃໝ່ຈາກ due_end_date ຫາ prev_working_day
-//       let actualOverdueDays = 0;
-//       let actualOverdueMonths = 0;
-//       let dueDate = null;
-      
-//       if (overdueItem.due_end_date) {
-//         // Parse due_end_date (format: DD/MM/YYYY)
-//         const dueDateParts = overdueItem.due_end_date.split('/');
-//         dueDate = dayjs(`${dueDateParts[2]}-${dueDateParts[1]}-${dueDateParts[0]}`);
-        
-//         // ຄິດໄລ່ຄວາມແຕກຕ່າງເປັນວັນ ແລະ ເດືອນ
-//         actualOverdueDays = prevWorkingDay.diff(dueDate, 'days');
-//         actualOverdueMonths = prevWorkingDay.diff(dueDate, 'months'); // ໃຊ້ diff months ແທນ
-        
-//         // ຖ້າຍັງບໍ່ເຖິງກຳນົດ ໃຫ້ເປັນ 0
-//         if (actualOverdueDays < 0) {
-//           actualOverdueDays = 0;
-//           actualOverdueMonths = 0;
-//         }
-//       } else {
-//         // ຖ້າບໍ່ມີ due_end_date ໃຊ້ຄ່າເດີມ
-//         actualOverdueDays = overdueItem.overdue_months * 30;
-//         actualOverdueMonths = overdueItem.overdue_months;
-//       }
-
-     
-//       const dailyDepreciation = parseFloat(matchedAsset.asset_value_remainMonth) / 30;
-//       let calculatedAmount = 0;
-      
-      
-//       const cDpacValue = parseInt(matchedAsset.C_dpac) || 0;
-//       const overdueMonthsFloor = Math.floor(actualOverdueMonths); 
-//       const assetValueRemainMonth = parseFloat(matchedAsset.asset_value_remainMonth);
-//       const assetValueRemainBegin = parseFloat(matchedAsset.asset_value_remainBegin);
-//       const accuDpcaValueTotal = parseFloat(matchedAsset.accu_dpca_value_total);
-//       const totalMonths = overdueItem.total_months;
-      
-//       if (cDpacValue === 0) {
-//         // C_dpac ຍັງບໍ່ມີຄ່າ (ເທົ່າກັບ 0)
-//         if (overdueMonthsFloor >= totalMonths) {
-          
-//           calculatedAmount = accuDpcaValueTotal;
-//         } else {
-//           // ການຄິດໄລ່ປົກກະຕິ: (overdue_months - 1) * asset_value_remainMonth + asset_value_remainBegin
-//           const adjustedMonths = Math.max(0, overdueMonthsFloor - 1);
-//           calculatedAmount = (adjustedMonths * assetValueRemainMonth) + assetValueRemainBegin;
-//         }
-//       } else {
-        
-//         if (overdueMonthsFloor >= totalMonths) {
-//           // ຖ້າ overdue_months >= total_months ໃຫ້ໃຊ້ accu_dpca_value_total
-//           calculatedAmount = accuDpcaValueTotal;
-//         } else {
-//           // ການຄິດໄລ່: overdue_months * asset_value_remainMonth
-//           calculatedAmount = overdueMonthsFloor * assetValueRemainMonth;
-//         }
-//       }
-      
-//       return {
-//         ...overdueItem,
-//         // ໃຊ້ວັນຄ້າງທີ່ຄິດໄລ່ໃໝ່
-//         overdue_months: actualOverdueMonths,
-//         overdue_days: actualOverdueDays,
-//         // ເພີ່ມຂໍ້ມູນຈາກ asset
-//         matched_asset: matchedAsset,
-//         daily_depreciation: dailyDepreciation,
-//         calculated_overdue_amount: calculatedAmount,
-//         asset_value_remainMonth: matchedAsset.asset_value_remainMonth,
-//         // ເພີ່ມຂໍ້ມູນອື່ນໆ ທີ່ອາດຈະໃຊ້
-//         asset_full_name: matchedAsset.asset_id_detail?.asset_name_la || overdueItem.asset_name,
-//         location_name: matchedAsset.location_detail?.location_name_la,
-//         supplier_name: matchedAsset.supplier_detail?.supplier_name,
-//         // ເພີ່ມຂໍ້ມູນສຳລັບ debug
-//         debug_info: {
-//           c_dpac: cDpacValue,
-//           overdue_months_floor: overdueMonthsFloor,
-//           actual_overdue_days: actualOverdueDays,
-//           actual_overdue_months: actualOverdueMonths,
-//           original_overdue_months: overdueItem.overdue_months,
-//           due_end_date: overdueItem.due_end_date,
-//           due_date_parsed: dueDate ? dueDate.format('YYYY-MM-DD') : null,
-//           prev_working_day: prevWorkingDay.format('YYYY-MM-DD'),
-//           total_months: totalMonths,
-//           asset_value_remain_month: assetValueRemainMonth,
-//           asset_value_remain_begin: assetValueRemainBegin,
-//           accu_dpca_value_total: accuDpcaValueTotal,
-//           calculation_method: cDpacValue === 0 ? 'C_dpac_zero' : 'C_dpac_has_value'
-//         }
-//       };
-//     }
-    
-//     // ຖ້າບໍ່ພົບ asset ທີ່ກົງກັນ
-//     return {
-//       ...overdueItem,
-//       overdue_months: overdueItem.overdue_months, // ຄງຄ່າເດີມ
-//       matched_asset: null,
-//       daily_depreciation: 0,
-//       calculated_overdue_amount: 0,
-//       asset_value_remainMonth: 0
-//     };
-//   });
-// });
 const mappedData = computed(() => {
   
   const eodData = eod.value[0]; 
@@ -173,15 +59,33 @@ const mappedData = computed(() => {
       let actualOverdueDays = 0;
       let actualOverdueMonths = 0;
       let dueDate = null;
+      let dueYear = null;
+      let dueMonth = null;
+      let currentYear = null;
+      let currentMonth = null;
+      let dueMonthTotal = null;
+      let currentMonthTotal = null;
       
       if (overdueItem.due_end_date) {
         // Parse due_end_date (format: DD/MM/YYYY)
         const dueDateParts = overdueItem.due_end_date.split('/');
         dueDate = dayjs(`${dueDateParts[2]}-${dueDateParts[1]}-${dueDateParts[0]}`);
         
-        // ຄິດໄລ່ຄວາມແຕກຕ່າງເປັນວັນ ແລະ ເດືອນ
+        // ຄິດໄລ່ຄວາມແຕກຕ່າງເປັນວັນ
         actualOverdueDays = prevWorkingDay.diff(dueDate, 'days');
-        actualOverdueMonths = prevWorkingDay.diff(dueDate, 'months'); 
+        
+        // ຄິດໄລ່ເດືອນດ້ວຍສູດ: ເດືອນສຸດທ້າຍ - ເດືອນທຳອິດ + 1
+        dueYear = parseInt(dueDateParts[2]);
+        dueMonth = parseInt(dueDateParts[1]);
+        currentYear = prevWorkingDay.year();
+        currentMonth = prevWorkingDay.month() + 1; // dayjs month ເລີ່ມຈາກ 0
+        
+        // ແປງເປັນເດືອນທັງໝົດນັບຈາກປີ 0
+        dueMonthTotal = (dueYear * 12) + dueMonth;
+        currentMonthTotal = (currentYear * 12) + currentMonth;
+        
+        // ໃຊ້ສູດ: ເດືອນສຸດທ້າຍ - ເດືອນທຳອິດ + 1
+        actualOverdueMonths = currentMonthTotal - dueMonthTotal + 1;
         
         // ຖ້າຍັງບໍ່ເຖິງກຳນົດ ໃຫ້ເປັນ 0
         if (actualOverdueDays < 0) {
@@ -212,6 +116,11 @@ const mappedData = computed(() => {
         finalOverdueMonths = overdueMonthsFloor + 1;
       }
       // ຖ້າຄົບກຳນົດແລ້ວ (>= totalMonths) ບໍ່ເພີ່ມ
+      
+      // ຮັບປະກັນວ່າ finalOverdueMonths ບໍ່ຕ່ຳກວ່າ 1
+      if (finalOverdueMonths < 1 && actualOverdueMonths > 0) {
+        finalOverdueMonths = 1;
+      }
       
       if (cDpacValue === 0) {
         // C_dpac ຍັງບໍ່ມີຄ່າ (ເທົ່າກັບ 0)
@@ -250,19 +159,42 @@ const mappedData = computed(() => {
         debug_info: {
           c_dpac: cDpacValue,
           overdue_months_floor: overdueMonthsFloor,
-          final_overdue_months: finalOverdueMonths, // ເພີ່ມສຳລັບ debug
+          final_overdue_months: finalOverdueMonths,
           actual_overdue_days: actualOverdueDays,
           actual_overdue_months: actualOverdueMonths,
           original_overdue_months: overdueItem.overdue_months,
           due_end_date: overdueItem.due_end_date,
-          due_date_parsed: dueDate ? dueDate.format('YYYY-MM-DD') : null,
+          due_year: dueYear || 'N/A',
+          due_month: dueMonth || 'N/A',
+          current_year: currentYear || 'N/A',
+          current_month: currentMonth || 'N/A',
+          due_month_total: dueMonthTotal || 'N/A',
+          current_month_total: currentMonthTotal || 'N/A',
+          month_calculation: dueMonthTotal && currentMonthTotal 
+            ? `${currentMonthTotal} - ${dueMonthTotal} + 1 = ${actualOverdueMonths}`
+            : 'No calculation',
           prev_working_day: prevWorkingDay.format('YYYY-MM-DD'),
           total_months: totalMonths,
           asset_value_remain_month: assetValueRemainMonth,
           asset_value_remain_begin: assetValueRemainBegin,
           accu_dpca_value_total: accuDpcaValueTotal,
           calculation_method: cDpacValue === 0 ? 'C_dpac_zero' : 'C_dpac_has_value',
-          added_one_month: overdueMonthsFloor < totalMonths ? 'Yes' : 'No' // ສະແດງວ່າເພີ່ມ 1 ເດືອນຫຼືບໍ່
+          added_one_month: overdueMonthsFloor < totalMonths ? 'Yes' : 'No',
+          calculation_formula: cDpacValue === 0 
+            ? `(${Math.max(0, finalOverdueMonths - 1)} * ${assetValueRemainMonth}) + ${assetValueRemainBegin} = ${calculatedAmount}`
+            : `${finalOverdueMonths} * ${assetValueRemainMonth} = ${calculatedAmount}`,
+          final_overdue_used: finalOverdueMonths,
+          values_check: {
+            assetValueRemainMonth: assetValueRemainMonth,
+            assetValueRemainBegin: assetValueRemainBegin,
+            accuDpcaValueTotal: accuDpcaValueTotal,
+            cDpacValue: cDpacValue,
+            isNaN_check: {
+              assetValueRemainMonth: isNaN(assetValueRemainMonth),
+              assetValueRemainBegin: isNaN(assetValueRemainBegin),
+              accuDpcaValueTotal: isNaN(accuDpcaValueTotal)
+            }
+          }
         }
       };
     }
@@ -278,6 +210,7 @@ const mappedData = computed(() => {
     };
   });
 });
+
 const headers = [
   { title: "ລະຫັດຊັບສິນ", key: "asset_id" },
   { title: "ຊື່ຊັບສິນ", key: "asset_name" },
