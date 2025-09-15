@@ -514,7 +514,7 @@ onMounted(async () => {
               "
               v-if="canAdd"
             >
-              <v-icon icon="mdi-plus"></v-icon> ເພີ່ມວິທີການບັນຊີໃໝ່
+              <v-icon icon="mdi-plus"></v-icon> ເພີ່ມວິທີການຕັ້ງຄ່າໃໝ່
             </v-btn>
           </div>
         </v-col>
