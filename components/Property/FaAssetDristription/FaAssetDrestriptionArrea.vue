@@ -113,7 +113,7 @@ const mappedData = computed(() => {
       
       // ຖ້າຍັງບໍ່ຄົບກຳນົດ (< totalMonths) ໃຫ້ເພີ່ມ 1 ເດືອນ
       if (overdueMonthsFloor < totalMonths) {
-        finalOverdueMonths = overdueMonthsFloor + 1;
+        finalOverdueMonths = overdueMonthsFloor ;
       }
       // ຖ້າຄົບກຳນົດແລ້ວ (>= totalMonths) ບໍ່ເພີ່ມ
       
@@ -199,10 +199,10 @@ const mappedData = computed(() => {
       };
     }
     
-    // ຖ້າບໍ່ພົບ asset ທີ່ກົງກັນ
+    
     return {
       ...overdueItem,
-      overdue_months: overdueItem.overdue_months, // ຄງຄ່າເດີມ
+      overdue_months: overdueItem.overdue_months, 
       matched_asset: null,
       daily_depreciation: 0,
       calculated_overdue_amount: 0,
