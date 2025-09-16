@@ -144,7 +144,7 @@ const mappedData = computed(() => {
       if (overdueMonthsFloor < totalMonths) {
         finalOverdueMonths = overdueMonthsFloor;
       }
-      
+
       if (finalOverdueMonths < 1 && actualOverdueMonths > 0) {
         finalOverdueMonths = 1;
       }
@@ -152,7 +152,7 @@ const mappedData = computed(() => {
       // *** ເພີ່ມເງື່ອນໄຂໃໝ່: ຖ້າ finalOverdueMonths > asset_useful_life * 12 ໃຫ້ໃຊ້ asset_useful_life * 12 ແທນ ***
       const assetUsefulLife = parseInt(matchedAsset.asset_useful_life) || 0;
       const maxAllowedMonths = assetUsefulLife * 12;
-      
+
       // *** ເພີ່ມ Debug Logs ***
       console.log(`🔍 Debug for asset ${overdueItem.asset_id}:`, {
         assetUsefulLife: assetUsefulLife,
@@ -160,18 +160,25 @@ const mappedData = computed(() => {
         finalOverdueMonths_before: finalOverdueMonths,
         condition1: assetUsefulLife > 0,
         condition2: finalOverdueMonths > maxAllowedMonths,
-        bothConditions: assetUsefulLife > 0 && finalOverdueMonths > maxAllowedMonths,
-        rawUsefulLife: matchedAsset.asset_useful_life
+        bothConditions:
+          assetUsefulLife > 0 && finalOverdueMonths > maxAllowedMonths,
+        rawUsefulLife: matchedAsset.asset_useful_life,
       });
-      
+
       if (assetUsefulLife > 0 && finalOverdueMonths > maxAllowedMonths) {
-        console.log(`✅ APPLYING useful_life limit for ${overdueItem.asset_id}: ${finalOverdueMonths} → ${maxAllowedMonths}`);
+        console.log(
+          `✅ APPLYING useful_life limit for ${overdueItem.asset_id}: ${finalOverdueMonths} → ${maxAllowedMonths}`
+        );
         finalOverdueMonths = maxAllowedMonths;
       } else {
-        console.log(`❌ NOT applying useful_life limit for ${overdueItem.asset_id}`);
+        console.log(
+          `❌ NOT applying useful_life limit for ${overdueItem.asset_id}`
+        );
       }
-      
-      console.log(`🎯 Final result for ${overdueItem.asset_id}: finalOverdueMonths = ${finalOverdueMonths}`);
+
+      console.log(
+        `🎯 Final result for ${overdueItem.asset_id}: finalOverdueMonths = ${finalOverdueMonths}`
+      );
 
       if (cDpacValue === 0) {
         // C_dpac ຍັງບໍ່ມີຄ່າ (ເທົ່າກັບ 0)
@@ -247,7 +254,8 @@ const mappedData = computed(() => {
               : `${finalOverdueMonths} * ${assetValueRemainMonth} = ${calculatedAmount}`,
           final_overdue_used: finalOverdueMonths,
           is_in_journal: isInJournal,
-          useful_life_limit_applied: assetUsefulLife > 0 && overdueMonthsFloor > maxAllowedMonths,
+          useful_life_limit_applied:
+            assetUsefulLife > 0 && overdueMonthsFloor > maxAllowedMonths,
           values_check: {
             assetValueRemainMonth: assetValueRemainMonth,
             assetValueRemainBegin: assetValueRemainBegin,
@@ -286,10 +294,11 @@ const selectableItems = computed(() => {
 const headers = [
   { title: "ລະຫັດຊັບສິນ", key: "asset_id" },
   { title: "ຊື່ຊັບສິນ", key: "asset_name" },
-  { title: "ຄ້າງ (ເດືອນ)", key: "overdue_months" },
   { title: "ຈຳນວນເງິນທີ່ຈະຫັກ", key: "calculated_overdue_amount" },
-  { title: "ຄືບໜ້າ", key: "completion_percentage" },
+  { title: "ຄ້າງ (ເດືອນ)", key: "overdue_months" },
   { title: "ງວດທີ່ຈະຫັກ", key: "due_end_date" },
+  { title: "ຄືບໜ້າ", key: "completion_percentage" },
+
   { title: "ສະຖານະ", key: "journal_status" },
 ];
 
@@ -349,8 +358,8 @@ onMounted(() => {
     class="mb-2 pa-2"
     style="background-color: #fff3e0; border-radius: 4px; font-size: 12px"
   >
-    <strong>📊 Journal Status:</strong>
-    ມີລາຍການໃນ journal: {{ journalData.length }} | ມີລາຍການທີ່ເລືອກໄດ້:
+    
+     ລາຍການທີ່ເລືອກໄດ້:
     {{ selectableItems.length }}/{{ mappedData.length }}
   </div>
 
@@ -496,6 +505,7 @@ onMounted(() => {
   </div>
 
   <v-data-table
+  class="text-no-wrap"
     v-model="selectedItems"
     :items="mappedData"
     :headers="headers"
@@ -540,17 +550,23 @@ onMounted(() => {
                 <!-- ກວດສອບວ່າມີການນຳໃຊ້ useful_life limit ຫຼືບໍ່ -->
                 <span v-if="item.debug_info?.useful_life_limit_applied">
                   {{
-                    item.matched_asset?.dpca_end_date 
-                      ? dayjs(item.matched_asset.dpca_end_date).format("MM/YYYY")
-                      : dayjs(item.due_end_date.split("/").reverse().join("-")).format("MM/YYYY")
+                    item.matched_asset?.dpca_end_date
+                      ? dayjs(item.matched_asset.dpca_end_date).format(
+                          "MM/YYYY"
+                        )
+                      : dayjs(
+                          item.due_end_date.split("/").reverse().join("-")
+                        ).format("MM/YYYY")
                   }}
                   ຫາ
                   {{
-                    item.matched_asset?.dpca_end_date 
-                      ? dayjs(item.matched_asset.dpca_end_date).format("MM/YYYY")
-                      : (eod[0]?.prev_working_day 
-                          ? dayjs(eod[0].prev_working_day).format("MM/YYYY")
-                          : dayjs().format("MM/YYYY"))
+                    item.matched_asset?.dpca_end_date
+                      ? dayjs(item.matched_asset.dpca_end_date).format(
+                          "MM/YYYY"
+                        )
+                      : eod[0]?.prev_working_day
+                      ? dayjs(eod[0].prev_working_day).format("MM/YYYY")
+                      : dayjs().format("MM/YYYY")
                   }}
                   (ຈຳກັດຕາມອາຍຸການໃຊ້ງານ)
                 </span>
@@ -640,23 +656,27 @@ onMounted(() => {
       >
         <!-- ກວດສອບວ່າມີການນຳໃຊ້ useful_life limit ຫຼືບໍ່ -->
         <span v-if="item.debug_info?.useful_life_limit_applied">
-        {{
-            dayjs(item.due_end_date.split("/").reverse().join("-")).format("MM/YYYY")
+          {{
+            dayjs(item.due_end_date.split("/").reverse().join("-")).format(
+              "MM/YYYY"
+            )
           }}
         </span>
         <span v-else>
           {{
-            dayjs(item.due_end_date.split("/").reverse().join("-")).format("MM/YYYY")
+            dayjs(item.due_end_date.split("/").reverse().join("-")).format(
+              "MM/YYYY"
+            )
           }}
         </span>
         <span style="color: #666"> ຫາ </span>
         <span v-if="item.debug_info?.useful_life_limit_applied">
           {{
-            item.matched_asset?.dpca_end_date 
+            item.matched_asset?.dpca_end_date
               ? dayjs(item.matched_asset.dpca_end_date).format("MM/YYYY")
-              : (eod[0]?.prev_working_day 
-                  ? dayjs(eod[0].prev_working_day).format("MM/YYYY")
-                  : dayjs().format("MM/YYYY"))
+              : eod[0]?.prev_working_day
+              ? dayjs(eod[0].prev_working_day).format("MM/YYYY")
+              : dayjs().format("MM/YYYY")
           }}
         </span>
         <span v-else>
