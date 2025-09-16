@@ -104,9 +104,8 @@ watch(
 
       request.ref_id = assetData?.asset_list_id || req.ref_id;
       request.amount = assetData?.asset_value || req.amount;
-      request.amount_start =
-        assetData?.asset_value_remainBegin || req.amount_start;
-      request.amount_end = assetData?.asset_value_remainLast || req.amount_end;
+      request.amount_start = req.amount_start;
+      request.amount_end = req.amount_end;
       request.debit_account_id = debitAccountNumber.value;
       request.credit_account_id = creditAccountNumber.value;
       request.transaction_date = assetData?.Maker_DT_Stamp
@@ -285,16 +284,11 @@ const title = "ລາຍລະອຽດການຕັ້ງຄ່າທືກ�
 
                 <v-label class="mb-1">ມູນຄ່າຕົ້ນ</v-label>
                 <v-text-field
-                  :model-value="
-                    formatnumber(
-                      dataupdate?.asset_value_remainBegin ||
-                        detail?.amount_start
-                    ).toString()
-                  "
-                  :v-model="request.amount_start"
+                  
+                  v-model="request.amount_start"
                   variant="outlined"
                   density="compact"
-                  readonly
+                 
                   class="formatted-number-input"
                 />
               </v-col>
@@ -308,20 +302,16 @@ const title = "ລາຍລະອຽດການຕັ້ງຄ່າທືກ�
                   :v-model="request.transaction_date"
                   variant="outlined"
                   density="compact"
-                  readonly
+                  
                 />
 
                 <v-label class="mb-1">ມູນຄ່າທ້າຍ</v-label>
                 <v-text-field
-                  :model-value="
-                    formatnumber(
-                      dataupdate?.asset_value_remainLast || detail?.amount_end
-                    ).toString()
-                  "
-                  :v-model="request.amount_end"
+                  
+                  v-model="request.amount_end"
                   variant="outlined"
                   density="compact"
-                  readonly
+                 
                   class="formatted-number-input"
                 />
               </v-col>
