@@ -2,9 +2,32 @@
 import dayjs from "dayjs";
 const mainStore = useFassetLidtDescription();
 const assetStores = faAssetStore();
+
 const eodStore = useDateStore();
 const selectedItems = ref([]);
 const journalStore = usejournalStore();
+
+// เพิ่ม ref สำหรับ filter
+const selectedAssetType = ref(null);
+const selectedJournalStatus = ref(null); // ເພີ່ມ filter ສະຖານະ journal
+
+const mainTypeStore = assetStore();
+const mainType = computed(() => {
+  const data = mainTypeStore.response_asset_types;
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (data && typeof data === "object") {
+    return [data];
+  }
+  return [];
+});
+
+// ເພີ່ມ options สຳລັບ filter ສະຖານະ journal
+const journalStatusOptions = [
+  { value: "pending", title: "ລໍຖ້າອະນຸມັດ" },
+  { value: "not_created", title: "ຍັງບໍ່ໄດ້ຫັກ" }
+];
 
 const journalData = computed(() => {
   const data = journalStore.response_data_list_journal;
@@ -17,7 +40,6 @@ const journalData = computed(() => {
   return [];
 });
 
-// ສ້າງ Set ຂອງ Ac_relatives ເພື່ອການກວດສອບໄວຂຶ້ນ
 const journalAssetIds = computed(() => {
   return new Set(journalData.value.map((item) => item.Ac_relatives));
 });
@@ -63,7 +85,6 @@ const StardDate = (apdc_start_date: any) => {
   return itemData ? itemData.dpca_start_date : "_";
 };
 
-// ພາກສ່ວນທີ່ປ່ຽນແປງພ້ອມ debug logs
 const mappedData = computed(() => {
   const eodData = eod.value[0];
   const prevWorkingDay = eodData?.prev_working_day
@@ -75,11 +96,9 @@ const mappedData = computed(() => {
       (asset) => asset.asset_list_id === overdueItem.asset_id
     );
 
-    // ກວດສອບວ່າ asset_id ນີ້ມີຢູ່ໃນ journal ແລ້ວຫຼືບໍ່
     const isInJournal = journalAssetIds.value.has(overdueItem.asset_id);
 
     if (matchedAsset) {
-      // ຄິດໄລ່ວັນຄ້າງໃໝ່ຈາກ due_end_date ຫາ prev_working_day
       let actualOverdueDays = 0;
       let actualOverdueMonths = 0;
       let dueDate = null;
@@ -91,35 +110,28 @@ const mappedData = computed(() => {
       let currentMonthTotal = null;
 
       if (overdueItem.due_end_date) {
-        // Parse due_end_date (format: DD/MM/YYYY)
         const dueDateParts = overdueItem.due_end_date.split("/");
         dueDate = dayjs(
           `${dueDateParts[2]}-${dueDateParts[1]}-${dueDateParts[0]}`
         );
 
-        // ຄິດໄລ່ຄວາມແຕກຕ່າງເປັນວັນ
         actualOverdueDays = prevWorkingDay.diff(dueDate, "days");
 
-        // ຄິດໄລ່ເດືອນດ້ວຍສູດ: ເດືອນສຸດທ້າຍ - ເດືອນທຳອິດ + 1
         dueYear = parseInt(dueDateParts[2]);
         dueMonth = parseInt(dueDateParts[1]);
         currentYear = prevWorkingDay.year();
-        currentMonth = prevWorkingDay.month() + 1; // dayjs month ເລີ່ມຈາກ 0
+        currentMonth = prevWorkingDay.month() + 1;
 
-        // ແປງເປັນເດືອນທັງໝົດນັບຈາກປີ 0
         dueMonthTotal = dueYear * 12 + dueMonth;
         currentMonthTotal = currentYear * 12 + currentMonth;
 
-        // ໃຊ້ສູດ: ເດືອນສຸດທ້າຍ - ເດືອນທຳອິດ + 1
         actualOverdueMonths = currentMonthTotal - dueMonthTotal + 1;
 
-        // ຖ້າຍັງບໍ່ເຖິງກຳນົດ ໃຫ້ເປັນ 0
         if (actualOverdueDays < 0) {
           actualOverdueDays = 0;
           actualOverdueMonths = 0;
         }
       } else {
-        // ຖ້າບໍ່ມີ due_end_date ໃຊ້ຄ່າເດີມ
         actualOverdueDays = overdueItem.overdue_months * 30;
         actualOverdueMonths = overdueItem.overdue_months;
       }
@@ -149,11 +161,9 @@ const mappedData = computed(() => {
         finalOverdueMonths = 1;
       }
 
-      // *** ເພີ່ມເງື່ອນໄຂໃໝ່: ຖ້າ finalOverdueMonths > asset_useful_life * 12 ໃຫ້ໃຊ້ asset_useful_life * 12 ແທນ ***
       const assetUsefulLife = parseInt(matchedAsset.asset_useful_life) || 0;
       const maxAllowedMonths = assetUsefulLife * 12;
 
-      // *** ເພີ່ມ Debug Logs ***
       console.log(`🔍 Debug for asset ${overdueItem.asset_id}:`, {
         assetUsefulLife: assetUsefulLife,
         maxAllowedMonths: maxAllowedMonths,
@@ -181,7 +191,6 @@ const mappedData = computed(() => {
       );
 
       if (cDpacValue === 0) {
-        // C_dpac ຍັງບໍ່ມີຄ່າ (ເທົ່າກັບ 0)
         if (finalOverdueMonths >= totalMonths) {
           calculatedAmount = accuDpcaValueTotal;
         } else {
@@ -191,33 +200,29 @@ const mappedData = computed(() => {
         }
       } else {
         if (finalOverdueMonths >= totalMonths) {
-          // ຖ້າ finalOverdueMonths >= total_months ໃຫ້ໃຊ້ accu_dpca_value_total
           calculatedAmount = accuDpcaValueTotal;
         } else {
-          // ການຄິດໄລ່: finalOverdueMonths * asset_value_remainMonth
           calculatedAmount = finalOverdueMonths * assetValueRemainMonth;
         }
       }
 
       return {
         ...overdueItem,
-        // ສະແດງເດືອນທີ່ເພີ່ມແລ້ວ
         overdue_months: finalOverdueMonths,
         overdue_days: actualOverdueDays,
-        // ເພີ່ມຂໍ້ມູນຈາກ asset
         matched_asset: matchedAsset,
         daily_depreciation: dailyDepreciation,
         calculated_overdue_amount: calculatedAmount,
         asset_value_remainMonth: matchedAsset.asset_value_remainMonth,
-        // ເພີ່ມສະຖານະ journal
         is_in_journal: isInJournal,
         journal_status: isInJournal ? "ລໍຖ້າອະນຸມັດ" : "ຍັງບໍ່ໄດ້ຫັກ",
-        // ເພີ່ມຂໍ້ມູນອື່ນໆ ທີ່ອາດຈະໃຊ້
+        journal_status_key: isInJournal ? "pending" : "not_created", // ເພີ່ມ key ສຳລັບ filter
         asset_full_name:
           matchedAsset.asset_id_detail?.asset_name_la || overdueItem.asset_name,
         location_name: matchedAsset.location_detail?.location_name_la,
         supplier_name: matchedAsset.supplier_detail?.supplier_name,
-        // ເພີ່ມຂໍ້ມູນສຳລັບ debug
+        // เพิ่ม asset_type_id เพื่อใช้ในการ filter
+        asset_type_id: matchedAsset.asset_type_id,
         debug_info: {
           asset_useful_life: assetUsefulLife,
           max_allowed_months: maxAllowedMonths,
@@ -281,14 +286,36 @@ const mappedData = computed(() => {
       is_in_journal: journalAssetIds.value.has(overdueItem.asset_id),
       journal_status: journalAssetIds.value.has(overdueItem.asset_id)
         ? "ລໍຖ້າອະນຸມັດ"
-        : "ຍັງບໍ່ໄດ້ສ້າງ",
+        : "ຍັງບໍ່ໄດ້ຫັກ",
+      journal_status_key: journalAssetIds.value.has(overdueItem.asset_id) ? "pending" : "not_created", // ເພີ່ມ key ສຳລັບ filter
+      asset_type_id: null, 
     };
   });
 });
 
-// ຟິລເຕີເອົາພຽງລາຍການທີ່ບໍ່ໄດ້ຢູ່ໃນ journal ແລະສາມາດເລືອກໄດ້
+// ປັບປຸງ filteredMappedData ໃຫ້ຮອງຮັບ filter ສະຖານະ journal
+const filteredMappedData = computed(() => {
+  let filtered = mappedData.value;
+
+  // Filter ຕາມປະເພດຊັບສິນ
+  if (selectedAssetType.value) {
+    filtered = filtered.filter(
+      (item) => item.asset_type_id === selectedAssetType.value
+    );
+  }
+
+  // Filter ຕາມສະຖານະ journal
+  if (selectedJournalStatus.value) {
+    filtered = filtered.filter(
+      (item) => item.journal_status_key === selectedJournalStatus.value
+    );
+  }
+
+  return filtered;
+});
+
 const selectableItems = computed(() => {
-  return mappedData.value.filter((item) => !item.is_in_journal);
+  return filteredMappedData.value.filter((item) => !item.is_in_journal);
 });
 
 const headers = [
@@ -298,7 +325,6 @@ const headers = [
   { title: "ຄ້າງ (ເດືອນ)", key: "overdue_months" },
   { title: "ງວດທີ່ຈະຫັກ", key: "due_end_date" },
   { title: "ຄືບໜ້າ", key: "completion_percentage" },
-
   { title: "ສະຖານະ", key: "journal_status" },
 ];
 
@@ -307,7 +333,6 @@ const formatNumber = (num: any) => {
 };
 
 const processBulkItems = async () => {
-  // ກວດສອບວ່າມີລາຍການທີ່ເລືອກຫຼືບໍ່
   if (selectedItems.value.length === 0) {
     alert("ກະລຸນາເລືອກລາຍການກ່ອນ");
     return;
@@ -315,7 +340,6 @@ const processBulkItems = async () => {
 
   mainStore.total_caculate.mapping_ids = selectedItems.value;
 
-  // ປ່ຽນຈາກວັນປະຈຸບັນເປັນ prev_working_day ຂອງ EOD
   const eodData = eod.value[0];
   const targetDate = eodData?.prev_working_day
     ? dayjs(eodData.prev_working_day).format("YYYY-MM-DD")
@@ -331,21 +355,27 @@ const processBulkItems = async () => {
   selectedItems.value = [];
 };
 
-// ຟັງຊັ່ນສຳລັບເລືອກທັງໝົດ/ຍົກເລີກທັງໝົດ
 const toggleSelectAll = () => {
   if (selectedItems.value.length === selectableItems.value.length) {
-    // ຖ້າເລືອກຄົບແລ້ວ ໃຫ້ຍົກເລີກທັງໝົດ
     selectedItems.value = [];
   } else {
-    // ຖ້າຍັງບໍ່ຄົບ ໃຫ້ເລືອກທັງໝົດ (ລາຍການທີ່ເລືອກໄດ້ເທົ່ານັ້ນ)
     selectedItems.value = selectableItems.value.map((item) => item.mapping_id);
   }
+};
+
+// ປັບປຸງ clearFilter ໃຫ້ລົບ filter ສະຖານະ journal ດ້ວຍ
+const clearFilter = () => {
+  selectedAssetType.value = null;
+  selectedJournalStatus.value = null; // ເພີ່ມການລົບ filter ສະຖານະ journal
+  selectedItems.value = [];
 };
 
 const title = "ຫັກຄ່າຫຼູຍຫ້ຽນຍອ້ນຫຼັງ";
 
 onMounted(() => {
+  mainTypeStore.GetAssetTypes();
   assetStores.GetFaAssetList();
+
   mainStore.getArrears();
   eodStore.GetEOD();
   journalStore.getData();
@@ -353,14 +383,91 @@ onMounted(() => {
 </script>
 
 <template>
-  <!-- Debug ຂໍ້ມູນ journal -->
+  <v-row>
+    <v-col cols="12" md="3">
+      <v-autocomplete
+        v-model="selectedAssetType"
+        :items="mainType"
+        item-title="asset_name_la"
+        item-value="coa_id"
+        label="ເລືອກປະເພດຊັບສິນ"
+        variant="outlined"
+        density="compact"
+        clearable
+        prepend-inner-icon="mdi-format-list-bulleted-type"
+      >
+        <template v-slot:item="{ props, item }">
+          <v-list-item
+            v-bind="props"
+            :title="`${item.raw.asset_name_la}-${item.raw.coa_id}`"
+          >
+            <template v-slot:prepend>
+              <v-avatar size="small" flat color="primary">
+                <v-icon
+                  icon="mdi-format-list-bulleted-type"
+                  size="small"
+                  color="white"
+                />
+              </v-avatar>
+            </template>
+          </v-list-item>
+        </template>
+      </v-autocomplete>
+    </v-col>
+    
+    <!-- ເພີ່ມ filter ສຳລັບສະຖານະ journal -->
+    <v-col cols="12" md="3">
+      <v-select
+        v-model="selectedJournalStatus"
+        :items="journalStatusOptions"
+        item-title="title"
+        item-value="value"
+        label="ເລືອກສະຖານະ"
+        variant="outlined"
+        density="compact"
+        clearable
+        prepend-inner-icon="mdi-clipboard-list-outline"
+      >
+        <template v-slot:item="{ props, item }">
+          <v-list-item v-bind="props" :title="item.raw.title">
+            <template v-slot:prepend>
+              <v-avatar size="small" flat :color="item.raw.value === 'pending' ? 'orange' : 'grey'">
+                <v-icon
+                  :icon="item.raw.value === 'pending' ? 'mdi-clock-outline' : 'mdi-plus-circle-outline'"
+                  size="small"
+                  color="white"
+                />
+              </v-avatar>
+            </template>
+          </v-list-item>
+        </template>
+      </v-select>
+    </v-col>
+    
+    <!-- ເພີ່ມປຸ່ມລົບ filter -->
+    <!-- <v-col cols="12" md="2">
+      <v-btn
+        @click="clearFilter"
+        variant="outlined"
+        color="secondary"
+        prepend-icon="mdi-filter-remove"
+        :disabled="!selectedAssetType && !selectedJournalStatus"
+        style="height: 40px;"
+      >
+        ລົບ Filter
+      </v-btn>
+    </v-col> -->
+  </v-row>
+
   <div
     class="mb-2 pa-2"
     style="background-color: #fff3e0; border-radius: 4px; font-size: 12px"
   >
-    
-     ລາຍການທີ່ເລືອກໄດ້:
-    {{ selectableItems.length }}/{{ mappedData.length }}
+    ລາຍການທີ່ເລືອກໄດ້:
+    {{ selectableItems.length }}/{{ filteredMappedData.length }}
+    <span v-if="selectedAssetType || selectedJournalStatus" style="color: #ff6f00">
+      (ກອງແລ້ວ: {{ filteredMappedData.length }}/{{ mappedData.length }})
+    </span>
   </div>
 
   <div
@@ -399,7 +506,6 @@ onMounted(() => {
     <small style="color: #666">
       Selected mapping_ids: {{ selectedItems }}
     </small>
-    <!-- ສະແດງວັນທີ່ກຳນົດ -->
     <br />
     <small style="color: #2196f3">
       📅 ວັນທີ່ກຳນົດສຳລັບການຫັກ:
@@ -421,7 +527,7 @@ onMounted(() => {
           ລາຍການທັງໝົດ
         </v-card-title>
         <div class="">
-          <h2 class="">{{ mappedData.length }}</h2>
+          <h2 class="">{{ filteredMappedData.length }}</h2>
           <p>ລາຍການ</p>
         </div>
       </v-card>
@@ -438,7 +544,7 @@ onMounted(() => {
           <h2 class="">
             {{
               formatNumber(
-                mappedData.reduce(
+                filteredMappedData.reduce(
                   (sum, item) => sum + (item.calculated_overdue_amount || 0),
                   0
                 )
@@ -475,7 +581,7 @@ onMounted(() => {
           <h2 class="">
             {{
               formatNumber(
-                mappedData
+                filteredMappedData
                   .filter((item) => selectedItems.includes(item.mapping_id))
                   .reduce(
                     (sum, item) => sum + (item.calculated_overdue_amount || 0),
@@ -490,7 +596,6 @@ onMounted(() => {
     </v-col>
   </v-row>
 
-  <!-- ສະແດງຂໍ້ມູນ EOD ສຳລັບ debug -->
   <div
     class="mb-2 pa-2"
     style="background-color: #f8f9fa; border-radius: 4px; font-size: 12px"
@@ -505,16 +610,15 @@ onMounted(() => {
   </div>
 
   <v-data-table
-  class="text-no-wrap"
+    class="text-no-wrap"
     v-model="selectedItems"
-    :items="mappedData"
+    :items="filteredMappedData"
     :headers="headers"
     show-select
     item-value="mapping_id"
     :loading="mainStore.isLoading"
     :item-selectable="(item) => !item.is_in_journal"
   >
-    <!-- Custom checkbox ທີ່ disabled ສຳລັບລາຍການທີ່ຢູ່ໃນ journal -->
     <template
       v-slot:item.data-table-select="{ item, isSelected, toggleSelect }"
     >
@@ -547,16 +651,11 @@ onMounted(() => {
             <div>
               ກົດຫັກແລ້ວສຳຫຼັບງວດ:
               <span v-if="item.due_end_date">
-                <!-- ກວດສອບວ່າມີການນຳໃຊ້ useful_life limit ຫຼືບໍ່ -->
                 <span v-if="item.debug_info?.useful_life_limit_applied">
                   {{
-                    item.matched_asset?.dpca_end_date
-                      ? dayjs(item.matched_asset.dpca_end_date).format(
-                          "MM/YYYY"
-                        )
-                      : dayjs(
-                          item.due_end_date.split("/").reverse().join("-")
-                        ).format("MM/YYYY")
+                    dayjs(
+                      item.due_end_date.split("/").reverse().join("-")
+                    ).format("MM/YYYY")
                   }}
                   ຫາ
                   {{
@@ -614,21 +713,18 @@ onMounted(() => {
       <b style="color: blue">{{ column.title }}</b>
     </template>
 
-    <!-- Asset ID with disabled styling for journal items -->
     <template v-slot:item.asset_id="{ item }">
       <span :style="{ opacity: item.is_in_journal ? 0.5 : 1 }">
         {{ item.asset_id }}
       </span>
     </template>
 
-    <!-- Asset name with disabled styling -->
     <template v-slot:item.asset_name="{ item }">
       <span :style="{ opacity: item.is_in_journal ? 0.5 : 1 }">
         {{ item.asset_name }}
       </span>
     </template>
 
-    <!-- Calculated amount with styling -->
     <template v-slot:item.calculated_overdue_amount="{ item }">
       <strong
         :style="{
@@ -654,7 +750,6 @@ onMounted(() => {
         v-if="item.due_end_date"
         :style="{ opacity: item.is_in_journal ? 0.5 : 1 }"
       >
-        <!-- ກວດສອບວ່າມີການນຳໃຊ້ useful_life limit ຫຼືບໍ່ -->
         <span v-if="item.debug_info?.useful_life_limit_applied">
           {{
             dayjs(item.due_end_date.split("/").reverse().join("-")).format(
@@ -706,7 +801,6 @@ onMounted(() => {
       </v-chip>
     </template>
 
-    <!-- Journal Status Column -->
     <template v-slot:item.journal_status="{ item }">
       <v-chip
         :color="item.is_in_journal ? 'orange' : 'grey'"
