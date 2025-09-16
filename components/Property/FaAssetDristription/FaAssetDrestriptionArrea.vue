@@ -7,9 +7,9 @@ const eodStore = useDateStore();
 const selectedItems = ref([]);
 const journalStore = usejournalStore();
 
-// เพิ่ม ref สำหรับ filter
+
 const selectedAssetType = ref(null);
-const selectedJournalStatus = ref(null); // ເພີ່ມ filter ສະຖານະ journal
+const selectedJournalStatus = ref(null); 
 
 const mainTypeStore = assetStore();
 const mainType = computed(() => {
@@ -216,12 +216,12 @@ const mappedData = computed(() => {
         asset_value_remainMonth: matchedAsset.asset_value_remainMonth,
         is_in_journal: isInJournal,
         journal_status: isInJournal ? "ລໍຖ້າອະນຸມັດ" : "ຍັງບໍ່ໄດ້ຫັກ",
-        journal_status_key: isInJournal ? "pending" : "not_created", // ເພີ່ມ key ສຳລັບ filter
+        journal_status_key: isInJournal ? "pending" : "not_created", 
         asset_full_name:
           matchedAsset.asset_id_detail?.asset_name_la || overdueItem.asset_name,
         location_name: matchedAsset.location_detail?.location_name_la,
         supplier_name: matchedAsset.supplier_detail?.supplier_name,
-        // เพิ่ม asset_type_id เพื่อใช้ในการ filter
+      
         asset_type_id: matchedAsset.asset_type_id,
         debug_info: {
           asset_useful_life: assetUsefulLife,
@@ -287,24 +287,24 @@ const mappedData = computed(() => {
       journal_status: journalAssetIds.value.has(overdueItem.asset_id)
         ? "ລໍຖ້າອະນຸມັດ"
         : "ຍັງບໍ່ໄດ້ຫັກ",
-      journal_status_key: journalAssetIds.value.has(overdueItem.asset_id) ? "pending" : "not_created", // ເພີ່ມ key ສຳລັບ filter
+      journal_status_key: journalAssetIds.value.has(overdueItem.asset_id) ? "pending" : "not_created", 
       asset_type_id: null, 
     };
   });
 });
 
-// ປັບປຸງ filteredMappedData ໃຫ້ຮອງຮັບ filter ສະຖານະ journal
+
 const filteredMappedData = computed(() => {
   let filtered = mappedData.value;
 
-  // Filter ຕາມປະເພດຊັບສິນ
+
   if (selectedAssetType.value) {
     filtered = filtered.filter(
       (item) => item.asset_type_id === selectedAssetType.value
     );
   }
 
-  // Filter ຕາມສະຖານະ journal
+  
   if (selectedJournalStatus.value) {
     filtered = filtered.filter(
       (item) => item.journal_status_key === selectedJournalStatus.value
@@ -733,14 +733,14 @@ onMounted(() => {
           opacity: item.is_in_journal ? 0.5 : 1,
         }"
       >
-        {{ formatNumber(Math.round(item.calculated_overdue_amount || 0)) }} ກີບ
+        {{ formatNumber((item.calculated_overdue_amount || 0)) }} ກີບ
       </strong>
     </template>
 
     <template v-slot:item.completion_percentage="{ item }">
       <span :style="{ opacity: item.is_in_journal ? 0.5 : 1 }">
         {{ item.current_month - 1 }}/{{ item.total_months }} ({{
-          Math.round(item.completion_percentage)
+          (item.completion_percentage)
         }}%)
       </span>
     </template>
