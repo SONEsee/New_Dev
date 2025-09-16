@@ -16,10 +16,12 @@ const history = computed(() => {
 const header = [
   { title: "ລະຫັດ", value: "aldim_id" },
   { title: "ງວດທີ່ຫັກ", value: "dpca_month" },
-  { title: "ຈຳນວນລາຍການທີ່ຫັກ", value: "C_dpca", align: "center" },
   { title: "ມູນຄ່າທີ່ຫັກ", value: "dpca_value" },
-  { title: "ສະຖານະ", value: "dpca_status" },
+  { title: "ຈຳນວນລາຍການທີ່ຫັກ", value: "C_dpca", align: "center" },
+
+  
   { title: "ມື້ຫັກ", value: "Maker_DT_Stamp" },
+  { title: "ສະຖານະ", value: "dpca_status" },
   { title: "ລາຍລະອຽດ", value: "actions" },
 ] as any;
 const responseData = computed(() => {
@@ -281,10 +283,20 @@ const handleNotificationClick = () => {
                   </div>
                 </template>
                 <template v-slot:item.dpca_status="{ item }">
-                  <v-chip color="success" v-if="item.dpca_status === 'SUCCESS'" variant="flat" size="small">
+                  <v-chip
+                    color="success"
+                    v-if="item.dpca_status === 'SUCCESS'"
+                    variant="flat"
+                    size="small"
+                  >
                     ສຳເລັດແລ້ວ
                   </v-chip>
-                  <v-chip color="error" v-if="item.dpca_status === 'FAILED'" variant="flat" size="small">
+                  <v-chip
+                    color="error"
+                    v-if="item.dpca_status === 'FAILED'"
+                    variant="flat"
+                    size="small"
+                  >
                     ຍັງບໍ່ສຳເລັດ
                   </v-chip>
                 </template>
