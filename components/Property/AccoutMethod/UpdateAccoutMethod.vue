@@ -103,7 +103,7 @@ watch(
       request.description = req.description;
 
       request.ref_id = assetData?.asset_list_id || req.ref_id;
-      request.amount = assetData?.asset_value || req.amount;
+      request.amount = assetData?.asset_value_remainMonth || req.amount;
       request.amount_start = req.amount_start;
       request.amount_end = req.amount_end;
       request.debit_account_id = debitAccountNumber.value;
@@ -177,7 +177,7 @@ const title = "ລາຍລະອຽດການຕັ້ງຄ່າທືກ�
 <template>
   <div class="pa-4">
     <GlobalTextTitleLine :title="title" />
-
+    <!-- <pre>{{ dataupdate }}</pre> -->
     <v-card class="mb-4" variant="outlined">
       <v-card-title class="text-h6 pb-2 bg-primary">
         <v-icon class="mr-2">mdi-format-list-bulleted</v-icon>
@@ -258,18 +258,18 @@ const title = "ລາຍລະອຽດການຕັ້ງຄ່າທືກ�
                   readonly
                 />
 
-                <v-label class="mb-1">ມູນຄ່າທັງໝົດ</v-label>
+                <v-label class="mb-1">ມູນຄ່າຕໍ່ເດືອນ</v-label>
                 <v-text-field
-                  :model-value="
-                    formatnumber(
-                      dataupdate?.asset_value || detail?.amount
-                    ).toString()
-                  "
-                  :v-model="request.amount"
+                
+                  v-model="request.amount"
                   variant="outlined"
                   density="compact"
-                  readonly
+                
                   class="formatted-number-input"
+                />
+                <GlobalCardTitle
+                  :text="dataupdate?.dpca_start_date ?? ''"
+                  title="ວັນທີ່ເລີ່ມຫັກ"
                 />
               </v-col>
 
@@ -284,12 +284,18 @@ const title = "ລາຍລະອຽດການຕັ້ງຄ່າທືກ�
 
                 <v-label class="mb-1">ມູນຄ່າຕົ້ນ</v-label>
                 <v-text-field
-                  
                   v-model="request.amount_start"
                   variant="outlined"
                   density="compact"
-                 
                   class="formatted-number-input"
+                />
+                <GlobalCardTitle
+                  :text="
+                    dataupdate?.asset_useful_life != null
+                      ? Number(dataupdate.asset_useful_life) * 12 + 'ເດືອນ'
+                      : ''
+                  "
+                  title="ອາຍຸໃນການໃຊ້ງານ"
                 />
               </v-col>
 
@@ -302,17 +308,20 @@ const title = "ລາຍລະອຽດການຕັ້ງຄ່າທືກ�
                   :v-model="request.transaction_date"
                   variant="outlined"
                   density="compact"
-                  
                 />
 
                 <v-label class="mb-1">ມູນຄ່າທ້າຍ</v-label>
                 <v-text-field
-                  
                   v-model="request.amount_end"
                   variant="outlined"
                   density="compact"
-                 
                   class="formatted-number-input"
+                />
+                <GlobalCardTitle
+                  :text="
+                    dataupdate?.dpca_end_date || ''
+                  "
+                  title="ງວດສຸດທ້າຍ"
                 />
               </v-col>
             </v-row>
