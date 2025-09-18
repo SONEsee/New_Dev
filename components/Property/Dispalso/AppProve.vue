@@ -123,8 +123,8 @@ interface ApiResponse {
 const isComponentMounted = ref<boolean>(true);
 
 // ===== STORE COMPOSABLES =====
-const mainStore = useFassetLidtDescription();
-const derpicationStore = useFassetLidtDescription();
+const mainStore = useDispoalStore();
+const derpicationStore = useDispoalStore();
 const cerrency = useCerrencyStore();
 const masterStore = useMasterStore();
 const jurnalStore = useJournalStor();
@@ -132,7 +132,7 @@ const jurnalStore = useJournalStor();
 // ===== COMPUTED PROPERTIES WITH PROPER TYPES AND ERROR HANDLING =====
 const datadevcription = computed((): DepreciationItem[] => {
   try {
-    const data = derpicationStore?.respons_data_driscription_main;
+    const data = derpicationStore?.respons_data_dispalso;
     let processedData: any[] = [];
 
     if (Array.isArray(data)) {
@@ -266,7 +266,7 @@ const modules = ref<ModuleItem[]>([]);
 const currencies = ref<CurrencyItem[]>([]);
 const authStatusOptions = ref<StatusItem[]>([]);
 
-const selectedItems = ref<(string | number)[]>([]);
+const selectedItems = ref<(string)[]>([]);
 const selectAll = ref<boolean>(false);
 
 const referenceDataCache = new Map<string, { data: any; timestamp: number }>();
@@ -350,7 +350,7 @@ const summary = reactive<Summary>({
   correction: 0,
 });
 
-// ===== HELPER FUNCTIONS WITH ERROR HANDLING =====
+
 const getMatchedAldmId = (item: JournalItem | null | undefined): string | number | null => {
   try {
     if (!item || !item.jrnl_log_ac?.Ac_relatives || !item.Maker_DT_Stamp) {
@@ -374,7 +374,7 @@ const getMatchedAldmId = (item: JournalItem | null | undefined): string | number
       }
     });
     
-    return matched ? matched.aldm_id : null;
+    return matched ? matched.asset_list_id : null;
   } catch (error) {
     console.error("Error in getMatchedAldmId:", error);
     return null;
@@ -395,8 +395,8 @@ const selectableItems = computed((): JournalItem[] => {
 const isItemSelected = (item: JournalItem | null | undefined): boolean => {
   try {
     if (!item) return false;
-    const aldmId = getMatchedAldmId(item);
-    return aldmId ? selectedItems.value.includes(aldmId) : false;
+    const asset_list_id = getMatchedAldmId(item);
+    return asset_list_id ? selectedItems.value.includes(String(asset_list_id)) : false;
   } catch (error) {
     console.error("Error in isItemSelected:", error);
     return false;
@@ -417,14 +417,15 @@ const toggleItemSelection = (item: JournalItem | null | undefined): void => {
   try {
     if (!item || !isItemSelectable(item)) return;
 
-    const aldmId = getMatchedAldmId(item);
-    if (!aldmId) return;
+    const asset_list_id = getMatchedAldmId(item);
+    if (!asset_list_id) return;
 
-    const index = selectedItems.value.indexOf(aldmId);
+    const stringId = String(asset_list_id); 
+    const index = selectedItems.value.indexOf(stringId);
     if (index > -1) {
       selectedItems.value.splice(index, 1);
     } else {
-      selectedItems.value.push(aldmId);
+      selectedItems.value.push(stringId);
     }
     updateSelectAllState();
   } catch (error) {
@@ -437,7 +438,8 @@ const toggleSelectAll = (): void => {
     if (selectAll.value) {
       selectedItems.value = selectableItems.value
         .map((item: JournalItem) => getMatchedAldmId(item))
-        .filter((aldmId): aldmId is string | number => aldmId !== null);
+        .filter((asset_list_id): asset_list_id is string | number => asset_list_id !== null)
+        .map(id => String(id)); // ແປງເປັນ string
     } else {
       selectedItems.value = [];
     }
@@ -450,13 +452,14 @@ const updateSelectAllState = (): void => {
   try {
     const selectableAldmIds = selectableItems.value
       .map((item: JournalItem) => getMatchedAldmId(item))
-      .filter((aldmId): aldmId is string | number => aldmId !== null);
+      .filter((asset_list_id): asset_list_id is string | number => asset_list_id !== null)
+      .map(id => String(id)); // ແປງເປັນ string
       
     if (selectableAldmIds.length === 0) {
       selectAll.value = false;
     } else {
-      selectAll.value = selectableAldmIds.every((aldmId: string | number) =>
-        selectedItems.value.includes(aldmId)
+      selectAll.value = selectableAldmIds.every((asset_list_id: string) =>
+        selectedItems.value.includes(asset_list_id)
       );
     }
   } catch (error) {
@@ -584,19 +587,19 @@ const activeFilterChips = computed((): FilterChip[] => {
   }
 });
 
-// ===== API FUNCTIONS WITH ERROR HANDLING =====
+
 const approveSelected = async (): Promise<void> => {
   try {
     if (!isComponentMounted.value) return;
     
-    const aldmIds = selectedItems.value;
-    if (aldmIds.length === 0) {
+    const asset_list_ids = selectedItems.value;
+    if (asset_list_ids.length === 0) {
       console.warn("No items selected for approval");
       return;
     }
 
-    mainStore.confirm_form_mark.aldm_ids = aldmIds as number[];
-    await mainStore.postConfirm();
+    mainStore.approve_disposal.asset_list_ids = asset_list_ids;
+    await mainStore.approveDisposal();
     
     if (isComponentMounted.value) {
       selectedItems.value = [];
@@ -619,14 +622,14 @@ const rejectSelected = async (): Promise<void> => {
   try {
     if (!isComponentMounted.value) return;
     
-    const aldmIds = selectedItems.value;
-    if (aldmIds.length === 0) {
+    const asset_list_ids = selectedItems.value;
+    if (asset_list_ids.length === 0) {
       console.warn("No items selected for rejection");
       return;
     }
 
-    mainStore.reject_form_mark.aldm_ids = aldmIds as number[];
-    await mainStore.postReject();
+    mainStore.reject_disposal.asset_list_ids = asset_list_ids;
+    await mainStore.RejectDisposal();
     
     if (isComponentMounted.value) {
       selectedItems.value = [];
@@ -781,7 +784,7 @@ const viewDetails = (item: JournalItem | null | undefined): void => {
       return;
     }
     
-    const detailUrl = `/property/autoriz/oneaddprove?Reference_No=${item.Reference_No}&sub_menu_id=${submenu_id}`;
+    const detailUrl = `/property/dispalso/oneapprove/?Reference_No=${item.Reference_No}&sub_menu_id=${submenu_id}`;
     router.push(detailUrl);
   } catch (error) {
     console.error("Error in viewDetails:", error);
@@ -880,7 +883,7 @@ const loadData = async (resetPage: boolean = true): Promise<void> => {
 
     if (!isComponentMounted.value) return;
 
-    const response = await axios.get("/api/journal-log-ard/init-data/", {
+    const response = await axios.get("/api/journal-log-dps/init-data/", {
       params,
       ...getAuthHeaders(),
     });
@@ -916,12 +919,12 @@ const loadData = async (resetPage: boolean = true): Promise<void> => {
       `✅ Loaded ${items.value.length} items (Page ${pagination.currentPage}/${pagination.totalPages})`
     );
 
-    // Debug mapping check
+    
     console.log("🔍 Mapping check:");
     items.value.forEach((item: JournalItem) => {
-      const aldmId = getMatchedAldmId(item);
-      if (aldmId) {
-        console.log(`✅ Mapped: JRNLLog_id ${item.JRNLLog_id} → aldm_id ${aldmId}`);
+      const asset_list_id = getMatchedAldmId(item);
+      if (asset_list_id) {
+        console.log(`✅ Mapped: JRNLLog_id ${item.JRNLLog_id} → aldm_id ${asset_list_id}`);
       } else {
         console.log(`❌ No match: JRNLLog_id ${item.JRNLLog_id}`);
       }
@@ -1158,7 +1161,7 @@ const exportData = (): void => {
   }
 };
 
-// ===== DEBOUNCED SEARCH =====
+
 const searchDebounced = debounce((): void => {
   try {
     handleFilterChange();
@@ -1167,16 +1170,16 @@ const searchDebounced = debounce((): void => {
   }
 }, 500);
 
-// ===== LIFECYCLE HOOKS =====
+
 onMounted(async (): Promise<void> => {
   try {
     console.log("Component mounting...");
     isComponentMounted.value = true;
     
-    // Safe store method calls with null checks
+ 
     try {
-      if (jurnalStore?.getJurnallist) {
-        await jurnalStore.getJurnallist();
+      if (jurnalStore?.getJurnallDispal) {
+        await jurnalStore.getJurnallDispal();
       }
     } catch (error) {
       console.error("Error calling jurnalStore.getJurnallist:", error);
@@ -1199,8 +1202,8 @@ onMounted(async (): Promise<void> => {
     }
 
     try {
-      if (derpicationStore?.getDataTotal) {
-        await derpicationStore.getDataTotal();
+      if (derpicationStore?.getDispalso) {
+        await derpicationStore.getDispalso();
       }
     } catch (error) {
       console.error("Error calling derpicationStore.getDataTotal:", error);
@@ -1258,7 +1261,7 @@ const nameDisplay = (item:any)=>{
       <div class="d-flex justify-space-between align-center">
         <h1 class="page-title-compact">
           <v-icon color="primary" size="20" class="mr-2">mdi-book-check</v-icon>
-          ອະນຸມັດບັນທຶກບັນຊີຊັບສິນ
+          ອະນຸມັດສະສາງຊັບສິນບັນຊີຊັບສິນ
         </h1>
         <!-- <pre>{{ datadevcription }}</pre> -->
         <div class="permission-indicators" v-if="permissions">
@@ -1683,7 +1686,7 @@ const nameDisplay = (item:any)=>{
                     ></v-skeleton-loader>
 
                     <span v-else>{{
-                      datajurnal.filter((item) => item).length / 2
+                      datajurnal.filter((item) => item).length 
                     }}</span>
                   </div>
                   <div class="summary-label-thin">ລາຍການທັງໝົດ</div>
@@ -1717,7 +1720,7 @@ const nameDisplay = (item:any)=>{
                       <span v-else>{{
                         datajurnal.filter(
                           (item) => item.Auth_Status.toString().trim() === "U"
-                        ).length / 2
+                        ).length 
                       }}</span>
                     </div>
                     <div class="summary-label-thin">ລໍຖ້າອະນຸມັດ</div>
@@ -1750,7 +1753,7 @@ const nameDisplay = (item:any)=>{
                     <span v-else>{{
                       datajurnal.filter(
                         (item) => item.Auth_Status.toString().trim() === "A"
-                      ).length / 2
+                      ).length 
                     }}</span>
                   </div>
                   <div class="summary-label-thin">ອະນຸມັດແລ້ວ</div>
@@ -1782,7 +1785,7 @@ const nameDisplay = (item:any)=>{
                     <span v-else>{{
                       datajurnal.filter(
                         (item) => item.Auth_Status.toString().trim() === "R"
-                      ).length / 2
+                      ).length 
                     }}</span>
                   </div>
                   <div class="summary-label-thin">ປະຕິເສດ</div>
@@ -1814,7 +1817,7 @@ const nameDisplay = (item:any)=>{
                     <span v-else>{{
                       datajurnal.filter(
                         (item) => item.Auth_Status.toString().trim() === "P"
-                      ).length / 2
+                      ).length 
                     }}</span>
                   </div>
                   <div class="summary-label-thin">ຖ້າເແກ້ໄຂ</div>
