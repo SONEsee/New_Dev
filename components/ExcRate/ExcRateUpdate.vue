@@ -153,6 +153,41 @@
               </v-row>
             </v-col>
 
+            <!-- Target Date Information -->
+            <v-col cols="12">
+              <v-card 
+                class="pa-4 rounded-lg" 
+                color="info" 
+                variant="tonal"
+              >
+                <div class="d-flex align-center justify-space-between">
+                  <div class="d-flex align-center">
+                    <v-icon size="24" color="info">mdi-calendar-today</v-icon>
+                    <div class="ml-3">
+                      <div class="text-subtitle-2">ວັນທີເປົ້າໝາຍ (Target Date)</div>
+                      <div class="text-h6 font-weight-bold">
+                        {{ formatDateSimple(targetDate) }}
+                      </div>
+                      <div class="text-caption text-grey-darken-1">
+                        ວັນທີນີ້ຈະຖືກໃຊ້ເປັນ value_date ໃນການອັບເດດ
+                      </div>
+                    </div>
+                  </div>
+                  <v-btn
+                    size="small"
+                    variant="text"
+                    color="info"
+                    @click="refreshTargetDate"
+                    :loading="refreshingDate"
+                    class="text-none"
+                  >
+                    <v-icon size="16">mdi-refresh</v-icon>
+                    ອັບເດດວັນທີ
+                  </v-btn>
+                </div>
+              </v-card>
+            </v-col>
+
             <!-- Exchange Rate Preview -->
             <v-col cols="12" v-if="form.ccy_code && form.Buy_Rate && form.Sale_Rate">
               <v-divider class="mb-4"></v-divider>
@@ -201,9 +236,9 @@
                   </v-text-field>
                 </v-col>
                 
-                <v-col cols="12" md="6" v-if="form.Maker_DT_Stamp">
+                <v-col cols="12" md="6" v-if="form.value_date">
                   <v-text-field
-                    :model-value="formatDate(form.Maker_DT_Stamp)"
+                    :model-value="formatDate(form.value_date)"
                     label="ວັນທີສ້າງ"
                     variant="outlined"
                     density="comfortable"
@@ -284,6 +319,17 @@
       ອັບເດດອັດຕາແລກປ່ຽນສຳເລັດແລ້ວ!
     </v-snackbar>
 
+    <!-- Target Date Refresh Success Snackbar -->
+    <v-snackbar
+      v-model="showDateRefresh"
+      color="info"
+      timeout="2000"
+      location="top"
+    >
+      <v-icon class="mr-2">mdi-calendar-check</v-icon>
+      ອັບເດດວັນທີເປົ້າໝາຍສຳເລັດແລ້ວ!
+    </v-snackbar>
+
     <!-- Error Snackbar -->
     <v-snackbar
       v-model="showError"
@@ -312,6 +358,21 @@ import { useRoute, useRouter } from 'vue-router'
 import axios from '@/helpers/axios'
 import { ExcRateModel } from '~/models'
 
+// Types for API responses
+interface EODCheckResponse {
+  available: boolean
+  reason: string
+  target_date: string
+  is_back_date: boolean
+  back_value_enabled: boolean
+  current_eod: {
+    date_id: number
+    eod_process_date: string
+    next_working_day: string
+    eod_status: string
+  }
+}
+
 const route = useRoute()
 const router = useRouter()
 const id = route.query.id as string
@@ -319,10 +380,13 @@ const id = route.query.id as string
 const isValid = ref(false)
 const loading = ref(false)
 const updateLoading = ref(false)
+const refreshingDate = ref(false)
 const showSuccess = ref(false)
 const showError = ref(false)
+const showDateRefresh = ref(false)
 const errorMessage = ref('')
 const originalSpread = ref<number | null>(null)
+const targetDate = ref<string>('')
 
 const form = ref<ExcRateModel.ExcRateResponse>({
   id: 0,
@@ -333,6 +397,7 @@ const form = ref<ExcRateModel.ExcRateResponse>({
   Auth_Status: '',
   Maker_Id: '',
   Checker_Id: null,
+  value_date: '',
   Maker_DT_Stamp: new Date(),
   Checker_DT_Stamp: null,
 })
@@ -403,9 +468,76 @@ const formatDate = (date: Date | string | null) => {
   }
 }
 
+const formatDateSimple = (date: string | null) => {
+  if (!date) return '-'
+  try {
+    const d = new Date(date)
+    return d.toLocaleDateString('lo-LA', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      weekday: 'long'
+    })
+  } catch {
+    return '-'
+  }
+}
+
 const calculateSpread = () => {
   // This is automatically handled by the computed property
   // Just trigger reactivity if needed
+}
+
+const refreshTargetDate = async () => {
+  refreshingDate.value = true
+  try {
+    const newTargetDate = await getTargetDate()
+    targetDate.value = newTargetDate
+    
+    // Show success message for date refresh
+    showDateRefresh.value = true
+  } catch (error) {
+    console.error('Error refreshing target date:', error)
+    showError.value = true
+    errorMessage.value = 'ເກີດຂໍ້ຜິດພາດໃນການອັບເດດວັນທີເປົ້າໝາຍ'
+  } finally {
+    refreshingDate.value = false
+  }
+}
+
+// Enhanced getTargetDate with detailed logging
+const getTargetDate = async (): Promise<string> => {
+  console.log('🔍 Starting getTargetDate request...')
+  
+  try {
+    const response = await axios.get<EODCheckResponse>('/api/end-of-day-journal/check/', {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    })
+    
+    
+    console.log('✅ EOD API Response:', response.data)
+    
+    if (response.data.target_date) {
+      console.log('✅ Target date found:', response.data.target_date)
+      targetDate.value = response.data.target_date
+      return response.data.target_date
+    }
+    
+    console.error('❌ Target date not found in response:', response.data)
+    throw new Error('Target date not found in response')
+  } catch (error: any) {
+    console.error('❌ Error fetching target date:', error)
+    console.error('❌ Error response:', error.response?.data)
+    
+    // Fallback to current date if API fails
+    const fallbackDate = new Date().toISOString().split('T')[0]
+    console.log('⚠️ Using fallback date:', fallbackDate)
+    targetDate.value = fallbackDate
+    return fallbackDate
+  }
 }
 
 const loadData = async () => {
@@ -417,13 +549,22 @@ const loadData = async () => {
 
   loading.value = true
   try {
+    // First get the target date
+    const dateFromAPI = await getTargetDate()
+    
+    // Then load the exchange rate data
     const res = await axios.get<ExcRateModel.ExcRateResponse>(`api/exc-rate/${id}/`, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
     })
-    form.value = res.data
+    
+    // Update form with loaded data and set value_date to target_date from API
+    form.value = {
+      ...res.data,
+      value_date: dateFromAPI
+    }
     
     // Store original spread for comparison
     if (res.data.Sale_Rate && res.data.Buy_Rate) {
@@ -443,7 +584,18 @@ const updateForm = async () => {
   
   updateLoading.value = true
   try {
-    await axios.put(`api/exc-rate/${id}/`, form.value, {
+    // Always get the latest target_date before updating to ensure we use the current business date
+    const latestTargetDate = await getTargetDate()
+    
+    // Prepare update data with the latest target_date as value_date
+    const updateData = {
+      ...form.value,
+      value_date: latestTargetDate
+    }
+    
+    console.log('Updating exchange rate with target_date:', latestTargetDate)
+    
+    await axios.put(`api/exc-rate/${id}/`, updateData, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${localStorage.getItem("token")}`,

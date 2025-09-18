@@ -171,6 +171,38 @@ const formattedEndDate = computed(() => {
 });
 
 // ການຄິດໄລ່ພື້ນຖານ
+// const depreciationBasicCalculation = computed(() => {
+//   if (!response.value) {
+//     return null;
+//   }
+
+//   const assetValue = parseFloat(response.value.asset_value || "0");
+//   const salvageValue = parseFloat(response.value.asset_salvage_value || "0");
+//   const usefulLife = parseInt(String(response.value.asset_useful_life || "0"));
+
+//   if (
+//     assetValue <= 0 ||
+//     salvageValue < 0 ||
+//     salvageValue >= assetValue ||
+//     usefulLife <= 0
+//   ) {
+//     return null;
+//   }
+
+//   const depreciableAmount = assetValue - salvageValue;
+//   const annualDepreciation = depreciableAmount / usefulLife;
+//   const monthlyDepreciation = Math.round((annualDepreciation / 12) * 1000) / 1000;
+//   const lastMonthDepreciation = annualDepreciation - monthlyDepreciation * 11;
+//   const totalCheck = monthlyDepreciation * 11 + lastMonthDepreciation;
+
+//   return {
+//     depreciableAmount: Math.round(depreciableAmount * 100) / 100,
+//     annualDepreciation: Math.round(annualDepreciation * 100) / 100,
+//     monthlyDepreciation: monthlyDepreciation,
+//     lastMonthDepreciation: Math.round(lastMonthDepreciation * 100) / 100,
+//     totalMonthlyCheck: Math.round(totalCheck * 100) / 100,
+//   };
+// });
 const depreciationBasicCalculation = computed(() => {
   if (!response.value) {
     return null;
@@ -191,19 +223,19 @@ const depreciationBasicCalculation = computed(() => {
 
   const depreciableAmount = assetValue - salvageValue;
   const annualDepreciation = depreciableAmount / usefulLife;
-  const monthlyDepreciation = Math.round((annualDepreciation / 12) * 100) / 100;
+  // ✅ ປັບເປັນ 3 ໂຕຫຼັງຈຸດ
+  const monthlyDepreciation = Math.round((annualDepreciation / 12) * 1000) / 1000;
   const lastMonthDepreciation = annualDepreciation - monthlyDepreciation * 11;
   const totalCheck = monthlyDepreciation * 11 + lastMonthDepreciation;
 
   return {
-    depreciableAmount: Math.round(depreciableAmount * 100) / 100,
-    annualDepreciation: Math.round(annualDepreciation * 100) / 100,
+    depreciableAmount: Math.round(depreciableAmount * 1000) / 1000,
+    annualDepreciation: Math.round(annualDepreciation * 1000) / 1000,
     monthlyDepreciation: monthlyDepreciation,
-    lastMonthDepreciation: Math.round(lastMonthDepreciation * 100) / 100,
-    totalMonthlyCheck: Math.round(totalCheck * 100) / 100,
+    lastMonthDepreciation: Math.round(lastMonthDepreciation * 1000) / 1000,
+    totalMonthlyCheck: Math.round(totalCheck * 1000) / 1000,
   };
 });
-
 // ✅ ປັບປຸງ monthlySetupValue ໃຫ້ແມ່ນຍຳແລະ stable
 const monthlySetupValue = computed(() => {
   if (!response.value || !depreciationBasicCalculation.value) {
@@ -227,7 +259,7 @@ const monthlySetupValue = computed(() => {
   const daysToUse = lastDayOfStartMonth - startDay + 1;
   const setupValue = (monthlyDepreciation * daysToUse) / lastDayOfStartMonth;
 
-  return Math.round(setupValue * 100) / 100;
+  return Math.round(setupValue * 1000) / 1000;
 });
 
 // ✅ ມູນຄ່າທ້າຍງວດ
@@ -241,7 +273,7 @@ const monthlyEndValue = computed(() => {
   const setupValue = monthlySetupValue.value;
   const endValue = monthlyDepreciation - setupValue;
 
-  return Math.max(0, Math.round(endValue * 100) / 100);
+  return Math.max(0, Math.round(endValue * 1000) / 1000);
 });
 
 // ✅ ປັບປຸງ finalMonthlySetupValue ແລະ displayMonthlyEndValue
@@ -377,7 +409,7 @@ const calculateDepreciationForAnyMonth = (
     year: targetYear,
     daysCalculated: daysToCalculate,
     totalDaysInMonth: lastDayOfTargetMonth,
-    monthlyAmount: Math.round(monthlyAmount * 100) / 100,
+    monthlyAmount: Math.round(monthlyAmount * 1000) / 1000,
     calculationType,
     description: `${description} = ${daysToCalculate} ວັນ`,
     formula:
@@ -519,18 +551,29 @@ const depreciationCalculator = computed(() => {
 });
 
 // [ຮັກສາຟັງຊັນ helper ອື່ນໆ...]
+// const formatNumber = (value: string | number) => {
+//   if (!value) return "0.00";
+//   return parseFloat(value.toString()).toLocaleString("en-US", {
+//     minimumFractionDigits: 2,
+//     maximumFractionDigits: 2,
+//   });
+// };
 const formatNumber = (value: string | number) => {
-  if (!value) return "0.00";
-  return parseFloat(value.toString()).toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+  if (!value && value !== 0) return "0.000";
+  const num = parseFloat(value.toString());
+  if (isNaN(num)) return "0.000";
+  
+  return num.toLocaleString("en-US", {
+    minimumFractionDigits: 3,
+    maximumFractionDigits: 3,
   });
 };
-
+// const formatCurrency = (value: string | number, currency: string = "LAK") => {
+//   return `${formatNumber(value)} ${currency}`;
+// };
 const formatCurrency = (value: string | number, currency: string = "LAK") => {
   return `${formatNumber(value)} ${currency}`;
 };
-
 const getDepreciationMethodName = (type: string) => {
   switch (type) {
     case "SL":
@@ -641,8 +684,8 @@ const saveCalculation = async () => {
       console.log("displayStartDate:", displayStartDate.value);
 
       // ✅ ບັງຄັບໃຫ້ໃຊ້ຄ່າທີ່ຄິດໄວ້ກ່ອນທຸກ API call
-      request.asset_value_remainBegin = setupValueToSave.toFixed(2);
-      request.asset_value_remainLast = endValueToSave.toFixed(2);
+      request.asset_value_remainBegin = setupValueToSave.toFixed(3);
+      request.asset_value_remainLast = endValueToSave.toFixed(3);
 
       if (depreciationBasicCalculation.value) {
         request.accu_dpca_value_total =

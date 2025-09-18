@@ -631,6 +631,7 @@
 
 <script setup>
 import axios from '@/helpers/axios'
+import { LOG } from '@zxing/library/esm/core/datamatrix/encoder/constants'
 
 // Page metadata
 definePageMeta({
@@ -715,60 +716,70 @@ const activeFilterCount = computed(() => {
 
 // Methods
 const loadData = async (options = {}) => {
-  loading.value = true
+  loading.value = true;
   try {
-    const params = new URLSearchParams()
-    
-    // Pagination
-    if (options.page) params.append('page', options.page)
-    if (options.itemsPerPage) params.append('page_size', options.itemsPerPage)
-    
-    // Search
-    if (search.value?.trim()) params.append('search', search.value.trim())
-    
-    // Filters
-    if (statusFilter.value) params.append('login_status', statusFilter.value)
-    if (logoutTypeFilter.value) params.append('logout_type', logoutTypeFilter.value)
-    if (dateFrom.value) params.append('login_datetime__date__gte', dateFrom.value)
-    if (dateTo.value) params.append('login_datetime__date__lte', dateTo.value)
-    
-    // Sorting
+    const params = new URLSearchParams();
+    if (options.page) params.append('page', options.page);
+    if (options.itemsPerPage) params.append('page_size', options.itemsPerPage);
+    if (search.value?.trim()) params.append('search', search.value.trim());
+    if (statusFilter.value) params.append('login_status', statusFilter.value);
+    if (logoutTypeFilter.value) params.append('logout_type', logoutTypeFilter.value);
+    if (dateFrom.value) params.append('login_datetime__date__gte', dateFrom.value);
+    if (dateTo.value) params.append('login_datetime__date__lte', dateTo.value);
     if (options.sortBy && options.sortBy.length > 0) {
-      const sort = options.sortBy[0]
-      const sortKey = sort.order === 'desc' ? `-${sort.key}` : sort.key
-      params.append('ordering', sortKey)
+      const sort = options.sortBy[0];
+      const sortKey = sort.order === 'desc' ? `-${sort.key}` : sort.key;
+      params.append('ordering', sortKey);
     }
+
+    console.log('Query Params:', params.toString());
 
     const response = await axios.get(`/api/user-access-logs/?${params.toString()}`, {
       headers: {
         'Authorization': `Bearer ${getAuthToken()}`,
         'Content-Type': 'application/json'
       }
-    })
-    
-    if (response.data) {
-      accessLogs.value = response.data.results || []
-      totalItems.value = response.data.count || 0
-      calculateStats()
-    }
-    
-  } catch (error) {
-    console.error('Failed to load access logs:', error)
-    showError('Failed to load user access logs. Please try again.')
-  } finally {
-    loading.value = false
-  }
-}
+    });
 
+    console.log('API Response:', response.data);
+
+    if (response.data) {
+      if (Array.isArray(response.data)) {
+        accessLogs.value = response.data;
+        totalItems.value = response.data.length;
+      } else if (response.data.results && typeof response.data.count === 'number') {
+        accessLogs.value = response.data.results;
+        totalItems.value = response.data.count;
+      } else {
+        console.error('Unexpected API response structure:', response.data);
+        accessLogs.value = [];
+        totalItems.value = 0;
+        showError('Unexpected API response structure.');
+      }
+      calculateStats();
+    } else {
+      accessLogs.value = [];
+      totalItems.value = 0;
+      showError('No data returned from API.');
+    }
+  } catch (error) {
+    console.error('Failed to load access logs:', error);
+    showError('Failed to load user access logs. Please try again.');
+    accessLogs.value = [];
+    totalItems.value = 0;
+  } finally {
+    loading.value = false;
+  }
+};
 const calculateStats = () => {
-  const today = new Date().toDateString()
-  
-  stats.value.activeUsers = accessLogs.value.filter(log => !log.logout_datetime).length
+  console.log('Calculating stats for:', accessLogs.value);
+  const today = new Date().toDateString();
+  stats.value.activeUsers = accessLogs.value.filter(log => !log.logout_datetime).length;
   stats.value.todayLogins = accessLogs.value.filter(log => {
-    return new Date(log.login_datetime).toDateString() === today
-  }).length
-  stats.value.failedLogins = accessLogs.value.filter(log => log.login_status === 'F').length
-}
+    return new Date(log.login_datetime).toDateString() === today;
+  }).length;
+  stats.value.failedLogins = accessLogs.value.filter(log => log.login_status === 'F').length;
+};
 
 const refreshData = () => {
   loadData({ 
@@ -843,6 +854,9 @@ const exportData = async () => {
       },
       responseType: 'blob'
     })
+
+    console.log(response.data);
+    
     
     const blob = new Blob([response.data], { type: 'text/csv' })
     const url = window.URL.createObjectURL(blob)

@@ -329,7 +329,10 @@ const headers = [
 ];
 
 const formatNumber = (num: any) => {
-  return new Intl.NumberFormat("en-US").format(num);
+  return parseFloat(num).toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 };
 
 const processBulkItems = async () => {
