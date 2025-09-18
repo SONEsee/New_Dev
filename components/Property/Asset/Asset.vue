@@ -243,7 +243,7 @@ const headers = computed(() => [
         },
       ]
     : []),
-]);
+] ) as any;
 
 const filteredData = computed(() => {
   console.log("🔍 Computing filtered data...");
@@ -268,7 +268,7 @@ const filteredData = computed(() => {
     const searchTerm = search.value.toLowerCase().trim();
     const beforeFilter = data.length;
     data = data.filter(
-      (item) =>
+      (item:any) =>
         item.asset_name_la?.toLowerCase().includes(searchTerm) ||
         item.asset_name_en?.toLowerCase().includes(searchTerm) ||
         item.asset_code?.toLowerCase().includes(searchTerm) ||

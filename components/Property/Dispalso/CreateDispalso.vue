@@ -357,7 +357,7 @@ const handelSubmit = async () => {
       const notification = await CallSwal({
         icon: "warning",
         title: "ຄຳເຕືອນ",
-        text: `ທ່ານກຳລັງຈະເພີ່ມລາຍການສ່າງ ທ່ານແນ່ໃຈແລ້ວບໍ່?`,
+        text: `ທ່ານກຳລັງຈະເພີ່ມລາຍການສ່າງ ທ່ານແນ່ໃຈແລ້ວບໍ່?`, 
         showCancelButton: true,
         confirmButtonText: "ຕົກລົງ",
         cancelButtonText: "ຍົກເລີກ",

@@ -178,8 +178,8 @@ const headers = computed(
       //   class: "text-center",
       // },
       {
-        title: "ບັນຊີເດບິດ",
-        value: "debit_account_id",
+        title: "ມູນຄ່າທັງໝົດຂອງຊັບສົມບັດ",
+        value: "asset_value",
         align: "center",
         sortable: true,
         filterable: true,
@@ -187,8 +187,8 @@ const headers = computed(
         class: "text-center",
       },
       {
-        title: "ບັນຊີເຄຣດິດ",
-        value: "credit_account_id",
+        title: "ມູນຄ່າຊາກ",
+        value: "asset_detail.asset_salvage_value",
         align: "center",
         sortable: true,
         filterable: true,
@@ -196,8 +196,8 @@ const headers = computed(
         class: "text-center",
       },
       {
-        title: "ຍອດເງິນ",
-        value: "amount",
+        title: "ມູນຄ່າຕໍ່ເດືອນ",
+        value: "asset_detail.asset_value_remainMonth",
         align: "end",
         sortable: true,
         filterable: false,
@@ -206,7 +206,25 @@ const headers = computed(
       },
       {
         title: "ງວດຕົ້ນຂອງຄ່າຫຼູຍຫ້ຽນ",
-        value: "start",
+        value: "amount_start",
+        align: "end",
+        sortable: true,
+        filterable: false,
+        width: "130px",
+        class: "text-end",
+      },
+      {
+        title: "ງວດທ້າຍຂອງຄ່າຫຼູຍຫ້ຽນ",
+        value: "amount_end",
+        align: "end",
+        sortable: true,
+        filterable: false,
+        width: "130px",
+        class: "text-end",
+      },
+      {
+        title: "ອາຍຸການໃຊ້ງານ",
+        value: "asset_detail.asset_useful_life",
         align: "end",
         sortable: true,
         filterable: false,
@@ -344,59 +362,6 @@ const filteredData = computed(() => {
 
   return data;
 });
-// const filteredData = computed(() => {
-//   let data = mappedData.value;
-
-//   if (selectedAccType.value !== "all") {
-//     data = data.filter((item) => item.asset_detail.asset_id_detail.asset_code === selectedAccType.value);
-//   }
-//   if (selectedStatus.value !== "all") {
-//     data = data.filter((item) => item.Record_Status === selectedStatus.value);
-//   }
-
-//   if (search.value) {
-//     data = data.filter(
-//       (item) =>
-//         item.mapping_id.toString().includes(search.value) ||
-//         item.ref_id.toString().includes(search.value) ||
-//         item.debit_account_id
-//           .toLowerCase()
-//           .includes(search.value.toLowerCase()) ||
-//         item.credit_account_id
-//           .toLowerCase()
-//           .includes(search.value.toLowerCase()) ||
-//         item.description?.toLowerCase().includes(search.value.toLowerCase()) ||
-//         item.asset_name?.toLowerCase().includes(search.value.toLowerCase()) ||
-//         item.asset_spec?.toLowerCase().includes(search.value.toLowerCase())
-//     );
-//   }
-
-//   return data;
-// });
-// const filteredData = computed(() => {
-//   let data = mockData.value;
-// const maindata = assetListStore.response_fa_asset_detail;
-//   if (selectedAccType.value !== "all") {
-//     data = data.filter((item) => item.ref_id === selectedAccType.value);
-//   }
-
-//   if (search.value) {
-//     data = data.filter(
-//       (item) =>
-//         item.mapping_id.toString().includes(search.value) ||
-//         item.ref_id.toString().includes(search.value) ||
-//         item.debit_account_id
-//           .toLowerCase()
-//           .includes(search.value.toLowerCase()) ||
-//         item.credit_account_id
-//           .toLowerCase()
-//           .includes(search.value.toLowerCase()) ||
-//         item.description?.toLowerCase().includes(search.value.toLowerCase())
-//     );
-//   }
-
-//   return data;
-// });
 
 const formatDate = (date: Date) => {
   if (!date) return "-";
@@ -496,6 +461,13 @@ const nameDisplayStatus = (items: any) => {
   }
   return `${items.title} - ${items.value}`;
 };
+const selecColId = computed(() => {
+  if (!selectedAccType || !mainType.value) return null;
+  const selecItem = mainType.value.find(
+    (item) => item.asset_code === selectedAccType.value
+  );
+  return selecItem ? selecItem.coa_id : null;
+});
 onMounted(async () => {
   accountMethodStoreInstance.GetAccountMethodList();
   mainTypeStore.GetAssetTypes();
@@ -531,16 +503,16 @@ onMounted(async () => {
               color="primary"
               @click="
                 goPath(
-                  `/property/accountmethod/create?sub_menu_id=${sub_menu_id}`
+                  `/property/accountmethod/create?sub_menu_id=${sub_menu_id}&asset_id=${selecColId}`
                 )
               "
               v-if="canAdd"
             >
-              <v-icon icon="mdi-plus"></v-icon> ເພີ່ມວິທີການບັນຊີໃໝ່
+              <v-icon icon="mdi-plus"></v-icon> ເພີ່ມວິທີການຕັ້ງຄ່າໃໝ່
             </v-btn>
           </div>
         </v-col>
-
+        <!-- <pre>{{ mainType }}</pre> -->
         <v-col cols="12" md="3" class="text-no-wrap">
           <v-autocomplete
             v-model="selectedAccType"
@@ -623,6 +595,7 @@ onMounted(async () => {
       </v-row>
       <!-- <pre>{{ detailassetlis }}</pre> -->
       <!-- <pre>{{  }}</pre> -->
+      <!-- <pre>{{ filteredData }}</pre> -->
 
       <v-data-table
         :headers="headers"
@@ -638,6 +611,17 @@ onMounted(async () => {
         <template v-slot:header.ref_id="{ column }">
           <b style="color: blue">{{ column.title }}</b>
         </template>
+        <template v-slot:header.asset_detail.asset_salvage_value="{ column }">
+          <b style="color: blue">{{ column.title }}</b>
+        </template>
+        <template
+          v-slot:header.asset_detail.asset_value_remainMonth="{ column }"
+        >
+          <b style="color: blue">{{ column.title }}</b>
+        </template>
+        <template v-slot:header.asset_detail.asset_useful_life="{ column }">
+          <b style="color: blue">{{ column.title }}</b>
+        </template>
 
         <template v-slot:header.acc_type="{ column }">
           <b style="color: blue">{{ column.title }}</b>
@@ -647,11 +631,11 @@ onMounted(async () => {
           <b style="color: blue">{{ column.title }}</b>
         </template>
 
-        <template v-slot:header.debit_account_id="{ column }">
+        <template v-slot:header.asset_value="{ column }">
           <b style="color: blue">{{ column.title }}</b>
         </template>
 
-        <template v-slot:header.credit_account_id="{ column }">
+        <template v-slot:header.asset_salvage_value="{ column }">
           <b style="color: blue">{{ column.title }}</b>
         </template>
 
@@ -682,7 +666,10 @@ onMounted(async () => {
         <template v-slot:header.delete="{ column }">
           <b style="color: blue">{{ column.title }}</b>
         </template>
-        <template v-slot:header.start="{ column }">
+        <template v-slot:header.amount_start="{ column }">
+          <b style="color: blue">{{ column.title }}</b>
+        </template>
+        <template v-slot:header.amount_end="{ column }">
           <b style="color: blue">{{ column.title }}</b>
         </template>
 
@@ -727,30 +714,37 @@ onMounted(async () => {
           </div>
         </template>
 
-        <template v-slot:item.debit_account_id="{ item }">
+        <template v-slot:item.asset_value="{ item }">
           <div class="text-center">
-            <v-chip color="error" variant="outlined" size="small" class="mb-1">
-              {{ item.debit_account_id }}
-            </v-chip>
-            <div class="text-caption text-grey">
-              {{ getAccountName(item.debit_account_id) }}
-            </div>
+            {{ formatCurrency(Number(item.asset_value)) }}
+          </div>
+        </template>
+        <template v-slot:item.asset_detail.asset_useful_life="{ item }">
+          <div class="text-center">
+            {{ Number(item.asset_detail?.asset_useful_life) * 12 }} ເດືອນ
+          </div>
+        </template>
+        <template v-slot:item.asset_detail.asset_value_remainMonth="{ item }">
+          <div class="text-center">
+            {{
+              formatCurrency(Number(item.asset_detail?.asset_value_remainMonth))
+            }}
+          </div>
+        </template>
+        <template v-slot:item.asset_detail.asset_salvage_value="{ item }">
+          <div class="text-center">
+            {{ formatCurrency(Number(item.asset_detail?.asset_salvage_value)) }}
+          </div>
+        </template>
+        <template v-slot:item.amount_end="{ item }">
+          <div class="text-center">
+            {{ formatCurrency(Number(item.amount_end)) }}
           </div>
         </template>
 
-        <template v-slot:item.credit_account_id="{ item }">
+        <template v-slot:item.asset_salvage_value="{ item }">
           <div class="text-center">
-            <v-chip
-              color="success"
-              variant="outlined"
-              size="small"
-              class="mb-1"
-            >
-              {{ item.credit_account_id }}
-            </v-chip>
-            <div class="text-caption text-grey">
-              {{ getAccountName(item.credit_account_id) }}
-            </div>
+            {{ item.asset_detail?.asset_salvage_value ?? "0" }}
           </div>
         </template>
 
@@ -760,9 +754,9 @@ onMounted(async () => {
             <div class="text-caption text-grey">LAK</div>
           </div>
         </template>
-        <template v-slot:item.start="{ item }">
+        <template v-slot:item.amount_start="{ item }">
           <div class="text-end">
-            {{ formatCurrency(parseFloat(start_value(item.ref_id)) || 0) }}
+            {{ formatCurrency(Number(item.amount_start)) }}
           </div>
         </template>
 
@@ -811,7 +805,7 @@ onMounted(async () => {
             icon="mdi-pen"
             @click="
               goPath(
-                `/property/accountmethod/edit?mapping_id=${item.mapping_id}`
+                `/property/accountmethod/edit?mapping_id=${item.mapping_id}&&asset_id=${item.ref_id}`
               )
             "
           />

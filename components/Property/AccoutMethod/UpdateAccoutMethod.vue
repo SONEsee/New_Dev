@@ -8,7 +8,10 @@ const valid = ref();
 const form = ref();
 const id = Number(route.query.mapping_id) || 0;
 const selectedAssetId = ref((route.query.mapping_id as string) || null);
-
+const DisplayGl = (item: any) => {
+  if (!item || !item.asset_spec || !item.asset_list_id) return "ທັງໝົດ";
+  return `${item.asset_spec} (${item.asset_list_id})`;
+};
 const accountMethodStoreInstance = accountMethodStore();
 const assetListStore = faAssetStore();
 
@@ -81,7 +84,15 @@ watch(selectedAssetId, async (newAssetId: any) => {
     }
   }
 });
-
+watch(
+  () => route.query.asset_id,
+  async (newValue) => {
+    if (newValue) {
+      selectedAssetId.value = newValue as string;
+    }
+  },
+  { immediate: true }
+);
 watch(
   [
     () => accountMethodStoreInstance.response_account_method_detail,
@@ -92,10 +103,9 @@ watch(
       request.description = req.description;
 
       request.ref_id = assetData?.asset_list_id || req.ref_id;
-      request.amount = assetData?.asset_value || req.amount;
-      request.amount_start =
-        assetData?.asset_value_remainBegin || req.amount_start;
-      request.amount_end = assetData?.asset_value_remainLast || req.amount_end;
+      request.amount = assetData?.asset_value_remainMonth || req.amount;
+      request.amount_start = req.amount_start;
+      request.amount_end = req.amount_end;
       request.debit_account_id = debitAccountNumber.value;
       request.credit_account_id = creditAccountNumber.value;
       request.transaction_date = assetData?.Maker_DT_Stamp
@@ -167,7 +177,7 @@ const title = "ລາຍລະອຽດການຕັ້ງຄ່າທືກ�
 <template>
   <div class="pa-4">
     <GlobalTextTitleLine :title="title" />
-    <!-- <pre> {{ dataupdate }}</pre> -->
+    <!-- <pre>{{ dataupdate }}</pre> -->
     <v-card class="mb-4" variant="outlined">
       <v-card-title class="text-h6 pb-2 bg-primary">
         <v-icon class="mr-2">mdi-format-list-bulleted</v-icon>
@@ -177,7 +187,7 @@ const title = "ລາຍລະອຽດການຕັ້ງຄ່າທືກ�
         <v-autocomplete
           v-model="selectedAssetId"
           :items="totaldata"
-          item-title="asset_spec"
+          :item-title="DisplayGl"
           item-value="asset_list_id"
           variant="outlined"
           density="compact"
@@ -186,17 +196,12 @@ const title = "ລາຍລະອຽດການຕັ້ງຄ່າທືກ�
           :loading="!totaldata.length"
           prepend-inner-icon="mdi-magnify"
         >
-          <template #item="{ item, props }">
-            <v-list-item v-bind="props">
-              <template #prepend>
-                <v-icon color="primary">mdi-package-variant</v-icon>
-              </template>
-              <v-list-item-subtitle>
-                ID: {{ item.raw.asset_list_id }}
-              </v-list-item-subtitle>
-            </v-list-item>
+          <template v-slot:item="{ item, props }">
+            <v-list-item
+              v-bind="props"
+              :title="`${item.raw.asset_spec}(${item.raw.asset_list_id})`"
+            ></v-list-item>
           </template>
-
           <template #no-data>
             <v-list-item>
               <v-list-item-title>ບໍ່ພົບຂໍ້ມູນຊັບສົມບັດ</v-list-item-title>
@@ -253,18 +258,18 @@ const title = "ລາຍລະອຽດການຕັ້ງຄ່າທືກ�
                   readonly
                 />
 
-                <v-label class="mb-1">ມູນຄ່າທັງໝົດ</v-label>
+                <v-label class="mb-1">ມູນຄ່າຕໍ່ເດືອນ</v-label>
                 <v-text-field
-                  :model-value="
-                    formatnumber(
-                      dataupdate?.asset_value || detail?.amount
-                    ).toString()
-                  "
-                  :v-model="request.amount"
+                
+                  v-model="request.amount"
                   variant="outlined"
                   density="compact"
-                  readonly
+                
                   class="formatted-number-input"
+                />
+                <GlobalCardTitle
+                  :text="dataupdate?.dpca_start_date ?? ''"
+                  title="ວັນທີ່ເລີ່ມຫັກ"
                 />
               </v-col>
 
@@ -279,17 +284,18 @@ const title = "ລາຍລະອຽດການຕັ້ງຄ່າທືກ�
 
                 <v-label class="mb-1">ມູນຄ່າຕົ້ນ</v-label>
                 <v-text-field
-                  :model-value="
-                    formatnumber(
-                      dataupdate?.asset_value_remainBegin ||
-                        detail?.amount_start
-                    ).toString()
-                  "
-                  :v-model="request.amount_start"
+                  v-model="request.amount_start"
                   variant="outlined"
                   density="compact"
-                  readonly
                   class="formatted-number-input"
+                />
+                <GlobalCardTitle
+                  :text="
+                    dataupdate?.asset_useful_life != null
+                      ? Number(dataupdate.asset_useful_life) * 12 + 'ເດືອນ'
+                      : ''
+                  "
+                  title="ອາຍຸໃນການໃຊ້ງານ"
                 />
               </v-col>
 
@@ -302,21 +308,20 @@ const title = "ລາຍລະອຽດການຕັ້ງຄ່າທືກ�
                   :v-model="request.transaction_date"
                   variant="outlined"
                   density="compact"
-                  readonly
                 />
 
                 <v-label class="mb-1">ມູນຄ່າທ້າຍ</v-label>
                 <v-text-field
-                  :model-value="
-                    formatnumber(
-                      dataupdate?.asset_value_remainLast || detail?.amount_end
-                    ).toString()
-                  "
-                  :v-model="request.amount_end"
+                  v-model="request.amount_end"
                   variant="outlined"
                   density="compact"
-                  readonly
                   class="formatted-number-input"
+                />
+                <GlobalCardTitle
+                  :text="
+                    dataupdate?.dpca_end_date || ''
+                  "
+                  title="ງວດສຸດທ້າຍ"
                 />
               </v-col>
             </v-row>

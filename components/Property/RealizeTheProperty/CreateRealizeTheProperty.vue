@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import { useRoute, useRouter } from "vue-router";
 import dayjs from "#build/dayjs.imports.mjs";
+
 const route = useRoute();
 const router = useRouter();
 const title = "ຈົດບັນທຶກຮັບຮູ້ຊັບສິນ";
 const id = route.query.asset_list_id as string;
 const assetStore = faAssetStore();
 const masterStore = useMasterStore();
+
+// ✅ ຕົວແປຄວບຄຸມການບັນທຶກ
+let isSaving = false;
 
 const editableValues = ref({
   salvageValue: 0,
@@ -32,14 +36,25 @@ const todayDate = computed(() => {
   return new Date().toISOString().split("T")[0];
 });
 
+// ✅ ປັບປຸງ displayStartDate ໃຫ້ຮອງຮັບການເລືອກວັນທີ່ຈາກ backend
 const displayStartDate = computed({
   get: () => {
+    // ✅ ຫາກມີຂໍ້ມູນຈາກ response ໃຫ້ໃຊ້ກ່ອນ
+    if (response.value?.dpca_start_date) {
+      if (response.value.dpca_start_date instanceof Date) {
+        return response.value.dpca_start_date.toISOString().split("T")[0];
+      }
+      return response.value.dpca_start_date.toString().split("T")[0];
+    }
+
     if (request.dpca_start_date) {
       if (request.dpca_start_date instanceof Date) {
         return request.dpca_start_date.toISOString().split("T")[0];
       }
       return request.dpca_start_date.toString().split("T")[0];
     }
+
+    // ✅ ຖ້າບໍ່ມີທັງສອງ ໃຫ້ໃຊ້ວັນນີ້
     return todayDate.value;
   },
   set: (value: string) => {
@@ -121,25 +136,13 @@ const calculateDepreciationEndDate = (
   return endDate.toISOString().split("T")[0];
 };
 
-// const computedEndDate = computed(() => {
-//   const startDate = displayStartDate.value;
-//   const usefulLife = response.value?.asset_useful_life;
-
-//   if (startDate && usefulLife) {
-//     return calculateDepreciationEndDate(startDate, usefulLife);
-//   }
-//   return null;
-// });
 const computedEndDate = computed(() => {
   const startDate = displayStartDate.value;
   const usefulLife = response.value?.asset_useful_life;
 
   if (startDate && usefulLife) {
     try {
-      // ✅ ໃຊ້ dayjs ເພື່ອຄິດໄລ່ວັນທີ່ສິ້ນສຸດ
       const endDate = dayjs(startDate).add(usefulLife, "year");
-
-      // ✅ Format ເປັນ YYYY-MM-DD ສຳລັບ date input
       return endDate.format("YYYY-MM-DD");
     } catch (error) {
       console.error("Error calculating end date with dayjs:", error);
@@ -148,6 +151,7 @@ const computedEndDate = computed(() => {
   }
   return null;
 });
+
 const formattedEndDate = computed(() => {
   const startDate = displayStartDate.value;
   const usefulLife = response.value?.asset_useful_life;
@@ -155,14 +159,10 @@ const formattedEndDate = computed(() => {
   if (!startDate || !usefulLife) return "";
 
   try {
-    // ✅ ໃຊ້ dayjs ຄິດໄລ່ແລະ format
     const endDate = dayjs(startDate).add(usefulLife, "year");
-
-    // ✅ ກວດສອບວ່າວັນທີ່ຖືກຕ້ອງ
     if (!endDate.isValid()) {
       return "";
     }
-
     return endDate.format("YYYY-MM-DD");
   } catch (error) {
     console.error("Error with dayjs formatting:", error);
@@ -171,9 +171,40 @@ const formattedEndDate = computed(() => {
 });
 
 // ການຄິດໄລ່ພື້ນຖານ
+// const depreciationBasicCalculation = computed(() => {
+//   if (!response.value) {
+//     return null;
+//   }
+
+//   const assetValue = parseFloat(response.value.asset_value || "0");
+//   const salvageValue = parseFloat(response.value.asset_salvage_value || "0");
+//   const usefulLife = parseInt(String(response.value.asset_useful_life || "0"));
+
+//   if (
+//     assetValue <= 0 ||
+//     salvageValue < 0 ||
+//     salvageValue >= assetValue ||
+//     usefulLife <= 0
+//   ) {
+//     return null;
+//   }
+
+//   const depreciableAmount = assetValue - salvageValue;
+//   const annualDepreciation = depreciableAmount / usefulLife;
+//   const monthlyDepreciation = Math.round((annualDepreciation / 12) * 1000) / 1000;
+//   const lastMonthDepreciation = annualDepreciation - monthlyDepreciation * 11;
+//   const totalCheck = monthlyDepreciation * 11 + lastMonthDepreciation;
+
+//   return {
+//     depreciableAmount: Math.round(depreciableAmount * 100) / 100,
+//     annualDepreciation: Math.round(annualDepreciation * 100) / 100,
+//     monthlyDepreciation: monthlyDepreciation,
+//     lastMonthDepreciation: Math.round(lastMonthDepreciation * 100) / 100,
+//     totalMonthlyCheck: Math.round(totalCheck * 100) / 100,
+//   };
+// });
 const depreciationBasicCalculation = computed(() => {
   if (!response.value) {
-    console.error("ບໍ່ມີຂໍ້ມູນ response");
     return null;
   }
 
@@ -181,69 +212,41 @@ const depreciationBasicCalculation = computed(() => {
   const salvageValue = parseFloat(response.value.asset_salvage_value || "0");
   const usefulLife = parseInt(String(response.value.asset_useful_life || "0"));
 
- 
   if (
     assetValue <= 0 ||
     salvageValue < 0 ||
     salvageValue >= assetValue ||
     usefulLife <= 0
   ) {
-    console.error("ຂໍ້ມູນບໍ່ຖືກຕ້ອງສຳລັບການຄິດໄລ່ຄ່າເສື່ອມ:");
-    console.error(`- ມູນຄ່າຊັບສິນ: ${assetValue}`);
-    console.error(`- ມູນຄ່າຊາກ: ${salvageValue}`);
-    console.error(`- ອາຍຸການໃຊ້ງານ: ${usefulLife}`);
     return null;
   }
 
- 
   const depreciableAmount = assetValue - salvageValue;
-
-
   const annualDepreciation = depreciableAmount / usefulLife;
-
-  const monthlyDepreciation = Math.round((annualDepreciation / 12) * 100) / 100;
-
-
+  // ✅ ປັບເປັນ 3 ໂຕຫຼັງຈຸດ
+  const monthlyDepreciation = Math.round((annualDepreciation / 12) * 1000) / 1000;
   const lastMonthDepreciation = annualDepreciation - monthlyDepreciation * 11;
-
- 
   const totalCheck = monthlyDepreciation * 11 + lastMonthDepreciation;
 
-  console.log(`ການກວດສອບຍອດລວມ:
-    - ມູນຄ່າທີ່ຫັກເສື່ອມໄດ້: ${depreciableAmount.toLocaleString()}
-    - ຄ່າເສື່ອມຕໍ່ປີ: ${annualDepreciation.toLocaleString()}
-    - ຄ່າເສື່ອມເດືອນທຳມະດາ (1-11): ${monthlyDepreciation.toLocaleString()}
-    - ຄ່າເສື່ອມເດືອນສຸດທ້າຍ (12): ${lastMonthDepreciation.toLocaleString()}
-    - ຍອດລວມ 12 ເດືອນ: ${totalCheck.toLocaleString()}
-    - ຄວາມຖືກຕ້ອງ: ${
-      Math.abs(totalCheck - annualDepreciation) < 0.01
-        ? "✅ ຖືກຕ້ອງ"
-        : "❌ ບໍ່ຖືກຕ້ອງ"
-    }`);
-
   return {
-    depreciableAmount: Math.round(depreciableAmount * 100) / 100,
-    annualDepreciation: Math.round(annualDepreciation * 100) / 100,
+    depreciableAmount: Math.round(depreciableAmount * 1000) / 1000,
+    annualDepreciation: Math.round(annualDepreciation * 1000) / 1000,
     monthlyDepreciation: monthlyDepreciation,
-    lastMonthDepreciation: Math.round(lastMonthDepreciation * 100) / 100,
-    totalMonthlyCheck: Math.round(totalCheck * 100) / 100,
+    lastMonthDepreciation: Math.round(lastMonthDepreciation * 1000) / 1000,
+    totalMonthlyCheck: Math.round(totalCheck * 1000) / 1000,
   };
 });
-
-// ✅ ມູນຄ່າຕົ້ນງວດ (ຮອງຮັບການຄຳນວນຍ້ອນຫຼັງ)
+// ✅ ປັບປຸງ monthlySetupValue ໃຫ້ແມ່ນຍຳແລະ stable
 const monthlySetupValue = computed(() => {
   if (!response.value || !depreciationBasicCalculation.value) {
-    console.error("ບໍ່ມີຂໍ້ມູນ response ຫຼື depreciationBasicCalculation");
     return 0;
   }
 
-  const monthlyDepreciation = depreciationBasicCalculation.value.monthlyDepreciation;
+  const monthlyDepreciation =
+    depreciationBasicCalculation.value.monthlyDepreciation;
   const startDate = new Date(displayStartDate.value);
-  const currentDate = new Date();
-  
-  // ກວດສອບວ່າວັນທີ່ເລີ່ມຖືກຕ້ອງບໍ່
+
   if (isNaN(startDate.getTime())) {
-    console.error("ວັນທີ່ເລີ່ມບໍ່ຖືກຕ້ອງ:", displayStartDate.value);
     return 0;
   }
 
@@ -252,86 +255,40 @@ const monthlySetupValue = computed(() => {
   const startDay = startDate.getDate();
   const lastDayOfStartMonth = new Date(startYear, startMonth + 1, 0).getDate();
 
-  let daysToUse = 0;
-  let calculationType = "";
-  let calculationMonth = `ເດືອນ ${startMonth + 1}/${startYear}`;
+  // ✅ ຄຳນວນວັນທີ່ໃຊ້ຈາກວັນເລີ່ມຫາທ້າຍເດືອນ
+  const daysToUse = lastDayOfStartMonth - startDay + 1;
+  const setupValue = (monthlyDepreciation * daysToUse) / lastDayOfStartMonth;
 
-  // ຄຳນວນມູນຄ່າຕົ້ນງວດສຳລັບເດືອນທີ່ເລີ່ມ depreciation
-  // ໂດຍຄິດຈາກວັນທີ່ເລີ່ມຫາທ້າຍເດືອນນັ້ນ
-  
-  if (startDate.getFullYear() === currentDate.getFullYear() && 
-      startDate.getMonth() === currentDate.getMonth()) {
-    // ກໍລະນີ: ເລີ່ມໃນເດືອນປັດຈຸບັນ
-    // ທຸກກໍລະນີຄິດຈາກວັນເລີ່ມຫາທ້າຍເດືອນ
-    daysToUse = lastDayOfStartMonth - startDay + 1;
-    
-    if (startDate <= currentDate) {
-      calculationType = "ເລີ່ມແລ້ວໃນເດືອນນີ້";
-    } else {
-      calculationType = "ຈະເລີ່ມໃນເດືອນນີ້";
-    }
-  } else if (startDate < currentDate) {
-    // ກໍລະນີ: ເລີ່ມໃນອະດີດ - ຄິດຈາກວັນເລີ່ມຫາທ້າຍເດືອນທີ່ເລີ່ມ
-    daysToUse = lastDayOfStartMonth - startDay + 1;
-    calculationType = "ເລີ່ມແລ້ວໃນອະດີດ";
-  } else {
-    // ກໍລະນີ: ຈະເລີ່ມໃນອະນາຄົດ - ຄິດຈາກວັນເລີ່ມຫາທ້າຍເດືອນທີ່ຈະເລີ່ມ
-    daysToUse = lastDayOfStartMonth - startDay + 1;
-    calculationType = "ຈະເລີ່ມໃນອະນາຄົດ";
-  }
-
-  // ຄຳນວນມູນຄ່າຕົ້ນງວດ
-  const setupValue = daysToUse > 0 ? (monthlyDepreciation * daysToUse) / lastDayOfStartMonth : 0;
-
-  console.log(`ການຄິດໄລ່ມູນຄ່າຕົ້ນງວດ (${calculationType}):
-    - ວັນທີ່ເລີ່ມ: ${startDate.toLocaleDateString("en-GB")} (ວັນທີ່ ${startDay})
-    - ວັນນີ້: ${currentDate.toLocaleDateString("en-GB")}
-    - ຄຳນວນສຳລັບ: ${calculationMonth}
-    - ວັນທີ່ໃຊ້ຈິງ: ${daysToUse} ວັນ (ຈາກວັນທີ່ ${startDay} ຫາ ${lastDayOfStartMonth})
-    - ວັນທັງໝົດໃນເດືອນ: ${lastDayOfStartMonth} ວັນ
-    - ມູນຄ່າຕໍ່ເດືອນ: ${monthlyDepreciation.toLocaleString()}
-    - ສູດ: (${monthlyDepreciation.toLocaleString()} × ${daysToUse}) ÷ ${lastDayOfStartMonth}
-    - ມູນຄ່າຕົ້ນງວດ: ${setupValue.toLocaleString()}`);
-
-  return Math.round(setupValue * 100) / 100;
+  return Math.round(setupValue * 1000) / 1000;
 });
+
 // ✅ ມູນຄ່າທ້າຍງວດ
 const monthlyEndValue = computed(() => {
   if (!response.value || !depreciationBasicCalculation.value) {
-    console.error("ບໍ່ມີຂໍ້ມູນ response ຫຼື depreciationBasicCalculation");
     return 0;
   }
 
   const monthlyDepreciation =
     depreciationBasicCalculation.value.monthlyDepreciation;
   const setupValue = monthlySetupValue.value;
-
   const endValue = monthlyDepreciation - setupValue;
 
-  console.log(`ການຄິດໄລ່ມູນຄ່າທ້າຍງວດ:
-    - ຄ່າເສື່ອມຕໍ່ເດືອນ: ${monthlyDepreciation.toLocaleString()}
-    - ມູນຄ່າຕົ້ນງວດ: ${setupValue.toLocaleString()}
-    - ມູນຄ່າທ້າຍງວດ: ${endValue.toLocaleString()}`);
-
-  return Math.max(0, Math.round(endValue * 100) / 100);
+  return Math.max(0, Math.round(endValue * 1000) / 1000);
 });
 
-// ✅ ປັບ finalMonthlySetupValue ແລະ displayMonthlyEndValue
+// ✅ ປັບປຸງ finalMonthlySetupValue ແລະ displayMonthlyEndValue
 const finalMonthlySetupValue = computed(() => {
   const setupValue = monthlySetupValue.value;
-  return setupValue === 0
-    ? depreciationCalculator.value?.monthlyDepreciation || 0
-    : setupValue;
+  const fallbackValue = depreciationCalculator.value?.monthlyDepreciation || 0;
+  return setupValue === 0 ? fallbackValue : setupValue;
 });
 
 const displayMonthlyEndValue = computed(() => {
   const endValue = monthlyEndValue.value;
-  return endValue === 0
-    ? depreciationCalculator.value?.monthlyDepreciation || 0
-    : endValue;
+  const fallbackValue = depreciationCalculator.value?.monthlyDepreciation || 0;
+  return endValue === 0 ? fallbackValue : endValue;
 });
 
-// ✅ ລາຍລະອຽດເດືອນປັດຈຸບັນ
 const getCurrentMonthDetails = computed(() => {
   const currentDate = new Date();
   const currentYear = currentDate.getFullYear();
@@ -363,13 +320,12 @@ const getCurrentMonthDetails = computed(() => {
   };
 });
 
-// ✅ ຟັງຊັນສຳລັບຄິດໄລ່ເດືອນອື່ນໆ
+// [ຮັກສາຟັງຊັນອື່ນໆທີ່ຍາວໆເປັນແບບເດີມ...]
 const calculateDepreciationForAnyMonth = (
   targetYear: number,
   targetMonth: number
 ) => {
   if (!response.value || !depreciationBasicCalculation.value) {
-    console.error("ບໍ່ມີຂໍ້ມູນ response ຫຼື depreciationBasicCalculation");
     return null;
   }
 
@@ -386,11 +342,6 @@ const calculateDepreciationForAnyMonth = (
     0
   ).getDate();
   const firstDayOfTargetMonth = new Date(targetYear, targetMonth, 1);
-  const lastDayOfTargetMonthDate = new Date(
-    targetYear,
-    targetMonth,
-    lastDayOfTargetMonth
-  );
 
   let daysToCalculate = 0;
   let calculationType = "";
@@ -458,7 +409,7 @@ const calculateDepreciationForAnyMonth = (
     year: targetYear,
     daysCalculated: daysToCalculate,
     totalDaysInMonth: lastDayOfTargetMonth,
-    monthlyAmount: Math.round(monthlyAmount * 100) / 100,
+    monthlyAmount: Math.round(monthlyAmount * 1000) / 1000,
     calculationType,
     description: `${description} = ${daysToCalculate} ວັນ`,
     formula:
@@ -472,7 +423,7 @@ const calculateDepreciationForAnyMonth = (
   };
 };
 
-// ✅ ສ້າງແຜນການຫັກຄ່າເສື່ອມທັງປີ
+// [ຮັກສາ computed properties ອື່ນໆທີ່ຍາວໆເປັນແບບເດີມ...]
 const getYearlyDepreciationPlan = computed(() => {
   if (!response.value || !depreciationBasicCalculation.value) return null;
 
@@ -496,216 +447,6 @@ const getYearlyDepreciationPlan = computed(() => {
     formattedTotal: formatNumber(totalAmount),
   };
 });
-
-// ✅ ລາຍລະອຽດການຄິດໄລ່ຕາມວັນທີ່ເລີ່ມ
-const getStartDateCalculationDetails = computed(() => {
-  if (!response.value || !depreciationBasicCalculation.value) return null;
-
-  const monthlyDepreciation =
-    depreciationBasicCalculation.value.monthlyDepreciation;
-  const startDate = new Date(displayStartDate.value);
-  const startYear = startDate.getFullYear();
-  const startMonth = startDate.getMonth();
-  const currentDate = new Date();
-
-  const lastDayOfStartMonth = new Date(startYear, startMonth + 1, 0).getDate();
-
-  let calculationType = "";
-  let daysUsed = 0;
-  let description = "";
-
-  if (startDate > currentDate) {
-    calculationType = "ຈະເລີ່ມໃນອະນາຄົດ";
-    const startDay = startDate.getDate();
-    daysUsed = lastDayOfStartMonth - startDay + 1;
-    description = `ຈາກວັນທີ່ ${startDay} ຫາ ${lastDayOfStartMonth} = ${daysUsed} ວັນ`;
-  } else if (
-    startDate.getMonth() === startMonth &&
-    startDate.getFullYear() === startYear &&
-    startDate <= currentDate
-  ) {
-    calculationType = "ຄຳນວນຍ້ອນຫຼັງ ຫຼື ເລີ່ມໃນເດືອນນີ້";
-    const startDay = startDate.getDate();
-    daysUsed = lastDayOfStartMonth - startDay + 1;
-    description = `ຈາກວັນທີ່ ${startDay} ຫາ ${lastDayOfStartMonth} = ${daysUsed} ວັນ`;
-  } else {
-    calculationType = "ເລີ່ມກ່ອນເດືອນນີ້";
-    daysUsed = lastDayOfStartMonth;
-    description = `ທັງເດືອນ (1-${lastDayOfStartMonth}) = ${daysUsed} ວັນ`;
-  }
-
-  const calculatedValue =
-    daysUsed > 0 ? (monthlyDepreciation * daysUsed) / lastDayOfStartMonth : 0;
-
-  return {
-    startDate: startDate.toISOString().split("T")[0],
-    currentDate: currentDate.toISOString().split("T")[0],
-    calculationType,
-    daysUsed,
-    totalDaysInMonth: lastDayOfStartMonth,
-    description,
-    monthlyDepreciation,
-    calculatedValue: Math.round(calculatedValue * 100) / 100,
-    formula:
-      daysUsed > 0
-        ? `(${formatNumber(
-            monthlyDepreciation
-          )} × ${daysUsed}) ÷ ${lastDayOfStartMonth} = ${formatNumber(
-            calculatedValue
-          )}`
-        : "ບໍ່ມີການຄິດໄລ່",
-    formatted: {
-      startDate: `ວັນທີ່ເລີ່ມ: ${startDate.toLocaleDateString("en-GB")}`,
-      currentDate: `ວັນນີ້: ${currentDate.toLocaleDateString("en-GB")}`,
-      calculation: `${calculationType}: ${description}`,
-      result: `ມູນຄ່າຕົ້ນງວດ: ${formatNumber(calculatedValue)} LAK`,
-    },
-  };
-});
-
-// ✅ ການຄິດໄລ່ຈຳນວນວັນທັງໝົດ
-const getTotalDaysCalculation = computed(() => {
-  if (!response.value) return null;
-
-  const usefulLife = parseInt(String(response.value.asset_useful_life || "0"));
-  const startDate = new Date(displayStartDate.value);
-  const endDate = computedEndDate.value
-    ? new Date(computedEndDate.value)
-    : null;
-
-  if (!endDate) return null;
-
-  const timeDiff = endDate.getTime() - startDate.getTime();
-  const totalDays = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
-
-  const totalMonths = usefulLife * 12;
-  const standardDays = totalMonths * 30;
-
-  const currentDate = new Date();
-  const daysFromStart = Math.max(
-    0,
-    Math.ceil(
-      (currentDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24)
-    )
-  );
-  const remainingDays = Math.max(0, totalDays - daysFromStart);
-
-  return {
-    usefulLifeYears: usefulLife,
-    totalMonths,
-    startDate: startDate.toISOString().split("T")[0],
-    endDate: endDate.toISOString().split("T")[0],
-    currentDate: currentDate.toISOString().split("T")[0],
-    totalDaysActual: totalDays,
-    standardDays,
-    daysFromStart,
-    remainingDays,
-    progressPercentage:
-      totalDays > 0 ? ((daysFromStart / totalDays) * 100).toFixed(2) : 0,
-    formatted: {
-      totalDaysActual: `${totalDays.toLocaleString()} ວັນ`,
-      standardDays: `${standardDays.toLocaleString()} ວັນ (${totalMonths} ເດືອນ × 30)`,
-      daysFromStart: `${daysFromStart.toLocaleString()} ວັນ`,
-      remainingDays: `${remainingDays.toLocaleString()} ວັນ`,
-      yearBreakdown: `${usefulLife} ປີ = ${totalMonths} ເດືອນ = ${standardDays} ວັນ (ມາດຕະຖານ)`,
-    },
-  };
-});
-
-// ✅ ລາຍລະອຽດການຄິດໄລ່
-const getDepreciationDetails = computed(() => {
-  if (!depreciationBasicCalculation.value || !response.value) return null;
-
-  const basic = depreciationBasicCalculation.value;
-  const assetValue = parseFloat(response.value.asset_value || "0");
-  const salvageValue = parseFloat(response.value.asset_salvage_value || "0");
-  const usefulLife = parseInt(String(response.value.asset_useful_life || "0"));
-
-  const totalDays = getTotalDaysCalculation.value;
-  const monthDetails = getCurrentMonthDetails.value;
-
-  return {
-    calculation: `(${formatNumber(assetValue)} - ${formatNumber(
-      salvageValue
-    )}) ÷ ${usefulLife} ປີ ÷ 12 ເດືອນ`,
-    yearlyAmount: `${formatNumber(basic.annualDepreciation)} LAK ຕໍ່ປີ`,
-    monthlyAmount: `${formatNumber(
-      basic.monthlyDepreciation
-    )} LAK ຕໍ່ເດືອນ (ເດືອນທີ 1-11)`,
-    lastMonthAmount: `${formatNumber(
-      basic.lastMonthDepreciation
-    )} LAK (ເດືອນທີ 12)`,
-    dailyAmountInCurrentMonth: monthDetails
-      ? `${formatNumber(
-          basic.monthlyDepreciation / monthDetails.totalDaysInMonth
-        )} LAK ຕໍ່ວັນ (ເດືອນນີ້)`
-      : "N/A",
-    depreciableTotal: formatNumber(basic.depreciableAmount),
-    totalCheck: `ຍອດລວມ 12 ເດືອນ: ${formatNumber(basic.totalMonthlyCheck)} LAK`,
-    daysInformation: {
-      totalLifeDays: totalDays?.formatted.totalDaysActual || "N/A",
-      standardDays: totalDays?.formatted.standardDays || "N/A",
-      yearBreakdown: totalDays?.formatted.yearBreakdown || "N/A",
-      currentProgress: totalDays
-        ? `${totalDays.daysFromStart.toLocaleString()} / ${totalDays.totalDaysActual.toLocaleString()} ວັນ (${
-            totalDays.progressPercentage
-          }%)`
-        : "N/A",
-    },
-    currentMonthInfo: {
-      monthStatus: monthDetails?.formatted.monthInfo || "N/A",
-      currentDay: monthDetails?.formatted.currentStatus || "N/A",
-      daysRemaining: monthDetails?.formatted.daysRemaining || "N/A",
-      calculationDays: monthDetails?.daysRemainingInMonth || 0,
-    },
-    startDateCalculation: {
-      details: getStartDateCalculationDetails.value?.formatted || {},
-      formula: getStartDateCalculationDetails.value?.formula || "N/A",
-      calculationType:
-        getStartDateCalculationDetails.value?.calculationType || "N/A",
-    },
-    newCalculationMethod: {
-      formula: monthDetails
-        ? `(${formatNumber(basic.monthlyDepreciation)} × ${
-            monthDetails.daysRemainingInMonth
-          }) ÷ ${monthDetails.totalDaysInMonth}`
-        : "N/A",
-      setupValue: monthDetails
-        ? `ມູນຄ່າຕົ້ນງວດ = ${formatNumber(
-            (basic.monthlyDepreciation * monthDetails.daysRemainingInMonth) /
-              monthDetails.totalDaysInMonth
-          )}`
-        : "N/A",
-      endValue: monthDetails
-        ? `ມູນຄ່າທ້າຍງວດ = ${formatNumber(
-            basic.monthlyDepreciation
-          )} - ${formatNumber(
-            (basic.monthlyDepreciation * monthDetails.daysRemainingInMonth) /
-              monthDetails.totalDaysInMonth
-          )} = ${formatNumber(
-            basic.monthlyDepreciation -
-              (basic.monthlyDepreciation * monthDetails.daysRemainingInMonth) /
-                monthDetails.totalDaysInMonth
-          )}`
-        : "N/A",
-    },
-  };
-});
-
-const calculateMonthsDifference = (
-  startDate: Date | string,
-  endDate: Date | string
-): number => {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-
-  if (isNaN(start.getTime()) || isNaN(end.getTime())) return 0;
-
-  const yearsDiff = end.getFullYear() - start.getFullYear();
-  const monthsDiff = end.getMonth() - start.getMonth();
-
-  return yearsDiff * 12 + monthsDiff;
-};
 
 const validationErrors = computed(() => {
   const errors: any = [];
@@ -751,14 +492,12 @@ const depreciationCalculator = computed(() => {
       monthlyDepreciation =
         depreciationBasicCalculation.value.monthlyDepreciation;
       break;
-
     case "DL":
       const depreciationRate =
         parseFloat(response.value.dpca_percentage || "0") / 100;
       annualDepreciation = assetValue * depreciationRate;
       monthlyDepreciation = annualDepreciation / 12;
       break;
-
     case "PU":
       if (unitsOfProduction.value.totalExpectedUnits > 0) {
         const depreciationPerUnit =
@@ -775,7 +514,6 @@ const depreciationCalculator = computed(() => {
           depreciationBasicCalculation.value.monthlyDepreciation;
       }
       break;
-
     default:
       annualDepreciation =
         depreciationBasicCalculation.value.annualDepreciation;
@@ -812,265 +550,30 @@ const depreciationCalculator = computed(() => {
   };
 });
 
-const getCurrentMonthDays = () => {
-  if (!response.value) return 0;
-
-  const startDate = new Date(displayStartDate.value);
-  const endDate = computedEndDate.value
-    ? new Date(computedEndDate.value)
-    : null;
-
-  const currentDate = new Date();
-  const currentMonth = currentDate.getMonth();
-  const currentYear = currentDate.getFullYear();
-
-  if (startDate > currentDate) return 0;
-
-  if (endDate && endDate < new Date(currentYear, currentMonth, 1)) return 0;
-
-  if (
-    startDate.getMonth() === currentMonth &&
-    startDate.getFullYear() === currentYear
-  ) {
-    const endOfMonth = new Date(currentYear, currentMonth + 1, 0);
-    let actualEndDate = endOfMonth;
-
-    if (
-      endDate &&
-      endDate.getMonth() === currentMonth &&
-      endDate.getFullYear() === currentYear
-    ) {
-      actualEndDate = endDate < endOfMonth ? endDate : endOfMonth;
-    }
-
-    const timeDiff = actualEndDate.getTime() - startDate.getTime();
-    return Math.max(0, Math.ceil(timeDiff / (1000 * 3600 * 24)));
-  } else if (startDate < new Date(currentYear, currentMonth, 1)) {
-    const currentMonthStart = new Date(currentYear, currentMonth, 1);
-    let actualEndDate = currentDate;
-
-    if (
-      endDate &&
-      endDate.getMonth() === currentMonth &&
-      endDate.getFullYear() === currentYear
-    ) {
-      actualEndDate = endDate < currentDate ? endDate : currentDate;
-    }
-
-    const timeDiff = actualEndDate.getTime() - currentMonthStart.getTime();
-    return Math.ceil(timeDiff / (1000 * 3600 * 24));
-  }
-
-  return 0;
-};
-
-const getEndOfMonthDays = () => {
-  if (!response.value) return 0;
-
-  const startDate = new Date(displayStartDate.value);
-  const endDate = computedEndDate.value
-    ? new Date(computedEndDate.value)
-    : null;
-
-  const currentDate = new Date();
-  const currentMonth = currentDate.getMonth();
-  const currentYear = currentDate.getFullYear();
-
-  if (startDate > currentDate) return 0;
-
-  const endOfMonth = new Date(currentYear, currentMonth + 1, 0);
-
-  if (
-    startDate.getMonth() === currentMonth &&
-    startDate.getFullYear() === currentYear
-  ) {
-    let actualEndDate = endOfMonth;
-
-    if (
-      endDate &&
-      endDate.getMonth() === currentMonth &&
-      endDate.getFullYear() === currentYear
-    ) {
-      actualEndDate = endDate < endOfMonth ? endDate : endOfMonth;
-    }
-
-    const timeDiff = actualEndDate.getTime() - startDate.getTime();
-    return Math.max(0, Math.ceil(timeDiff / (1000 * 3600 * 24)));
-  } else if (startDate < new Date(currentYear, currentMonth, 1)) {
-    const currentMonthStart = new Date(currentYear, currentMonth, 1);
-    let actualEndDate = endOfMonth;
-
-    if (
-      endDate &&
-      endDate.getMonth() === currentMonth &&
-      endDate.getFullYear() === currentYear
-    ) {
-      actualEndDate = endDate < endOfMonth ? endDate : endOfMonth;
-    }
-
-    const timeDiff = actualEndDate.getTime() - currentMonthStart.getTime();
-    return Math.ceil(timeDiff / (1000 * 3600 * 24));
-  }
-
-  return 0;
-};
-
-const calculateDaysFromStart = () => {
-  if (!response.value) return 0;
-
-  const startDate = new Date(displayStartDate.value);
-  const currentDate = new Date();
-
-  const timeDifference = currentDate.getTime() - startDate.getTime();
-  return Math.max(0, Math.ceil(timeDifference / (1000 * 3600 * 24)));
-};
-
-const depreciableAmountForSave = computed(() => {
-  if (!response.value) return 0;
-
-  const assetValue = parseFloat(response.value.asset_value || "0");
-  const salvageValue = parseFloat(response.value.asset_salvage_value || "0");
-
-  const depreciableAmount = assetValue - salvageValue;
-
-  return Math.max(0, depreciableAmount);
-});
-
-const depreciationSchedule = computed(() => {
-  if (
-    !response.value ||
-    !depreciationCalculator.value ||
-    validationErrors.value.length > 0
-  ) {
-    return [];
-  }
-
-  const assetValue = parseFloat(response.value.asset_value || "0");
-  const salvageValue = parseFloat(response.value.asset_salvage_value || "0");
-  const usefulLife = parseInt(String(response.value.asset_useful_life || "0"));
-  const depreciationType = response.value.dpca_type || "SL";
-  const depreciationRate =
-    parseFloat(response.value.dpca_percentage || "0") / 100;
-  const depreciableAmount = assetValue - salvageValue;
-
-  const schedule = [];
-  let bookValue = assetValue;
-  let totalAccumulatedDepreciation = 0;
-
-  for (let year = 1; year <= usefulLife; year++) {
-    const beginningBookValue = bookValue;
-    let currentYearDepreciation = 0;
-
-    switch (depreciationType) {
-      case "SL":
-        currentYearDepreciation = depreciableAmount / usefulLife;
-        break;
-
-      case "DL":
-        currentYearDepreciation = beginningBookValue * depreciationRate;
-        if (beginningBookValue - currentYearDepreciation < salvageValue) {
-          currentYearDepreciation = beginningBookValue - salvageValue;
-        }
-        break;
-
-      case "PU":
-        if (unitsOfProduction.value.totalExpectedUnits > 0) {
-          const depreciationPerUnit =
-            depreciableAmount / unitsOfProduction.value.totalExpectedUnits;
-          const unitsThisYear =
-            unitsOfProduction.value.yearlyUsage[year - 1] ||
-            unitsOfProduction.value.totalExpectedUnits / usefulLife;
-          currentYearDepreciation = depreciationPerUnit * unitsThisYear;
-        } else {
-          currentYearDepreciation = depreciableAmount / usefulLife;
-        }
-        break;
-    }
-
-    if (year === usefulLife && depreciationType !== "DL") {
-      currentYearDepreciation = Math.max(0, beginningBookValue - salvageValue);
-    }
-
-    currentYearDepreciation = Math.max(0, currentYearDepreciation);
-    if (beginningBookValue - currentYearDepreciation < salvageValue) {
-      currentYearDepreciation = Math.max(0, beginningBookValue - salvageValue);
-    }
-
-    totalAccumulatedDepreciation += currentYearDepreciation;
-    bookValue = assetValue - totalAccumulatedDepreciation;
-
-    if (bookValue < salvageValue) {
-      bookValue = salvageValue;
-    }
-
-    schedule.push({
-      year,
-      beginningBookValue: Math.round(beginningBookValue * 100) / 100,
-      depreciationExpense: Math.round(currentYearDepreciation * 100) / 100,
-      accumulatedDepreciation:
-        Math.round(totalAccumulatedDepreciation * 100) / 100,
-      endingBookValue: Math.round(bookValue * 100) / 100,
-      depreciationRate:
-        depreciationType === "DL"
-          ? (currentYearDepreciation / beginningBookValue) * 100
-          : (currentYearDepreciation / assetValue) * 100,
-    });
-
-    if (bookValue <= salvageValue && year < usefulLife) {
-      break;
-    }
-  }
-
-  return schedule;
-});
-
-const depreciationSummary = computed(() => {
-  if (!depreciationSchedule.value.length) return null;
-
-  const schedule = depreciationSchedule.value;
-  const totalDepreciation = schedule.reduce(
-    (sum, item) => sum + item.depreciationExpense,
-    0
-  );
-  const averageAnnualDepreciation = totalDepreciation / schedule.length;
-  const highestDepreciation = Math.max(
-    ...schedule.map((item) => item.depreciationExpense)
-  );
-  const lowestDepreciation = Math.min(
-    ...schedule.map((item) => item.depreciationExpense)
-  );
-
-  return {
-    totalDepreciation: Math.round(totalDepreciation * 100) / 100,
-    averageAnnualDepreciation:
-      Math.round(averageAnnualDepreciation * 100) / 100,
-    highestDepreciation: Math.round(highestDepreciation * 100) / 100,
-    lowestDepreciation: Math.round(lowestDepreciation * 100) / 100,
-    finalBookValue: schedule[schedule.length - 1].endingBookValue,
-  };
-});
-
-const depreciationProgress = computed(() => {
-  if (!response.value || !depreciationCalculator.value) return 0;
-  return depreciationCalculator.value.depreciationProgress;
-});
-
+// [ຮັກສາຟັງຊັນ helper ອື່ນໆ...]
+// const formatNumber = (value: string | number) => {
+//   if (!value) return "0.00";
+//   return parseFloat(value.toString()).toLocaleString("en-US", {
+//     minimumFractionDigits: 2,
+//     maximumFractionDigits: 2,
+//   });
+// };
 const formatNumber = (value: string | number) => {
-  if (!value) return "0.00";
-  return parseFloat(value.toString()).toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+  if (!value && value !== 0) return "0.000";
+  const num = parseFloat(value.toString());
+  if (isNaN(num)) return "0.000";
+  
+  return num.toLocaleString("en-US", {
+    minimumFractionDigits: 3,
+    maximumFractionDigits: 3,
   });
 };
-
+// const formatCurrency = (value: string | number, currency: string = "LAK") => {
+//   return `${formatNumber(value)} ${currency}`;
+// };
 const formatCurrency = (value: string | number, currency: string = "LAK") => {
   return `${formatNumber(value)} ${currency}`;
 };
-
-const formatPercentage = (value: number) => {
-  return `${value.toFixed(2)}%`;
-};
-
 const getDepreciationMethodName = (type: string) => {
   switch (type) {
     case "SL":
@@ -1084,30 +587,6 @@ const getDepreciationMethodName = (type: string) => {
   }
 };
 
-const getDepreciationMethodDescription = (type: string) => {
-  switch (type) {
-    case "SL":
-      return "ຫັກຄ່າເສື່ອມເທົ່າໆກັນທຸກປີ = (ມູນຄ່າຊັບສິນ - ມູນຄ່າຊາກ) ÷ ອາຍຸການໃຊ້ງານ";
-    case "DL":
-      return "ຫັກຄ່າເສື່ອມສູງໃນປີທຳອິດ ແລ້ວຫຼຸດລົງ = ມູນຄ່າຄົງເຫຼືອ × ອັດຕາເສື່ອມ";
-    case "PU":
-      return "ຫັກຄ່າເສື່ອມຕາມການນຳໃຊ້ຈິງ = (ມູນຄ່າຊັບສິນ - ມູນຄ່າຊາກ) ÷ ໜ່ວຍຜະລິດທັງໝົດ × ໜ່ວຍທີ່ໃຊ້";
-    default:
-      return "ບໍ່ມີຂໍ້ມູນວິທີການຄຳນວນ";
-  }
-};
-
-const setToToday = () => {
-  request.dpca_start_date = new Date();
-};
-
-const formatOnBlur = (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  if (request.asset_value_remain && request.asset_value_remain > 0) {
-    target.value = formatNumber(request.asset_value_remain);
-  }
-};
-
 const goBack = () => {
   router.go(-1);
 };
@@ -1118,59 +597,12 @@ const generateReferenceNumber = () => {
   const month = String(currentDate.getMonth() + 1).padStart(2, "0");
   const day = String(currentDate.getDate()).padStart(2, "0");
   const dateString = `${year}${month}${day}`;
-
   const assetListCode = response.value?.asset_list_code || "000";
-
   return `AS-ARC-${dateString}-${assetListCode}`;
-};
-
-const generateJournalEntry = () => {
-  if (!response.value) {
-    console.error("ບໍ່ມີຂໍ້ມູນ response");
-    return null;
-  }
-
-  const currentDate = new Date();
-  const currentYear = currentDate.getFullYear().toString();
-  const currentMonth = String(currentDate.getMonth() + 1).padStart(2, "0");
-  const periodCode = `${currentYear}${currentMonth}`;
-
-  const valueDateISO = currentDate.toISOString();
-  const referenceNo = generateReferenceNumber();
-  const mastercodeName = masterdata.value.mastercode_detail?.MC_name_la || "";
-  const assetName =
-    response.value.mastercode_detail?.chart_detail?.asset_name_la ||
-    response.value.asset_id_detail?.asset_name_la ||
-    "";
-  const addlText = `${mastercodeName}-${assetName}`;
-
-  const accountNumbers = getAccountNumbers.value;
-
-  const journalEntry = {
-    Reference_No: referenceNo,
-    Ccy_cd: response.value.asset_currency || "LAK",
-    Txn_code: "ARC",
-    Value_date: valueDateISO,
-    Addl_text: addlText,
-    fin_cycle: currentYear,
-    Period_code: periodCode,
-    module_id: "AS",
-    entries: [
-      {
-        Account_no: accountNumbers.dr || "",
-        Amount: parseFloat(response.value.asset_value || "0"),
-        Dr_cr: "C",
-        Addl_sub_text: response.value.asset_spec || "",
-      },
-    ],
-  };
-
-  return journalEntry;
 };
 
 const generateCompleteJournalEntry = () => {
   if (!response.value) {
-    console.error("ບໍ່ມີຂໍ້ມູນ response");
     return null;
   }
 
@@ -1226,74 +658,7 @@ const generateCompleteJournalEntry = () => {
   return journalEntry;
 };
 
-const showJournalEntryPreview = () => {
-  const entry = generateCompleteJournalEntry();
-  if (entry) {
-    console.log("📋 Journal Entry Preview:");
-    console.log(JSON.stringify(entry, null, 2));
-    return entry;
-  }
-  return null;
-};
-
-const copyJournalEntryToClipboard = async () => {
-  const entry = generateCompleteJournalEntry();
-  if (entry) {
-    try {
-      await navigator.clipboard.writeText(JSON.stringify(entry, null, 2));
-      CallSwal({
-        icon: "success",
-        title: "ສຳເລັດ!",
-        text: "ຄັດລອກຂໍ້ມູນ Journal Entry ໄປ Clipboard ແລ້ວ",
-        timer: 2000,
-      });
-    } catch (error) {
-      console.error("Error copying to clipboard:", error);
-      CallSwal({
-        icon: "error",
-        title: "ຜິດພາດ!",
-        text: "ບໍ່ສາມາດຄັດລອກໄດ້",
-      });
-    }
-  }
-};
-
-const journalEntryData = computed(() => {
-  return generateCompleteJournalEntry();
-});
-
-const submitJournalEntry = async () => {
-  const entry = generateCompleteJournalEntry();
-  if (!entry) return;
-
-  try {
-    const response = await fetch("journal/process-v2/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(entry),
-    });
-
-    if (response.ok) {
-      CallSwal({
-        icon: "success",
-        title: "ສຳເລັດ!",
-        text: "ສົ່ງຂໍ້ມູນ Journal Entry ສຳເລັດແລ້ວ",
-      });
-    } else {
-      throw new Error("API Error");
-    }
-  } catch (error) {
-    console.error("Error submitting journal entry:", error);
-    CallSwal({
-      icon: "error",
-      title: "ຜິດພາດ!",
-      text: "ບໍ່ສາມາດສົ່ງຂໍ້ມູນໄດ້",
-    });
-  }
-};
-
+// ✅ ປັບປຸງຟັງຊັນ saveCalculation ໃຫ້ແກ້ບັນຫາຫຼັກ
 const saveCalculation = async () => {
   try {
     const notification = await CallSwal({
@@ -1306,15 +671,36 @@ const saveCalculation = async () => {
     });
 
     if (notification.isConfirmed) {
-      await assetStore.Update(id);
+      // ✅ ເລີ່ມການບັນທຶກ - ປ້ອງກັນ watcher override
+      isSaving = true;
 
-      request.asset_value_remainBegin = finalMonthlySetupValue.value.toString();
-      request.asset_value_remainLast = displayMonthlyEndValue.value.toString();
+      // ✅ ເກັບຄ່າທີ່ຄິດໄວ້ກ່ອນທຸກຢ່າງ
+      const setupValueToSave = finalMonthlySetupValue.value;
+      const endValueToSave = displayMonthlyEndValue.value;
+
+      console.log("=== ຄ່າທີ່ຈະບັນທຶກ (ກ່ອນ API calls) ===");
+      console.log("setupValueToSave:", setupValueToSave);
+      console.log("endValueToSave:", endValueToSave);
+      console.log("displayStartDate:", displayStartDate.value);
+
+      // ✅ ບັງຄັບໃຫ້ໃຊ້ຄ່າທີ່ຄິດໄວ້ກ່ອນທຸກ API call
+      request.asset_value_remainBegin = setupValueToSave.toFixed(3);
+      request.asset_value_remainLast = endValueToSave.toFixed(3);
 
       if (depreciationBasicCalculation.value) {
         request.accu_dpca_value_total =
           depreciationBasicCalculation.value.depreciableAmount;
       }
+
+      await assetStore.Update(id);
+
+      // ✅ ຢືນຢັນຄ່າອີກຄັ້ງຫຼັງ Update
+      request.asset_value_remainBegin = setupValueToSave.toFixed(2);
+      request.asset_value_remainLast = endValueToSave.toFixed(2);
+
+      console.log("=== ຄ່າສຸດທ້າຍທີ່ບັນທຶກ ===");
+      console.log("asset_value_remainBegin:", request.asset_value_remainBegin);
+      console.log("asset_value_remainLast:", request.asset_value_remainLast);
 
       const journalData = generateCompleteJournalEntry();
 
@@ -1357,10 +743,16 @@ const saveCalculation = async () => {
   } finally {
     editableValues.value.isEditing = false;
     editableValues.value.salvageValue = 0;
+
+    // ✅ ຢຸດການບັນທຶກຫຼັງ 2 ວິນາທີ (ເພີ່ມເວລາ)
+    setTimeout(() => {
+      isSaving = false;
+      console.log("🔓 isSaving reset to false");
+    }, 2000);
   }
 };
 
-// ✅ Watchers
+// ✅ Watchers - ປັບປຸງໃຫ້ມີ debug ແລະ ປ້ອງກັນ override
 watch(
   () => response.value?.asset_id_detail?.asset_type_detail?.type_code,
   (newTypeCode) => {
@@ -1385,7 +777,16 @@ watch(
 watch(
   () => assetStore.response_fa_asset_detail,
   (req) => {
-    if (req) {
+    console.log(`
+=== WATCHER TRIGGERED ===
+🔒 isSaving: ${isSaving}
+📊 has request: ${!!req}
+📅 Time: ${new Date().toLocaleString()}
+    `);
+
+    if (req && !isSaving) {
+      console.log("✅ Watcher: Processing update...");
+
       request.asset_accu_dpca_value = req.asset_accu_dpca_value
         ? Number(req.asset_accu_dpca_value)
         : 0;
@@ -1397,17 +798,41 @@ watch(
         : 0;
 
       nextTick(() => {
-        request.asset_value_remainBegin =
-          finalMonthlySetupValue.value.toFixed(2);
-        request.asset_value_remainLast =
-          displayMonthlyEndValue.value.toFixed(2);
-        const assetValue = parseFloat(req.asset_value || "0");
-        const salvageValue = parseFloat(req.asset_salvage_value || "0");
-        request.accu_dpca_value_total = Math.max(0, assetValue - salvageValue);
+        if (!isSaving) {
+          const newBeginValue = finalMonthlySetupValue.value.toFixed(2);
+          const newEndValue = displayMonthlyEndValue.value.toFixed(2);
+
+          console.log(`
+=== WATCHER nextTick UPDATE ===
+🔒 isSaving: ${isSaving}
+💰 New Begin Value: ${newBeginValue}
+💰 New End Value: ${newEndValue}
+📅 Current displayStartDate: ${displayStartDate.value}
+          `);
+
+          request.asset_value_remainBegin = newBeginValue;
+          request.asset_value_remainLast = newEndValue;
+
+          const assetValue = parseFloat(req.asset_value || "0");
+          const salvageValue = parseFloat(req.asset_salvage_value || "0");
+          request.accu_dpca_value_total = Math.max(
+            0,
+            assetValue - salvageValue
+          );
+        } else {
+          console.log("🔒 WATCHER: Blocked by isSaving flag");
+        }
       });
 
+      
       if (!request.dpca_start_date) {
-        request.dpca_start_date = new Date();
+        
+        if (req.dpca_start_date) {
+          request.dpca_start_date = new Date(req.dpca_start_date);
+        } else {
+          // ✅ ຖ້າບໍ່ມີໃຫ້ໃຊ້ວັນນີ້
+          request.dpca_start_date = new Date();
+        }
       }
 
       if (req.asset_useful_life && displayStartDate.value) {
@@ -1417,18 +842,75 @@ watch(
         );
         request.dpca_end_date = endDate ? new Date(endDate) : null;
       }
+    } else {
+      console.log(
+        `❌ Watcher: Skipped - isSaving: ${isSaving}, hasReq: ${!!req}`
+      );
     }
   }
 );
 
-onMounted(() => {
-  assetStore.GetFaAssetDetail(id);
-  masterStore.getDataAsset();
+// ✅ ເພີ່ມຟັງຊັນ debug manual
+const debugCurrentValues = () => {
+  console.log(`
+=== MANUAL DEBUG - CURRENT VALUES ===
+📊 monthlySetupValue: ${monthlySetupValue.value.toLocaleString()}
+📊 finalMonthlySetupValue: ${finalMonthlySetupValue.value.toLocaleString()}
+📊 displayMonthlyEndValue: ${displayMonthlyEndValue.value.toLocaleString()}
+📊 request.asset_value_remainBegin: ${request.asset_value_remainBegin}
+📊 request.asset_value_remainLast: ${request.asset_value_remainLast}
+🔒 isSaving: ${isSaving}
+📅 displayStartDate: ${displayStartDate.value}
+📅 todayDate: ${todayDate.value}
+  `);
 
-  if (!request.dpca_start_date) {
-    request.dpca_start_date = new Date().toISOString().split("T")[0];
+  if (depreciationBasicCalculation.value) {
+    console.log(`
+📊 Monthly Depreciation: ${depreciationBasicCalculation.value.monthlyDepreciation.toLocaleString()}
+📊 Annual Depreciation: ${depreciationBasicCalculation.value.annualDepreciation.toLocaleString()}
+    `);
+  }
+};
+
+// ✅ ປັບປຸງ onMounted ໃຫ້ດີກວ່າ
+onMounted(async () => {
+  console.log("🚀 Component mounted - Loading data...");
+
+  try {
+    // ✅ Load ຂໍ້ມູນ
+    await assetStore.GetFaAssetDetail(id);
+    await masterStore.getDataAsset();
+
+    // ✅ ຕັ້ງວັນທີ່ເລີ່ມຖ້າຍັງບໍ່ມີ
+    if (!request.dpca_start_date) {
+      // ✅ ລອງໃຊ້ຂໍ້ມູນຈາກ response ກ່ອນ
+      if (response.value?.dpca_start_date) {
+        request.dpca_start_date = new Date(response.value.dpca_start_date);
+        console.log(
+          "✅ Using dpca_start_date from response:",
+          response.value.dpca_start_date
+        );
+      } else {
+        // ✅ ຖ້າບໍ່ມີໃຫ້ໃຊ້ວັນນີ້
+        request.dpca_start_date = new Date().toISOString().split("T")[0];
+        console.log(
+          "✅ Set dpca_start_date to today:",
+          request.dpca_start_date
+        );
+      }
+    }
+
+    // ✅ Debug ຫຼັງ load ຂໍ້ມູນເສັດ
+    setTimeout(() => {
+      console.log("🔍 === POST-MOUNT DEBUG ===");
+      debugCurrentValues();
+    }, 2000);
+  } catch (error) {
+    console.error("❌ Error in onMounted:", error);
   }
 });
+
+// ✅ Date Modal functionality
 const showDateModal = ref(false);
 const tempDate = ref("");
 
@@ -1440,9 +922,28 @@ const openDateModal = () => {
 const confirmDate = () => {
   displayStartDate.value = tempDate.value;
   showDateModal.value = false;
+  console.log("📅 Date updated to:", tempDate.value);
+};
+
+// ✅ ເພີ່ມຟັງຊັນສຳລັບ template debug (ໃຊ້ໃນ dev mode)
+const logCalculationDetails = () => {
+  if (depreciationBasicCalculation.value && displayStartDate.value) {
+    const startDate = new Date(displayStartDate.value);
+    console.log(`
+=== CALCULATION DETAILS ===
+📅 Start Date: ${startDate.toLocaleDateString(
+      "en-GB"
+    )} (Day ${startDate.getDate()})
+📅 Month: ${startDate.getMonth() + 1}/${startDate.getFullYear()}
+📊 Monthly Depreciation: ${depreciationBasicCalculation.value.monthlyDepreciation.toLocaleString()}
+📊 Setup Value: ${monthlySetupValue.value.toLocaleString()}
+📊 End Value: ${monthlyEndValue.value.toLocaleString()}
+✅ Final Setup: ${finalMonthlySetupValue.value.toLocaleString()}
+✅ Final End: ${displayMonthlyEndValue.value.toLocaleString()}
+    `);
+  }
 };
 </script>
-```
 
 <template>
   <div class="pa-4">
@@ -1670,7 +1171,7 @@ const confirmDate = () => {
                 >
                   <v-card-title class="text-h6 pb-2 bg-purple text-white">
                     <v-icon class="mr-2">mdi-calculator</v-icon>
-                    ຂໍ້ມູນຄ່າຫຼູຍຫຽ້ນ
+                    ຂໍ້ມູນຄ່າຫຼູຍຫ້ຽນ
                   </v-card-title>
                   <v-card-text class="pt-4">
                     <v-row>
@@ -1811,7 +1312,7 @@ const confirmDate = () => {
                         <v-text-field
                           :value="
                             computedEndDate
-                              ? $dayjs(computedEndDate).format('YYYY-MM-DD')
+                              ? $dayjs(computedEndDate).format('DD/MM/YYYY')
                               : ''
                           "
                           type="text"
@@ -1840,14 +1341,14 @@ const confirmDate = () => {
                           >ມູນຄ່າຕົ້ນງວດ
                           <span class="text-error">*</span></label
                         >
-                     <v-text-field
-  :value="formatNumber(finalMonthlySetupValue)"
-  variant="outlined"
-  density="compact"
-  readonly
-  :suffix="response?.asset_currency || ''"
-  class="formatted-number-input"
-/>
+                        <v-text-field
+                          :value="formatNumber(finalMonthlySetupValue)"
+                          variant="outlined"
+                          density="compact"
+                          readonly
+                          :suffix="response?.asset_currency || ''"
+                          class="formatted-number-input"
+                        />
 
                         <v-label
                           >ມູນຄ່າຫຼູ້ຍຫຽ້ນລາຄາສະສົມ

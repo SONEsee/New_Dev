@@ -87,23 +87,15 @@ const doca_type = [
 ];
 
 const isAutoCalculating = ref(false);
-
 const formatNumber = (value: any) => {
   if (!value && value !== 0) return "";
   const num = parseFloat(value);
   if (isNaN(num)) return "";
 
-  if (num % 1 === 0) {
-    return new Intl.NumberFormat("en-US", {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(num);
-  } else {
-    return new Intl.NumberFormat("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(num);
-  }
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 3,
+    maximumFractionDigits: 3,
+  }).format(num);
 };
 
 const parseFormattedNumber = (value: any) => {
@@ -159,10 +151,13 @@ const formattedAssetValueRemainMonth = computed(() => {
   const usefulLife = faAssetStoreInstance.form_create_fa_asset.asset_useful_life;
 
   if (assetValue && usefulLife && usefulLife > 0) {
-    // ຄຳນວນ: (ມູນຄ່າເລີ່ມຕົ້ນ - ມູນຄ່າຊາກ) ÷ (ອາຍຸການໃຊ້ງານ × 12)
     const depreciableAmount = assetValue - (salvageValue || 0);
     const monthlyValue = depreciableAmount / (usefulLife * 12);
-    const roundedValue = Math.round(monthlyValue * 100) / 100;
+    
+ 
+    const roundedValue = Math.round(monthlyValue * 1000) / 1000;
+    
+ 
     
     faAssetStoreInstance.form_create_fa_asset.asset_value_remainMonth = roundedValue;
     return formatNumber(roundedValue);
@@ -171,22 +166,6 @@ const formattedAssetValueRemainMonth = computed(() => {
   faAssetStoreInstance.form_create_fa_asset.asset_value_remainMonth = 0;
   return formatNumber(0);
 });
-// const formattedAssetValueRemainMonth = computed(() => {
-//   const assetValue = faAssetStoreInstance.form_create_fa_asset.asset_value;
-//   const usefulLife =
-//     faAssetStoreInstance.form_create_fa_asset.asset_useful_life;
-
-//   if (assetValue && usefulLife && usefulLife > 0) {
-//     const monthlyValue = assetValue / (usefulLife * 12);
-//     const roundedValue = Math.round(monthlyValue * 100) / 100;
-//     faAssetStoreInstance.form_create_fa_asset.asset_value_remainMonth =
-//       roundedValue;
-//     return formatNumber(roundedValue);
-//   }
-
-//   faAssetStoreInstance.form_create_fa_asset.asset_value_remainMonth = 0;
-//   return formatNumber(0);
-// });
 
 const formattedAssetValueRemainLast = computed(() => {
   return formatNumber(
@@ -679,7 +658,7 @@ watch(
       isAutoCalculating.value = true;
       const percentage = 100 / newUsefulLife;
       faAssetStoreInstance.form_create_fa_asset.dpca_percentage =
-        Math.round(percentage * 100) / 100;
+        (percentage * 100) / 100;
       nextTick(() => {
         isAutoCalculating.value = false;
       });
@@ -731,7 +710,7 @@ watch(
       isAutoCalculating.value = true;
       const usefulLife = 100 / newPercentage;
       faAssetStoreInstance.form_create_fa_asset.asset_useful_life =
-        Math.round(usefulLife);
+        (usefulLife);
       nextTick(() => {
         isAutoCalculating.value = false;
       });
