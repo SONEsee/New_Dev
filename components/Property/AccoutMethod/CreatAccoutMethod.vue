@@ -59,8 +59,8 @@ const formatNumber = (value: number | string): string => {
   if (isNaN(numValue)) return "";
 
   return numValue.toLocaleString("en-US", {
-    minimumFractionDigits: 3,
-    maximumFractionDigits: 3,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   });
 };
 

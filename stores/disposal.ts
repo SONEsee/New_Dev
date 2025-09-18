@@ -136,7 +136,9 @@ export const useDispoalStore = defineStore("disposal", {
             timer: 1500,
             showCancelButton: false,
             showConfirmButton: false,
-          });
+          });setTimeout(() => {
+            goPath("/property/dispalso/approve")
+          }, 1000);;
         }
         }
         // const req = await axios.post(

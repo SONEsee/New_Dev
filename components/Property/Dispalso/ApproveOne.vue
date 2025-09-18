@@ -1,14 +1,14 @@
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import axios from "@/helpers/axios";
 import Swal from "sweetalert2";
 import { useRolePermissions } from "@/composables/useRolePermissions";
 const derpicationStore = useFassetLidtDescription();
-const mainStore = useFassetLidtDescription();
+const mainStore = useDispoalStore();
 const datadeprecation = computed(() => {
   const data = derpicationStore.respons_data_driscription_main;
-  let processedData = [];
+  let processedData = [] as any[];
 
   if (Array.isArray(data)) {
     processedData = data;
@@ -41,7 +41,7 @@ const {
 const loading = ref(false);
 const error = ref(null);
 const selectedItem = ref(null);
-const journalEntries = ref([]);
+const journalEntries = ref([] as DevJourNalRespons[]);
 const modules = ref([]);
 const currencies = ref([]);
 const isDeletingPair = ref(false);
@@ -51,7 +51,42 @@ const rejectingRefSubNo = ref(null);
 const isEditingPair = ref(false);
 const editingRefSubNo = ref(null);
 const editDialog = ref(false);
-
+interface DevJourNalRespons {
+    JRNLLog_id_his:   number;
+    currency_name:    string;
+    account_code:     string;
+    account_name:     string;
+    transaction_name: string;
+    maker_name:       string;
+    ac_relatives:     string;
+    Reference_No:     string;
+    Reference_sub_No: string;
+    comments:         null;
+    Fcy_Amount:       string;
+    Lcy_Amount:       string;
+    fcy_dr:           string;
+    fcy_cr:           string;
+    lcy_dr:           string;
+    lcy_cr:           string;
+    Dr_cr:            string;
+    Account_no:       string;
+    Ac_relatives:     string;
+    Value_date:       Date;
+    Exch_rate:        string;
+    Addl_text:        string;
+    Addl_sub_text:    string;
+    Maker_DT_Stamp:   Date;
+    Checker_DT_Stamp: null;
+    Auth_Status:      string;
+    module_id:        string;
+    Ccy_cd:           string;
+    Account:          number;
+    Txn_code:         string;
+    fin_cycle:        string;
+    Period_code:      string;
+    Maker_Id:         string;
+    Checker_Id:       null;
+}
 
 const editForm = ref({
   Reference_sub_No: "",
@@ -66,12 +101,27 @@ const editForm = ref({
   credit_account_code: "",
   currency_code: "",
 });
+interface AccountRespons {
+    glsub_id:         number;
+    glsub_code:       string;
+    glsub_Desc_la:    string;
+    glsub_Desc_en:    string;
+    Record_Status:    string;
+    Maker_DT_Stamp:   Date;
+    Checker_DT_Stamp: Date;
+    Auth_Status:      string;
+    Once_Auth:        string;
+    gl_code:          number;
+    Maker_Id:         string;
+    Checker_Id:       string;
+    account_display:  string;
+}
 
 const editFormRef = ref(null);
-const accounts = ref([]);
+const accounts = ref<AccountRespons[]>([]);
 const loadingAccounts = ref(false);
-const selectedDebitAccount = ref(null);
-const selectedCreditAccount = ref(null);
+const selectedDebitAccount = ref<AccountRespons | null>(null);
+const selectedCreditAccount = ref<AccountRespons | null>(null);
 const editFormCurrency = ref(null);
 
 
@@ -82,7 +132,7 @@ const getAuthHeaders = () => ({
 });
 
 
-const getAccountCode = (accountId) => {
+const getAccountCode = (accountId:any) => {
   if (!accountId) return "";
 
 
@@ -95,7 +145,7 @@ const getAccountCode = (accountId) => {
   return "";
 };
 
-function handleEdit(entry) {
+function handleEdit(entry:any) {
 
   const allowedTypes = ["GL"];
   const isAllowedType = allowedTypes.includes(referenceNoSubstring.value);
@@ -145,13 +195,13 @@ const canApprove = computed(() => {
 });
 
 const totalFcyDebit = computed(() => {
-  return journalEntries.value.reduce((sum, entry) => {
+  return journalEntries.value.reduce((sum:any, entry:any) => {
     return sum + parseFloat(entry.fcy_dr || 0);
   }, 0);
 });
 
 const totalFcyCredit = computed(() => {
-  return journalEntries.value.reduce((sum, entry) => {
+  return journalEntries.value.reduce((sum:any, entry:any) => {
     return sum + parseFloat(entry.fcy_cr || 0);
   }, 0);
 });
@@ -260,10 +310,10 @@ const enhancedJournalEntries = computed(() => {
       return assetIdMatch && timeMatch;
     });
 
-    // Return enhanced entry with depreciation data
+   
     return {
       ...entry,
-      // Add depreciation fields
+     
       aldm_id: matchingDeprecation?.aldm_id || null,
       depreciation_info: matchingDeprecation ? {
         aldm_id: matchingDeprecation.aldm_id,
@@ -376,7 +426,7 @@ const loadData = async () => {
       },
     });
 
-  } catch (err) {
+  } catch (err:any) {
     console.error("Error loading detail data:", err);
     error.value = err.response?.data?.detail || err.message || "ບໍ່ສາມາດໂຫຼດຂໍ້ມູນໄດ້";
   } finally {
@@ -400,7 +450,7 @@ const loadAccounts = async () => {
     const accountData = response.data.results || response.data || [];
 
     // Format accounts for display in select using correct field names
-    accounts.value = accountData.map((account) => ({
+    accounts.value = accountData.map((account:any) => ({
       ...account,
       account_display: `${account.glsub_code} - ${
         account.glsub_Desc_la || account.glsub_Desc_en || ""
@@ -440,7 +490,7 @@ const loadCurrencies = async () => {
 };
 
 // Helper functions
-const formatNumber = (num, decimals = 2) => {
+const formatNumber = (num:any, decimals = 2) => {
   if (!num) return "0.00";
   return new Intl.NumberFormat("en-US", {
     minimumFractionDigits: decimals,
@@ -448,17 +498,17 @@ const formatNumber = (num, decimals = 2) => {
   }).format(num);
 };
 
-const formatDate = (date) => {
+const formatDate = (date:any) => {
   if (!date) return "-";
   return new Date(date).toLocaleDateString("lo-LA");
 };
 
-const formatDateTime = (date) => {
+const formatDateTime = (date:any) => {
   if (!date) return "-";
   return new Date(date).toLocaleString("lo-LA");
 };
 
-const getStatusColor = (status) => {
+const getStatusColor = (status:any) => {
   switch (status) {
     case "A":
       return "success";
@@ -473,7 +523,7 @@ const getStatusColor = (status) => {
   }
 };
 
-const getStatusIcon = (status) => {
+const getStatusIcon = (status:any) => {
   switch (status) {
     case "A":
       return "mdi-check-circle";
@@ -488,7 +538,7 @@ const getStatusIcon = (status) => {
   }
 };
 
-const getStatusText = (status) => {
+const getStatusText = (status:any) => {
   switch (status) {
     case "A":
       return "ອະນຸມັດແລ້ວ";
@@ -503,7 +553,7 @@ const getStatusText = (status) => {
   }
 };
 
-const getModuleName = (moduleId) => {
+const getModuleName = (moduleId:any) => {
   if (!moduleId) return "-";
   const module = modules.value.find((m) => m.module_Id === moduleId);
   return module ? module.module_name_la : moduleId;
@@ -562,7 +612,7 @@ const deleteByPairAccount = async (referenceSubNo) => {
 
     // Reload data
     await loadData();
-  } catch (error) {
+  } catch (error:any) {
     console.error("Error deleting journal entry pair:", error);
 
     let errorMessage = "ບໍ່ສາມາດລຶບບັນທຶກຄູ່ໄດ້";
@@ -585,7 +635,7 @@ const deleteByPairAccount = async (referenceSubNo) => {
 };
 
 // Reject by pair account function
-const rejectByPairAccount = async (referenceSubNo, item) => {
+const rejectByPairAccount = async (referenceSubNo:any, item:any) => {
   if (!referenceSubNo) {
     Swal.fire({
       icon: "error",
@@ -596,7 +646,7 @@ const rejectByPairAccount = async (referenceSubNo, item) => {
     return;
   }
 
-  const result = await Swal.fire({
+  const result = await CallSwal({
     icon: "warning",
     title: "ດັດເເກ້ຄູ່ບັນຊີ",
     html: `
@@ -611,8 +661,8 @@ const rejectByPairAccount = async (referenceSubNo, item) => {
     inputPlaceholder: "ກະລຸນາໃສ່ເຫດຜົນການປະຕິເສດ...",
     inputAttributes: {
       "aria-label": "Rejection reason",
-      rows: 3,
-      maxlength: 250,
+      rows: 3 as any,
+      maxlength: 250 as any,
       class: "custom-textarea",
     },
     inputValidator: (value) => {
@@ -928,13 +978,13 @@ const rejectByPairAccount = async (referenceSubNo, item) => {
 };
 
 
-const editByPairAccount = (entry) => {
+const editByPairAccount = (entry:any) => {
   
 
-  // Find the related entry (debit/credit pair)
+
   const relatedEntry = journalEntries.value.find(
     (e) =>
-      e.Reference_sub_No === entry.Reference_sub_No &&
+      e.Reference_sub_No  === entry.Reference_sub_No &&
       e.JRNLLog_id !== entry.JRNLLog_id
   );
 
@@ -1047,7 +1097,7 @@ const editByPairAccount = (entry) => {
   editDialog.value = true;
 };
 
-const onDebitAccountChange = (glsubId) => {
+const onDebitAccountChange = (glsubId:any) => {
   if (glsubId) {
     selectedDebitAccount.value = accounts.value.find(
       (acc) => acc.glsub_id === glsubId
@@ -1420,23 +1470,23 @@ const approveItem = async () => {
     }
 
     const firstEntry = journalEntries.value[0];
-    if (!firstEntry.aldm_id || firstEntry.aldm_id.length === 0) {
+    if (!firstEntry.Ac_relatives || firstEntry.Ac_relatives.length === 0) {
       throw new Error('ບໍ່ມີ aldm_id ໃຫ້ approve');
     }
 
    
-    const aldmIds = Array.isArray(firstEntry.aldm_id) 
-      ? firstEntry.aldm_id 
-      : [firstEntry.aldm_id];
+    const aldmIds = Array.isArray(firstEntry.Ac_relatives) 
+      ? firstEntry.Ac_relatives
+      : [firstEntry.Ac_relatives];
     
-    mainStore.confirm_form_mark.aldm_ids = aldmIds;
+    mainStore.approve_disposal.asset_list_ids = aldmIds;
     
-    await mainStore.postConfirm();
+    await mainStore.approveDisposal();
     
-    console.log("Confirm form mark:", mainStore.confirm_form_mark);
-    
-    firstEntry.aldm_id = [];
-    
+    console.log("Confirm form mark:", mainStore.approve_disposal);
+
+    firstEntry.Ac_relatives = [] as any[];
+
   } catch (error) {
     console.error('Error approving item:', error);
     
@@ -1450,28 +1500,28 @@ const rejectItem = async () => {
 
     const firstEntry = journalEntries.value[0];
     console.log("🔍 Debug firstEntry:", firstEntry);
-    
-    if (!firstEntry.aldm_id || firstEntry.aldm_id.length === 0) {
+
+    if (!firstEntry.Ac_relatives || firstEntry.Ac_relatives.length === 0) {
       throw new Error('ບໍ່ມີ aldm_id ໃຫ້ reject');
     }
 
-    console.log("🔍 Rejecting item with aldm_id:", firstEntry.aldm_id);
+    console.log("🔍 Rejecting item with aldm_id:", firstEntry.Ac_relatives);
+
+    
+    
+    
+    mainStore.reject_disposal.asset_list_ids = firstEntry.Ac_relatives;
    
     
+    console.log("🔍 Before postReject - confirm_form_mark:", mainStore.reject_disposal);
     
     
-    mainStore.reject_form_mark_one.aldm_id = firstEntry.aldm_id;
-   
-    
-    console.log("🔍 Before postReject - confirm_form_mark:", mainStore.confirm_form_mark);
-    
-    
-    await mainStore.postRejectone();
+    await mainStore.RejectDisposal();
     
     console.log("✅ Reject successful");
     
 
-    firstEntry.aldm_id = [];
+    firstEntry.Ac_relatives = [];
     
   } catch (error) {
     console.error('❌ Error rejecting item:', error);
@@ -1869,7 +1919,7 @@ watch(
                     <th class="th-actions">ການກະທຳ</th>
                   </tr>
                 </thead>
-              <!-- <pre>{{ journalEntries }}</pre> -->
+              <!-- <pre>{{ accounts }}</pre> -->
                 <tbody>
                   <tr
                     v-for="(entry, index) in journalEntries"
