@@ -43,7 +43,7 @@ const extractLastNumber = (assetListId: string): string => {
   return lastPart || "0000000";
 };
 
-const creditAccountNumber = computed(() => {
+const debitAccountNumber = computed(() => {
   if (!dataupdate.value?.asset_list_id && detail.value?.credit_account_id) {
     return detail.value.credit_account_id;
   }
@@ -56,7 +56,7 @@ const creditAccountNumber = computed(() => {
   return "4601110.0000000";
 });
 
-const debitAccountNumber = computed(() => {
+const creditAccountNumber = computed(() => {
   if (!dataupdate.value?.asset_list_id && detail.value?.debit_account_id) {
     return detail.value.debit_account_id;
   }
