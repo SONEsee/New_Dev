@@ -1902,7 +1902,8 @@ const nameDisplay = (item:any)=>{
             </v-btn>
           </div>
         </v-card-title>
-        <!-- <pre>{{ selectedItems }}</pre> -->
+        <!-- <pre>{{ items }}</pre> -->
+
         <v-data-table
           :headers="headers"
           :items="items"
@@ -1915,6 +1916,7 @@ const nameDisplay = (item:any)=>{
           item-value="JRNLLog_id"
           hide-default-footer
         >
+        
           <template v-slot:loading>
             <v-skeleton-loader
               v-for="n in pagination.pageSize"
@@ -1976,7 +1978,7 @@ const nameDisplay = (item:any)=>{
             <span v-if="item.module_name_la" class="text-compact">
               {{ item.module_name_la }}
             </span>
-            <span v-else class="text-grey">-</span>
+            <span v-else class="text-grey">ຊັບສິນ</span>
           </template>
 
           <template v-slot:item.Fcy_Amount="{ item }">
