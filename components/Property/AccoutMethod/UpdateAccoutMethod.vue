@@ -103,7 +103,7 @@ watch(
       request.description = req.description;
 
       request.ref_id = assetData?.asset_list_id || req.ref_id;
-      request.amount = assetData?.asset_value_remainMonth || req.amount;
+      request.amount = assetData?.asset_value_remainMonth || req.amount ;
       request.amount_start = req.amount_start;
       request.amount_end = req.amount_end;
       request.debit_account_id = debitAccountNumber.value;

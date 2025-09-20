@@ -357,6 +357,7 @@ onMounted(() => {
       </template>
       <template v-slot:item.expense_status="{ item }">
         <v-btn
+        color="blue-lighten-4"
           flat
           class="text-primary"
           @click="
