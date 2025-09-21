@@ -517,7 +517,7 @@ import { useRoute, useRouter } from "vue-router"
 import { computed, onMounted, onUnmounted, ref } from "vue"
 import { useMenuStore } from "~/stores/menu"
 import axios from "@/helpers/axios"
-
+import { useAuthCheck } from "@/composables/useAuthCheck"
 // Working Day Check Interface
 interface WorkingDayResponse {
   available: boolean
@@ -555,7 +555,7 @@ const router = useRouter()
 const drawer = ref(true)
 const rail = ref(false)
 const error = ref(false)
-
+useAuthCheck();
 // Working Day Check Variables
 const isWorkingDay = ref<boolean | null>(null)
 const loadingWorkingDay = ref(false)
