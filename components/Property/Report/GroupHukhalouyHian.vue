@@ -230,6 +230,7 @@ onMounted(() => {
             <v-autocomplete
               prepend-inner-icon="mdi-package-variant"
               label="ເລືອກຕາມຊັບສິນ"
+              clearable
               v-model="selecList"
               :items="assetList"
               variant="outlined"

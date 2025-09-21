@@ -237,7 +237,7 @@ const disposalStatusOptions = computed(() => {
 });
 
 const calculateGainLoss = computed(() => {
-  const proceeds = parseFloat(parseNumber(request.disposal_proceeds) || "0");
+  const proceeds = parseFloat(parseNumber(request.disposal_value) || "0");
   const comparisonValue = getComparisonValue.value;
 
   if (!request.asset_list_id || proceeds === 0) {
@@ -308,7 +308,7 @@ const handleNonSaleDisposal = () => {
     request.gain_loss = "DPS08";
   }
 
-  request.disposal_proceeds = "";
+  request.disposal_value = "";
 };
 const handleDisposalCostInput = (event: any) => {
   const value = event.target.value;
@@ -327,17 +327,17 @@ const handleDisposalValueInput = (event: any) => {
 const handleDisposalProceedsInput = (event: any) => {
   const value = event.target.value;
   const rawValue = parseNumber(value);
-  request.disposal_proceeds = rawValue;
+  request.disposal_value = rawValue;
   event.target.value = formatNumber(rawValue);
 };
 
 watch(
-  [() => request.disposal_proceeds, () => request.asset_list_id],
+  [() => request.disposal_value, () => request.asset_list_id],
   () => {
     if (request.asset_list_id) {
       if (
-        request.disposal_proceeds &&
-        parseFloat(parseNumber(request.disposal_proceeds)) > 0
+        request.disposal_value &&
+        parseFloat(parseNumber(request.disposal_value)) > 0
       ) {
         const result = calculateGainLoss.value;
         if (result.status) {
@@ -718,7 +718,7 @@ onMounted(() => {
             variant="outlined"
             density="compact"
             :model-value="formatNumber(request.disposal_proceeds)"
-            @input="handleDisposalProceedsInput"
+           
             label="ລາຍຮັບຈາກການຂາຍ"
             type="text"
           >
@@ -750,7 +750,7 @@ onMounted(() => {
                     {{
                       new Intl.NumberFormat("en-US").format(
                         parseFloat(
-                          parseNumber(request.disposal_proceeds) || "0"
+                          parseNumber(request.disposal_value) || "0"
                         )
                       )
                     }}
@@ -764,8 +764,8 @@ onMounted(() => {
           <v-alert
             v-if="
               request.asset_list_id &&
-              request.disposal_proceeds &&
-              parseFloat(parseNumber(request.disposal_proceeds)) > 0
+              request.disposal_value &&
+              parseFloat(parseNumber(request.disposal_value)) > 0
             "
             :color="calculateGainLoss.color"
             variant="tonal"

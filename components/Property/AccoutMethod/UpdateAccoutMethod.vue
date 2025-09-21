@@ -43,7 +43,7 @@ const extractLastNumber = (assetListId: string): string => {
   return lastPart || "0000000";
 };
 
-const creditAccountNumber = computed(() => {
+const debitAccountNumber = computed(() => {
   if (!dataupdate.value?.asset_list_id && detail.value?.credit_account_id) {
     return detail.value.credit_account_id;
   }
@@ -56,7 +56,7 @@ const creditAccountNumber = computed(() => {
   return "4601110.0000000";
 });
 
-const debitAccountNumber = computed(() => {
+const creditAccountNumber = computed(() => {
   if (!dataupdate.value?.asset_list_id && detail.value?.debit_account_id) {
     return detail.value.debit_account_id;
   }
@@ -103,7 +103,7 @@ watch(
       request.description = req.description;
 
       request.ref_id = assetData?.asset_list_id || req.ref_id;
-      request.amount = assetData?.asset_value_remainMonth || req.amount;
+      request.amount = assetData?.asset_value_remainMonth || req.amount ;
       request.amount_start = req.amount_start;
       request.amount_end = req.amount_end;
       request.debit_account_id = debitAccountNumber.value;
