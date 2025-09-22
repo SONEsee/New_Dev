@@ -117,7 +117,7 @@
           </template>
 
           <!-- Date Column -->
-          <template #item.Maker_DT_Stamp="{ item }">
+          <template #item.value_date="{ item }">
             <div class="text-center">
               <v-chip
                 color="info"
@@ -126,10 +126,10 @@
                 prepend-icon="mdi-calendar"
                 class="font-weight-medium"
               >
-                {{ formatDate(item.Maker_DT_Stamp) }}
+                {{ formatDate(item.value_date) }}
               </v-chip>
               <div class="text-caption text-grey mt-1">
-                {{ formatTime(item.Maker_DT_Stamp) }}
+                {{ formatTime(item.value_date) }}
               </div>
             </div>
           </template>
@@ -343,7 +343,7 @@
                         <v-icon color="brown">mdi-calendar</v-icon>
                       </template>
                       <v-list-item-title>ວັນທີສ້າງ</v-list-item-title>
-                      <v-list-item-subtitle>{{ formatDate(selectedItem.Maker_DT_Stamp) }} {{ formatTime(selectedItem.Maker_DT_Stamp) }}</v-list-item-subtitle>
+                      <v-list-item-subtitle>{{ formatDate(selectedItem.value_date) }} {{ formatTime(selectedItem.value_date) }}</v-list-item-subtitle>
                     </v-list-item>
                     
                     <v-list-item class="px-0">
@@ -428,10 +428,10 @@
                 <template #item.Maker_DT_Stamp="{ item }">
                   <div class="text-center">
                     <div class="text-caption font-weight-medium">
-                      {{ formatDate(item.Maker_DT_Stamp) }}
+                      {{ formatDate(item.value_date) }}
                     </div>
                     <div class="text-caption text-grey">
-                      {{ formatTime(item.Maker_DT_Stamp) }}
+                      {{ formatTime(item.value_date) }}
                     </div>
                   </div>
                 </template>
@@ -539,7 +539,7 @@ const headers = [
   },
   { 
     title: 'ວັນທີສ້າງ', 
-    key: 'Maker_DT_Stamp',
+    key: 'value_date',
     align: 'center' as const,
     width: '130px'
   },
@@ -586,7 +586,7 @@ const historyHeaders = [
   },
   { 
     title: 'ວັນທີ', 
-    key: 'Maker_DT_Stamp',
+    key: 'value_date',
     align: 'center' as const,
     width: '120px'
   },
