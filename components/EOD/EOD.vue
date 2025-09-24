@@ -97,9 +97,9 @@
                     <v-chip color="info" variant="flat" size="small" prepend-icon="mdi-calendar">
                       ວັນທີເປົ້າໝາຍ: {{ targetDate }}
                     </v-chip>
-                    <v-chip color="warning" variant="flat" size="small" prepend-icon="mdi-database">
+                    <!-- <v-chip color="warning" variant="flat" size="small" prepend-icon="mdi-database">
                       EOD ID: {{ currentEODInfo.date_id }}
-                    </v-chip>
+                    </v-chip> -->
                     <v-chip 
                       :color="currentEODInfo.eod_status === 'Y' ? 'success' : 'error'" 
                       variant="flat" 
