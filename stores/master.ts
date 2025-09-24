@@ -14,6 +14,7 @@ export const useMasterStore = defineStore("master", {
       respons_data_status_dps :null as MasterModel.MasterCode | null,
       respons_data_status_nuw1 :null as MasterModel.MasterCode | null,
       resposne_status_setting:null as MasterModel.MasterCode | null,
+      resposne_status_setting_update:null as MasterModel.MasterCode | null,
       isloading: false,
       error: null as string | null,
       res_pons_filter:{
@@ -383,6 +384,7 @@ export const useMasterStore = defineStore("master", {
         console.error(error);
       }
     },
+
     async getSetting(){
       this.isloading = true;
       this.error = null;
@@ -398,6 +400,34 @@ export const useMasterStore = defineStore("master", {
         );
         if (res.status === 200) {
           this.resposne_status_setting = res.data;
+         
+          this.isloading = false;
+        }
+      } catch (error) {
+        CallSwal({
+          title: "Error",
+          text: "ການດຶງຂໍ້ມູນຜິດພາດ.",
+          icon: "error",
+        });
+        this.error = "Failed to fetch master data";
+        console.error(error);
+      }
+    },
+    async getSettingupdate(){
+      this.isloading = true;
+      this.error = null;
+      try {
+        const res = await axios.get<MasterModel.MasterRespons>(
+          `/api/master-types/tree/AAS/`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+            },
+          }
+        );
+        if (res.status === 200) {
+          this.resposne_status_setting_update = res.data.MasterCodes;
          
           this.isloading = false;
         }

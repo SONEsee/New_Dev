@@ -246,8 +246,8 @@ onMounted(() => {
     <v-col cols="6">
     <pre>{{ request }}</pre>  
     </v-col>
-  </v-row>
- <pre>{{ cat }}</pre> -->
+  </v-row>-->
+ <!-- <pre>{{ masterdatato }}</pre>  -->
   <div class="pa-2">
     <GlobalTextTitleLine :title="title" />
     <v-form ref="form" @submit.prevent="handleSubmit">
