@@ -10,6 +10,17 @@ const selectTypeOfPlay = ref("");
 const form = ref();
 const rout = useRoute();
 const type = rout.query.type as string;
+const assetListData = computed(() => {
+  const data = faasetStore.response_fa_asset_list2;
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (data && typeof data === "object") {
+    return [data];
+  }
+  return [];
+});
+
 watch(selectTypeOfPlay, async (newValue, oldValue) => {
   if (newValue !== oldValue && oldValue !== undefined) {
     request.account_tupe_of_play = "";
@@ -310,6 +321,18 @@ const handleNonSaleDisposal = () => {
 
   request.disposal_value = "";
 };
+watch(
+  () => request.disposal_type,
+  (newValue, oldValue) => {
+    if (
+      newValue !== "SALE" &&
+      newValue !== oldValue &&
+      oldValue !== undefined
+    ) {
+      handleNonSaleDisposal();
+    }
+  },{ immediate: false }
+);
 const handleDisposalCostInput = (event: any) => {
   const value = event.target.value;
   const rawValue = parseNumber(value);
@@ -357,7 +380,7 @@ const handelSubmit = async () => {
       const notification = await CallSwal({
         icon: "warning",
         title: "ຄຳເຕືອນ",
-        text: `ທ່ານກຳລັງຈະເພີ່ມລາຍການສ່າງ ທ່ານແນ່ໃຈແລ້ວບໍ່?`, 
+        text: `ທ່ານກຳລັງຈະເພີ່ມລາຍການສ່າງ ທ່ານແນ່ໃຈແລ້ວບໍ່?`,
         showCancelButton: true,
         confirmButtonText: "ຕົກລົງ",
         cancelButtonText: "ຍົກເລີກ",
@@ -375,7 +398,7 @@ const handelSubmit = async () => {
             dispalsoStore.from_create_disposal.dps_account
           );
         }
-console.log(dispalsoStore.from_create_disposal)
+        console.log(dispalsoStore.from_create_disposal);
         const calculationResult = calculateGainLoss.value;
         if (calculationResult.account) {
           dispalsoStore.from_create_disposal.gain_loss_account =
@@ -434,6 +457,31 @@ const TypeOfPlayDisplay = (item: any) => {
   if (!item || !item.MC_name_la || !item.MC_code) return "ທັງໝົດ";
   return `${item.MC_name_la}(${item.MC_code})`;
 };
+watch(
+  () => request.asset_list_id,
+  async (newValue) => {
+    // if (!newValue || newValue === oldValue) {
+    //   return;
+    // }
+
+    faasetStore.isLoading = true;
+    try {
+      faasetStore.filter_data_assetlist_id2.filter.asset_list_id =
+        newValue as any;
+
+      await faasetStore.GetFaAssetList3();
+    } catch (error) {
+      CallSwal({
+        icon: "error",
+        title: "ຂໍ້ຜິດພາດ",
+        text: "ມີຂໍ້ຜິດພາດໃນການດຶງຂໍ້ມູນ",
+      });
+    } finally {
+      faasetStore.isLoading = false;
+    }
+  },
+  { immediate: true }
+);
 
 const selecAccountOfPlay = computed(() => {
   const setlectAccout = request.account_tupe_of_play;
@@ -448,9 +496,11 @@ const selecAccountOfPlay = computed(() => {
     (item) => item.glsub_code === setlectAccout
   );
 });
+
 onMounted(() => {
   masterType.getDT();
   faasetStore.GetFaAssetList();
+  faasetStore.GetFaAssetList3();
   employee.GetEmployee();
   masterType.getEP();
   masterType.getDPS();
@@ -463,7 +513,7 @@ onMounted(() => {
 <template>
   <div class="pa-4">
     <GlobalTextTitleLine :title="title" />
-    <!-- <pre>{{ accountTypeOfplay }}</pre> -->
+    <!-- <pre>{{ assetListData }}</pre> -->
     <!-- <pre>
   {{ gdaData }}
 </pre>
@@ -484,6 +534,261 @@ onMounted(() => {
               >
             </p>
           </div>
+        </v-col>
+        <v-col cols="12" md="3">
+          <label for="asset_list_id">ລາຍການຊັບສີນ</label>
+          <v-autocomplete
+            id="asset_list_id"
+            :loading="faasetStore.isLoading"
+            v-model="request.asset_list_id"
+            :items="dataList"
+            :item-title="nameAsset"
+            item-value="asset_list_id"
+            variant="outlined"
+            density="compact"
+          >
+            <template v-slot:item="{ props, item }">
+              <v-list-item
+                v-bind="props"
+                :title="`${item.raw.asset_spec}(${item.raw.asset_list_id})`"
+              ></v-list-item>
+            </template>
+          </v-autocomplete>
+        </v-col>
+        <v-col cols="12" md="3">
+          <GlobalCardTitle
+            :title="'ມູນຄ່າຊັບສິນທັງໝົດ'"
+            :text="formatNumber(assetListData[0]?.asset_value ?? '')"
+          />
+        </v-col>
+        <v-col cols="12" md="3">
+          <GlobalCardTitle
+            :title="'ມູນຄ່າສະສົມ'"
+            :text="formatNumber(assetListData[0]?.asset_accu_dpca_value ?? '')"
+          />
+        </v-col>
+        <v-col cols="12" md="3">
+          <GlobalCardTitle
+            :title="'ມູນຄ່າຄົງເຫຼືອ'"
+            :text="formatNumber(assetListData[0]?.asset_value_remain ?? '')"
+          />
+        </v-col>
+        <v-col cols="12" md="6">
+          <v-label for="disposal_purpose">ຈຸດປະສົງການຖອນ</v-label>
+          <v-text-field
+            id="disposal_purpose"
+            variant="outlined"
+            density="compact"
+            v-model="request.disposal_purpose"
+          >
+          </v-text-field>
+          <v-label for="disposal_reason">ເຫດຜົນການຖອນ</v-label>
+          <v-text-field
+            id="disposal_reason"
+            variant="outlined"
+            density="compact"
+            v-model="request.disposal_reason"
+          >
+          </v-text-field>
+          <v-label for="buyer_name">ຊື່ຜູ້ຊື້ (ກໍລະນີຂາຍ)</v-label>
+          <v-text-field
+            :disabled="request.disposal_type !== 'SALE'"
+            id="buyer_name"
+            variant="outlined"
+            density="compact"
+            v-model="request.buyer_name"
+          >
+          </v-text-field>
+          <v-label for="disposal_proceeds">ລາຍຮັບຈາກການສະສາງ</v-label>
+          <v-text-field
+            :disabled="request.disposal_type !== 'SALE'"
+            variant="outlined"
+            density="compact"
+            :model-value="formatNumber(request.disposal_proceeds)"
+            type="text"
+          ></v-text-field>
+          <v-label for="disposal_proceeds">ລາຍຈ່າຍໃນການສະສາງ</v-label>
+          <v-text-field
+            :disabled="request.disposal_type !== 'SALE'"
+            variant="outlined"
+            density="compact"
+            :model-value="formatNumber(request.disposal_cost)"
+            @input="handleDisposalCostInput"
+            type="text"
+          >
+          </v-text-field>
+          <v-label for="disposal_proceeds">ວັນທີ່ຖອນ</v-label>
+          <v-text-field
+            type="date"
+            variant="outlined"
+            density="compact"
+            v-model="request.disposal_date"
+          >
+          </v-text-field>
+          <v-label for="disposal_proceeds">ສະຖານະການຖອນ</v-label>
+          <v-autocomplete
+            v-model="request.gain_loss"
+            readonly
+            :items="disposalStatusOptions"
+            item-title="title"
+            item-value="value"
+            variant="outlined"
+            density="compact"
+          >
+            <template v-slot:item="{ props, item }">
+              <v-list-item
+                v-bind="props"
+                :title="item.raw.title"
+                :subtitle="`Code: ${item.raw.value} | BOL: ${item.raw.bol_code}`"
+              ></v-list-item>
+            </template>
+          </v-autocomplete>
+          <v-autocomplete
+            v-model="request.disposal_by"
+            label="ຜູ້ຖອນ"
+            :items="employees"
+            item-title="employee_name_la"
+            item-value="employee_id"
+            variant="outlined"
+            density="compact"
+          >
+            <template v-slot:item="{ props, item }">
+              <v-list-item
+                v-bind="props"
+                :title="`${item.raw.employee_name_la}(${item.raw.employee_id})`"
+              ></v-list-item>
+            </template>
+          </v-autocomplete>
+        </v-col>
+        <v-col cols="12" md="6">
+          <GlobalCardTitle
+            :title="'ມູນຄ່າຊາກ'"
+            :text="formatNumber(assetListData[0]?.asset_salvage_value ?? '')"
+            class="mb-3"
+          />
+
+          <label for="disposal_type">ປະເພດການຊຳລະສະສາງ</label>
+          <v-autocomplete
+            v-model="request.disposal_type"
+            :items="typeData"
+            item-title="MC_name_la"
+            item-value="MC_code"
+            variant="outlined"
+            density="compact"
+          >
+            <template v-slot:item="{ props, item }">
+              <v-list-item
+                v-bind="props"
+                :title="`${item.raw.MC_name_la}(${item.raw.MC_code})`"
+              ></v-list-item>
+            </template>
+          </v-autocomplete>
+          <label for="disposal_type">ປະເພດການຊຳລະ</label>
+          <v-autocomplete
+            v-model="selectTypeOfPlay"
+            :disabled="request.disposal_type !== 'SALE'"
+            :loading="masterType.isloading"
+            density="compact"
+            variant="outlined"
+            :items="TypeOfPlayData"
+            :item-title="TypeOfPlayDisplay"
+            item-value="MC_code"
+          >
+            <template v-slot:item="{ item, props }">
+              <v-list-item
+                v-bind="props"
+                :title="`${item.raw.MC_name_la}(${item.raw.MC_code})`"
+              ></v-list-item>
+            </template>
+          </v-autocomplete>
+          <label for=""
+            >ເລືອກບັນຊີຕາມປະເພດການຈ່າຍ(<span
+              class="text-caption text-success"
+              v-if="selecAccountOfPlay"
+              >{{ selecAccountOfPlay.glsub_Desc_la }}</span
+            >)</label
+          >
+
+          <v-autocomplete
+            :items="accountTypeOfplay"
+            :loading="masterType.isloading"
+            v-model="request.account_tupe_of_play"
+            item-title="glsub_code"
+            item-value="glsub_code"
+            variant="outlined"
+            density="compact"
+          >
+          </v-autocomplete>
+          <label for="disposal_type">ມູນຄ່າສະສາງ</label>
+          <v-text-field
+            :disabled="request.disposal_type !== 'SALE'"
+            :model-value="formatNumber(request.disposal_value)"
+            @input="handleDisposalValueInput"
+            variant="outlined"
+            density="compact"
+            type="text"
+          >
+          </v-text-field>
+
+          <div v-if="request.asset_list_id" class="mt-2">
+            <v-card variant="outlined" density="compact">
+              <v-card-text class="py-2">
+                <div class="text-caption mb-1">
+                  <strong>ຂໍ້ມູນການຄິດໄລ່:</strong>
+                </div>
+                <div class="text-caption">
+                  ມູນຄ່າທີ່ໃຊ້ທຽບ:
+                  <span class="font-weight-bold text-primary">
+                    {{
+                      new Intl.NumberFormat("en-US").format(getComparisonValue)
+                    }}
+                    LAK
+                  </span>
+                  <span class="text-grey" style="font-size: 10px">
+                    {{
+                      type === "expired" ? "(ມູນຄ່າຊາກ)" : "(ມູນຄ່າຄົງເຫຼືອ)"
+                    }}
+                  </span>
+                </div>
+                <div class="text-caption">
+                  ລາຍຮັບຈາກການຂາຍ:
+                  <span class="font-weight-bold text-secondary">
+                    {{
+                      new Intl.NumberFormat("en-US").format(
+                        parseFloat(parseNumber(request.disposal_value) || "0")
+                      )
+                    }}
+                    LAK
+                  </span>
+                </div>
+              </v-card-text>
+            </v-card>
+          </div>
+
+          <v-alert
+            v-if="
+              request.asset_list_id &&
+              request.disposal_value &&
+              parseFloat(parseNumber(request.disposal_value)) > 0
+            "
+            :color="calculateGainLoss.color"
+            variant="tonal"
+            density="compact"
+            class="mt-2"
+          >
+            <div class="text-caption">
+              <strong>ສະຖານະການຄິດໄລ່:</strong><br />
+              {{ calculateGainLoss.label }}
+              <br />
+              <span v-if="calculateGainLoss.account" class="font-weight-bold">
+                ບັນຊີທີ່ໃຊ້: {{ calculateGainLoss.account.MC_detail }}
+                <br />
+                <span class="text-grey">{{
+                  calculateGainLoss.account.MC_name_la
+                }}</span>
+              </span>
+            </div>
+          </v-alert>
         </v-col>
         <!--
         <v-col cols="12" v-if="request.asset_list_id">
@@ -530,7 +835,7 @@ onMounted(() => {
           </v-card>
         </v-col> -->
 
-        <v-col cols="12" md="3">
+        <!-- <v-col cols="12" md="3">
           <v-autocomplete
             :loading="faasetStore.isLoading"
             v-model="request.asset_list_id"
@@ -549,39 +854,8 @@ onMounted(() => {
             </template>
           </v-autocomplete>
 
-          <v-autocomplete
-            v-model="request.disposal_type"
-            label="ປະເພດການຊຳລະສະສາງ"
-            :items="typeData"
-            item-title="MC_name_la"
-            item-value="MC_code"
-            variant="outlined"
-            density="compact"
-          >
-            <template v-slot:item="{ props, item }">
-              <v-list-item
-                v-bind="props"
-                :title="`${item.raw.MC_name_la}(${item.raw.MC_code})`"
-              ></v-list-item>
-            </template>
-          </v-autocomplete>
-          <v-autocomplete
-            v-model="selectTypeOfPlay"
-            :loading="masterType.isloading"
-            label="ປະເພດການຈ່າຍ"
-            density="compact"
-            variant="outlined"
-            :items="TypeOfPlayData"
-            :item-title="TypeOfPlayDisplay"
-            item-value="MC_code"
-          >
-            <template v-slot:item="{ item, props }">
-              <v-list-item
-                v-bind="props"
-                :title="`${item.raw.MC_name_la}(${item.raw.MC_code})`"
-              ></v-list-item>
-            </template>
-          </v-autocomplete>
+          
+        
 
           <v-text-field
             variant="outlined"
@@ -592,9 +866,9 @@ onMounted(() => {
             type="text"
           >
           </v-text-field>
-        </v-col>
+        </v-col> -->
 
-        <v-col cols="12" md="3">
+        <!-- <v-col cols="12" md="3">
           <v-text-field
             variant="outlined"
             density="compact"
@@ -603,47 +877,9 @@ onMounted(() => {
           >
           </v-text-field>
 
-          <v-text-field
-            :model-value="formatNumber(request.disposal_value)"
-            @input="handleDisposalValueInput"
-            label="ມູນຄ່າການຖອນ"
-            variant="outlined"
-            density="compact"
-            type="text"
-          >
-          </v-text-field>
-          <span class="text-caption text-success" v-if="selecAccountOfPlay">{{
-            selecAccountOfPlay.glsub_Desc_la
-          }}</span>
-          <v-autocomplete
-            :items="accountTypeOfplay"
-            :loading="masterType.isloading"
-            v-model="request.account_tupe_of_play"
-            item-title="glsub_code"
-            item-value="glsub_code"
-            label="ເລືອກບັນຊີຕາມປະເພດການຈ່າຍ"
-            variant="outlined"
-            density="compact"
-          >
-          </v-autocomplete>
+          
 
-          <v-autocomplete
-            v-model="request.gain_loss"
-            label="ສະຖານະການຖອນ"
-            :items="disposalStatusOptions"
-            item-title="title"
-            item-value="value"
-            variant="outlined"
-            density="compact"
-          >
-            <template v-slot:item="{ props, item }">
-              <v-list-item
-                v-bind="props"
-                :title="item.raw.title"
-                :subtitle="`Code: ${item.raw.value} | BOL: ${item.raw.bol_code}`"
-              ></v-list-item>
-            </template>
-          </v-autocomplete>
+         
 
           <div class="mt-2">
             <v-btn
@@ -667,9 +903,9 @@ onMounted(() => {
               ສະສາງໂດຍບໍ່ໄດ້ຂາຍ (ເປ້ເພ/ຖິ້ມ)
             </v-btn>
           </div>
-        </v-col>
+        </v-col> -->
 
-        <v-col cols="12" md="3">
+        <!-- <v-col cols="12" md="3">
           <v-text-field
             variant="outlined"
             density="compact"
@@ -703,89 +939,7 @@ onMounted(() => {
             label="ວັນທີ່ຖອນ"
           >
           </v-text-field>
-        </v-col>
-
-        <v-col cols="12" md="3">
-          <v-text-field
-            variant="outlined"
-            density="compact"
-            v-model="request.buyer_name"
-            label="ຊື່ຜູ້ຊື້ (ກໍລະນີຂາຍ)"
-          >
-          </v-text-field>
-
-          <v-text-field
-            variant="outlined"
-            density="compact"
-            :model-value="formatNumber(request.disposal_proceeds)"
-           
-            label="ລາຍຮັບຈາກການຂາຍ"
-            type="text"
-          >
-          </v-text-field>
-
-          <div v-if="request.asset_list_id" class="mt-2">
-            <v-card variant="outlined" density="compact">
-              <v-card-text class="py-2">
-                <div class="text-caption mb-1">
-                  <strong>ຂໍ້ມູນການຄິດໄລ່:</strong>
-                </div>
-                <div class="text-caption">
-                  ມູນຄ່າທີ່ໃຊ້ທຽບ:
-                  <span class="font-weight-bold text-primary">
-                    {{
-                      new Intl.NumberFormat("en-US").format(getComparisonValue)
-                    }}
-                    LAK
-                  </span>
-                  <span class="text-grey" style="font-size: 10px">
-                    {{
-                      type === "expired" ? "(ມູນຄ່າຊາກ)" : "(ມູນຄ່າຄົງເຫຼືອ)"
-                    }}
-                  </span>
-                </div>
-                <div class="text-caption">
-                  ລາຍຮັບຈາກການຂາຍ:
-                  <span class="font-weight-bold text-secondary">
-                    {{
-                      new Intl.NumberFormat("en-US").format(
-                        parseFloat(
-                          parseNumber(request.disposal_value) || "0"
-                        )
-                      )
-                    }}
-                    LAK
-                  </span>
-                </div>
-              </v-card-text>
-            </v-card>
-          </div>
-
-          <v-alert
-            v-if="
-              request.asset_list_id &&
-              request.disposal_value &&
-              parseFloat(parseNumber(request.disposal_value)) > 0
-            "
-            :color="calculateGainLoss.color"
-            variant="tonal"
-            density="compact"
-            class="mt-2"
-          >
-            <div class="text-caption">
-              <strong>ສະຖານະການຄິດໄລ່:</strong><br />
-              {{ calculateGainLoss.label }}
-              <br />
-              <span v-if="calculateGainLoss.account" class="font-weight-bold">
-                ບັນຊີທີ່ໃຊ້: {{ calculateGainLoss.account.MC_detail }}
-                <br />
-                <span class="text-grey">{{
-                  calculateGainLoss.account.MC_name_la
-                }}</span>
-              </span>
-            </div>
-          </v-alert>
-        </v-col>
+        </v-col> -->
       </v-row>
 
       <v-col cols="12">

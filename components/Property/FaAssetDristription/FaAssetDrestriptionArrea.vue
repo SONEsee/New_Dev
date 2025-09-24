@@ -7,9 +7,8 @@ const eodStore = useDateStore();
 const selectedItems = ref([]);
 const journalStore = usejournalStore();
 
-
 const selectedAssetType = ref(null);
-const selectedJournalStatus = ref(null); 
+const selectedJournalStatus = ref(null);
 
 const mainTypeStore = assetStore();
 const mainType = computed(() => {
@@ -23,10 +22,10 @@ const mainType = computed(() => {
   return [];
 });
 
-// ເພີ່ມ options สຳລັບ filter ສະຖານະ journal
+
 const journalStatusOptions = [
   { value: "pending", title: "ລໍຖ້າອະນຸມັດ" },
-  { value: "not_created", title: "ຍັງບໍ່ໄດ້ຫັກ" }
+  { value: "not_created", title: "ຍັງບໍ່ໄດ້ຫັກ" },
 ];
 
 const journalData = computed(() => {
@@ -87,8 +86,8 @@ const StardDate = (apdc_start_date: any) => {
 
 const mappedData = computed(() => {
   const eodData = eod.value[0];
-  const prevWorkingDay = eodData?.prev_working_day
-    ? dayjs(eodData.prev_working_day)
+  const prevWorkingDay = eodData?.start_date
+    ? dayjs(eodData.start_date)
     : dayjs();
 
   return res.value.map((overdueItem) => {
@@ -216,12 +215,12 @@ const mappedData = computed(() => {
         asset_value_remainMonth: matchedAsset.asset_value_remainMonth,
         is_in_journal: isInJournal,
         journal_status: isInJournal ? "ລໍຖ້າອະນຸມັດ" : "ຍັງບໍ່ໄດ້ຫັກ",
-        journal_status_key: isInJournal ? "pending" : "not_created", 
+        journal_status_key: isInJournal ? "pending" : "not_created",
         asset_full_name:
           matchedAsset.asset_id_detail?.asset_name_la || overdueItem.asset_name,
         location_name: matchedAsset.location_detail?.location_name_la,
         supplier_name: matchedAsset.supplier_detail?.supplier_name,
-      
+
         asset_type_id: matchedAsset.asset_type_id,
         debug_info: {
           asset_useful_life: assetUsefulLife,
@@ -242,7 +241,7 @@ const mappedData = computed(() => {
             dueMonthTotal && currentMonthTotal
               ? `${currentMonthTotal} - ${dueMonthTotal} + 1 = ${actualOverdueMonths}`
               : "No calculation",
-          prev_working_day: prevWorkingDay.format("YYYY-MM-DD"),
+          start_date: prevWorkingDay.format("YYYY-MM-DD"),
           total_months: totalMonths,
           asset_value_remain_month: assetValueRemainMonth,
           asset_value_remain_begin: assetValueRemainBegin,
@@ -287,16 +286,16 @@ const mappedData = computed(() => {
       journal_status: journalAssetIds.value.has(overdueItem.asset_id)
         ? "ລໍຖ້າອະນຸມັດ"
         : "ຍັງບໍ່ໄດ້ຫັກ",
-      journal_status_key: journalAssetIds.value.has(overdueItem.asset_id) ? "pending" : "not_created", 
-      asset_type_id: null, 
+      journal_status_key: journalAssetIds.value.has(overdueItem.asset_id)
+        ? "pending"
+        : "not_created",
+      asset_type_id: null,
     };
   });
 });
 
-
 const filteredMappedData = computed(() => {
   let filtered = mappedData.value;
-
 
   if (selectedAssetType.value) {
     filtered = filtered.filter(
@@ -304,7 +303,6 @@ const filteredMappedData = computed(() => {
     );
   }
 
-  
   if (selectedJournalStatus.value) {
     filtered = filtered.filter(
       (item) => item.journal_status_key === selectedJournalStatus.value
@@ -344,14 +342,14 @@ const processBulkItems = async () => {
   mainStore.total_caculate.mapping_ids = selectedItems.value;
 
   const eodData = eod.value[0];
-  const targetDate = eodData?.prev_working_day
-    ? dayjs(eodData.prev_working_day).format("YYYY-MM-DD")
+  const targetDate = eodData?.start_date
+    ? dayjs(eodData.start_date).format("YYYY-MM-DD")
     : dayjs().tz("Asia/Bangkok").format("YYYY-MM-DD");
 
   mainStore.total_caculate.target_date = targetDate;
 
   console.log("Bulk process data:", mainStore.total_caculate);
-  console.log("Using EOD prev_working_day:", targetDate);
+  console.log("Using EOD start_date:", targetDate);
 
   await mainStore.postArreat();
 
@@ -366,10 +364,9 @@ const toggleSelectAll = () => {
   }
 };
 
-// ປັບປຸງ clearFilter ໃຫ້ລົບ filter ສະຖານະ journal ດ້ວຍ
 const clearFilter = () => {
   selectedAssetType.value = null;
-  selectedJournalStatus.value = null; // ເພີ່ມການລົບ filter ສະຖານະ journal
+  selectedJournalStatus.value = null;
   selectedItems.value = [];
 };
 
@@ -417,8 +414,7 @@ onMounted(() => {
         </template>
       </v-autocomplete>
     </v-col>
-    
-    <!-- ເພີ່ມ filter ສຳລັບສະຖານະ journal -->
+
     <v-col cols="12" md="3">
       <v-select
         v-model="selectedJournalStatus"
@@ -434,9 +430,17 @@ onMounted(() => {
         <template v-slot:item="{ props, item }">
           <v-list-item v-bind="props" :title="item.raw.title">
             <template v-slot:prepend>
-              <v-avatar size="small" flat :color="item.raw.value === 'pending' ? 'orange' : 'grey'">
+              <v-avatar
+                size="small"
+                flat
+                :color="item.raw.value === 'pending' ? 'orange' : 'grey'"
+              >
                 <v-icon
-                  :icon="item.raw.value === 'pending' ? 'mdi-clock-outline' : 'mdi-plus-circle-outline'"
+                  :icon="
+                    item.raw.value === 'pending'
+                      ? 'mdi-clock-outline'
+                      : 'mdi-plus-circle-outline'
+                  "
                   size="small"
                   color="white"
                 />
@@ -446,7 +450,7 @@ onMounted(() => {
         </template>
       </v-select>
     </v-col>
-    
+
     <!-- ເພີ່ມປຸ່ມລົບ filter -->
     <!-- <v-col cols="12" md="2">
       <v-btn
@@ -468,7 +472,10 @@ onMounted(() => {
   >
     ລາຍການທີ່ເລືອກໄດ້:
     {{ selectableItems.length }}/{{ filteredMappedData.length }}
-    <span v-if="selectedAssetType || selectedJournalStatus" style="color: #ff6f00">
+    <span
+      v-if="selectedAssetType || selectedJournalStatus"
+      style="color: #ff6f00"
+    >
       (ກອງແລ້ວ: {{ filteredMappedData.length }}/{{ mappedData.length }})
     </span>
   </div>
@@ -513,8 +520,8 @@ onMounted(() => {
     <small style="color: #2196f3">
       📅 ວັນທີ່ກຳນົດສຳລັບການຫັກ:
       {{
-        eod[0]?.prev_working_day
-          ? dayjs(eod[0].prev_working_day).format("DD/MM/YYYY")
+        eod[0]?.start_date
+          ? dayjs(eod[0].start_date).format("DD/MM/YYYY")
           : "ວັນນີ້"
       }}
     </small>
@@ -605,8 +612,8 @@ onMounted(() => {
   >
     <strong>📅 EOD Info:</strong>
     <span v-if="eod[0]">
-      prev_working_day:
-      {{ dayjs(eod[0].prev_working_day).format("DD/MM/YYYY HH:mm") }} | date_id:
+      start_date:
+      {{ dayjs(eod[0].start_date).format("DD/MM/YYYY HH:mm") }} | date_id:
       {{ eod[0].date_id }} | eod_time: {{ eod[0].eod_time }}
     </span>
     <span v-else style="color: #f44336">ບໍ່ມີຂໍ້ມູນ EOD</span>
@@ -666,8 +673,8 @@ onMounted(() => {
                       ? dayjs(item.matched_asset.dpca_end_date).format(
                           "MM/YYYY"
                         )
-                      : eod[0]?.prev_working_day
-                      ? dayjs(eod[0].prev_working_day).format("MM/YYYY")
+                      : eod[0]?.start_date
+                      ? dayjs(eod[0].start_date).format("MM/YYYY")
                       : dayjs().format("MM/YYYY")
                   }}
                   (ຈຳກັດຕາມອາຍຸການໃຊ້ງານ)
@@ -680,8 +687,8 @@ onMounted(() => {
                   }}
                   ຫາ
                   {{
-                    eod[0]?.prev_working_day
-                      ? dayjs(eod[0].prev_working_day).format("MM/YYYY")
+                    eod[0]?.start_date
+                      ? dayjs(eod[0].start_date).format("MM/YYYY")
                       : dayjs().format("MM/YYYY")
                   }}
                 </span>
@@ -736,14 +743,14 @@ onMounted(() => {
           opacity: item.is_in_journal ? 0.5 : 1,
         }"
       >
-        {{ formatNumber((item.calculated_overdue_amount || 0)) }} ກີບ
+        {{ formatNumber(item.calculated_overdue_amount || 0) }} ກີບ
       </strong>
     </template>
 
     <template v-slot:item.completion_percentage="{ item }">
       <span :style="{ opacity: item.is_in_journal ? 0.5 : 1 }">
         {{ item.current_month - 1 }}/{{ item.total_months }} ({{
-          (item.completion_percentage)
+          item.completion_percentage
         }}%)
       </span>
     </template>
@@ -772,15 +779,15 @@ onMounted(() => {
           {{
             item.matched_asset?.dpca_end_date
               ? dayjs(item.matched_asset.dpca_end_date).format("MM/YYYY")
-              : eod[0]?.prev_working_day
-              ? dayjs(eod[0].prev_working_day).format("MM/YYYY")
+              : eod[0]?.start_date
+              ? dayjs(eod[0].start_date).format("MM/YYYY")
               : dayjs().format("MM/YYYY")
           }}
         </span>
         <span v-else>
           {{
-            eod[0]?.prev_working_day
-              ? dayjs(eod[0].prev_working_day).format("MM/YYYY")
+            eod[0]?.start_date
+              ? dayjs(eod[0].start_date).format("MM/YYYY")
               : dayjs().format("MM/YYYY")
           }}
         </span>
