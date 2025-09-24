@@ -169,6 +169,10 @@ const handleNotificationClick = () => {
                           <v-chip color="success">{{ dataDate[0].month }}/{{ dataDate[0].year }}</v-chip>
                           
                         </template>
+                        <template v-slot:item.total_items_need_depreciation="{ item }">
+                          <v-chip color="success">{{item.total_items_need_depreciation }}</v-chip>
+                          
+                        </template>
                         <template
                           v-slot:item.total_depreciation_amount="{ item }"
                         >
