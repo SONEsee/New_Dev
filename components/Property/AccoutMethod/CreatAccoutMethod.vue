@@ -337,16 +337,16 @@ onMounted(() => {
             @focus="handleNumberFocus"
           />
           <v-label class="mb-1">
-            ບັນຊີເຄດິດ (Cr) <span class="text-error">*</span>
+            ບັນຊີເດບິດ (Dr) <span class="text-error">*</span>
           </v-label>
           <v-text-field
             class="pa-1"
-            v-model="creditAccount"
+            readonly
+            v-model="debitAccount"
             density="compact"
             variant="outlined"
-            label="ບັນຊີເຄດິດ (Cr)"
-            placeholder="ບັນຊີເຄດິດ"
-            readonly
+            label="ບັນຊີເດບິດ (Dr)"
+            placeholder="ບັນຊີເດບິດ"
           />
         </v-col>
 
@@ -366,17 +366,18 @@ onMounted(() => {
             @blur="handleNumberBlur"
             @focus="handleNumberFocus"
           />
+          
           <v-label class="mb-1">
-            ບັນຊີເດບິດ (Dr) <span class="text-error">*</span>
+            ບັນຊີເຄດິດ (Cr) <span class="text-error">*</span>
           </v-label>
           <v-text-field
             class="pa-1"
-            readonly
-            v-model="debitAccount"
+            v-model="creditAccount"
             density="compact"
             variant="outlined"
-            label="ບັນຊີເດບິດ (Dr)"
-            placeholder="ບັນຊີເດບິດ"
+            label="ບັນຊີເຄດິດ (Cr)"
+            placeholder="ບັນຊີເຄດິດ"
+            readonly
           />
         </v-col>
 
