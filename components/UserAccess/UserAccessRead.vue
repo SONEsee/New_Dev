@@ -812,27 +812,32 @@ const confirmForceLogout = (log) => {
   logoutCandidate.value = log
   forceLogoutDialog.value = true
 }
-
 const executeForceLogout = async () => {
   if (!logoutCandidate.value) return
   
   forceLogoutLoading.value = true
   try {
-    await axios.post(`/api/user-access-logs/${logoutCandidate.value.log_id}/force-logout/`, {}, {
-      headers: {
-        'Authorization': `Bearer ${getAuthToken()}`,
-        'Content-Type': 'application/json'
+    // Call the force logout endpoint
+    const response = await axios.post(
+      `/api/force-logout/${logoutCandidate.value.user?.user_id}/`,
+      {},
+      {
+        headers: {
+          'Authorization': `Bearer ${getAuthToken()}`,
+          'Content-Type': 'application/json'
+        }
       }
-    })
+    )
     
-    showSuccess('User has been successfully logged out.')
+    showSuccess(response.data.message || 'User has been successfully logged out.')
     forceLogoutDialog.value = false
     detailsDialog.value = false
     refreshData()
     
   } catch (error) {
     console.error('Failed to force logout:', error)
-    showError('Failed to force logout user. Please try again.')
+    const errorMsg = error.response?.data?.error || 'Failed to force logout user.'
+    showError(errorMsg)
   } finally {
     forceLogoutLoading.value = false
   }

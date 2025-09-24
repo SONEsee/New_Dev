@@ -4,6 +4,27 @@ import FaAssetDrestriptionArrea from "./FaAssetDrestriptionArrea.vue";
 
 const accountStore = accountMethodStore();
 const depreciationStore = useFassetLidtDescription();
+const deprecationUPda = useDrepecitoinUpdat();
+const dataShow = computed(() => {
+  const data = deprecationUPda.response_data_drepecation_lis?.summary;
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (data && typeof data === "object") {
+    return [data];
+  }
+  return [];
+});
+const dataDate = computed(() => {
+  const data = deprecationUPda.response_data_drepecation_lis?.target_period;
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (data && typeof data === "object") {
+    return [data];
+  }
+  return [];
+});
 const history = computed(() => {
   const data = depreciationStore.response_history_data;
   if (Array.isArray(data)) {
@@ -19,10 +40,18 @@ const header = [
   { title: "ມູນຄ່າທີ່ຫັກ", value: "dpca_value" },
   { title: "ຈຳນວນລາຍການທີ່ຫັກ", value: "C_dpca", align: "center" },
 
-  
   { title: "ມື້ຫັກ", value: "Maker_DT_Stamp" },
   { title: "ສະຖານະ", value: "dpca_status" },
   { title: "ລາຍລະອຽດ", value: "actions" },
+] as any;
+
+const header1 = [
+  { title: "ລຳດັບ", value: "index" },
+  { title: "ມູນຄ່າທີ່ຕອ້ງຫັກ", value: "total_depreciation_amount" },
+  { title: "ຈຳນວນລາຍການທັງໝົດ", value: "total_items_need_depreciation" },
+
+  { title: "ຫັກປະຈຳງວດທີ່", value: "dates" },
+  { title: "ລາຍລະອຽດ", value: "action" },
 ] as any;
 const responseData = computed(() => {
   return depreciationStore.respons_data_calculated;
@@ -77,6 +106,7 @@ onMounted(() => {
   depreciationStore.getdataCalculated();
   depreciationStore.getDataHistory();
   depreciationStore.getDataTotal();
+  deprecationUPda.getDataDrepecation();
 });
 
 const handleNotificationClick = () => {
@@ -130,7 +160,32 @@ const handleNotificationClick = () => {
                       {{ responseData.data.target_period.year }}
                     </v-card-title>
                     <v-card-text class="pa-0">
-                      <v-table class="text-center">
+                      <!-- <pre>{{ dataShow }}</pre> -->
+                      <v-data-table :items="dataShow" :headers="header1">
+                        <template v-slot:item.index="{ item, index }">
+                          {{ index + 1 }}
+                        </template>
+                        <template v-slot:item.dates="{ item }">
+                          <v-chip color="success">{{ dataDate[0].month }}/{{ dataDate[0].year }}</v-chip>
+                          
+                        </template>
+                        <template v-slot:item.total_items_need_depreciation="{ item }">
+                          <v-chip color="success">{{item.total_items_need_depreciation }}</v-chip>
+                          
+                        </template>
+                        <template
+                          v-slot:item.total_depreciation_amount="{ item }"
+                        >
+                          <v-chip variant="flat" size="small" color="info">{{
+                            formatNumber(item.total_depreciation_amount)
+                          }}</v-chip>
+                        </template>
+                        <template v-slot:item.action>
+                          <v-btn color="primary" flat> ລາຍລະອຽດການຫັກ </v-btn>
+                        </template>
+                      </v-data-table>
+                      <!-- {{ dataDate }} -->
+                      <!-- <v-table class="text-center">
                         <thead>
                           <tr class="bg-grey-lighten-3">
                             <th
@@ -203,7 +258,7 @@ const handleNotificationClick = () => {
                             </td>
                           </tr>
                         </tbody>
-                      </v-table>
+                      </v-table> -->
                     </v-card-text>
                   </v-card>
                 </v-tabs-window-item>

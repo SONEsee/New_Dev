@@ -2,7 +2,7 @@
   <v-container fluid class="pa-6">
     <v-card elevation="0" class="rounded-lg">
       <v-card-title class="pa-6 pb-4">
-        <h2 class="text-h5 font-weight-medium">ຈັດການອັດຕາແລກປ່ຽນ</h2>
+        <h2 class="text-h5 font-weight-medium text-styles">ຈັດການອັດຕາແລກປ່ຽນ</h2>
       </v-card-title>
       
       <!-- Header Actions -->
@@ -10,12 +10,13 @@
         <v-row align="center" class="mb-4">
           <v-col cols="auto">
             <v-btn
-              @click="goPath('/excrate/create')"
+              @click="checkAndCreateNew"
               color="primary"
               variant="elevated"
               prepend-icon="mdi-plus"
               class="text-none"
               size="small"
+              :loading="checkingDuplicates"
             >
               ເພີ່ມອັດຕາແລກປ່ຽນ
             </v-btn>
@@ -63,7 +64,7 @@
           <!-- Table Header -->
           <template #top>
             <div class="pa-4">
-              <span class="text-h6">ລາຍການອັດຕາແລກປ່ຽນ</span>
+              <span class="text-h6 text-styles">ລາຍການອັດຕາແລກປ່ຽນ</span>
             </div>
           </template>
 
@@ -84,21 +85,27 @@
             </div>
           </template>
 
-          <!-- Buy Rate Column -->
+          <!-- Buy Rate Column with Arrow Up Icon -->
           <template #item.Buy_Rate="{ item }">
             <div class="text-right">
-              <div class="font-weight-bold text-success">
-                {{ formatCurrency(item.Buy_Rate) }}
+              <div class="d-flex align-center justify-end">
+                <v-icon color="success" size="16" class="mr-1">mdi-arrow-up-bold</v-icon>
+                <div class="font-weight-bold text-success">
+                  {{ formatCurrency(item.Buy_Rate) }}
+                </div>
               </div>
               <div class="text-caption text-grey">ຊື້</div>
             </div>
           </template>
 
-          <!-- Sale Rate Column -->
+          <!-- Sale Rate Column with Arrow Down Icon -->
           <template #item.Sale_Rate="{ item }">
             <div class="text-right">
-              <div class="font-weight-bold text-error">
-                {{ formatCurrency(item.Sale_Rate) }}
+              <div class="d-flex align-center justify-end">
+                <v-icon color="error" size="16" class="mr-1">mdi-arrow-down-bold</v-icon>
+                <div class="font-weight-bold text-error">
+                  {{ formatCurrency(item.Sale_Rate) }}
+                </div>
               </div>
               <div class="text-caption text-grey">ຂາຍ</div>
             </div>
@@ -117,7 +124,7 @@
           </template>
 
           <!-- Date Column -->
-          <template #item.Maker_DT_Stamp="{ item }">
+          <template #item.value_date="{ item }">
             <div class="text-center">
               <v-chip
                 color="info"
@@ -126,10 +133,10 @@
                 prepend-icon="mdi-calendar"
                 class="font-weight-medium"
               >
-                {{ formatDate(item.Maker_DT_Stamp) }}
+                {{ formatDate(item.value_date) }}
               </v-chip>
               <div class="text-caption text-grey mt-1">
-                {{ formatTime(item.Maker_DT_Stamp) }}
+                {{ formatTime(item.value_date) }}
               </div>
             </div>
           </template>
@@ -191,7 +198,7 @@
                 </v-tooltip>
               </v-btn>
 
-              <!-- View Details Button -->
+              <!-- View Charts/Analytics Button -->
               <v-btn
                 color="info"
                 variant="text"
@@ -200,9 +207,9 @@
                 @click="viewDetails(item)"
                 class="action-btn"
               >
-                <v-icon size="20">mdi-eye</v-icon>
+                <v-icon size="20">mdi-chart-line</v-icon>
                 <v-tooltip activator="parent" location="top">
-                  ເບິ່ງລາຍລະອຽດ
+                  ເບິ່ງກາຟິກ
                 </v-tooltip>
               </v-btn>
             </div>
@@ -228,8 +235,9 @@
               <v-btn
                 color="primary"
                 variant="elevated"
-                @click="goPath('/excrate/create')"
+                @click="checkAndCreateNew"
                 prepend-icon="mdi-plus"
+                :loading="checkingDuplicates"
               >
                 ເພີ່ມອັດຕາແລກປ່ຽນ
               </v-btn>
@@ -238,6 +246,58 @@
         </v-data-table>
       </v-card-text>
     </v-card>
+
+    <!-- Duplicate Currency Warning Dialog -->
+    <v-dialog v-model="duplicateWarningDialog" max-width="500">
+      <v-card class="rounded-lg">
+        <v-card-title class="pa-6 pb-4">
+          <div class="d-flex align-center">
+            <v-icon color="warning" size="28" class="mr-3">mdi-alert</v-icon>
+            <span class="text-h6 font-weight-bold text-styles">ເຕືອນສະກຸນເງິນຊໍ້າ</span>
+          </div>
+        </v-card-title>
+        <v-card-text class="pa-6 pt-0">
+          <p class="text-body-1 mb-4 text-styles">
+            ມີສະກຸນເງິນເຫຼົ່ານີ້ຢູ່ແລ້ວໃນລະບົບ:
+          </p>
+          <v-list class="bg-warning-lighten-4 rounded">
+            <v-list-item
+              v-for="currency in existingCurrencies"
+              :key="currency"
+              prepend-icon="mdi-currency-usd"
+            >
+              <v-list-item-title class="font-weight-medium">{{ currency }}</v-list-item-title>
+            </v-list-item>
+          </v-list>
+          <v-alert
+            type="info"
+            variant="tonal"
+            class="mt-4"
+            icon="mdi-information"
+          >
+            ກະລຸນາເລືອກສະກຸນເງິນອື່ນ ຫຼື ແກ້ໄຂສະກຸນເງິນທີ່ມີຢູ່ແລ້ວ
+          </v-alert>
+        </v-card-text>
+        <v-card-actions class="pa-6 pt-0">
+          <v-spacer />
+          <v-btn
+            variant="text"
+            @click="duplicateWarningDialog = false"
+            class="text-none"
+          >
+            ປິດ
+          </v-btn>
+          <v-btn
+            color="warning"
+            variant="elevated"
+            @click="proceedWithDuplicates"
+            class="text-none font-weight-medium"
+          >
+            ສືບຕໍ່ແນວໃດ
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <!-- Delete Confirmation Dialog -->
     <v-dialog v-model="deleteDialog" max-width="420">
@@ -282,13 +342,13 @@
       </v-card>
     </v-dialog>
 
-    <!-- Enhanced Details Dialog with History -->
-    <v-dialog v-model="detailsDialog" max-width="1000">
+    <!-- Enhanced Details Dialog with Charts -->
+    <v-dialog v-model="detailsDialog" max-width="1200">
       <v-card class="rounded-lg">
         <v-card-title class="pa-6 pb-4">
           <div class="d-flex align-center">
-            <v-icon color="info" size="28" class="mr-3">mdi-information</v-icon>
-            <span class="text-h6 font-weight-bold">ລາຍລະອຽດອັດຕາແລກປ່ຽນ</span>
+            <v-icon color="info" size="28" class="mr-3">mdi-chart-line</v-icon>
+            <span class="text-h6 font-weight-bold">ກາຟິກອັດຕາແລກປ່ຽນ</span>
           </div>
         </v-card-title>
         
@@ -313,7 +373,7 @@
                     
                     <v-list-item class="px-0">
                       <template #prepend>
-                        <v-icon color="brown">mdi-trending-up</v-icon>
+                        <v-icon color="success">mdi-arrow-up-bold</v-icon>
                       </template>
                       <v-list-item-title>ອັດຕາຊື້</v-list-item-title>
                       <v-list-item-subtitle>{{ formatCurrency(selectedItem.Buy_Rate) }}</v-list-item-subtitle>
@@ -321,7 +381,7 @@
                     
                     <v-list-item class="px-0">
                       <template #prepend>
-                        <v-icon color="brown">mdi-trending-down</v-icon>
+                        <v-icon color="error">mdi-arrow-down-bold</v-icon>
                       </template>
                       <v-list-item-title>ອັດຕາຂາຍ</v-list-item-title>
                       <v-list-item-subtitle>{{ formatCurrency(selectedItem.Sale_Rate) }}</v-list-item-subtitle>
@@ -343,7 +403,7 @@
                         <v-icon color="brown">mdi-calendar</v-icon>
                       </template>
                       <v-list-item-title>ວັນທີສ້າງ</v-list-item-title>
-                      <v-list-item-subtitle>{{ formatDate(selectedItem.Maker_DT_Stamp) }} {{ formatTime(selectedItem.Maker_DT_Stamp) }}</v-list-item-subtitle>
+                      <v-list-item-subtitle>{{ formatDate(selectedItem.value_date) }} {{ formatTime(selectedItem.value_date) }}</v-list-item-subtitle>
                     </v-list-item>
                     
                     <v-list-item class="px-0">
@@ -364,6 +424,28 @@
                   </v-list>
                 </v-col>
               </v-row>
+            </v-card-text>
+          </v-card>
+
+          <!-- Rate Trend Chart Section -->
+          <v-card variant="outlined" class="mb-6">
+            <v-card-title class="pa-4 pb-2">
+              <div class="d-flex align-center justify-space-between w-100">
+                <div class="d-flex align-center">
+                  <v-icon class="mr-2" color="primary">mdi-chart-areaspline</v-icon>
+                  ແນວໂນ້ມອັດຕາແລກປ່ຽນ
+                </div>
+                <v-chip color="info" variant="tonal" size="small">
+                  7 ວັນຜ່ານມາ
+                </v-chip>
+              </div>
+            </v-card-title>
+            <v-card-text class="pa-4">
+              <div class="text-center pa-8">
+                <v-icon size="64" color="info" class="mb-4">mdi-chart-timeline-variant</v-icon>
+                <p class="text-body-1 mb-2">ກາຟິກແນວໂນ້ມອັດຕາແລກປ່ຽນ</p>
+                <p class="text-caption text-grey">ເຊື່ອມຕໍ່ກັບ API ເພື່ອສະແດງກາຟິກ</p>
+              </div>
             </v-card-text>
           </v-card>
 
@@ -400,15 +482,25 @@
               >
                 <!-- Buy Rate Column -->
                 <template #item.Buy_Rate="{ item }">
-                  <div class="text-right font-weight-bold text-success">
-                    {{ formatCurrency(item.Buy_Rate) }}
+                  <div class="text-right">
+                    <div class="d-flex align-center justify-end">
+                      <v-icon color="success" size="14" class="mr-1">mdi-arrow-up-bold</v-icon>
+                      <div class="font-weight-bold text-success">
+                        {{ formatCurrency(item.Buy_Rate) }}
+                      </div>
+                    </div>
                   </div>
                 </template>
 
                 <!-- Sale Rate Column -->
                 <template #item.Sale_Rate="{ item }">
-                  <div class="text-right font-weight-bold text-error">
-                    {{ formatCurrency(item.Sale_Rate) }}
+                  <div class="text-right">
+                    <div class="d-flex align-center justify-end">
+                      <v-icon color="error" size="14" class="mr-1">mdi-arrow-down-bold</v-icon>
+                      <div class="font-weight-bold text-error">
+                        {{ formatCurrency(item.Sale_Rate) }}
+                      </div>
+                    </div>
                   </div>
                 </template>
 
@@ -425,13 +517,13 @@
                 </template>
 
                 <!-- Date Column -->
-                <template #item.Maker_DT_Stamp="{ item }">
+                <template #item.value_date="{ item }">
                   <div class="text-center">
                     <div class="text-caption font-weight-medium">
-                      {{ formatDate(item.Maker_DT_Stamp) }}
+                      {{ formatDate(item.value_date) }}
                     </div>
                     <div class="text-caption text-grey">
-                      {{ formatTime(item.Maker_DT_Stamp) }}
+                      {{ formatTime(item.value_date) }}
                     </div>
                   </div>
                 </template>
@@ -504,8 +596,11 @@ const loading = ref(false)
 const search = ref('')
 const deleteDialog = ref(false)
 const detailsDialog = ref(false)
+const duplicateWarningDialog = ref(false)
+const checkingDuplicates = ref(false)
 const itemToDelete = ref<ExcRateModel.ExcRateResponse | null>(null)
 const selectedItem = ref<ExcRateModel.ExcRateResponse | null>(null)
+const existingCurrencies = ref<string[]>([])
 
 // History related
 const historyItems = ref<any[]>([])
@@ -522,13 +617,13 @@ const headers = [
     title: 'ອັດຕາຊື້', 
     key: 'Buy_Rate',
     align: 'end' as const,
-    width: '100px'
+    width: '120px'
   },
   { 
     title: 'ອັດຕາຂາຍ', 
     key: 'Sale_Rate',
     align: 'end' as const,
-    width: '100px'
+    width: '120px'
   },
   { 
     title: 'ຄ່າຕ່າງ', 
@@ -539,7 +634,7 @@ const headers = [
   },
   { 
     title: 'ວັນທີສ້າງ', 
-    key: 'Maker_DT_Stamp',
+    key: 'value_date',
     align: 'center' as const,
     width: '130px'
   },
@@ -569,13 +664,13 @@ const historyHeaders = [
     title: 'ອັດຕາຊື້', 
     key: 'Buy_Rate',
     align: 'end' as const,
-    width: '100px'
+    width: '120px'
   },
   { 
     title: 'ອັດຕາຂາຍ', 
     key: 'Sale_Rate',
     align: 'end' as const,
-    width: '100px'
+    width: '120px'
   },
   { 
     title: 'ຄ່າຕ່າງ', 
@@ -586,7 +681,7 @@ const historyHeaders = [
   },
   { 
     title: 'ວັນທີ', 
-    key: 'Maker_DT_Stamp',
+    key: 'value_date',
     align: 'center' as const,
     width: '120px'
   },
@@ -663,6 +758,44 @@ const mapAuthStatus = (status: string) => {
   }
 }
 
+// Duplicate prevention logic
+const checkForDuplicates = async () => {
+  checkingDuplicates.value = true
+  try {
+    const res = await axios.get<ExcRateModel.ExcRateResponse[]>('api/exc-rate/', {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    })
+    
+    return res.data.map(item => item.ccy_code).filter(code => code) as string[]
+  } catch (error) {
+    console.error('Error checking for duplicates:', error)
+    return []
+  } finally {
+    checkingDuplicates.value = false
+  }
+}
+
+const checkAndCreateNew = async () => {
+  const existingCodes = await checkForDuplicates()
+  
+  if (existingCodes.length > 0) {
+    existingCurrencies.value = existingCodes
+    duplicateWarningDialog.value = true
+  } else {
+    goPath('/excrate/create')
+  }
+}
+
+const proceedWithDuplicates = () => {
+  duplicateWarningDialog.value = false
+  // Pass existing currencies as query params to warn user in create form
+  const existingCodesParam = existingCurrencies.value.join(',')
+  goPath(`/excrate/create?existing=${encodeURIComponent(existingCodesParam)}`)
+}
+
 const confirmDelete = (item: ExcRateModel.ExcRateResponse) => {
   itemToDelete.value = item
   deleteDialog.value = true
@@ -678,10 +811,14 @@ const viewDetails = async (item: ExcRateModel.ExcRateResponse) => {
 const deleteItem = async () => {
   if (itemToDelete.value) {
     try {
-      // Add your delete API call here
-      // await axios.delete(`api/exc-rate/${itemToDelete.value.id}`)
+      await axios.delete(`api/exc-rate/${itemToDelete.value.id}/`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      })
       
-      // Remove item from local array for now
+      // Remove item from local array
       const index = items.value.findIndex(item => item.id === itemToDelete.value?.id)
       if (index > -1) {
         items.value.splice(index, 1)
@@ -691,6 +828,7 @@ const deleteItem = async () => {
       itemToDelete.value = null
     } catch (error) {
       console.error('Error deleting item:', error)
+      // Show error notification
     }
   }
 }
@@ -800,5 +938,16 @@ onMounted(fetchData)
 
 :deep(.v-data-table__wrapper::-webkit-scrollbar-thumb:hover) {
   background-color: rgba(var(--v-theme-primary), 0.5);
+}
+
+/* Rate display improvements */
+.rate-container {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.rate-icon {
+  margin-right: 4px;
 }
 </style>

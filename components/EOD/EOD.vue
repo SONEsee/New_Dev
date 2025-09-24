@@ -52,11 +52,12 @@
               >
                 <span class="font-weight-bold">ຍ້ອນຫຼັງ</span>
               </v-chip> -->
+              <!-- Update the EOD button to show more detailed status -->
               <v-btn
                 size="large"
                 :color="canStartEOD ? 'success' : 'error'"
                 variant="flat"
-                :loading="isProcessing"
+                :loading="isProcessing || isPerformingCleanup"
                 :disabled="!canStartEOD"
                 @click="startEODProcess"
                 :prepend-icon="canStartEOD ? 'mdi-play-circle' : 'mdi-alert-circle'"
@@ -96,9 +97,9 @@
                     <v-chip color="info" variant="flat" size="small" prepend-icon="mdi-calendar">
                       ວັນທີເປົ້າໝາຍ: {{ targetDate }}
                     </v-chip>
-                    <v-chip color="warning" variant="flat" size="small" prepend-icon="mdi-database">
+                    <!-- <v-chip color="warning" variant="flat" size="small" prepend-icon="mdi-database">
                       EOD ID: {{ currentEODInfo.date_id }}
-                    </v-chip>
+                    </v-chip> -->
                     <v-chip 
                       :color="currentEODInfo.eod_status === 'Y' ? 'success' : 'error'" 
                       variant="flat" 
@@ -920,6 +921,83 @@
     </v-card>
   </v-col>
 </v-row>
+<!-- Post-EOD Cleanup Progress Alert -->
+  <v-expand-transition>
+    <v-row v-if="isPerformingCleanup" class="mb-4">
+      <v-col cols="12">
+        <v-alert
+          type="info"
+          variant="tonal"
+          rounded="lg"
+          prominent
+          border="start"
+          class="cleanup-progress-alert"
+        >
+          <template v-slot:title>
+            <div class="d-flex align-center">
+              <v-progress-circular
+                indeterminate
+                color="info"
+                size="24"
+                class="mr-3"
+              ></v-progress-circular>
+              <strong>ກຳລັງອັບເດດຂໍ້ມູນຫຼັງປິດບັນຊີ</strong>
+            </div>
+          </template>
+          <div class="mt-2">
+            <p>ກຳລັງອັບເດດ BACK_VALUE ແລະ MOD_NO ໃນຕາຕະລາງຂໍ້ມູນ...</p>
+            <v-progress-linear
+              indeterminate
+              color="info"
+              class="mt-2"
+            ></v-progress-linear>
+          </div>
+        </v-alert>
+      </v-col>
+    </v-row>
+  </v-expand-transition>
+
+  <!-- Logout Countdown Alert -->
+  <v-expand-transition>
+    <v-row v-if="showLogoutCountdown" class="mb-4">
+      <v-col cols="12">
+        <v-alert
+          type="warning"
+          variant="tonal"
+          rounded="lg"
+          prominent
+          border="start"
+          class="logout-countdown-alert"
+        >
+          <template v-slot:title>
+            <div class="d-flex align-center">
+              <v-icon class="mr-2">mdi-logout</v-icon>
+              <strong>ກຳລັງອອກຈາກລະບົບ</strong>
+            </div>
+          </template>
+          <div class="mt-2">
+            <p>ການປິດບັນຊີສຳເລັດສົມບູນ. ລະບົບຈະອອກອັດຕະໂນມັດໃນ:</p>
+            <div class="d-flex align-center mt-3">
+              <v-progress-circular
+                :model-value="((5 - logoutCountdown) / 5) * 100"
+                size="48"
+                width="4"
+                color="warning"
+                class="mr-3"
+              >
+                <span class="text-h6 font-weight-bold">{{ logoutCountdown }}</span>
+              </v-progress-circular>
+              <div>
+                <p class="text-body-1 font-weight-medium mb-1">ວິນາທີ</p>
+                <p class="text-body-2 text-grey">ກະລຸນາບັນທຶກຂໍ້ມູນທີ່ຈຳເປັນ</p>
+              </div>
+            </div>
+          </div>
+        </v-alert>
+      </v-col>
+    </v-row>
+  </v-expand-transition>
+
 <!-- Missing EOD Dates Alert -->
 <v-expand-transition>
   <v-row v-if="missingEODDates.length > 0" class="mb-4">
@@ -1171,7 +1249,10 @@ const missingEODDates = ref<string[]>([])
 const nextRequiredDate = ref<string>('')
 const isProcessingMissing = ref(false)
 const loadingMissingDates = ref(false)
-
+const isPerformingCleanup = ref(false)
+const logoutCountdown = ref(0)
+const showLogoutCountdown = ref(false)
+const logoutTimer = ref<NodeJS.Timeout | null>(null)
 // Add new interfaces
 interface MissingDatesResponse {
   missing_dates: string[]
@@ -1468,6 +1549,83 @@ const getEOCTypeIcon = (type: string): string => {
   }
 }
 
+
+// Add this method for countdown display
+const startLogoutCountdown = (seconds: number = 5) => {
+  logoutCountdown.value = seconds
+  showLogoutCountdown.value = true
+  
+  logoutTimer.value = setInterval(() => {
+    logoutCountdown.value--
+    if (logoutCountdown.value <= 0) {
+      if (logoutTimer.value) {
+        clearInterval(logoutTimer.value)
+      }
+      showLogoutCountdown.value = false
+    }
+  }, 1000)
+}
+
+// Update the performPostEODCleanup method to set loading state
+const performPostEODCleanup = async () => {
+  isPerformingCleanup.value = true
+  try {
+    const response = await axios.post('/api/mttb-data-entry/post_eod_cleanup/', {}, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    })
+
+    if (response.status === 200 && response.data.success) {
+      console.log('Post-EOD cleanup completed:', response.data.updated_count, 'records updated')
+      return {
+        success: true,
+        message: response.data.message,
+        updatedCount: response.data.updated_count,
+        logoutRequired: response.data.logout_required
+      }
+    }
+  } catch (error) {
+    console.error("Post-EOD cleanup failed:", error)
+    return {
+      success: false,
+      error: error.response?.data?.error || "ເກີດຂໍ້ຜິດພາດໃນການສຳເລັດການປິດບັນຊີ"
+    }
+  } finally {
+    isPerformingCleanup.value = false
+  }
+}
+
+// New logout method
+const performLogout = async () => {
+  try {
+    // Clear local storage
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    localStorage.removeItem('userRole')
+    
+    // Optional: Call logout endpoint if you have one
+    try {
+      await axios.post('/api/logout/', {}, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      })
+    } catch (logoutError) {
+      console.log('Logout endpoint call failed, but continuing with local logout')
+    }
+    
+    // Redirect to login page
+    router.push('/login')
+  } catch (error) {
+    console.error('Error during logout:', error)
+    // Force redirect even if logout fails
+    router.push('/login')
+  }
+}
+
 const hasPendingJournals = computed(() => {
   // Ensure pendingJournals.value is an array before calling filter
   if (!Array.isArray(pendingJournals.value)) {
@@ -1668,7 +1826,7 @@ const refreshPreviousJournals = async () => {
   }
 }
 
-// Submit end-of-day journal with back-date support
+// Update submitEndOfDayJournal to use countdown
 const submitEndOfDayJournal = async () => {
   try {
     const payload = isBackDateMode.value 
@@ -1701,9 +1859,41 @@ const submitEndOfDayJournal = async () => {
         fetchActiveUsers()
       ])
       
+      // Perform post-EOD cleanup (update BACK_VALUE and MOD_NO)
+      console.log('Starting post-EOD cleanup...')
+      const cleanupResult = await performPostEODCleanup()
+      
+      if (cleanupResult.success) {
+        // Show additional success message for data update
+        setTimeout(() => {
+          showSuccess.value = true
+          successMessage.value = cleanupResult.message
+        }, 2000)
+        
+        // Logout after cleanup if required
+        if (cleanupResult.logoutRequired) {
+          setTimeout(() => {
+            showSuccess.value = true
+            successMessage.value = 'ການປິດບັນຊີສຳເລັດສົມບູນ. ກຳລັງອອກຈາກລະບົບ...'
+            startLogoutCountdown(5)
+            
+            // Logout after countdown
+            setTimeout(async () => {
+              await performLogout()
+            }, 5000)
+          }, 4000)
+        }
+      } else {
+        // Show error if cleanup failed, but don't prevent EOD success
+        setTimeout(() => {
+          showError.value = true
+          errorMessage.value = cleanupResult.error
+        }, 3000)
+      }
+      
       return true
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error("End-of-day journal submission failed:", error)
     showError.value = true
     
@@ -1718,7 +1908,6 @@ const submitEndOfDayJournal = async () => {
     return false
   }
 }
-
 const fetchPendingJournals = async () => {
   loadingJournals.value = true
   try {
@@ -2204,7 +2393,7 @@ const toggleEODFunctionDetails = (): void => {
   showEODFunctionDetails.value = !showEODFunctionDetails.value
 }
 
-// Main Process Methods
+// Updated startEODProcess method with better progress indication
 const startEODProcess = async (): Promise<void> => {
   if (!canStartEOD.value) {
     showError.value = true
@@ -2227,7 +2416,7 @@ const startEODProcess = async (): Promise<void> => {
       }
     }
     
-    // Submit the end-of-day journal
+    // Submit the end-of-day journal (this now includes cleanup and logout)
     const success = await submitEndOfDayJournal()
     
     if (success) {
@@ -2294,7 +2483,41 @@ onMounted(async () => {
 * {
   font-family: 'Noto Sans Lao', sans-serif !important;
 }
+/* Add these new styles */
+.cleanup-progress-alert {
+  background: linear-gradient(135deg, rgba(33, 150, 243, 0.1) 0%, rgba(33, 150, 243, 0.05) 100%);
+  border-left: 6px solid #2196F3 !important;
+}
 
+.logout-countdown-alert {
+  background: linear-gradient(135deg, rgba(255, 152, 0, 0.15) 0%, rgba(255, 152, 0, 0.08) 100%);
+  border-left: 6px solid #FF9800 !important;
+}
+
+.logout-countdown-alert .v-progress-circular {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 152, 0, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(255, 152, 0, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 152, 0, 0);
+  }
+}
+
+/* Update the EOD button text helper */
+.eod-button:disabled {
+  opacity: 0.6 !important;
+}
+
+.eod-button .v-btn__loader {
+  color: white;
+}
 /* Header styling */
 .header-card {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);

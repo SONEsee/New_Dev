@@ -665,10 +665,11 @@ import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'  
 import axios from '@/helpers/axios'
 import Swal from 'sweetalert2'
+import { useAuthCheck } from "@/composables/useAuthCheck"
 
 // Router
 const router = useRouter()
-
+useAuthCheck();
 // Use the updated journal permission composable
 const {
   data: permissionData,

@@ -81,7 +81,7 @@
         <!-- Settings Overview Cards -->
         <v-row class="mb-4">
           <v-col cols="12">
-            <div class="text-subtitle-2 font-weight-bold mb-2 text-grey-darken-1">
+            <div class="text-subtitle-2 font-weight-bold mb-2 text-grey-darken-1 text-styles">
               ພາບລວມການຕັ້ງຄ່າລ່າສຸດ
             </div>
           </v-col>
@@ -170,7 +170,7 @@
                 </v-avatar>
                 <div>
                   <div class="font-weight-medium">ID: {{ item.data_entry_id }}</div>
-                  <div class="text-caption text-grey">ລະຫັດການຕັ້ງຄ່າ</div>
+                  <div class="text-caption text-grey text-styles">ລະຫັດການຕັ້ງຄ່າ</div>
                 </div>
               </div>
             </template>
@@ -186,7 +186,7 @@
                 >
                   ຢືນຢັນຂໍ້ມູນ: {{ item.JRN_REKEY_REQUIRED === 'Y' ? 'ເປີດ' : 'ປິດ' }}
                 </v-chip>
-                <div v-if="item.JRN_REKEY_REQUIRED === 'Y'" class="text-caption text-grey ml-6">
+                <div v-if="item.JRN_REKEY_REQUIRED === 'Y'" class="text-caption text-grey ml-6 text-styles">
                   <span v-if="item.JRN_REKEY_VALUE_DATE === 'Y'">✓ ວັນທີ</span>
                   <span v-if="item.JRN_REKEY_AMOUNT === 'Y'" class="ml-2">✓ ຈຳນວນເງິນ</span>
                   <span v-if="item.JRN_REKEY_TXN_CODE === 'Y'" class="ml-2">✓ ລະຫັດ</span>
@@ -399,7 +399,7 @@
         <v-card-title class="pa-6 pb-4">
           <div class="d-flex align-center">
             <v-icon color="primary" size="28" class="mr-3">mdi-database-edit</v-icon>
-            <span class="text-h6 font-weight-bold">ລາຍລະອຽດການຕັ້ງຄ່າ</span>
+            <span class="text-h6 font-weight-bold text-styles">ລາຍລະອຽດການຕັ້ງຄ່າ</span>
           </div>
         </v-card-title>
 
@@ -431,7 +431,7 @@
 
           <!-- Rekey Settings Section -->
           <div class="mb-6">
-            <h3 class="text-subtitle-1 font-weight-bold mb-3 d-flex align-center">
+            <h3 class="text-subtitle-1 font-weight-bold mb-3 d-flex align-center text-styles">
               <v-icon color="orange" size="20" class="mr-2">mdi-keyboard</v-icon>
               ການຕັ້ງຄ່າການຢືນຢັນຂໍ້ມູນ
             </h3>
@@ -442,7 +442,7 @@
                     {{ selectedEntry.JRN_REKEY_REQUIRED === 'Y' ? 'mdi-check-circle' : 'mdi-close-circle' }}
                   </v-icon>
                 </template>
-                <v-list-item-title>ຢືນຢັນຂໍ້ມູນໃນເວລາກ່ອນອະນຸມັດບັນຊີ</v-list-item-title>
+                <v-list-item-title class="text-styles">ຢືນຢັນຂໍ້ມູນໃນເວລາກ່ອນອະນຸມັດບັນຊີ</v-list-item-title>
                 <v-list-item-subtitle>
                   {{ selectedEntry.JRN_REKEY_REQUIRED === 'Y' ? 'ເປີດໃຊ້ງານ' : 'ປິດໃຊ້ງານ' }}
                 </v-list-item-subtitle>
@@ -456,7 +456,7 @@
                         {{ selectedEntry.JRN_REKEY_VALUE_DATE === 'Y' ? 'mdi-check' : 'mdi-close' }}
                       </v-icon>
                     </template>
-                    <v-list-item-title class="text-body-2">ຢືນຢັນຄືນວັນທີເຮັດທຸລະກຳ</v-list-item-title>
+                    <v-list-item-title class="text-body-2 text-styles">ຢືນຢັນຄືນວັນທີເຮັດທຸລະກຳ</v-list-item-title>
                   </v-list-item>
                   
                   <v-list-item class="px-0">
@@ -465,7 +465,7 @@
                         {{ selectedEntry.JRN_REKEY_AMOUNT === 'Y' ? 'mdi-check' : 'mdi-close' }}
                       </v-icon>
                     </template>
-                    <v-list-item-title class="text-body-2">ຢືນຢັນຄືນມູນຄ່າທີ່ປ້ອນ</v-list-item-title>
+                    <v-list-item-title class="text-body-2 text-styles">ຢືນຢັນຄືນມູນຄ່າທີ່ປ້ອນ</v-list-item-title>
                   </v-list-item>
                   
                   <v-list-item class="px-0">
@@ -474,7 +474,7 @@
                         {{ selectedEntry.JRN_REKEY_TXN_CODE === 'Y' ? 'mdi-check' : 'mdi-close' }}
                       </v-icon>
                     </template>
-                    <v-list-item-title class="text-body-2">ຢືນຢັນຄືນລະຫັດທຸລະກຳ</v-list-item-title>
+                    <v-list-item-title class="text-body-2 text-styles">ຢືນຢັນຄືນລະຫັດທຸລະກຳ</v-list-item-title>
                   </v-list-item>
                 </div>
               </v-expand-transition>
@@ -485,7 +485,7 @@
 
           <!-- Permission Settings Section -->
           <div class="mb-6">
-            <h3 class="text-subtitle-1 font-weight-bold mb-3 d-flex align-center">
+            <h3 class="text-subtitle-1 font-weight-bold mb-3 d-flex align-center text-styles">
               <v-icon color="orange" size="20" class="mr-2">mdi-shield-check</v-icon>
               ການອະນຸຍາດພິເສດ
             </h3>
@@ -527,7 +527,7 @@
 
           <!-- Audit Information -->
           <div>
-            <h3 class="text-subtitle-1 font-weight-bold mb-3 d-flex align-center">
+            <h3 class="text-subtitle-1 font-weight-bold mb-3 d-flex align-center text-styles">
               <v-icon color="orange" size="20" class="mr-2">mdi-history</v-icon>
               ຂໍ້ມູນການບັນທຶກ
             </h3>

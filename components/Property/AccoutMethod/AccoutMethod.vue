@@ -240,15 +240,24 @@ const headers = computed(
         width: "150px",
         class: "text-center",
       },
-      // {
-      //   title: "Journal Entry",
-      //   value: "journal_entry_id",
-      //   align: "center",
-      //   sortable: false,
-      //   filterable: true,
-      //   width: "140px",
-      //   class: "text-center",
-      // },
+      {
+        title: "ເລກບັນຊີ(DR)",
+        value: "debit_account_id",
+        align: "center",
+        sortable: false,
+        filterable: true,
+        width: "140px",
+        class: "text-center",
+      },
+      {
+        title: "ເລກບັນຊີ(CR)",
+        value: "credit_account_id",
+        align: "center",
+        sortable: false,
+        filterable: true,
+        width: "140px",
+        class: "text-center",
+      },
       ...(canRecordStatus.value
         ? [
             {
@@ -640,6 +649,12 @@ onMounted(async () => {
         </template>
 
         <template v-slot:header.amount="{ column }">
+          <b style="color: blue">{{ column.title }}</b>
+        </template>
+        <template v-slot:header.credit_account_id="{ column }">
+          <b style="color: blue">{{ column.title }}</b>
+        </template>
+        <template v-slot:header.debit_account_id="{ column }">
           <b style="color: blue">{{ column.title }}</b>
         </template>
 

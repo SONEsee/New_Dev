@@ -6,7 +6,6 @@ import Swal from "sweetalert2";
 import { debounce } from "lodash";
 import { useRolePermissions } from "@/composables/useRolePermissions";
 
-// ===== TYPE DEFINITIONS =====
 interface JournalItem {
   JRNLLog_id: string | number;
   Reference_No: string;
@@ -119,17 +118,17 @@ interface ApiResponse {
   };
 }
 
-// ===== COMPONENT LIFECYCLE STATE =====
+
 const isComponentMounted = ref<boolean>(true);
 
-// ===== STORE COMPOSABLES =====
+
 const mainStore = useFassetLidtDescription();
 const derpicationStore = useFassetLidtDescription();
 const cerrency = useCerrencyStore();
 const masterStore = useMasterStore();
 const jurnalStore = useJournalStor();
 
-// ===== COMPUTED PROPERTIES WITH PROPER TYPES AND ERROR HANDLING =====
+
 const datadevcription = computed((): DepreciationItem[] => {
   try {
     const data = derpicationStore?.respons_data_driscription_main;
@@ -225,14 +224,14 @@ const responscerrency = computed((): CurrencyItem[] => {
   }
 });
 
-// ===== ROUTER & ROUTE =====
+
 const route = useRoute();
 const router = useRouter();
 
 const submenu_id = (route.query.sub_menu_id as string) || "GL_NOTE_CAP";
 console.log("Submenu ID:", submenu_id);
 
-// ===== PERMISSIONS =====
+
 const {
   initializeRole,
   canView,
@@ -243,7 +242,7 @@ const {
   permissions,
 } = useRolePermissions();
 
-// ===== PERFORMANCE TRACKER =====
+
 const performanceTracker = {
   startTime: 0,
   start() {
@@ -258,7 +257,7 @@ const performanceTracker = {
   },
 };
 
-// ===== REACTIVE STATE =====
+
 const loading = ref<boolean>(false);
 const loadingReferences = ref<boolean>(false);
 const items = ref<JournalItem[]>([]);
@@ -283,12 +282,12 @@ const currentUser = computed((): User | null => {
   }
 });
 
-// ===== DATE CONSTANTS =====
+
 const today = new Date().toISOString().slice(0, 10);
 const currentYear = new Date().getFullYear();
 const currentMonth = new Date().getMonth() + 1;
 
-// ===== PAGINATION =====
+
 const pagination = reactive<Pagination>({
   currentPage: 1,
   pageSize: 25,
@@ -296,7 +295,7 @@ const pagination = reactive<Pagination>({
   totalItems: 0,
 });
 
-// ===== FILTER OPTIONS =====
+
 const dateFilterTypes = ref<DateFilterType[]>([
   { value: "all", text: "ທັງໝົດ", icon: "mdi-calendar-multiple" },
   { value: "date", text: "ວັນທີສະເພາະ", icon: "mdi-calendar" },
@@ -350,7 +349,7 @@ const summary = reactive<Summary>({
   correction: 0,
 });
 
-// ===== HELPER FUNCTIONS WITH ERROR HANDLING =====
+
 const getMatchedAldmId = (item: JournalItem | null | undefined): string | number | null => {
   try {
     if (!item || !item.jrnl_log_ac?.Ac_relatives || !item.Maker_DT_Stamp) {
@@ -845,7 +844,6 @@ const buildDateParams = (): Record<string, string> => {
   }
 };
 
-// ===== MAIN DATA LOADING FUNCTION =====
 const loadData = async (resetPage: boolean = true): Promise<void> => {
   if (!isComponentMounted.value) {
     console.log("Component unmounted, skipping loadData");
@@ -916,7 +914,7 @@ const loadData = async (resetPage: boolean = true): Promise<void> => {
       `✅ Loaded ${items.value.length} items (Page ${pagination.currentPage}/${pagination.totalPages})`
     );
 
-    // Debug mapping check
+
     console.log("🔍 Mapping check:");
     items.value.forEach((item: JournalItem) => {
       const aldmId = getMatchedAldmId(item);
@@ -963,7 +961,7 @@ const loadReferenceData = async (): Promise<void> => {
   }
 };
 
-// ===== UTILITY FUNCTIONS FOR DISPLAY =====
+
 const getStatusColor = (status: string): string => {
   switch (status) {
     case "A":
@@ -1158,7 +1156,7 @@ const exportData = (): void => {
   }
 };
 
-// ===== DEBOUNCED SEARCH =====
+
 const searchDebounced = debounce((): void => {
   try {
     handleFilterChange();
@@ -1167,13 +1165,13 @@ const searchDebounced = debounce((): void => {
   }
 }, 500);
 
-// ===== LIFECYCLE HOOKS =====
+
 onMounted(async (): Promise<void> => {
   try {
     console.log("Component mounting...");
     isComponentMounted.value = true;
     
-    // Safe store method calls with null checks
+ 
     try {
       if (jurnalStore?.getJurnallist) {
         await jurnalStore.getJurnallist();
@@ -1260,7 +1258,7 @@ const nameDisplay = (item:any)=>{
           <v-icon color="primary" size="20" class="mr-2">mdi-book-check</v-icon>
           ອະນຸມັດບັນທຶກບັນຊີຊັບສິນ
         </h1>
-        <!-- <pre>{{ datadevcription }}</pre> -->
+        <!-- <pre>{{ items  }}</pre> -->
         <div class="permission-indicators" v-if="permissions">
           <v-tooltip text="ສິດເຂົ້າເຖິງຂອງທ່ານ" location="bottom">
             <template #activator="{ props }">
@@ -1899,7 +1897,7 @@ const nameDisplay = (item:any)=>{
             </v-btn>
           </div>
         </v-card-title>
-        <!-- <pre>{{ selectedItems }}</pre> -->
+        <!-- <pre>{{ datadevcription }}</pre> -->
         <v-data-table
           :headers="headers"
           :items="items"
