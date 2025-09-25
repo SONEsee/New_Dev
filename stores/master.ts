@@ -441,5 +441,33 @@ export const useMasterStore = defineStore("master", {
         console.error(error);
       }
     },
+    async getSetASP(){
+      this.isloading = true;
+      this.error = null;
+      try {
+        const res = await axios.get<MasterModel.MasterRespons>(
+          `/api/master-types/tree/AST/`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+            },
+          }
+        );
+        if (res.status === 200) {
+          this.resposne_status_setting_update = res.data.MasterCodes;
+         
+          this.isloading = false;
+        }
+      } catch (error) {
+        CallSwal({
+          title: "Error",
+          text: "ການດຶງຂໍ້ມູນຜິດພາດ.",
+          icon: "error",
+        });
+        this.error = "Failed to fetch master data";
+        console.error(error);
+      }
+    },
   },
 });

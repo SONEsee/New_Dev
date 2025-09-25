@@ -2,6 +2,34 @@
 import axios from "@/helpers/axios";
 import { ref, onMounted, computed } from "vue";
 const proppertyStore = propertyStore();
+const masterStore = useMasterStore();
+const masterData = computed(() => {
+  const data = masterStore.resposne_status_setting_update;
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (data && typeof data === "object") {
+    return [data];
+  }
+  return [];
+});
+
+const seLectType = ref("");
+watch( seLectType, async (newValue)=>{
+  masterStore.isloading = true; 
+  try {
+    proppertyStore.filter_type.query.is_tangible = newValue;
+    await proppertyStore.GetPropertyCategoryById();
+  } catch (error) {
+    CallSwal({
+      icon: "error",
+      title: "ຂໍ້ຜິດພາດ",
+      text: "ກະລຸນາເລືອກຊັບສົມບັດກ່ອນ",
+    })
+  }finally{
+    masterStore.isloading = false;
+  }
+})
 const mockData1 =  computed(()=>{
   return proppertyStore.respons_data_property_category || []
 })
@@ -127,6 +155,7 @@ const headers = computed(() => [
   { title: "ລະຫັດ", value: "type_code"},
   { title: "ຊື່ພາສາລາວ", value: "type_name_la" },
   { title: "ຊື່ພາສາອັງກິດ", value: "type_name_en" },
+  { title: "ປະເພດຊັບສົມບັດ", value: "mastercode_detail.MC_name_la" },
  
 
   ...(canView.value
@@ -165,7 +194,7 @@ const headers = computed(() => [
   ...(canRecordStatus.value
     ? [{ title: "ສະຖານະ", value: "Record_Status", align: "center", width: "5px" }]
     : []),
-]);
+]) as any;
 
 
 const filteredData = computed(() => {
@@ -187,6 +216,7 @@ const confirmDelete = async (item: any) => {
 };
 
 onMounted(async () => {
+  masterStore.getSetASP();
   loading.value = true;
   try {
     initializeRole();
@@ -206,7 +236,7 @@ onMounted(async () => {
       <GlobalTextTitleLine :title="title" />
 
       <v-row class="">
-        <v-col cols="12" md="6">
+        <v-col cols="12" md="4">
           <v-btn
             v-if="canAdd"
             color="primary"
@@ -218,8 +248,24 @@ onMounted(async () => {
             ເພີ່ມປະເພດຊັບສິນ
           </v-btn>
         </v-col>
-        <v-spacer />
-        <v-col cols="12" md="4">
+        <!-- <v-spacer /> -->
+        <v-col cols="12" md="3">
+          <v-autocomplete
+          v-model="seLectType"
+            :loading="loading"
+            :items="masterData"
+            item-title="MC_name_la"
+            item-value="MC_code"
+            
+            label="ເລືອກຕາມປະເພດຊັບສິນ"
+            prepend-inner-icon="mdi-format-list-bulleted-type"
+            variant="outlined"
+            density="compact"
+            clearable
+            hide-details
+          />
+        </v-col>
+        <v-col cols="12" md="3">
           <v-text-field
             v-model="search"
             label="ຄົ້ນຫາ"
@@ -231,7 +277,7 @@ onMounted(async () => {
           />
         </v-col>
       </v-row>
-
+<!-- <pre>{{ mockData1 }}</pre> -->
       <v-data-table
         :items="mockData1"
         :headers="headers"
@@ -241,6 +287,9 @@ onMounted(async () => {
         hover
       >
         <template v-slot:header.type_code="{ column }">
+          <b class="text-primary">{{ column.title }}</b>
+        </template>
+        <template v-slot:header.mastercode_detail.MC_name_la="{ column }">
           <b class="text-primary">{{ column.title }}</b>
         </template>
 
