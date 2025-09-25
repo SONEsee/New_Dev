@@ -2,22 +2,23 @@
 import dayjs from "#build/dayjs.imports.mjs";
 import { formats } from "numeral";
 import { useRoute } from "vue-router";
+
 const masterStore = useMasterStore();
-const masterAccount  = computed(()=>{
+const masterAccount = computed(() => {
   const data = masterStore.resposne_status_setting_update;
-  if(Array.isArray(data)){
+  if (Array.isArray(data)) {
     return data;
   }
-  if(data && typeof data === "object"){
+  if (data && typeof data === "object") {
     return [data];
   }
   return [];
 })
+
 const getMasterAccountByCode = (mcCode: string) => {
   return masterAccount.value.find(item => item.MC_code === mcCode);
 };
 
-// ຟັງຊັນສຳລັບແຍກເລກບັນຊີ DR ແລະ CR ຈາກ MC_detail
 const parseAccountNumbers = (mcDetail: string) => {
   if (!mcDetail) return { debitAccount: '', creditAccount: '' };
   
@@ -27,15 +28,18 @@ const parseAccountNumbers = (mcDetail: string) => {
     creditAccount: accounts[1] || ''
   };
 };
+
 const route = useRoute();
 const valid = ref();
 const form = ref();
 const id = Number(route.query.mapping_id) || 0;
 const selectedAssetId = ref((route.query.mapping_id as string) || null);
+
 const DisplayGl = (item: any) => {
   if (!item || !item.asset_spec || !item.asset_list_id) return "ທັງໝົດ";
   return `${item.asset_spec} (${item.asset_list_id})`;
 };
+
 const accountMethodStoreInstance = accountMethodStore();
 const assetListStore = faAssetStore();
 
@@ -74,7 +78,6 @@ const debitAccountNumber = computed(() => {
   }
 
   if (dataupdate.value?.asset_list_id) {
-    // ດຶງ asset_code ຈາກ totaldata
     const selectedAsset = totaldata.value.find(
       item => item.asset_list_id === selectedAssetId.value
     );
@@ -88,7 +91,6 @@ const debitAccountNumber = computed(() => {
         const lastNumber = extractLastNumber(dataupdate.value.asset_list_id);
         return `${debitAccount}.${lastNumber}`;
       } else {
-        // ຖ້າຫາບໍ່ເຈີ masterAccount ໃຫ້ alert ເຕືອນ
         CallSwal({
           icon: "warning",
           title: "ຂໍ້ຜິດພາດ",
@@ -97,26 +99,24 @@ const debitAccountNumber = computed(() => {
         return "";
       }
     } else {
-      // ຖ້າບໍ່ມີ type_code
-      CallSwal({
-        icon: "error",
-        title: "ຂໍ້ຜິດພາດ",
-        text: "ບໍ່ສາມາດກຳນົດປະເພດຊັບສົມບັດໄດ້",
-      });
+      // CallSwal({
+      //   icon: "error",
+      //   title: "ຂໍ້ຜິດພາດ",
+      //   text: "ບໍ່ສາມາດກຳນົດປະເພດຊັບສົມບັດໄດ້",
+      // });
       return "";
     }
   }
 
   return "";
 });
+
 const creditAccountNumber = computed(() => {
-  // ຖ້າບໍ່ມີ asset_list_id ໃຫ້ໃຊ້ຄ່າເກົ່າ
   if (!dataupdate.value?.asset_list_id && detail.value?.debit_account_id) {
     return detail.value.debit_account_id;
   }
 
   if (dataupdate.value?.asset_list_id) {
-    // ດຶງ asset_code ຈາກ totaldata
     const selectedAsset = totaldata.value.find(
       item => item.asset_list_id === selectedAssetId.value
     );
@@ -130,7 +130,6 @@ const creditAccountNumber = computed(() => {
         const lastNumber = extractLastNumber(dataupdate.value.asset_list_id);
         return `${creditAccount}.${lastNumber}`;
       } else {
-        // ຖ້າຫາບໍ່ເຈີ masterAccount ໃຫ້ alert ເຕືອນ
         CallSwal({
           icon: "warning",
           title: "ຂໍ້ຜິດພາດ",
@@ -139,12 +138,11 @@ const creditAccountNumber = computed(() => {
         return "";
       }
     } else {
-      // ຖ້າບໍ່ມີ type_code
-      CallSwal({
-        icon: "error",
-        title: "ຂໍ້ຜິດພາດ",
-        text: "ບໍ່ສາມາດກຳນົດປະເພດຊັບສົມບັດໄດ້",
-      });
+      // CallSwal({
+      //   icon: "error",
+      //   title: "ຂໍ້ຜິດພາດ",
+      //   text: "ບໍ່ສາມາດກຳນົດປະເພດຊັບສົມບັດໄດ້",
+      // });
       return "";
     }
   }
@@ -152,21 +150,35 @@ const creditAccountNumber = computed(() => {
   return "";
 });
 
+// ✅ ແກ້ໄຂການດຶງຂໍ້ມູນ - ໃຊ້ mapping_id ທີ່ຖືກຕ້ອງ
 watch(selectedAssetId, async (newAssetId: any) => {
   if (newAssetId) {
     try {
       await assetListStore.GetFaAssetDetail(newAssetId);
-      await accountMethodStoreInstance.GetAccountMethodDetail(newAssetId);
+      
+      // ✅ ຫາ mapping_id ທີ່ຖືກຕ້ອງຈາກ asset data
+      // ຖ້າມີ id ຈາກ route ໃຫ້ໃຊ້ id ນັ້ນ
+      if (id && id > 0) {
+        await accountMethodStoreInstance.GetAccountMethodDetail(id);
+      }
+      // ຖ້າບໍ່ງັ້ນລອງຫາຈາກ asset detail
+      else {
+        console.warn("No mapping_id found, might be creating new record");
+      }
     } catch (error) {
       console.error("Error loading asset details:", error);
-      CallSwal({
-        icon: "error",
-        title: "ຂໍ້ຜິດພາດ",
-        text: "ບໍ່ສາມາດໂຫຼດຂໍ້ມູນໄດ້",
-      });
+      // ບໍ່ alert ຖ້າເປັນ 404 - record ອາດຍັງບໍ່ມີ
+      if (error.response?.status !== 404) {
+        CallSwal({
+          icon: "error",
+          title: "ຂໍ້ຜິດພາດ",
+          text: "ບໍ່ສາມາດໂຫຼດຂໍ້ມູນໄດ້",
+        });
+      }
     }
   }
 });
+
 watch(
   () => route.query.asset_id,
   async (newValue) => {
@@ -176,29 +188,46 @@ watch(
   },
   { immediate: true }
 );
+
+// ✅ ແກ້ໄຂການ watch - ເພີ່ມ mapping_id ແລະ default values
 watch(
   [
     () => accountMethodStoreInstance.response_account_method_detail,
     () => dataupdate.value,
   ],
   ([req, assetData]) => {
-    if (req) {
-      request.description = req.description;
-
-      request.ref_id = assetData?.asset_list_id || req.ref_id;
-      request.amount = assetData?.asset_value_remainMonth || req.amount ;
-      request.amount_start = req.amount_start;
-      request.amount_end = req.amount_end;
+    // ແກ້ໄຂ: ເຮັດວຽກກັບທັງ req ແລະ assetData
+    if (assetData || req) {
+      // ✅ ເພີ່ມ mapping_id
+      request.mapping_id = id || req?.mapping_id || null;
+      request.asset_id = req?.asset_id || null;
+      request.acc_type = req?.acc_type || "ASSET";
+      
+      request.ref_id = assetData?.asset_list_id || req?.ref_id;
+      
+      // ✅ ກຳນົດ default description ຖ້າວ່າງ
+      request.description = req?.description || "ຫັກຄ່າເສື່ອມຊັບສິນ";
+      
+      // ✅ ໃຊ້ DB values ຈາກ asset
+      request.amount = assetData?.asset_value_remainMonth || req?.amount || "0";
+      request.amount_start = assetData?.asset_value_remainBegin || req?.amount_start || "0";
+      request.amount_end = assetData?.asset_value_remainLast || req?.amount_end || "0";
+      
       request.debit_account_id = debitAccountNumber.value;
       request.credit_account_id = creditAccountNumber.value;
+      
+      // ✅ ແກ້ໄຂວັນທີ່ - ບໍ່ໃຫ້ວ່າງ
       request.transaction_date = assetData?.Maker_DT_Stamp
         ? dayjs(assetData.Maker_DT_Stamp).format("YYYY-MM-DD")
-        : "";
+        : req?.transaction_date || dayjs().format("YYYY-MM-DD");
+        
+      request.journal_entry_id = req?.journal_entry_id || "";
     }
   },
   { immediate: true }
 );
 
+// ✅ ແກ້ໄຂການ submit - ເພີ່ມການກວດສອບ
 const handelSuvmit = async () => {
   if (!selectedAssetId.value) {
     CallSwal({
@@ -208,6 +237,21 @@ const handelSuvmit = async () => {
     });
     return;
   }
+
+  // ✅ ກວດສອບແລະແກ້ໄຂຂໍ້ມູນກ່ອນ submit
+  if (!request.description || request.description.trim() === "") {
+    request.description = "ຫັກຄ່າເສື່ອມຊັບສິນ";
+  }
+  
+  if (!request.transaction_date || request.transaction_date === "") {
+    request.transaction_date = dayjs().format("YYYY-MM-DD");
+  }
+  
+  if (!request.mapping_id) {
+    request.mapping_id = id;
+  }
+
+  console.log("ຂໍ້ມູນທີ່ຈະສົ່ງ (ຫຼັງແກ້ໄຂ):", request);
 
   const isValid = await form.value.validate();
   if (isValid) {
@@ -221,6 +265,7 @@ const handelSuvmit = async () => {
       confirmButtonColor: "primary",
       cancelButtonColor: "error",
     });
+    
     if (notification.isConfirmed) {
       try {
         await accountMethodStoreInstance.UpdateAccountMethod(id);
@@ -231,6 +276,7 @@ const handelSuvmit = async () => {
           timer: 2000,
         });
       } catch (error) {
+        console.error("Update error:", error);
         CallSwal({
           icon: "error",
           title: "ຜິດພາດ",
@@ -248,7 +294,10 @@ onMounted(async () => {
 
     if (selectedAssetId.value) {
       await assetListStore.GetFaAssetDetail(selectedAssetId.value);
-      await accountMethodStoreInstance.GetAccountMethodDetail(id);
+      // ✅ ໃຊ້ id (mapping_id) ທີ່ຖືກຕ້ອງ
+      if (id && id > 0) {
+        await accountMethodStoreInstance.GetAccountMethodDetail(id);
+      }
     }
   } catch (error) {
     console.error("Error on mounted:", error);
@@ -261,10 +310,7 @@ const title = "ລາຍລະອຽດການຕັ້ງຄ່າທືກ�
 <template>
   <div class="pa-4">
     <GlobalTextTitleLine :title="title" />
-    <!-- <v-row>
-    <v-col cols="6"><pre>{{ masterAccount }}</pre></v-col>
-    <v-col cols="6"><pre>{{ totaldata }}</pre></v-col>
-    </v-row> -->
+    
     <v-card class="mb-4" variant="outlined">
       <v-card-title class="text-h6 pb-2 bg-primary">
         <v-icon class="mr-2">mdi-format-list-bulleted</v-icon>
@@ -299,7 +345,8 @@ const title = "ລາຍລະອຽດການຕັ້ງຄ່າທືກ�
     </v-card>
 
     <v-form ref="form" @submit.prevent="handelSuvmit">
-      <div v-if="selectedAssetId && detail">
+      <!-- ✅ ແກ້ໄຂ condition - ບໍ່ຈຳເປັນຕ້ອງມີ detail ເພື່ອສະແດງຟອມ -->
+      <div v-if="selectedAssetId">
         <v-card variant="outlined">
           <v-card-title class="text-h6 pb-2 bg-success">
             <v-icon class="mr-2">mdi-information</v-icon>
@@ -318,7 +365,7 @@ const title = "ລາຍລະອຽດການຕັ້ງຄ່າທືກ�
 
                 <v-label class="mb-1">ປະເພດທຸລະກຳ</v-label>
                 <v-text-field
-                  :model-value="detail?.acc_type"
+                  :model-value="detail?.acc_type || 'ASSET'"
                   variant="outlined"
                   density="compact"
                   readonly
@@ -333,12 +380,14 @@ const title = "ລາຍລະອຽດການຕັ້ງຄ່າທືກ�
                   density="compact"
                   class="formatted-number-input"
                   :rules="[(v) => !!v || 'ກະລຸນາໃສ່ລາຍລະອຽດ']"
+                  placeholder="ຫັກຄ່າເສື່ອມຊັບສິນ"
                 />
               </v-col>
 
               <v-col cols="12" md="3">
                 <v-label class="mb-1">ເລກບັນຊີ DR</v-label>
                 <v-text-field
+                :loading="masterStore.isloading"
                   :model-value="debitAccountNumber"
                   variant="outlined"
                   density="compact"
@@ -347,11 +396,9 @@ const title = "ລາຍລະອຽດການຕັ້ງຄ່າທືກ�
 
                 <v-label class="mb-1">ມູນຄ່າຕໍ່ເດືອນ</v-label>
                 <v-text-field
-                
                   v-model="request.amount"
                   variant="outlined"
                   density="compact"
-                
                   class="formatted-number-input"
                 />
                 <GlobalCardTitle
@@ -363,6 +410,7 @@ const title = "ລາຍລະອຽດການຕັ້ງຄ່າທືກ�
               <v-col cols="12" md="3">
                 <v-label class="mb-1">ເລກບັນຊີ CR</v-label>
                 <v-text-field
+                :loading="masterStore.isloading"
                   :model-value="creditAccountNumber"
                   variant="outlined"
                   density="compact"
@@ -390,11 +438,13 @@ const title = "ລາຍລະອຽດການຕັ້ງຄ່າທືກ�
                 <v-label class="mb-1">ວັນທີ່ເລີ່ມຖຸລະກຳ</v-label>
                 <v-text-field
                   :model-value="
-                    dayjs(dataupdate?.Maker_DT_Stamp).format('DD/MM/YYYY')
+                    dataupdate?.Maker_DT_Stamp 
+                      ? dayjs(dataupdate.Maker_DT_Stamp).format('DD/MM/YYYY')
+                      : dayjs().format('DD/MM/YYYY')
                   "
-                  :v-model="request.transaction_date"
                   variant="outlined"
                   density="compact"
+                  readonly
                 />
 
                 <v-label class="mb-1">ມູນຄ່າທ້າຍ</v-label>
@@ -405,9 +455,7 @@ const title = "ລາຍລະອຽດການຕັ້ງຄ່າທືກ�
                   class="formatted-number-input"
                 />
                 <GlobalCardTitle
-                  :text="
-                    dataupdate?.dpca_end_date || ''
-                  "
+                  :text="dataupdate?.dpca_end_date || ''"
                   title="ງວດສຸດທ້າຍ"
                 />
               </v-col>
