@@ -2,16 +2,25 @@
 import axios from "@/helpers/axios";
 import { CallSwal } from "#build/imports";
 import { useRoute } from "vue-router";
-
+const masterStore = useMasterStore();
 const propertyStor = propertyStore();
 const route = useRoute();
 const id = Number(route.query.type_id) || 0;
-const update_form = propertyStor.form_update_property_category
+const update_form = propertyStor.form_update_property_category;
 const title = ref("ແກ້ໄຂປະເພດຊັບສິນ");
 const loading = ref(false);
 const form = ref();
 
-
+const masterData = computed(() => {
+  const data = masterStore.resposne_status_setting_update;
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (data && typeof data === "object") {
+    return [data];
+  }
+  return [];
+});
 
 const rules = {
   required: (value: any) => !!value || "ກະລຸນາໃສ່ຂໍ້ມູນ",
@@ -19,11 +28,7 @@ const rules = {
 
 onMounted(() => {
   propertyStor.GetPropertyDetail(id);
-
 });
-
-
-
 
 watch(
   () => propertyStor.respons_detail_property_category,
@@ -34,7 +39,6 @@ watch(
       update_form.type_name_la = newVal.type_name_la || "";
       update_form.type_name_en = newVal.type_name_en || "";
       update_form.is_tangible = newVal.is_tangible || "";
-      
     }
   },
   { immediate: true }
@@ -42,7 +46,7 @@ watch(
 
 const submitForm = async () => {
   if (!form.value) return;
-  
+
   const validation = await form.value.validate();
   if (validation.valid) {
     const notification = await CallSwal({
@@ -63,7 +67,7 @@ const submitForm = async () => {
 const updatePropertyType = async () => {
   loading.value = true;
   try {
-   await propertyStor.UpdatePropertyType(id)
+    await propertyStor.UpdatePropertyType(id);
   } catch (error) {
     console.error("Error updating property type:", error);
     CallSwal({
@@ -77,6 +81,9 @@ const updatePropertyType = async () => {
     loading.value = false;
   }
 };
+onMounted(() => {
+  masterStore.getSetASP();
+});
 </script>
 
 <template>
@@ -111,13 +118,11 @@ const updatePropertyType = async () => {
                 hide-details="auto"
                 class="pb-6"
               />
-
-             
             </v-col>
-
+            <!-- <pre>{{ masterData }}</pre> -->
             <v-col cols="12" md="6">
               <label>ປະເພດຊັບສິນ / Asset Type</label>
-              <v-select
+              <v-autocomplete
                 v-model="update_form.is_tangible"
                 :rules="[rules.required]"
                 placeholder="ເລືອກປະເພດຊັບສິນ"
@@ -125,14 +130,21 @@ const updatePropertyType = async () => {
                 variant="outlined"
                 hide-details="auto"
                 class="pb-6"
-                :items="[
-                  { title: 'ຊັບສິນທີ່ແທ້ຈິງ', value: 'Y' },
-                  { title: 'ຊັບສິນທີ່ບໍ່ແທ້ຈິງ', value: 'N' }
-                ]"
-                item-title="title"
-                item-value="value"
-              />
- <label>ຊື່ປະເພດ (ອັງກິດ) / Type Name (English)</label>
+                :items="masterData"
+                item-title="MC_name_la"
+                item-value="MC_code"
+              >
+              <template v-slot:item="{ item, props }">
+                <v-list-item v-bind="props" :title="`${item.raw.MC_name_la}(${item.raw.MC_code})`">
+                  <template v-slot:prepend>
+                    <v-avatar size="small" color="primary">
+                      <v-icon>mdi-format-list-bulleted-type</v-icon>
+                    </v-avatar>
+                  </template>
+                </v-list-item>
+              </template>
+              </v-autocomplete>
+              <label>ຊື່ປະເພດ (ອັງກິດ) / Type Name (English)</label>
               <v-text-field
                 v-model="update_form.type_name_en"
                 :rules="[rules.required]"
@@ -155,12 +167,12 @@ const updatePropertyType = async () => {
             </v-col>
           </v-row>
         </v-col>
-        
+
         <v-col cols="12" class="d-flex flex-wrap justify-center">
-          <v-btn 
-            color="primary" 
-            flat 
-            type="submit" 
+          <v-btn
+            color="primary"
+            flat
+            type="submit"
             :loading="loading"
             :disabled="loading"
           >
