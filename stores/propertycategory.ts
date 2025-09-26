@@ -5,6 +5,12 @@ export const propertyStore = defineStore("propertycategory", {
   state() {
     return {
       respons_data_property_category: [] as PropertyTypeModel.PropertyType[],
+      filter_type:{
+        isLoading: false,
+        query: {
+          is_tangible: "",
+        },
+      },
       isloading: false,
       respons_detail_property_category:
         null as PropertyTypeModel.PropertyType | null,
@@ -38,6 +44,9 @@ export const propertyStore = defineStore("propertycategory", {
               "Content-Type": "application/json",
               Authorization: `Bearer ${localStorage.getItem("token")}`,
             },
+            params:{
+              ...this.filter_type.query
+            }
           }
         );
         if (res.status === 200) {

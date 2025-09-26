@@ -2,10 +2,20 @@
 const title = "ສ້າງປະເພດຊັບສິນ";
 const visible = ref(false);
 const propStore = propertyStore();
+const masterStore = useMasterStore();
 const request = propStore.form_creat_property_category;
 const form = ref();
 const loading = ref(false);
-
+const masterData = computed(() => {
+  const data = masterStore.resposne_status_setting_update;
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (data && typeof data === "object") {
+    return [data];
+  }
+  return [];
+});
 const handleSubmit = async () => {
   if (form.value) {
     const validation = await form.value.validate();
@@ -34,7 +44,9 @@ const handleSubmit = async () => {
     }
   }
 };
-
+onMounted(() => {
+  masterStore.getSetASP();
+});
 const rules = {
   required: (value: any) => !!value || "ກະລຸນາໃສ່ຂໍ້ມູນ",
 };
@@ -77,27 +89,38 @@ const rules = {
             />
           </v-col>
           <v-col cols="12" md="6">
+            <!-- <pre>{{ masterData }}</pre> -->
             <v-autocomplete
               v-model="request.is_tangible"
               label="ປະເພດຊັບສິນ"
+              prepend-inner-icon="mdi-format-list-bulleted-type"
               variant="outlined"
               density="compact"
-              :items="[
-                { title: 'ມີໂຕຕົນ', value: '2' },
-                { title: 'ບໍ່ມີໂຕຕົນ', value: '1' }
-              ]"
-              item-title="title"
-              item-value="value"
+              :items="masterData"
+              item-title="MC_name_la"
+              item-value="MC_code"
               :rules="[rules.required]"
               required
-            />
+            >
+              <template v-slot:item="{ item, props }">
+                <v-list-item
+                  v-bind="props"
+                  :title="`${item.raw.MC_name_la}(${item.raw.MC_code})`"
+                >
+                  <template v-slot:prepend>
+                    <v-avatar size="small" color="primary">
+                      <v-icon>mdi-format-list-bulleted-type</v-icon>
+                    </v-avatar>
+                  </template>
+              </v-list-item>
+              </template>
+            </v-autocomplete>
           </v-col>
-        
         </v-row>
         <div class="d-flex align-center justify-center mt-4">
-          <v-btn 
-            type="submit" 
-            color="primary" 
+          <v-btn
+            type="submit"
+            color="primary"
             :loading="loading"
             :disabled="loading"
           >

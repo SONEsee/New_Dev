@@ -1801,7 +1801,7 @@ watch(
           </div>
 
           <div class="entries-status">
-            <!-- Balance Indicator -->
+           
             <v-chip
               :color="isBalanced ? 'success' : 'error'"
               variant="flat"
@@ -1936,7 +1936,7 @@ watch(
 
                     <td class="td-actions">
                       <div class="action-buttons">
-                        <!-- Show actions only if user has permissions -->
+                        
                         <template v-if="canView">
                           <v-tooltip text="ແກ້ໄຂຄູ່ບັນທຶກ" location="top">
                             <template #activator="{ props }">
