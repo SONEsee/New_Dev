@@ -333,7 +333,7 @@ const headers = computed(() => [
   //   width: "80px",
   //   class: "text-center",
   // },
-]);
+]) as any;
 
 const filteredData = computed(() => {
   let data = mockData.value;
@@ -348,7 +348,7 @@ const filteredData = computed(() => {
 
   if (search.value) {
     data = data.filter(
-      (item) =>
+      (item:any) =>
         item.asset_tag?.toLowerCase().includes(search.value.toLowerCase()) ||
         item.asset_serial_no
           ?.toLowerCase()
@@ -362,14 +362,14 @@ const filteredData = computed(() => {
 
   if (selectedassetCode.value !== "all") {
     data = data.filter(
-      (item) => item.asset_id_detail?.coa_id === selectedassetCode.value
+      (item:any) => item.asset_id_detail?.coa_id === selectedassetCode.value
     );
   }
 
-  // ຈັດຮຽງໃຫ້ UC + Auth_Status_ARC = U + Auth_Status = U ຂຶ້ນກ່ອນ
+  
   return data.sort((a, b) => {
     // ຟັງຊັນຊ່ວຍກຳນົດລຳດັບຄວາມສຳຄັນ
-    const getPriority = (item) => {
+    const getPriority = (item:any) => {
       // ຄວາມສຳຄັນສູງສຸດ: UC + Auth_Status_ARC = U + Auth_Status = U
       if (
         item.asset_status === "UC" &&
@@ -487,7 +487,7 @@ const clearFilters = async () => {
   }
 };
 
-const formatNumber = (value) => {
+const formatNumber = (value:any) => {
   if (!value && value !== 0) return "0";
   const num = parseFloat(value);
   if (isNaN(num)) return "0";
