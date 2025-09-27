@@ -512,7 +512,7 @@ onMounted(async () => {
     assetStores.GetAssetList();
     masterStore.getStatus();
     typeAssetStore.GetPropertyCategoryById();
-    faAssetStoreInstance.GetFaAssetList();
+    // faAssetStoreInstance.GetFaAssetList();
     // assetStores.GetAssetList();
     typeAssetStore.GetPropertyCategoryById();
     faAssetStoreInstance.GetFaAssetList1();

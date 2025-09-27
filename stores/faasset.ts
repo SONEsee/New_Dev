@@ -9,7 +9,7 @@ export const faAssetStore = defineStore("faAsset", {
         filter:{
           asset_type_id:"",
           Auth_Status:"U",
-          asset_status:""
+          asset_status:"UC"
         },
         isLoading:false,
       },
