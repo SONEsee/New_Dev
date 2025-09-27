@@ -864,15 +864,15 @@ const saveCalculation = async () => {
 
         CallSwal({
           icon: "success",
-          title: "สำเร็จ!",
-          text: "บันทึกข้อมูลและสร้าง Journal Entry สำเร็จแล้ว",
+          title: "ສຳເລັດ!",
+          text: "ບັນທືກຂໍ້ມູນ Journal Entry ສຳເລັດແລ້ວ",
           timer: 2000,
         });
       } else {
         CallSwal({
           icon: "warning",
-          title: "แจ้งเตือน!",
-          text: "บันทึกข้อมูลสำเร็จ แต่ไม่สามารถสร้าง Journal Entry ได้",
+          title: "ແຈ້ງເຕືອນ!",
+          text: "ບັນທືກຂໍ້ມູນ Journal Entry ບໍ່ສາມາດສະແດງໄດ້",
         });
       }
     }
@@ -880,8 +880,8 @@ const saveCalculation = async () => {
     console.error("Error saving calculation:", error);
     CallSwal({
       icon: "error",
-      title: "ผิดพลาด!",
-      text: `เกิดข้อผิดพลาด: ${error.message || error}`,
+      title: "ຜີດພາດ!",
+      text: `ຜີດພາດ: ${error.message || error}`,
     });
   } finally {
     editableValues.value.isEditing = false;
