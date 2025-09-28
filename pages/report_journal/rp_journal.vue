@@ -1,5 +1,6 @@
 <template>
-    <JournalReport />
+    <!-- <JournalReport /> -->
+     <JournalReportLisr />
 </template>
 <script setup lang="ts">
 

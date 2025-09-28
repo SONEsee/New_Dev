@@ -1,7 +1,6 @@
-<!-- JournalReport.vue -->
+<!-- JournalReportACTB.vue -->
 <template>
   <v-container fluid class="pa-6">
-    
     <v-card elevation="0" style="border: 1px solid #e0e0e0; width: 100%;">
       <!-- Header Section -->
       <v-card-title class="px-6 py-4 d-flex align-center" style="background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%); color: white;">
@@ -563,7 +562,7 @@ const fetchJournalData = async () => {
 
     console.log('Calling Journal Report API with params:', params)
 
-    const apiResponse = await axios.post('/api/journal-report/', params, getAuthHeaders())
+    const apiResponse = await axios.post('/api/journal-report-actb/', params, getAuthHeaders())
     const response: ApiResponse = apiResponse.data
 
     if (response.status === 'success') {
