@@ -3,8 +3,17 @@ import dayjs from '#build/dayjs.imports.mjs';
 
 const accoutStore = accountMethodStore();
 const dreptriptionStore = useFassetLidtDescription();
-
-
+const deprecationUPda = useDrepecitoinUpdat();
+const dataUpdate = computed(()=>{
+  const data = deprecationUPda.response_data_drepecation_lis?.all_items_needing_attention;
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (data && typeof data === "object") {
+    return [data];
+  }
+  return [];
+})
 const respontest = computed(() => {
   return dreptriptionStore.response_data_get_overdue;
 });
@@ -104,17 +113,13 @@ onMounted(() => {
   accoutStore.GetAccountMethodList();
   dreptriptionStore.getdataCalculated();
   dreptriptionStore.getArrears();
+  deprecationUPda.getDataDrepecation();
 });
 </script>
 
 <template>
   <v-container fluid>
-    <!-- Debug ຂໍ້ມູນ (ລຶບອອກເມື່ອໃຊ້ງານຈິງ) -->
-    <!-- <details>
-      <summary>Debug Data</summary>
-     
-    </details> -->
- <!-- <pre>{{ respontest }}</pre> -->
+ 
     <v-row v-if="dreptriptionStore.isLoading">
       <v-col cols="12" class="text-center">
         <v-progress-circular
@@ -153,11 +158,11 @@ onMounted(() => {
             </v-row>
            
             
-         
+         <pre>{{ dataUpdate }}</pre>
 
             <v-data-table
               :headers="headers"
-              :items="allItems"
+              :items="dataUpdate"
               :items-per-page="10"
               class="elevation-1"
               :loading="dreptriptionStore.isLoading"

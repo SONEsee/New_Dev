@@ -50,8 +50,16 @@ const header = [
 
 const header1 = [
   { title: "ລຳດັບ", value: "index", width: "80px" },
-  { title: "ມູນຄ່າທີ່ຕ້ອງຫັກ", value: "total_depreciation_amount", width: "180px" },
-  { title: "ຈຳນວນລາຍການ", value: "total_items_need_depreciation", width: "150px" },
+  {
+    title: "ມູນຄ່າທີ່ຕ້ອງຫັກ",
+    value: "total_depreciation_amount",
+    width: "180px",
+  },
+  {
+    title: "ຈຳນວນລາຍການ",
+    value: "total_items_need_depreciation",
+    width: "150px",
+  },
   { title: "ງວດທີ່ຫັກ", value: "dates", width: "120px" },
   { title: "ການດຳເນີນການ", value: "action", width: "150px" },
 ] as any;
@@ -76,12 +84,16 @@ const formatNumber = (num: number) => {
 };
 
 const formatCurrency = (num: number) => {
-  return new Intl.NumberFormat('lo-LA', {
-    style: 'currency',
-    currency: 'LAK',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  }).format(num).replace('LAK', '') + ' ₭';
+  return (
+    new Intl.NumberFormat("lo-LA", {
+      style: "currency",
+      currency: "LAK",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    })
+      .format(num)
+      .replace("LAK", "") + " ₭"
+  );
 };
 
 const tab = ref("one");
@@ -127,11 +139,13 @@ const handleNotificationClick = () => {
 <template>
   <v-container fluid class="modern-container">
     <!-- Header Section -->
-    <div class="header-section mb-6">
+    <div class="">
       <v-row align="center" class="mb-4">
         <v-col>
           <h1 class="main-title">
-            <v-icon class="mr-3" color="primary" size="large">mdi-calculator</v-icon>
+            <v-icon class="mr-3" color="primary" size="large"
+              >mdi-calculator</v-icon
+            >
             ລະບົບຫັກຄ່າຫຼູ້ຍຫຽ້ນ
           </h1>
           <p class="subtitle">ຈັດການແລະຕິດຕາມການຫັກຄ່າຫຼູ້ຍຫຽ້ນຂອງຊັບສົມບັດ</p>
@@ -148,7 +162,9 @@ const handleNotificationClick = () => {
               <v-icon>mdi-bell</v-icon>
               <v-badge
                 v-if="notificationCount > 0"
-                :content="notificationCount > 99 ? '99+' : notificationCount.toString()"
+                :content="
+                  notificationCount > 99 ? '99+' : notificationCount.toString()
+                "
                 color="error"
                 floating
               />
@@ -189,7 +205,8 @@ const handleNotificationClick = () => {
             <v-icon class="mr-2">mdi-calendar-month</v-icon>
             ຫັກຄ່າຫຼູ້ຍຫຽ້ນປະຈຳເດືອນ
             <v-chip class="ml-2" size="small" color="info">
-              {{ responseData.data.target_period.month_name_la }} {{ responseData.data.target_period.year }}
+              {{ responseData.data.target_period.month_name_la }}
+              {{ responseData.data.target_period.year }}
             </v-chip>
           </v-tab>
           <v-tab value="two" class="modern-tab">
@@ -210,55 +227,71 @@ const handleNotificationClick = () => {
                   <v-card class="summary-card blue-card" elevation="0">
                     <v-card-text class="pa-6">
                       <div class="summary-icon">
-                        <v-icon size="40" color="white">mdi-calendar-clock</v-icon>
+                        <v-icon size="40" color="white"
+                          >mdi-calendar-clock</v-icon
+                        >
                       </div>
                       <h3 class="summary-title">ງວດທີ່ຫັກ</h3>
                       <div class="summary-value">
                         {{ dataDate[0]?.month }}/{{ dataDate[0]?.year }}
                       </div>
-                      <p class="summary-subtitle">{{ responseData.data.target_period.month_name_la }}</p>
+                      <p class="summary-subtitle">
+                        {{ responseData.data.target_period.month_name_la }}
+                      </p>
                     </v-card-text>
                   </v-card>
                 </v-col>
-                
+
                 <v-col cols="12" md="3">
                   <v-card class="summary-card green-card" elevation="0">
                     <v-card-text class="pa-6">
                       <div class="summary-icon">
-                        <v-icon size="40" color="white">mdi-format-list-numbered</v-icon>
+                        <v-icon size="40" color="white"
+                          >mdi-format-list-numbered</v-icon
+                        >
                       </div>
                       <h3 class="summary-title">ລາຍການທັງໝົດ</h3>
-                      <div class="summary-value">{{ formatNumber(dataShow[0]?.total_items_need_depreciation || 0) }}</div>
+                      <div class="summary-value">
+                        {{
+                          formatNumber(
+                            dataShow[0]?.total_items_need_depreciation || 0
+                          )
+                        }}
+                      </div>
                       <p class="summary-subtitle">ລາຍການ</p>
                     </v-card-text>
                   </v-card>
                 </v-col>
-                
+
                 <v-col cols="12" md="6">
                   <v-card class="summary-card orange-card" elevation="0">
                     <v-card-text class="pa-6">
                       <div class="summary-icon">
-                        <v-icon size="40" color="white">mdi-cash-multiple</v-icon>
+                        <v-icon size="40" color="white"
+                          >mdi-cash-multiple</v-icon
+                        >
                       </div>
                       <h3 class="summary-title">ມູນຄ່າທີ່ຕ້ອງຫັກ</h3>
                       <div class="summary-value-large">
-                        {{ formatCurrency(dataShow[0]?.total_depreciation_amount || 0) }}
+                        {{
+                          formatCurrency(
+                            dataShow[0]?.total_depreciation_amount || 0
+                          )
+                        }}
                       </div>
                       <p class="summary-subtitle">ມູນຄ່າລວມທັງໝົດ</p>
                     </v-card-text>
                   </v-card>
                 </v-col>
               </v-row>
-
-              <!-- Data Table -->
               <v-card class="modern-card table-card" elevation="0">
                 <v-card-title class="table-title">
                   <v-icon class="mr-2">mdi-table</v-icon>
                   ລາຍລະອຽດການຫັກຄ່າຫຼູ້ຍຫຽ້ນ
                 </v-card-title>
                 <v-divider />
-                <v-data-table 
-                  :items="dataShow" 
+                <v-data-table
+                  :items="dataShow"
                   :headers="header1"
                   class="modern-table"
                   :items-per-page="10"
@@ -269,21 +302,23 @@ const handleNotificationClick = () => {
                       {{ index + 1 }}
                     </v-chip>
                   </template>
-                  
+
                   <template v-slot:item.dates="{ item }">
                     <v-chip color="success" variant="elevated" size="small">
                       <v-icon start>mdi-calendar</v-icon>
                       {{ dataDate[0]?.month }}/{{ dataDate[0]?.year }}
                     </v-chip>
                   </template>
-                  
-                  <template v-slot:item.total_items_need_depreciation="{ item }">
+
+                  <template
+                    v-slot:item.total_items_need_depreciation="{ item }"
+                  >
                     <v-chip color="info" variant="tonal" size="small">
                       <v-icon start>mdi-counter</v-icon>
                       {{ item.total_items_need_depreciation }}
                     </v-chip>
                   </template>
-                  
+
                   <template v-slot:item.total_depreciation_amount="{ item }">
                     <div class="amount-cell">
                       <v-chip color="warning" variant="elevated" size="small">
@@ -291,10 +326,9 @@ const handleNotificationClick = () => {
                       </v-chip>
                     </div>
                   </template>
-                  
                   <template v-slot:item.action>
-                    <v-btn 
-                      color="primary" 
+                    <v-btn
+                      color="primary"
                       variant="elevated"
                       size="small"
                       @click="goPath('/property/faassetdetription/create')"
@@ -307,15 +341,11 @@ const handleNotificationClick = () => {
               </v-card>
             </div>
           </v-tabs-window-item>
-
-          <!-- Retroactive Depreciation Tab -->
           <v-tabs-window-item value="two" class="pa-0">
             <FaAssetDrestriptionArrea />
           </v-tabs-window-item>
         </v-tabs-window>
       </v-card>
-
-      <!-- History Section -->
       <v-card class="modern-card history-card" elevation="0">
         <v-card-title class="history-title">
           <div class="d-flex align-center">
@@ -326,15 +356,19 @@ const handleNotificationClick = () => {
             </div>
           </div>
           <v-spacer />
-          <v-chip color="primary" variant="elevated" prepend-icon="mdi-database">
+          <v-chip
+            color="primary"
+            variant="elevated"
+            prepend-icon="mdi-database"
+          >
             ທັງໝົດ: {{ history?.length }} ລາຍການ
           </v-chip>
         </v-card-title>
-        
+
         <v-divider />
-        
-        <v-data-table 
-          :items="history" 
+
+        <v-data-table
+          :items="history"
           :headers="header"
           class="modern-table history-table"
           :items-per-page="15"
@@ -342,7 +376,11 @@ const handleNotificationClick = () => {
         >
           <template v-slot:header="{ props }">
             <tr class="table-header">
-              <th v-for="header in props.headers" :key="header.key" class="modern-th">
+              <th
+                v-for="header in props.headers"
+                :key="header.key"
+                class="modern-th"
+              >
                 <div class="header-content">
                   <span class="header-text">{{ header.title }}</span>
                 </div>
@@ -382,9 +420,13 @@ const handleNotificationClick = () => {
               :color="item.dpca_status === 'SUCCESS' ? 'success' : 'error'"
               variant="elevated"
               size="small"
-              :prepend-icon="item.dpca_status === 'SUCCESS' ? 'mdi-check-circle' : 'mdi-alert-circle'"
+              :prepend-icon="
+                item.dpca_status === 'SUCCESS'
+                  ? 'mdi-check-circle'
+                  : 'mdi-alert-circle'
+              "
             >
-              {{ item.dpca_status === 'SUCCESS' ? 'ສຳເລັດ' : 'ບໍ່ສຳເລັດ' }}
+              {{ item.dpca_status === "SUCCESS" ? "ສຳເລັດ" : "ບໍ່ສຳເລັດ" }}
             </v-chip>
           </template>
 
@@ -400,7 +442,11 @@ const handleNotificationClick = () => {
               color="primary"
               size="small"
               prepend-icon="mdi-eye-outline"
-              @click="goPath(`/property/faassetdetription/list?deptription_id=${item.aldim_id}`)"
+              @click="
+                goPath(
+                  `/property/faassetdetription/list?deptription_id=${item.aldim_id}`
+                )
+              "
             >
               ລາຍລະອຽດ
             </v-btn>
@@ -526,13 +572,17 @@ const handleNotificationClick = () => {
 }
 
 .summary-card::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    transparent 100%
+  );
   pointer-events: none;
 }
 
@@ -677,25 +727,25 @@ const handleNotificationClick = () => {
     flex-direction: column;
     text-align: center;
   }
-  
+
   .monthly-section {
     padding: 1rem;
   }
-  
+
   .summary-value {
     font-size: 1.5rem;
   }
-  
+
   .summary-value-large {
     font-size: 1.3rem;
   }
-  
+
   .header-section {
     padding: 1.5rem;
   }
 }
 
-/* Custom animations */
+
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -711,21 +761,29 @@ const handleNotificationClick = () => {
   animation: fadeInUp 0.6s ease forwards;
 }
 
-.summary-card:nth-child(1) { animation-delay: 0.1s; }
-.summary-card:nth-child(2) { animation-delay: 0.2s; }
-.summary-card:nth-child(3) { animation-delay: 0.3s; }
-.summary-card:nth-child(4) { animation-delay: 0.4s; }
+.summary-card:nth-child(1) {
+  animation-delay: 0.1s;
+}
+.summary-card:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.summary-card:nth-child(3) {
+  animation-delay: 0.3s;
+}
+.summary-card:nth-child(4) {
+  animation-delay: 0.4s;
+}
 
-/* Responsive improvements */
+
 @media (max-width: 600px) {
   .modern-container {
     padding: 1rem 0.5rem;
   }
-  
+
   .modern-card {
     border-radius: 12px !important;
   }
-  
+
   .header-section {
     border-radius: 12px;
   }
