@@ -6,7 +6,7 @@
       <v-card-title class="px-6 py-4 d-flex align-center" style="background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%); color: white;">
         <v-icon start size="24">mdi-book-open-page-variant</v-icon>
         <span class="text-h6 font-weight-medium text-styles">
-          ລາຍງານວາລະສານບັນຊີ (Journal Report)
+          ລາຍງານການເຄື່ອນໄຫວບັນຊີກ່ອນປິດບັນຊີ (Journal Report)
         </span>
         <v-spacer />
         <v-chip 

@@ -10,23 +10,17 @@
       slider-color="white"
     >
       <!-- Tab for the main table content -->
-     
-      
       <!-- Journal Report ACTB Tab -->
-      <v-tab value="journal_report">
-        <v-icon start>mdi-book-open-page-variant</v-icon>
-        <span class="d-none d-md-inline">Journal Report</span>
-        <span class="d-md-none">JR</span>
-      </v-tab>
     <v-tab value="journal_report_actb">
         <v-icon start>mdi-book-open-page-variant</v-icon>
-        <span class="d-none d-md-inline">Journal Report ACTB</span>
+        <span class="d-none d-md-inline">ການເຄື່ອນໄຫວບັນຊີກ່ອນປິດບັນຊີ</span>
         <span class="d-md-none">JR ACTB</span>
       </v-tab>
-
-
-      
-     
+            <v-tab value="journal_report">
+        <v-icon start>mdi-book-open-page-variant</v-icon>
+        <span class="d-none d-md-inline">ການເຄື່ອນໄຫວບັນຊີຫຼັງປິດບັນຊີ</span>
+        <span class="d-md-none">JR</span>
+      </v-tab>
     </v-tabs>
 
     <!-- Tab Content Info Bar -->
@@ -942,7 +936,7 @@ const tabConfig = {
   },
   journal_report_actb: { 
     title: 'Journal Report ACTB', 
-    description: 'ລາຍງານວາລະສານບັນຊີ ACTB',
+    description: 'ລາຍງານການເຄື່ອນໄຫວບັນຊີກ່ອນປິດບັນຊີ',
     icon: 'mdi-book-open-page-variant',
     color: 'blue'
   },
