@@ -114,12 +114,18 @@ const exportToPDF = () => {
     <!DOCTYPE html>
     <html>
     <head>
-      <title>ບົດລາຍງານການຫຼຸດມູນຄ່າຊັບສິນ</title>
+      <title >ບົດລາຍງານການຫຼຸດມູນຄ່າຊັບສິນ</title>
       <meta charset="UTF-8">
       <style>
         @page { 
           size: A4; 
           margin: 15mm;
+        }
+          div {
+            font-family: 'Noto Sans Lao', Arial, sans-serif;
+          }
+        title {
+          font-family: 'Noto Sans Lao', Arial, sans-serif;
         }
         body { 
           font-family: 'Noto Sans Lao', Arial, sans-serif; 
@@ -516,14 +522,14 @@ onMounted(() => {
     <v-row>
       <v-col cols="6" class="text-start">
         <div class="signature-box">
-          <p><strong>ຜູ້ຈັດຕຳລາຍງານ</strong></p>
+          <p><strong>ຜູ້ອານຸມັດ</strong></p>
           <div class="signature-line"></div>
           <p>ວັນທີ່: ________________</p>
         </div>
       </v-col>
       <v-col cols="6" class="text-center">
         <div class="signature-box">
-          <p><strong>ຜູ້ອະນຸມັດ</strong></p>
+          <p><strong>ຜູ້ຮັບຜິດຊອບ</strong></p>
           <div class="signature-line"></div>
           <p>ວັນທີ່: ________________</p>
         </div>

@@ -4,7 +4,17 @@ import { useRouter, useRoute } from "vue-router";
 import { nextTick } from "vue";
 const isGeneratingCode = ref(false);
 const currencyStore = useCerrencyStore();
-
+const eodStore = useDateStore();
+const eodData = computed(() => {
+  const data = eodStore.response_data_eod;
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (data && typeof data === "object") {
+    return [data];
+  }
+  return [];
+});
 
 const currency = computed(() => {
   const data = currencyStore.respons_cerrency_data;
@@ -155,16 +165,19 @@ const formattedAssetValueRemainBegin = computed(() => {
 });
 const formattedAssetValueRemainMonth = computed(() => {
   const assetValue = faAssetStoreInstance.form_create_fa_asset.asset_value;
-  const salvageValue = faAssetStoreInstance.form_create_fa_asset.asset_salvage_value;
-  const usefulLife = faAssetStoreInstance.form_create_fa_asset.asset_useful_life;
+  const salvageValue =
+    faAssetStoreInstance.form_create_fa_asset.asset_salvage_value;
+  const usefulLife =
+    faAssetStoreInstance.form_create_fa_asset.asset_useful_life;
 
   if (assetValue && usefulLife && usefulLife > 0) {
     // ຄຳນວນ: (ມູນຄ່າເລີ່ມຕົ້ນ - ມູນຄ່າຊາກ) ÷ (ອາຍຸການໃຊ້ງານ × 12)
     const depreciableAmount = assetValue - (salvageValue || 0);
     const monthlyValue = depreciableAmount / (usefulLife * 12);
     const roundedValue = Math.round(monthlyValue * 100) / 100;
-    
-    faAssetStoreInstance.form_create_fa_asset.asset_value_remainMonth = roundedValue;
+
+    faAssetStoreInstance.form_create_fa_asset.asset_value_remainMonth =
+      roundedValue;
     return formatNumber(roundedValue);
   }
 
@@ -194,31 +207,67 @@ const formattedAssetValueRemainLast = computed(() => {
   );
 });
 
-const generateReferenceNo = () => {
-  const assetListCode =
-    faAssetStoreInstance.form_create_fa_asset.asset_list_code;
+// const generateReferenceNo = () => {
+//   const assetListCode =
+//     faAssetStoreInstance.form_create_fa_asset.asset_list_code;
 
+//   if (!assetListCode) {
+//     return "";
+//   }
+
+//   const now = new Date();
+//   const day = now.getDate().toString().padStart(2, "0");
+//   const month = (now.getMonth() + 1).toString().padStart(2, "0");
+//   const year = now.getFullYear();
+//   const dateString = `${year}${month}${day}`;
+
+//   return `AS-UNC-${dateString}-${assetListCode}`;
+// };
+const generateReferenceNo = () => {
+  const assetListCode = faAssetStoreInstance.form_create_fa_asset.asset_list_code;
+  
   if (!assetListCode) {
     return "";
   }
 
-  const now = new Date();
-  const day = now.getDate().toString().padStart(2, "0");
-  const month = (now.getMonth() + 1).toString().padStart(2, "0");
-  const year = now.getFullYear();
-  const dateString = `${year}${month}${day}`;
-
+  const { dateString } = getEodDates();
   return `AS-UNC-${dateString}-${assetListCode}`;
 };
-
+// const computedReferenceNo = computed(() => {
+//   return generateReferenceNo();
+// });
 const computedReferenceNo = computed(() => {
   return generateReferenceNo();
 });
-
 const goBack = () => {
   router.go(-1);
 };
+const getEodDates = () => {
+  const eod = eodData.value?.[0];
+  
+  if (!eod || !eod.start_date) {
+    // ຖ້າບໍ່ມີຂໍ້ມູນ EOD ໃຫ້ໃຊ້ວັນທີ່ປະຈຸບັນ
+    const currentDate = new Date();
+    return {
+      startDate: currentDate,
+      year: currentDate.getFullYear().toString(),
+      yearMonth: `${currentDate.getFullYear()}${(currentDate.getMonth() + 1).toString().padStart(2, "0")}`,
+      dateString: `${currentDate.getFullYear()}${(currentDate.getMonth() + 1).toString().padStart(2, "0")}${currentDate.getDate().toString().padStart(2, "0")}`
+    };
+  }
 
+  const startDate = new Date(eod.start_date);
+  const year = startDate.getFullYear().toString();
+  const month = (startDate.getMonth() + 1).toString().padStart(2, "0");
+  const day = startDate.getDate().toString().padStart(2, "0");
+  
+  return {
+    startDate,
+    year,
+    yearMonth: `${year}${month}`,
+    dateString: `${year}${month}${day}`
+  };
+};
 const submitForm = async () => {
   const isValid = await form.value.validate();
 
@@ -325,6 +374,7 @@ const submitForm = async () => {
 
   if (notification.isConfirmed) {
     try {
+      const eodDates = getEodDates();
       faAssetStoreInstance.form_create_fa_asset.Reference_No =
         computedReferenceNo.value;
 
@@ -336,18 +386,48 @@ const submitForm = async () => {
         .toString()
         .padStart(2, "0")}`;
 
-      faAssetStoreInstance.creat_form_jornal = {
+      // faAssetStoreInstance.creat_form_jornal = {
+      //   Reference_No: computedReferenceNo.value,
+      //   Ccy_cd:
+      //     faAssetStoreInstance.form_create_fa_asset.currency_type || "LAK",
+      //   Txn_code: "UNC",
+      //   Value_date: new Date(),
+      //   Addl_text:
+      //     `ພວມຊື້ພວມກໍ່ສ້າງ${faAssetStoreInstance.form_create_fa_asset.MC_name_la}` ||
+      //     "",
+      //   fin_cycle: currentYear,
+      //   module_id: "AS",
+      //   Period_code: currentYearMonth,
+      //   entries: [
+      //     {
+      //       Account: faAssetStoreInstance.form_create_fa_asset.asset_type_id,
+      //       Account_no: faAssetStoreInstance.form_create_fa_asset.MC_detail,
+      //       Amount: parseFormattedNumber(formattedAssetValue.value),
+      //       Dr_cr: "D",
+      //       Addl_sub_text: `${faAssetStoreInstance.form_create_fa_asset.asset_spec}`,
+      //       Ac_relatives:
+      //         faAssetStoreInstance.form_create_fa_asset.asset_list_id,
+      //     },
+      //     {
+      //       Account: null,
+      //       Account_no: faAssetStoreInstance.form_create_fa_asset.acc_no,
+      //       Amount: parseFormattedNumber(formattedAssetValue.value),
+      //       Dr_cr: "C",
+      //       Addl_sub_text: `${faAssetStoreInstance.form_create_fa_asset.asset_spec}`,
+      //       Ac_relatives:
+      //         faAssetStoreInstance.form_create_fa_asset.asset_list_id,
+      //     },
+      //   ],
+      // };
+faAssetStoreInstance.creat_form_jornal = {
         Reference_No: computedReferenceNo.value,
-        Ccy_cd:
-          faAssetStoreInstance.form_create_fa_asset.currency_type || "LAK",
+        Ccy_cd: faAssetStoreInstance.form_create_fa_asset.currency_type || "LAK",
         Txn_code: "UNC",
-        Value_date: new Date(),
-        Addl_text:
-          `ພວມຊື້ພວມກໍ່ສ້າງ${faAssetStoreInstance.form_create_fa_asset.MC_name_la}` ||
-          "",
-        fin_cycle: currentYear,
+        Value_date: eodDates.startDate, 
+        Addl_text: `ພວມຊື້ພວມກໍ່ສ້າງ${faAssetStoreInstance.form_create_fa_asset.MC_name_la}` || "",
+        fin_cycle: eodDates.year, 
         module_id: "AS",
-        Period_code: currentYearMonth,
+        Period_code: eodDates.yearMonth, 
         entries: [
           {
             Account: faAssetStoreInstance.form_create_fa_asset.asset_type_id,
@@ -355,8 +435,7 @@ const submitForm = async () => {
             Amount: parseFormattedNumber(formattedAssetValue.value),
             Dr_cr: "D",
             Addl_sub_text: `${faAssetStoreInstance.form_create_fa_asset.asset_spec}`,
-            Ac_relatives:
-              faAssetStoreInstance.form_create_fa_asset.asset_list_id,
+            Ac_relatives: faAssetStoreInstance.form_create_fa_asset.asset_list_id,
           },
           {
             Account: null,
@@ -364,12 +443,10 @@ const submitForm = async () => {
             Amount: parseFormattedNumber(formattedAssetValue.value),
             Dr_cr: "C",
             Addl_sub_text: `${faAssetStoreInstance.form_create_fa_asset.asset_spec}`,
-            Ac_relatives:
-              faAssetStoreInstance.form_create_fa_asset.asset_list_id,
+            Ac_relatives: faAssetStoreInstance.form_create_fa_asset.asset_list_id,
           },
         ],
       };
-
       await faAssetStoreInstance.CreateFaAsset();
       await faAssetStoreInstance.CreateJournal();
 
@@ -436,37 +513,72 @@ const computedAssetSpecName = computed(() => {
 });
 import axios from "@/helpers/axios";
 const generateNextAssetCode = async () => {
-    try {
-        const res = await axios.post(`/api/asset_list/generate-next-code/`, {}, {
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${localStorage.getItem("token")}`,
-            }
-        });
-        
-        if (res.data.success) {
-            faAssetStoreInstance.form_create_fa_asset.asset_list_code = res.data.next_code;
-            return res.data.next_code;
-        } else {
-            throw new Error(res.data.message || 'Failed to generate asset code');
-        }
-    } catch (error) {
-        console.error('API Error:', error);
-        await CallSwal({
-            icon: "error",
-            title: "ຜິດພາດ",
-            text: "ບໍ່ສາມາດສ້າງລະຫັດຊັບສິນໄດ້",
-            confirmButtonText: "ຕົກລົງ",
-        });
-        return null;
+  try {
+    const res = await axios.post(
+      `/api/asset_list/generate-next-code/`,
+      {},
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
+
+    if (res.data.success) {
+      faAssetStoreInstance.form_create_fa_asset.asset_list_code =
+        res.data.next_code;
+      return res.data.next_code;
+    } else {
+      throw new Error(res.data.message || "Failed to generate asset code");
     }
+  } catch (error) {
+    console.error("API Error:", error);
+    await CallSwal({
+      icon: "error",
+      title: "ຜິດພາດ",
+      text: "ບໍ່ສາມາດສ້າງລະຫັດຊັບສິນໄດ້",
+      confirmButtonText: "ຕົກລົງ",
+    });
+    return null;
+  }
 };
 
+// const generateSerialNumber = () => {
+//   const selectedAssetTypeId =
+//     faAssetStoreInstance.form_create_fa_asset.asset_type_id;
+//   const assetListCode =
+//     faAssetStoreInstance.form_create_fa_asset.asset_list_code;
+
+//   if (!selectedAssetTypeId || !assetListCode) {
+//     return "";
+//   }
+
+//   if (!mockData.value || !Array.isArray(mockData.value)) {
+//     return "";
+//   }
+
+//   const selectedAsset = mockData.value.find(
+//     (asset) => asset && asset.coa_id === selectedAssetTypeId
+//   );
+
+//   if (!selectedAsset || !selectedAsset.asset_code) {
+//     return "";
+//   }
+
+//   const assetCode = selectedAsset.asset_code;
+
+//   const now = new Date();
+//   const year = now.getFullYear();
+//   const month = (now.getMonth() + 1).toString().padStart(2, "0");
+//   const day = now.getDate().toString().padStart(2, "0");
+//   const dateString = `${year}${month}${day}`;
+
+//   return `SN-${assetCode}-${dateString}-${assetListCode}`;
+// };
 const generateSerialNumber = () => {
-  const selectedAssetTypeId =
-    faAssetStoreInstance.form_create_fa_asset.asset_type_id;
-  const assetListCode =
-    faAssetStoreInstance.form_create_fa_asset.asset_list_code;
+  const selectedAssetTypeId = faAssetStoreInstance.form_create_fa_asset.asset_type_id;
+  const assetListCode = faAssetStoreInstance.form_create_fa_asset.asset_list_code;
 
   if (!selectedAssetTypeId || !assetListCode) {
     return "";
@@ -485,21 +597,46 @@ const generateSerialNumber = () => {
   }
 
   const assetCode = selectedAsset.asset_code;
-
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = (now.getMonth() + 1).toString().padStart(2, "0");
-  const day = now.getDate().toString().padStart(2, "0");
-  const dateString = `${year}${month}${day}`;
+  const { dateString } = getEodDates(); // ໃຊ້ EOD date
 
   return `SN-${assetCode}-${dateString}-${assetListCode}`;
 };
 
+// const generateSerialtag = () => {
+//   const selectedAssetTypeId =
+//     faAssetStoreInstance.form_create_fa_asset.asset_type_id;
+//   const assetListCode =
+//     faAssetStoreInstance.form_create_fa_asset.asset_list_code;
+
+//   if (!selectedAssetTypeId || !assetListCode) {
+//     return "";
+//   }
+
+//   if (!mockData.value || !Array.isArray(mockData.value)) {
+//     return "";
+//   }
+
+//   const selectedAsset = mockData.value.find(
+//     (asset) => asset && asset.coa_id === selectedAssetTypeId
+//   );
+
+//   if (!selectedAsset || !selectedAsset.asset_code) {
+//     return "";
+//   }
+
+//   const assetCode = selectedAsset.asset_code;
+
+//   const now = new Date();
+//   const year = now.getFullYear();
+//   const month = (now.getMonth() + 1).toString().padStart(2, "0");
+//   const day = now.getDate().toString().padStart(2, "0");
+//   const dateString = `${year}${month}${day}`;
+
+//   return `BA-${assetCode}-${dateString}-${assetListCode}`;
+// };
 const generateSerialtag = () => {
-  const selectedAssetTypeId =
-    faAssetStoreInstance.form_create_fa_asset.asset_type_id;
-  const assetListCode =
-    faAssetStoreInstance.form_create_fa_asset.asset_list_code;
+  const selectedAssetTypeId = faAssetStoreInstance.form_create_fa_asset.asset_type_id;
+  const assetListCode = faAssetStoreInstance.form_create_fa_asset.asset_list_code;
 
   if (!selectedAssetTypeId || !assetListCode) {
     return "";
@@ -518,21 +655,45 @@ const generateSerialtag = () => {
   }
 
   const assetCode = selectedAsset.asset_code;
-
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = (now.getMonth() + 1).toString().padStart(2, "0");
-  const day = now.getDate().toString().padStart(2, "0");
-  const dateString = `${year}${month}${day}`;
+  const { dateString } = getEodDates(); // ໃຊ້ EOD date
 
   return `BA-${assetCode}-${dateString}-${assetListCode}`;
 };
 
+// const generateAssetListId = () => {
+//   const selectedAssetTypeId =
+//     faAssetStoreInstance.form_create_fa_asset.asset_type_id;
+//   const assetListCode =
+//     faAssetStoreInstance.form_create_fa_asset.asset_list_code;
+
+//   if (!selectedAssetTypeId || !assetListCode) {
+//     return "";
+//   }
+
+//   if (!mockData.value || !Array.isArray(mockData.value)) {
+//     return "";
+//   }
+
+//   const selectedAsset = mockData.value.find(
+//     (asset) => asset && asset.coa_id === selectedAssetTypeId
+//   );
+
+//   if (!selectedAsset || !selectedAsset.asset_code) {
+//     return "";
+//   }
+
+//   const assetCode = selectedAsset.asset_code;
+
+//   const now = new Date();
+//   const year = now.getFullYear();
+//   const month = (now.getMonth() + 1).toString().padStart(2, "0");
+//   const yearMonth = `${year}${month}`;
+
+//   return `${assetCode}-${yearMonth}-${assetListCode}`;
+// };
 const generateAssetListId = () => {
-  const selectedAssetTypeId =
-    faAssetStoreInstance.form_create_fa_asset.asset_type_id;
-  const assetListCode =
-    faAssetStoreInstance.form_create_fa_asset.asset_list_code;
+  const selectedAssetTypeId = faAssetStoreInstance.form_create_fa_asset.asset_type_id;
+  const assetListCode = faAssetStoreInstance.form_create_fa_asset.asset_list_code;
 
   if (!selectedAssetTypeId || !assetListCode) {
     return "";
@@ -551,15 +712,10 @@ const generateAssetListId = () => {
   }
 
   const assetCode = selectedAsset.asset_code;
-
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = (now.getMonth() + 1).toString().padStart(2, "0");
-  const yearMonth = `${year}${month}`;
+  const { yearMonth } = getEodDates(); // ໃຊ້ EOD year-month
 
   return `${assetCode}-${yearMonth}-${assetListCode}`;
 };
-
 const handleTypeOfPayChange = async (selectedValue: any) => {
   if (selectedValue) {
     noaccStore.res_pons_filter.query.gl_code = selectedValue;
@@ -741,36 +897,37 @@ watch(
 
 watch(
   assetcode,
-  async (newValue) => { 
-    // ກວດວ່າຍັງບໍ່ມີເລກ ແລະ ບໍ່ໄດ້ກຳລັງສ້າງ
+  async (newValue) => {
     if (
-      newValue && 
-      Array.isArray(newValue) && 
-      newValue.length >= 0 && 
+      newValue &&
+      Array.isArray(newValue) &&
+      newValue.length >= 0 &&
       !faAssetStoreInstance.form_create_fa_asset.asset_list_code && // ຍັງບໍ່ມີເລກ
-      !isGeneratingCode.value // ບໍ່ໄດ້ກຳລັງສ້າງ
+      !isGeneratingCode.value
     ) {
-      console.log('🎯 Generating asset code...');
-      
+      console.log("🎯 Generating asset code...");
+
       try {
         isGeneratingCode.value = true; // ລັອກ
-        const newCode = await generateNextAssetCode(); 
-        
+        const newCode = await generateNextAssetCode();
+
         if (newCode) {
           faAssetStoreInstance.form_create_fa_asset.asset_list_code = newCode;
 
           if (faAssetStoreInstance.form_create_fa_asset.asset_type_id) {
-            faAssetStoreInstance.form_create_fa_asset.asset_list_id = generateAssetListId();
-            faAssetStoreInstance.form_create_fa_asset.asset_serial_no = generateSerialNumber();
+            faAssetStoreInstance.form_create_fa_asset.asset_list_id =
+              generateAssetListId();
+            faAssetStoreInstance.form_create_fa_asset.asset_serial_no =
+              generateSerialNumber();
           }
         }
       } catch (error) {
-        console.error('Error generating code:', error);
+        console.error("Error generating code:", error);
       } finally {
-        isGeneratingCode.value = false; 
+        isGeneratingCode.value = false;
       }
     } else {
-      console.log('🔄 Skipping - already has code or generating in progress');
+      console.log("🔄 Skipping - already has code or generating in progress");
     }
   },
   { immediate: true }
@@ -930,6 +1087,7 @@ const selectedSubglDesc = computed(() => {
 onMounted(async () => {
   try {
     loading.value = true;
+    eodStore.GetEOD();
     if (!faAssetStoreInstance.form_create_fa_asset.asset_ac_datetime) {
       faAssetStoreInstance.form_create_fa_asset.asset_ac_datetime =
         getCurrentDate();
@@ -1020,7 +1178,7 @@ onMounted(async () => {
         <v-col cols="12">
           <GlobalTextTitleLine :title="title" />
         </v-col>
-        <!-- <pre>{{ currency }}</pre> -->
+        <!-- <pre>{{ eodData }}</pre> -->
         <v-col cols="12" class="">
           <v-row>
             <v-col cols="12">
@@ -1042,7 +1200,7 @@ onMounted(async () => {
                       >
 
                       <v-autocomplete
-                      :loading="faAssetStoreInstance.isLoading"
+                        :loading="faAssetStoreInstance.isLoading"
                         v-model="
                           faAssetStoreInstance.form_create_fa_asset
                             .asset_type_id
@@ -1476,7 +1634,6 @@ onMounted(async () => {
                         >ປະເພດການຊຳລະ<span class="text-error">*</span></label
                       >
                       <v-autocomplete
-                     
                         v-model="
                           faAssetStoreInstance.form_create_fa_asset.type_of_pay
                         "

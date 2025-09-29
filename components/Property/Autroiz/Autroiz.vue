@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, onBeforeUnmount, watch } from "vue";
+import {
+  ref,
+  reactive,
+  computed,
+  onMounted,
+  onBeforeUnmount,
+  watch,
+} from "vue";
 import { useRoute, useRouter } from "vue-router";
 import axios from "@/helpers/axios";
 import Swal from "sweetalert2";
@@ -14,7 +21,7 @@ interface JournalItem {
   Fcy_Amount: number;
   Lcy_Amount?: number;
   Value_date: string;
-  Auth_Status: 'A' | 'R' | 'U' | 'P';
+  Auth_Status: "A" | "R" | "U" | "P";
   Maker_Id: string;
   Maker_DT_Stamp: string;
   module_id?: string;
@@ -30,7 +37,7 @@ interface JournalItem {
 interface DepreciationItem {
   aldm_id: string | number;
   asset_list_id: string;
-  Auth_Status: 'A' | 'R' | 'U' | 'P';
+  Auth_Status: "A" | "R" | "U" | "P";
   Maker_DT_Stamp: string;
 }
 
@@ -50,7 +57,7 @@ interface ModuleItem {
 }
 
 interface DateFilterType {
-  value: 'all' | 'date' | 'range' | 'month' | 'year';
+  value: "all" | "date" | "range" | "month" | "year";
   text: string;
   icon: string;
 }
@@ -96,7 +103,7 @@ interface Filters {
   module_id: string | null;
   Ccy_cd: string | null;
   Auth_Status: string | null;
-  dateFilterType: 'all' | 'date' | 'range' | 'month' | 'year';
+  dateFilterType: "all" | "date" | "range" | "month" | "year";
   specificDate: string;
   dateFrom: string;
   dateTo: string;
@@ -118,9 +125,7 @@ interface ApiResponse {
   };
 }
 
-
 const isComponentMounted = ref<boolean>(true);
-
 
 const mainStore = useFassetLidtDescription();
 const derpicationStore = useFassetLidtDescription();
@@ -128,21 +133,23 @@ const cerrency = useCerrencyStore();
 const masterStore = useMasterStore();
 const jurnalStore = useJournalStor();
 
-
 const datadevcription = computed((): DepreciationItem[] => {
   try {
     const data = derpicationStore?.respons_data_driscription_main;
     let processedData: any[] = [];
 
     if (Array.isArray(data)) {
-      processedData = data.filter(item => item != null);
+      processedData = data.filter((item) => item != null);
     } else if (data && typeof data === "object") {
       processedData = [data];
     }
 
     // Transform data to match interface with type assertion
     return processedData
-      .filter((item: any) => item && (item.Auth_Status === "U" || item.Auth_Status === "P"))
+      .filter(
+        (item: any) =>
+          item && (item.Auth_Status === "U" || item.Auth_Status === "P")
+      )
       .map((item: any): DepreciationItem => {
         // Ensure Maker_DT_Stamp is properly handled
         let makerDate = item.Maker_DT_Stamp;
@@ -167,7 +174,7 @@ const datadevcription = computed((): DepreciationItem[] => {
           Maker_Id: item.Maker_Id,
           Checker_DT_Stamp: item.Checker_DT_Stamp,
           Checker_Id: item.Checker_Id,
-          ...item // Include any additional properties
+          ...item,
         };
       });
   } catch (error) {
@@ -180,10 +187,10 @@ const datajurnal = computed((): JournalItem[] => {
   try {
     const data = jurnalStore?.response_journal_list;
     if (Array.isArray(data)) {
-      return data.filter(item => item != null) as JournalItem[];
+      return data.filter((item) => item != null) as JournalItem[];
     }
     if (data && typeof data === "object") {
-      return [data as any] ;
+      return [data as any];
     }
     return [];
   } catch (error) {
@@ -194,9 +201,9 @@ const datajurnal = computed((): JournalItem[] => {
 
 const status = computed((): StatusItem[] => {
   try {
-    const data = masterStore?.respone_data_master?.MasterCodes   || [] ;
+    const data = masterStore?.respone_data_master?.MasterCodes || [];
     if (Array.isArray(data)) {
-      return data.filter(item => item != null) as StatusItem[];
+      return data.filter((item) => item != null) as StatusItem[];
     }
     if (data && typeof data === "object") {
       return [data as StatusItem];
@@ -212,7 +219,7 @@ const responscerrency = computed((): CurrencyItem[] => {
   try {
     const data = cerrency?.respons_cerrency_data;
     if (Array.isArray(data)) {
-      return data.filter(item => item != null) as CurrencyItem[];
+      return data.filter((item) => item != null) as CurrencyItem[];
     }
     if (data && typeof data === "object") {
       return [data as CurrencyItem];
@@ -224,13 +231,11 @@ const responscerrency = computed((): CurrencyItem[] => {
   }
 });
 
-
 const route = useRoute();
 const router = useRouter();
 
 const submenu_id = (route.query.sub_menu_id as string) || "GL_NOTE_CAP";
 console.log("Submenu ID:", submenu_id);
-
 
 const {
   initializeRole,
@@ -241,7 +246,6 @@ const {
   canAdd,
   permissions,
 } = useRolePermissions();
-
 
 const performanceTracker = {
   startTime: 0,
@@ -256,7 +260,6 @@ const performanceTracker = {
     }
   },
 };
-
 
 const loading = ref<boolean>(false);
 const loadingReferences = ref<boolean>(false);
@@ -275,18 +278,16 @@ const CACHE_DURATION = 5 * 60 * 1000;
 const currentUser = computed((): User | null => {
   try {
     const userData = localStorage.getItem("user");
-    return userData ? JSON.parse(userData) as User : null;
+    return userData ? (JSON.parse(userData) as User) : null;
   } catch (error) {
     console.error("Error parsing user data:", error);
     return null;
   }
 });
 
-
 const today = new Date().toISOString().slice(0, 10);
 const currentYear = new Date().getFullYear();
 const currentMonth = new Date().getMonth() + 1;
-
 
 const pagination = reactive<Pagination>({
   currentPage: 1,
@@ -294,7 +295,6 @@ const pagination = reactive<Pagination>({
   totalPages: 0,
   totalItems: 0,
 });
-
 
 const dateFilterTypes = ref<DateFilterType[]>([
   { value: "all", text: "ທັງໝົດ", icon: "mdi-calendar-multiple" },
@@ -349,30 +349,33 @@ const summary = reactive<Summary>({
   correction: 0,
 });
 
-
-const getMatchedAldmId = (item: JournalItem | null | undefined): string | number | null => {
+const getMatchedAldmId = (
+  item: JournalItem | null | undefined
+): string | number | null => {
   try {
     if (!item || !item.jrnl_log_ac?.Ac_relatives || !item.Maker_DT_Stamp) {
       return null;
     }
 
-    const itemDate = item.Maker_DT_Stamp.split('T')[0];
-    
+    const itemDate = item.Maker_DT_Stamp.split("T")[0];
+
     const matched = datadevcription.value.find((dep: DepreciationItem) => {
       if (!dep || !dep.Maker_DT_Stamp) return false;
-      
+
       try {
-        const depDate = dep.Maker_DT_Stamp.split('T')[0];
-        return dep.asset_list_id === item.jrnl_log_ac!.Ac_relatives &&
-               depDate === itemDate &&
-               dep.Auth_Status === "U" &&
-               item.Auth_Status === "U";
+        const depDate = dep.Maker_DT_Stamp.split("T")[0];
+        return (
+          dep.asset_list_id === item.jrnl_log_ac!.Ac_relatives &&
+          depDate === itemDate &&
+          dep.Auth_Status === "U" &&
+          item.Auth_Status === "U"
+        );
       } catch (err) {
         console.warn("Error comparing dates:", err);
         return false;
       }
     });
-    
+
     return matched ? matched.aldm_id : null;
   } catch (error) {
     console.error("Error in getMatchedAldmId:", error);
@@ -383,7 +386,9 @@ const getMatchedAldmId = (item: JournalItem | null | undefined): string | number
 const selectableItems = computed((): JournalItem[] => {
   try {
     return items.value.filter((item: JournalItem) => {
-      return item && item.Auth_Status !== "A" && getMatchedAldmId(item) !== null;
+      return (
+        item && item.Auth_Status !== "A" && getMatchedAldmId(item) !== null
+      );
     });
   } catch (error) {
     console.error("Error in selectableItems computed:", error);
@@ -450,7 +455,7 @@ const updateSelectAllState = (): void => {
     const selectableAldmIds = selectableItems.value
       .map((item: JournalItem) => getMatchedAldmId(item))
       .filter((aldmId): aldmId is string | number => aldmId !== null);
-      
+
     if (selectableAldmIds.length === 0) {
       selectAll.value = false;
     } else {
@@ -516,7 +521,9 @@ const activeFilterChips = computed((): FilterChip[] => {
     }
 
     if (filters.module_id) {
-      const module = modules.value.find((m: ModuleItem) => m.module_Id === filters.module_id);
+      const module = modules.value.find(
+        (m: ModuleItem) => m.module_Id === filters.module_id
+      );
       chips.push({
         key: "module_id",
         label: `ໂມດູນ: ${module?.module_name_la || filters.module_id}`,
@@ -563,7 +570,9 @@ const activeFilterChips = computed((): FilterChip[] => {
         filters.selectedMonth &&
         filters.selectedYear
       ) {
-        const month = months.value.find((m: MonthItem) => m.value === filters.selectedMonth);
+        const month = months.value.find(
+          (m: MonthItem) => m.value === filters.selectedMonth
+        );
         dateLabel += `: ${month?.text} ${filters.selectedYear}`;
       } else if (filters.dateFilterType === "year" && filters.selectedYear) {
         dateLabel += `: ${filters.selectedYear}`;
@@ -587,7 +596,7 @@ const activeFilterChips = computed((): FilterChip[] => {
 const approveSelected = async (): Promise<void> => {
   try {
     if (!isComponentMounted.value) return;
-    
+
     const aldmIds = selectedItems.value;
     if (aldmIds.length === 0) {
       console.warn("No items selected for approval");
@@ -596,7 +605,7 @@ const approveSelected = async (): Promise<void> => {
 
     mainStore.confirm_form_mark.aldm_ids = aldmIds as number[];
     await mainStore.postConfirm();
-    
+
     if (isComponentMounted.value) {
       selectedItems.value = [];
       await loadData(false);
@@ -617,7 +626,7 @@ const approveSelected = async (): Promise<void> => {
 const rejectSelected = async (): Promise<void> => {
   try {
     if (!isComponentMounted.value) return;
-    
+
     const aldmIds = selectedItems.value;
     if (aldmIds.length === 0) {
       console.warn("No items selected for rejection");
@@ -626,7 +635,7 @@ const rejectSelected = async (): Promise<void> => {
 
     mainStore.reject_form_mark.aldm_ids = aldmIds as number[];
     await mainStore.postReject();
-    
+
     if (isComponentMounted.value) {
       selectedItems.value = [];
       await loadData(false);
@@ -657,11 +666,21 @@ const headers = [
   { title: "ລະຫັດ", key: "Txn_code", sortable: false },
   { title: "ເລກອ້າງອີງ", key: "Reference_No", sortable: false },
   { title: "ເນື້ອໃນ", key: "Addl_text", sortable: false },
-  { title: "ຈຳນວນເງິນ", key: "Fcy_Amount", align: "end" as const, sortable: false },
+  {
+    title: "ຈຳນວນເງິນ",
+    key: "Fcy_Amount",
+    align: "end" as const,
+    sortable: false,
+  },
   { title: "ຜູ້ສ້າງ", key: "maker_name", sortable: false },
   { title: "ວັນທີ", key: "Value_date", sortable: false },
   { title: "ສະຖານະ", key: "Auth_Status", sortable: false },
-  { title: "ການກະທຳ", key: "actions", sortable: false, align: "center" as const },
+  {
+    title: "ການກະທຳ",
+    key: "actions",
+    sortable: false,
+    align: "center" as const,
+  },
 ];
 
 // ===== UTILITY FUNCTIONS =====
@@ -779,7 +798,7 @@ const viewDetails = (item: JournalItem | null | undefined): void => {
       console.warn("Invalid item for viewing details");
       return;
     }
-    
+
     const detailUrl = `/property/autoriz/oneaddprove?Reference_No=${item.Reference_No}&sub_menu_id=${submenu_id}`;
     router.push(detailUrl);
   } catch (error) {
@@ -881,6 +900,10 @@ const loadData = async (resetPage: boolean = true): Promise<void> => {
     const response = await axios.get("/api/journal-log-ard/init-data/", {
       params,
       ...getAuthHeaders(),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
     });
 
     if (!isComponentMounted.value) return;
@@ -888,23 +911,31 @@ const loadData = async (resetPage: boolean = true): Promise<void> => {
     const data: ApiResponse = response.data;
 
     if (data && isComponentMounted.value) {
-      items.value = Array.isArray(data.results) ? 
-        data.results.filter(item => item != null) : [];
-      
-      if (data.summary && typeof data.summary === 'object') {
+      items.value = Array.isArray(data.results)
+        ? data.results.filter((item) => item != null)
+        : [];
+
+      if (data.summary && typeof data.summary === "object") {
         Object.assign(summary, data.summary);
       }
-      
+
       pagination.totalItems = Number(data.count) || 0;
       pagination.totalPages = Number(data.page_info?.total_pages) || 1;
 
-      if (data.reference_data && typeof data.reference_data === 'object') {
-        modules.value = Array.isArray(data.reference_data.modules) ? 
-          data.reference_data.modules.filter(item => item != null) : [];
-        currencies.value = Array.isArray(data.reference_data.currencies) ? 
-          data.reference_data.currencies.filter(item => item != null) : [];
-        authStatusOptions.value = Array.isArray(data.reference_data.auth_status_options) ? 
-          data.reference_data.auth_status_options.filter(item => item != null) : [];
+      if (data.reference_data && typeof data.reference_data === "object") {
+        modules.value = Array.isArray(data.reference_data.modules)
+          ? data.reference_data.modules.filter((item) => item != null)
+          : [];
+        currencies.value = Array.isArray(data.reference_data.currencies)
+          ? data.reference_data.currencies.filter((item) => item != null)
+          : [];
+        authStatusOptions.value = Array.isArray(
+          data.reference_data.auth_status_options
+        )
+          ? data.reference_data.auth_status_options.filter(
+              (item) => item != null
+            )
+          : [];
 
         setCachedData("reference_data", data.reference_data);
       }
@@ -914,12 +945,13 @@ const loadData = async (resetPage: boolean = true): Promise<void> => {
       `✅ Loaded ${items.value.length} items (Page ${pagination.currentPage}/${pagination.totalPages})`
     );
 
-
     console.log("🔍 Mapping check:");
     items.value.forEach((item: JournalItem) => {
       const aldmId = getMatchedAldmId(item);
       if (aldmId) {
-        console.log(`✅ Mapped: JRNLLog_id ${item.JRNLLog_id} → aldm_id ${aldmId}`);
+        console.log(
+          `✅ Mapped: JRNLLog_id ${item.JRNLLog_id} → aldm_id ${aldmId}`
+        );
       } else {
         console.log(`❌ No match: JRNLLog_id ${item.JRNLLog_id}`);
       }
@@ -928,7 +960,7 @@ const loadData = async (resetPage: boolean = true): Promise<void> => {
     performanceTracker.end("Data Loading");
   } catch (error) {
     console.error("❌ Error loading data:", error);
-    
+
     if (isComponentMounted.value) {
       Swal.fire({
         icon: "error",
@@ -960,7 +992,6 @@ const loadReferenceData = async (): Promise<void> => {
     console.error("Error in loadReferenceData:", error);
   }
 };
-
 
 const getStatusColor = (status: string): string => {
   switch (status) {
@@ -1007,12 +1038,15 @@ const getStatusText = (status: string): string => {
   }
 };
 
-const formatNumber = (num: number | string | null | undefined, decimals: number = 2): string => {
+const formatNumber = (
+  num: number | string | null | undefined,
+  decimals: number = 2
+): string => {
   try {
     if (!num) return "0.00";
-    const numValue = typeof num === 'string' ? parseFloat(num) : num;
+    const numValue = typeof num === "string" ? parseFloat(num) : num;
     if (isNaN(numValue)) return "0.00";
-    
+
     return new Intl.NumberFormat("en-US", {
       minimumFractionDigits: decimals,
       maximumFractionDigits: decimals,
@@ -1028,7 +1062,7 @@ const formatDate = (date: string | Date | null | undefined): string => {
     if (!date) return "-";
     const dateObj = new Date(date);
     if (isNaN(dateObj.getTime())) return "-";
-    
+
     return dateObj.toLocaleDateString("lo-LA");
   } catch (error) {
     console.error("Error in formatDate:", error);
@@ -1074,7 +1108,9 @@ const onPageSizeChange = (newSize: number): void => {
   }
 };
 
-const deleteItem = async (item: JournalItem | null | undefined): Promise<void> => {
+const deleteItem = async (
+  item: JournalItem | null | undefined
+): Promise<void> => {
   try {
     if (!item || !isComponentMounted.value) {
       console.warn("Invalid item or component unmounted");
@@ -1144,7 +1180,7 @@ const deleteItem = async (item: JournalItem | null | undefined): Promise<void> =
 const exportData = (): void => {
   try {
     if (!isComponentMounted.value) return;
-    
+
     Swal.fire({
       icon: "info",
       title: "ກຳລັງພັດທະນາ",
@@ -1156,7 +1192,6 @@ const exportData = (): void => {
   }
 };
 
-
 const searchDebounced = debounce((): void => {
   try {
     handleFilterChange();
@@ -1165,13 +1200,11 @@ const searchDebounced = debounce((): void => {
   }
 }, 500);
 
-
 onMounted(async (): Promise<void> => {
   try {
     console.log("Component mounting...");
     isComponentMounted.value = true;
-    
- 
+
     try {
       if (jurnalStore?.getJurnallist) {
         await jurnalStore.getJurnallist();
@@ -1223,7 +1256,7 @@ onMounted(async (): Promise<void> => {
         console.error("Error in initial loadData:", error);
       }
     }
-    
+
     console.log("Component mounted successfully");
   } catch (error) {
     console.error("Error during component mount:", error);
@@ -1234,21 +1267,21 @@ onBeforeUnmount(() => {
   try {
     console.log("Component unmounting...");
     isComponentMounted.value = false;
-    
+
     // Clean up any pending operations
     clearSelection();
-    
+
     console.log("Component unmounted successfully");
   } catch (error) {
     console.error("Error during component unmount:", error);
   }
 });
-const nameDisplay = (item:any)=>{
-  if(!item || !item.MC_name_la || !item.MC_code){
-    return "ທັງໝົດ"
-  };
-  return `${item.MC_name_la}(${item.MC_code})`
-}
+const nameDisplay = (item: any) => {
+  if (!item || !item.MC_name_la || !item.MC_code) {
+    return "ທັງໝົດ";
+  }
+  return `${item.MC_name_la}(${item.MC_code})`;
+};
 </script>
 <template>
   <div class="gl-approved-master">
@@ -1371,7 +1404,7 @@ const nameDisplay = (item:any)=>{
                 hide-details
               ></v-text-field>
             </v-col>
-<!-- <pre>{{ responscerrency }}</pre> -->
+            <!-- <pre>{{ responscerrency }}</pre> -->
             <v-col cols="12" md="2">
               <v-autocomplete
                 v-model="filters.Ccy_cd"
@@ -1386,7 +1419,7 @@ const nameDisplay = (item:any)=>{
                 hide-details
                 :loading="loadingReferences"
               >
-            </v-autocomplete>
+              </v-autocomplete>
             </v-col>
 
             <v-col cols="12" md="3">
@@ -1404,19 +1437,21 @@ const nameDisplay = (item:any)=>{
                 hide-details
                 :loading="loadingReferences"
               >
-              <template v-slot:item="{props, item}">
-                <v-list-item v-bind="props" :title="`${item.raw.MC_name_la}(${item.raw.MC_code})`">
-                  <template v-slot:prepend>
-                    <v-avatar size="small" color="primary">
-                      <v-icon>mdi-format-list-bulleted-type</v-icon>
-                    </v-avatar>
-                  </template>
-                </v-list-item>
-              </template>
-            </v-autocomplete>
+                <template v-slot:item="{ props, item }">
+                  <v-list-item
+                    v-bind="props"
+                    :title="`${item.raw.MC_name_la}(${item.raw.MC_code})`"
+                  >
+                    <template v-slot:prepend>
+                      <v-avatar size="small" color="primary">
+                        <v-icon>mdi-format-list-bulleted-type</v-icon>
+                      </v-avatar>
+                    </template>
+                  </v-list-item>
+                </template>
+              </v-autocomplete>
             </v-col>
 
-          
             <v-col cols="12" md="2">
               <v-select
                 v-model="filters.dateFilterType"
@@ -1458,7 +1493,6 @@ const nameDisplay = (item:any)=>{
             </v-col>
           </v-row>
 
-          
           <v-row dense class="mt-2" v-if="selectedItems.length > 0">
             <v-col cols="12">
               <v-alert
@@ -1469,13 +1503,13 @@ const nameDisplay = (item:any)=>{
               >
                 <div class="d-flex justify-space-between align-center">
                   <div class="d-flex align-center">
-                    <v-icon size="16" class="mr-2">mdi-check-circle-outline</v-icon>
+                    <v-icon size="16" class="mr-2"
+                      >mdi-check-circle-outline</v-icon
+                    >
                     <span>ເລືອກແລ້ວ {{ selectedItems.length }} ລາຍການ</span>
                   </div>
-                  
-                 
+
                   <div class="d-flex align-center gap-2">
-                    
                     <v-btn
                       v-if="canAuthorize"
                       color="success"
@@ -1488,7 +1522,6 @@ const nameDisplay = (item:any)=>{
                       ອະນຸມັດ ({{ selectedItems.length }})
                     </v-btn>
 
-                    
                     <v-btn
                       v-if="canAuthorize"
                       color="error"
@@ -1501,7 +1534,6 @@ const nameDisplay = (item:any)=>{
                       ປະຕິເສດ ({{ selectedItems.length }})
                     </v-btn>
 
-                   
                     <v-btn
                       variant="text"
                       size="small"
@@ -1859,7 +1891,6 @@ const nameDisplay = (item:any)=>{
               ທັງໝົດ
             </v-chip>
 
-        
             <v-chip
               v-if="pagination.totalItems > 0"
               size="small"

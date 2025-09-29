@@ -37,11 +37,11 @@ watch(selectAssetList, async (newValue) => {
     dispalsoStore.fiter_data_disposal.query.asset_list_id = newValue;
     await dispalsoStore.getDispalso();
   } catch (error) {
-    CallSwal({
-      icon: "error",
-      title: "ຂໍ້ຜິດພາດ",
-      text: "ກະລຸນາເລືອກຊັບສົມບັດກ່ອນ",
-    });
+    // CallSwal({
+    //   icon: "error",
+    //   title: "ຂໍ້ຜິດພາດ",
+    //   text: "ກະລຸນາເລືອກຊັບສົມບັດກ່ອນ",
+    // });
   } finally {
     dispalsoStore.isLoading = false;
   }
@@ -52,11 +52,11 @@ watch(selecGross, async (newValue) => {
     dispalsoStore.fiter_data_disposal.query.gain_loss = newValue;
     await dispalsoStore.getDispalso();
   } catch (error) {
-    CallSwal({
-      icon: "error",
-      title: "ຂໍ້ຜິດພາດ",
-      text: "ກະລຸນາເລືອກຊັບສົມບັດກ່ອນ",
-    });
+    // CallSwal({
+    //   icon: "error",
+    //   title: "ຂໍ້ຜິດພາດ",
+    //   text: "ກະລຸນາເລືອກຊັບສົມບັດກ່ອນ",
+    // });
   } finally {
     dispalsoStore.isLoading = false;
   }
@@ -67,11 +67,11 @@ watch(seleMaster, async (newValue) => {
     dispalsoStore.fiter_data_disposal.query.disposal_type = newValue;
     await dispalsoStore.getDispalso();
   } catch (error) {
-    CallSwal({
-      icon: "error",
-      title: "ຂໍ້ຜິດພາດ",
-      text: "ກະລຸນາເລືອກຊັບສົມບັດກ່ອນ",
-    });
+    // CallSwal({
+    //   icon: "error",
+    //   title: "ຂໍ້ຜິດພາດ",
+    //   text: "ກະລຸນາເລືອກຊັບສົມບັດກ່ອນ",
+    // });
   } finally {
     dispalsoStore.isLoading = false;
   }
