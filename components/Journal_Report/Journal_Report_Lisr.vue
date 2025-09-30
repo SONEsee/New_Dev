@@ -21,7 +21,13 @@
         <span class="d-none d-md-inline">ການເຄື່ອນໄຫວບັນຊີຫຼັງປິດບັນຊີ</span>
         <span class="d-md-none">JR</span>
       </v-tab>
+    <v-tab value="account_report">
+        <v-icon start>mdi-book-open-page-variant</v-icon>
+        <span class="d-none d-md-inline">ການເຄື່ອນໄຫວເລກບັນຊີ</span>
+        <span class="d-md-none">Account Report</span>
+      </v-tab>
     </v-tabs>
+    
 
     <!-- Tab Content Info Bar -->
     <v-card class="mb-3" elevation="0" style="border: 1px solid #e0e0e0;">
@@ -525,6 +531,9 @@
       <v-window-item value="journal_report">
         <JournalReport />
       </v-window-item>
+        <v-window-item value="account_report">
+            <AccountReportACTB />
+        </v-window-item>
     </v-window>
 
     <!-- Dairy Report Export Dialog -->

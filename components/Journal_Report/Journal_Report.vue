@@ -7,7 +7,7 @@
       <v-card-title class="px-6 py-4 d-flex align-center" style="background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%); color: white;">
         <v-icon start size="24">mdi-book-open-page-variant</v-icon>
         <span class="text-h6 font-weight-medium text-styles">
-          ລາຍງານການເຄື່ອນໄຫວບັນຊີຫຼັງປິດບັນຊີ (Journal Report)
+          ລາຍງານການເຄື່ອນໄຫວບັນຊີຫຼັງປິດບັນຊີ (Journal Report) --
         </span>
         <v-spacer />
         <v-chip 
@@ -139,8 +139,25 @@
               />
             </v-col>
 
+            <!-- Maker ID Dropdown -->
+            <v-col cols="12" md="2" class="px-md-1 mb-3 mb-md-0">
+              <v-select
+                v-model="selectedMakerId"
+                :items="makerIdOptions"
+                :loading="loadingOptions"
+                label="ຜູ້ບັນທຶກ (Maker ID)"
+                variant="outlined"
+                density="compact"
+                prepend-inner-icon="mdi-account"
+                hide-details="auto"
+                clearable
+                item-title="title"
+                item-value="value"
+              />
+            </v-col>
+
             <!-- Search Field -->
-            <v-col cols="12" md="4" class="px-md-1 mb-3 mb-md-0">
+            <v-col cols="12" md="2" class="px-md-1 mb-3 mb-md-0">
               <v-text-field
                 v-model="searchText"
                 label="ຄົ້ນຫາໃນຕາຕະລາງ"
@@ -450,15 +467,20 @@ const getAuthHeaders = () => {
   }
 }
 
+// Add EOD state
+const eodInfo = ref<any>(null)
+const targetDate = ref('')
+
 // Reactive state
 const loading = ref(false)
 const searchText = ref('')
-const selectedFinancialCycle = ref(new Date().getFullYear().toString())
+const selectedFinancialCycle = ref('') // will be set by EOD
 const selectedPeriodCode = ref('')
 const selectedModuleId = ref('')
 const selectedTrnCode = ref('')
 const selectedStartDate = ref('')
 const selectedEndDate = ref('')
+const selectedMakerId = ref('')
 const journalData = ref<JournalItem[]>([])
 const lastUsedParams = ref<any>(null)
 
@@ -472,6 +494,7 @@ const snackbar = ref({
 // Dynamic options from API
 const moduleOptions = ref([])
 const transactionCodeOptions = ref([])
+const makerIdOptions = ref<any[]>([])
 const loadingOptions = ref(false)
 
 // Validation functions
@@ -494,17 +517,25 @@ const validatePeriodCode = (value: string) => {
 
 // Computed properties
 const filteredData = computed(() => {
-  if (!searchText.value) return journalData.value
-  
+  if (!searchText.value && !selectedMakerId.value) return journalData.value
+
   const search = searchText.value.toLowerCase()
-  return journalData.value.filter(item => 
-    item.ac_no_id?.toLowerCase().includes(search) ||
-    item.ac_no_full?.toLowerCase().includes(search) ||
-    item.trn_ref_no?.toLowerCase().includes(search) ||
-    item.addl_text?.toLowerCase().includes(search) ||
-    item.addl_sub_text?.toLowerCase().includes(search) ||
-    item.ac_ccy_id?.toLowerCase().includes(search) ||
-    item.module_id?.toLowerCase().includes(search)
+  return journalData.value.filter(item =>
+    (
+      !searchText.value ||
+      item.ac_no_id?.toLowerCase().includes(search) ||
+      item.ac_no_full?.toLowerCase().includes(search) ||
+      item.trn_ref_no?.toLowerCase().includes(search) ||
+      item.addl_text?.toLowerCase().includes(search) ||
+      item.addl_sub_text?.toLowerCase().includes(search) ||
+      item.ac_ccy_id?.toLowerCase().includes(search) ||
+      item.module_id?.toLowerCase().includes(search) ||
+      item.Maker_id_id?.toLowerCase().includes(search)
+    ) &&
+    (
+      !selectedMakerId.value ||
+      item.Maker_id_id === selectedMakerId.value
+    )
   )
 })
 
@@ -544,6 +575,26 @@ const fetchTransactionCodes = async () => {
     showSnackbar('ບໍ່ສາມາດດຶງຂໍ້ມູນລະຫັດລາຍການໄດ້', 'warning', 'mdi-alert')
   } finally {
     loadingOptions.value = false
+  }
+}
+
+// Helper to fetch EOD info and set defaults
+const fetchEodInfo = async () => {
+  try {
+    const res = await axios.get('/api/end-of-day-journal/check/', getAuthHeaders())
+    if (res.data && res.data.target_date) {
+      eodInfo.value = res.data
+      targetDate.value = res.data.target_date
+
+      // Set all date-related fields to target_date
+      selectedFinancialCycle.value = targetDate.value.substring(0, 4)
+      selectedPeriodCode.value = targetDate.value.replace(/-/g, '').substring(0, 6)
+      selectedStartDate.value = targetDate.value
+      selectedEndDate.value = targetDate.value
+    }
+  } catch (err) {
+    console.error('Failed to fetch EOD info', err)
+    showSnackbar('ບໍ່ສາມາດດຶງຂໍ້ມູນ EOD', 'warning', 'mdi-alert')
   }
 }
 
@@ -590,6 +641,20 @@ const fetchJournalData = async () => {
     loading.value = false
   }
 }
+
+// Fetch Maker IDs from journalData (unique values)
+const updateMakerIdOptions = () => {
+  const uniqueMakers = Array.from(
+    new Set(journalData.value.map(item => item.Maker_id_id).filter(Boolean))
+  )
+  makerIdOptions.value = uniqueMakers.map(maker => ({
+    title: maker,
+    value: maker
+  }))
+}
+
+// Watch journalData to update Maker ID dropdown options
+watch(journalData, updateMakerIdOptions, { immediate: true })
 
 // Utility functions
 const formatDate = (dateString: string): string => {
@@ -766,17 +831,9 @@ onMounted(async () => {
     if (token) {
       console.log('Component mounted')
       
-      // Set current day as default dates
-      const today = new Date().toISOString().split('T')[0]
-      selectedStartDate.value = today
-      selectedEndDate.value = today
-      
-      // Set default period code to current year-month
-      const now = new Date()
-      const year = now.getFullYear()
-      const month = String(now.getMonth() + 1).padStart(2, '0')
-      selectedPeriodCode.value = `${year}${month}`
-      
+      // Fetch EOD info and set defaults
+      await fetchEodInfo()
+
       // Fetch dropdown data
       await Promise.all([
         fetchModules(),

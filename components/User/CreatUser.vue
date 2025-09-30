@@ -267,7 +267,7 @@
               <div class="d-flex justify-space-between align-center">
                 <div class="text-caption text-medium-emphasis">
                   * ຊ່ອງທີ່ຈຳເປັນຕ້ອງຕື້ມ
-                </div>
+                </div>                            
                 
                 <div class="d-flex ga-3">
                   <v-btn
