@@ -40,7 +40,7 @@
                 item-title="text"
                 item-value="value"
                 label="ສະກຸນເງິນ (Currency) *"
-                :rules="requiredRules"
+                
                 prepend-inner-icon="mdi-currency-usd"
                 variant="outlined"
                 density="comfortable"
