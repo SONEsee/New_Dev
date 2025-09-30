@@ -717,7 +717,12 @@ onMounted(async () => {
     if (token) {
       console.log('🚀 Component mounted')
       // Set default period code to current period from API
-      selectedPeriodCode.value = await getCurrentPeriodCodeId()
+      const periodCode = await getCurrentPeriodCodeId()
+      selectedPeriodCode.value = periodCode
+      // Set selectedFinYear from periodCode if possible
+      if (periodCode && periodCode.length === 6) {
+        selectedFinYear.value = periodCode.substring(0, 4)
+      }
       // Don't auto-fetch data - wait for user to complete form
       showSnackbar('📋 ກະລຸນາເລືອກຂໍ້ມູນໃນແບບຟອມແລ້ວກົດດຶງຂໍ້ມູນ', 'info', 'mdi-information')
     } else {
