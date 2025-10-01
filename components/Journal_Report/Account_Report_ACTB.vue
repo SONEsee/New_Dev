@@ -328,6 +328,9 @@
               <template #item.GL_Code_7="{ item }">
                 <span>{{ item.GL_Code_7 }}</span>
               </template>
+            <template #item.GL_Account="{ item }">
+                <span>{{ item.GL_Account }}</span>
+              </template>
               
               <template #item.TRN_DESC="{ item }">
                 <span class="text-truncate" style="max-width: 300px; display: inline-block;" :title="item.TRN_DESC">
@@ -412,19 +415,21 @@ const formValidACTB = ref(false)
 const formValidEOC = ref(false)
 const loading = ref(false)
 const searchResult = ref(null)
+const eodInfo = ref(null)
+const targetDate = ref('')
 
 const searchParamsACTB = ref({
   gl_code: '',
   currency_code: 'LAK',
-  date_start: '',
-  date_end: ''
+  date_start: '', // will be set by EOD
+  date_end: ''    // will be set by EOD
 })
 
 const searchParamsEOC = ref({
   gl_code: '',
   currency_code: 'LAK',
-  date_start: '',
-  date_end: ''
+  date_start: '', // will be set by EOD
+  date_end: ''    // will be set by EOD
 })
 
 const snackbar = ref({
@@ -448,6 +453,7 @@ const currencies = [
 const tableHeaders = [
   { title: 'ລໍາດັບ', key: 'rID', align: 'center', width: '80px' },
   { title: 'ເລກບັນຊີ', key: 'GL_Code_7', align: 'center', width: '120px' },
+  { title: 'ເລກບັນຊີຫຍ່ອຍ', key: 'GL_Account', align: 'center', width: '120px' },
   { title: 'ວັນທີ່', key: 'T_DATE', align: 'center', width: '80px' },
   { title: 'ລາຍລະອຽດ', key: 'TRN_DESC', align: 'start' },
   { title: 'ເດບິດ (DR)', key: 'DR', align: 'end', width: '140px' },
@@ -769,6 +775,35 @@ const printData = () => {
   }
 }
 
+// Helper to fetch EOD info and set defaults
+const fetchEodInfo = async () => {
+  try {
+    const res = await axios.get('/api/end-of-day-journal/check/', getAuthHeaders())
+    if (res.data && res.data.target_date) {
+      eodInfo.value = res.data
+      targetDate.value = res.data.target_date
+
+      // Set both ACTB and EOC date ranges to target_date
+      searchParamsACTB.value.date_start = targetDate.value
+      searchParamsACTB.value.date_end = targetDate.value
+
+      searchParamsEOC.value.date_start = targetDate.value
+      searchParamsEOC.value.date_end = targetDate.value
+    }
+  } catch (err) {
+    console.error('Failed to fetch EOD info', err)
+    // Fallback to default dates if API fails
+    const today = new Date()
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
+    const defaultStartDate = formatDateInput(firstDay)
+    const defaultEndDate = formatDateInput(today)
+    searchParamsACTB.value.date_start = defaultStartDate
+    searchParamsACTB.value.date_end = defaultEndDate
+    searchParamsEOC.value.date_start = defaultStartDate
+    searchParamsEOC.value.date_end = defaultEndDate
+  }
+}
+
 // Watch for tab changes to clear results
 watch(activeTab, () => {
   searchResult.value = null
@@ -777,17 +812,8 @@ watch(activeTab, () => {
 // =============================================
 // LIFECYCLE
 // =============================================
-onMounted(() => {
-  const today = new Date()
-  const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
-  
-  // Initialize ACTB search params
-  searchParamsACTB.value.date_start = formatDateInput(firstDay)
-  searchParamsACTB.value.date_end = formatDateInput(today)
-  
-  // Initialize EOC search params
-  searchParamsEOC.value.date_start = formatDateInput(firstDay)
-  searchParamsEOC.value.date_end = formatDateInput(today)
+onMounted(async () => {
+  await fetchEodInfo()
 })
 </script>
 

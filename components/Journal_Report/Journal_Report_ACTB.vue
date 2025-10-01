@@ -444,15 +444,15 @@ const targetDate = ref('')
 const searchParamsACTB = ref({
   gl_code: '',
   currency_code: 'LAK',
-  date_start: '',
-  date_end: ''
+  date_start: '', // will be set by EOD
+  date_end: ''    // will be set by EOD
 })
 
 const searchParamsEOC = ref({
   gl_code: '',
   currency_code: 'LAK',
-  date_start: '',
-  date_end: ''
+  date_start: '', // will be set by EOD
+  date_end: ''    // will be set by EOD
 })
 
 const snackbar = ref({

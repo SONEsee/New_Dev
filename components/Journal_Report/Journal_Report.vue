@@ -595,6 +595,13 @@ const fetchEodInfo = async () => {
   } catch (err) {
     console.error('Failed to fetch EOD info', err)
     showSnackbar('ບໍ່ສາມາດດຶງຂໍ້ມູນ EOD', 'warning', 'mdi-alert')
+    // Fallback: set default dates to today if API fails
+    const today = new Date()
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
+    selectedFinancialCycle.value = today.getFullYear().toString()
+    selectedPeriodCode.value = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}`
+    selectedStartDate.value = firstDay.toISOString().split('T')[0]
+    selectedEndDate.value = today.toISOString().split('T')[0]
   }
 }
 
