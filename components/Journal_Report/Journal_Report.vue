@@ -1,4 +1,4 @@
-<!-- JournalReport.vue -->
+<!-- JournalReport.vue ACTB -->
 <template>
   <v-container fluid class="pa-6">
 
@@ -7,7 +7,7 @@
       <v-card-title class="px-6 py-4 d-flex align-center" style="background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%); color: white;">
         <v-icon start size="24">mdi-book-open-page-variant</v-icon>
         <span class="text-h6 font-weight-medium text-styles">
-          ລາຍງານການເຄື່ອນໄຫວບັນຊີຫຼັງປິດບັນຊີ (Journal Report) --
+          ລາຍງານການເຄື່ອນໄຫວບັນຊີກ່ອນປິດບັນຊີ (Journal Report)
         </span>
         <v-spacer />
         <v-chip 
@@ -189,8 +189,24 @@
           <!-- Third Row: Export Actions -->
           <v-row no-gutters class="mb-4">
             <v-col cols="12" class="d-flex gap-2 justify-end">
+              <!-- Print Button -->
+              <v-tooltip text="ພິມລາຍງານ" location="top">
+                <template #activator="{ props }">
+                  <v-btn
+                    v-bind="props"
+                    color="primary"
+                    icon="mdi-printer"
+                    :disabled="!journalData.length || loading"
+                    @click="printData"
+                    size="small"
+                    variant="elevated"
+                  />
+                </template>
+              </v-tooltip>
+
+              <!-- Excel Export Button -->
               <v-btn
-                color="primary"
+                color="success"
                 prepend-icon="mdi-microsoft-excel"
                 :disabled="!journalData.length || loading"
                 @click="exportToExcel"
@@ -237,40 +253,40 @@
             <thead>
               <tr class="main-header-row">
                 <th class="header-cell sticky-column entry-no-header">
-                  <div class="header-content-center">Module</div>
+                  <div class="header-content-center">ໂມດູນ</div>
                 </th>
                 <th class="header-cell">
-                  <div class="header-content-center">Trn Code</div>
+                  <div class="header-content-center">ລະຫັດລາຍການ</div>
                 </th>
                 <th class="header-cell">
-                  <div class="header-content-center">Reference No</div>
+                  <div class="header-content-center">ເລກອ້າງອີງ</div>
                 </th>
                 <th class="header-cell">
-                  <div class="header-content-center">Description</div>
+                  <div class="header-content-center">ລາຍລະອຽດ</div>
                 </th>
                 <th class="header-cell">
-                  <div class="header-content-center">Account Full</div>
+                  <div class="header-content-center">ເລກບັນຊີເຕັມ</div>
                 </th>
                 <th class="header-cell amount-header">
-                  <div class="header-content-center">FCY Dr</div>
+                  <div class="header-content-center">ເດບິດ (FCY)</div>
                 </th>
                 <th class="header-cell amount-header">
-                  <div class="header-content-center">FCY Cr</div>
+                  <div class="header-content-center">ເຄຣດິດ (FCY)</div>
                 </th>
                 <th class="header-cell amount-header">
-                  <div class="header-content-center">Exchange Rate</div>
+                  <div class="header-content-center">ອັດຕາແລກປ່ຽນ</div>
                 </th>
                 <th class="header-cell">
-                  <div class="header-content-center">Currency</div>
+                  <div class="header-content-center">ສະກຸນເງິນ</div>
                 </th>
                 <th class="header-cell">
-                  <div class="header-content-center">Trn Date</div>
+                  <div class="header-content-center">ວັນທີ</div>
                 </th>
                 <th class="header-cell">
-                  <div class="header-content-center">Maker ID</div>
+                  <div class="header-content-center">ຜູ້ບັນທຶກ</div>
                 </th>
                 <th class="header-cell">
-                  <div class="header-content-center">Status</div>
+                  <div class="header-content-center">ສະຖານະ</div>
                 </th>
               </tr>
             </thead>
@@ -605,6 +621,234 @@ const fetchEodInfo = async () => {
   }
 }
 
+// Add this print function to your script section
+
+const printData = () => {
+  if (!filteredData.value.length) {
+    showSnackbar('ບໍ່ມີຂໍ້ມູນເພື່ອພິມ', 'warning', 'mdi-alert')
+    return
+  }
+
+  try {
+    const printWindow = window.open('', '', 'width=1200,height=800')
+
+    // Determine report type and maker info
+    const reportType = 'ACTB'
+    const makerInfo = selectedMakerId.value 
+      ? `ຜູ້ບັນທຶກ: ${selectedMakerId.value}` 
+      : 'ຜູ້ບັນທຶກ: ທັງໝົດ'
+
+    // Build table rows dynamically
+    const tableRows = filteredData.value.map((row, index) => {
+      return '<tr>' +
+        '<td class="text-center">' + (index + 1) + '</td>' +
+        '<td class="text-center">' + (row.module_id || '') + '</td>' +
+        '<td class="text-center">' + (row.trn_code_id || '') + '</td>' +
+        '<td class="text-left">' + (row.trn_ref_no || '') + '</td>' +
+        '<td class="text-left">' + (row.addl_sub_text || '-') + '</td>' +
+        '<td class="text-left">' + (row.ac_no_full || '') + '</td>' +
+        '<td class="text-right">' + formatCurrency(row.fcy_dr) + '</td>' +
+        '<td class="text-right">' + formatCurrency(row.fcy_cr) + '</td>' +
+        '<td class="text-right">' + formatExchangeRate(row.exch_rate) + '</td>' +
+        '<td class="text-center">' + (row.ac_ccy_id || '') + '</td>' +
+        '<td class="text-center">' + formatDate(row.trn_dt) + '</td>' +
+        '<td class="text-center">' + (row.Maker_id_id || '') + '</td>' +
+        '<td class="text-center">' + getStatusText(row.Auth_Status) + '</td>' +
+        '</tr>'
+    }).join('')
+
+    const printContent = '<!DOCTYPE html>' +
+      '<html>' +
+      '<head>' +
+      '<meta charset="UTF-8">' +
+      '<title>Journal Report ACTB - ' + selectedFinancialCycle.value + '-' + selectedPeriodCode.value + '</title>' +
+      '<style>' +
+      'body { font-family: Phetsarath OT, sans-serif; padding: 20px; margin: 0; }' +
+      '.header { text-align: center; margin-bottom: 30px; }' +
+      '.header h2 { margin: 0; font-size: 1.3rem; }' +
+      '.info-section { margin-bottom: 20px; font-size: 0.9rem; }' +
+      '.info-row { display: flex; justify-content: space-between; padding: 5px 0; }' +
+      'table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.8rem; }' +
+      'th, td { border: 1px solid #ddd; padding: 6px 4px; }' +
+      'th { background-color: #f2f2f2; font-weight: bold; text-align: center; }' +
+      
+      '/* Column width optimization for landscape */' +
+      'th:nth-child(1), td:nth-child(1) { width: 3%; }' +   /* No */
+      'th:nth-child(2), td:nth-child(2) { width: 6%; }' +   /* Module */
+      'th:nth-child(3), td:nth-child(3) { width: 7%; }' +   /* Trn Code */
+      'th:nth-child(4), td:nth-child(4) { width: 12%; }' +  /* Reference */
+      'th:nth-child(5), td:nth-child(5) { width: 18%; }' +  /* Description */
+      'th:nth-child(6), td:nth-child(6) { width: 10%; }' +  /* Account Full */
+      'th:nth-child(7), td:nth-child(7) { width: 8%; }' +   /* FCY Dr */
+      'th:nth-child(8), td:nth-child(8) { width: 8%; }' +   /* FCY Cr */
+      'th:nth-child(9), td:nth-child(9) { width: 7%; }' +   /* Exchange Rate */
+      'th:nth-child(10), td:nth-child(10) { width: 5%; }' + /* Currency */
+      'th:nth-child(11), td:nth-child(11) { width: 7%; }' + /* Date */
+      'th:nth-child(12), td:nth-child(12) { width: 6%; }' + /* Maker */
+      'th:nth-child(13), td:nth-child(13) { width: 6%; }' + /* Status */
+      
+      '.text-right { text-align: right; }' +
+      '.text-center { text-align: center; }' +
+      '.text-left { text-align: left; }' +
+      '.summary { margin-top: 20px; font-weight: bold; font-size: 0.9rem; }' +
+      '.sign-row { margin-top: 40px; display: flex; justify-content: space-between; }' +
+      '.sign-label { font-size: 1rem; font-weight: 500; padding: 0 40px; }' +
+      
+      '@media print { ' +
+      '  body { padding: 10px; } ' +
+      '  @page { size: A4 landscape; margin: 15mm; }' +
+      '  html, body { width: 297mm; height: 210mm; }' +
+      '}' +
+      '</style>' +
+      '</head>' +
+      '<body>' +
+      '<div class="header">' +
+      '<h2>ລາຍງານການເຄື່ອນໄຫວບັນຊີກ່ອນປິດບັນຊີ (Journal Report ACTB)</h2>' +
+      '</div>' +
+      '<div class="info-section">' +
+      '<div class="info-row">' +
+      '<span><strong>ວົງຈອນການເງິນ:</strong> ' + (selectedFinancialCycle.value || '-') + '</span>' +
+      '<span><strong>ລະຫັດງວດ:</strong> ' + (selectedPeriodCode.value || '-') + '</span>' +
+      '</div>' +
+      '<div class="info-row">' +
+      '<span><strong>ໄລຍະວັນທີ:</strong> ' + (selectedStartDate.value || '-') + ' - ' + (selectedEndDate.value || '-') + '</span>' +
+      '<span><strong>' + makerInfo + '</strong></span>' +
+      '</div>' +
+      '<div class="info-row">' +
+      '<span><strong>ໂມດູນ:</strong> ' + (selectedModuleId.value || 'ທັງໝົດ') + '</span>' +
+      '<span><strong>ລະຫັດລາຍການ:</strong> ' + (selectedTrnCode.value || 'ທັງໝົດ') + '</span>' +
+      '</div>' +
+      '</div>' +
+      '<table>' +
+      '<thead>' +
+      '<tr>' +
+      '<th class="text-center">ລຳດັບ</th>' +
+      '<th class="text-center">ໂມດູນ</th>' +
+      '<th class="text-center">ລະຫັດລາຍການ</th>' +
+      '<th class="text-center">ເລກອ້າງອີງ</th>' +
+      '<th class="text-center">ລາຍລະອຽດ</th>' +
+      '<th class="text-center">ເລກບັນຊີເຕັມ</th>' +
+      '<th class="text-right">ເດບິດ (FCY)</th>' +
+      '<th class="text-right">ເຄຣດິດ (FCY)</th>' +
+      '<th class="text-right">ອັດຕາແລກປ່ຽນ</th>' +
+      '<th class="text-center">ສະກຸນເງິນ</th>' +
+      '<th class="text-center">ວັນທີ</th>' +
+      '<th class="text-center">ຜູ້ບັນທຶກ</th>' +
+      '<th class="text-center">ສະຖານະ</th>' +
+      '</tr>' +
+      '</thead>' +
+      '<tbody>' +
+      tableRows +
+      '</tbody>' +
+      '</table>' +
+      '<div class="summary">' +
+      '<div class="info-row">' +
+      '<span>ຈຳນວນລາຍການທັງໝົດ: ' + filteredData.value.length + ' ລາຍການ</span>' +
+      '<span>ວັນທີພິມ: ' + new Date().toLocaleDateString('lo-LA') + '</span>' +
+      '</div>' +
+      '</div>' +
+      '<div class="sign-row">' +
+      '<span class="sign-label">ຫົວໜ້າບັນຊີ:</span>' +
+      '<span class="sign-label">ພະນັກງານຜູ້ບັນທຶກ:</span>' +
+      '</div>' +
+      '<script>' +
+      'window.onload = function () { window.print(); };' +
+      '<\/script>' +
+      '</body>' +
+      '</html>'
+
+    printWindow.document.write(printContent)
+    printWindow.document.close()
+
+  } catch (error) {
+    console.error('Print error:', error)
+    showSnackbar('ມີຂໍ້ຜິດພາດໃນການພິມ', 'error', 'mdi-alert-circle')
+  }
+}
+
+// Update the Excel export function
+const exportToExcel = () => {
+  try {
+    // Check if there's data to export
+    const dataToExport = filteredData.value
+    
+    if (!dataToExport.length) {
+      showSnackbar('ບໍ່ມີຂໍ້ມູນໃຫ້ສົ່ງອອກ', 'warning', 'mdi-alert')
+      return
+    }
+
+    // Prepare export data with Lao headers
+    const exportData = dataToExport.map((item, index) => ({
+      'ລຳດັບ': index + 1,
+      'ໂມດູນ': item.module_id,
+      'ລະຫັດລາຍການ': item.trn_code_id,
+      'ວັນທີລາຍການ': item.trn_dt,
+      'ເລກອ້າງອີງ': item.trn_ref_no,
+      'ລະຫັດງວດ': item.period_code_id,
+      'ວັນທີມູນຄ່າ': item.value_dt,
+      'ອ້າງອີງຍ່ອຍ': item.trn_ref_sub_no,
+      'ລາຍລະອຽດ': item.addl_sub_text,
+      'ບັນຊີທີ່ກ່ຽວຂ້ອງ': item.ac_relative,
+      'ຈຳນວນເງິນ FCY': item.fcy_amount,
+      'ເດບິດ FCY': item.fcy_dr,
+      'ເຄຣດິດ FCY': item.fcy_cr,
+      'ອັດຕາແລກປ່ຽນ': item.exch_rate,
+      'ສະກຸນເງິນ': item.ac_ccy_id,
+      'Dr/Cr': item.drcr_ind,
+      'ສະຖານະອະນຸມັດ': item.Auth_Status,
+      'ວັນທີບັນທຶກ': item.Maker_DT_Stamp,
+      'ຜູ້ບັນທຶກ': item.Maker_id_id,
+      'ເລກບັນຊີເຕັມ': item.ac_no_full
+    }))
+
+    const wb = XLSX.utils.book_new()
+    const ws = XLSX.utils.json_to_sheet(exportData)
+    
+    // Set column widths
+    const colWidths = [
+      { wch: 8 },  // ລຳດັບ
+      { wch: 10 }, // ໂມດູນ
+      { wch: 12 }, // ລະຫັດລາຍການ
+      { wch: 12 }, // ວັນທີລາຍການ
+      { wch: 20 }, // ເລກອ້າງອີງ
+      { wch: 12 }, // ລະຫັດງວດ
+      { wch: 12 }, // ວັນທີມູນຄ່າ
+      { wch: 15 }, // ອ້າງອີງຍ່ອຍ
+      { wch: 30 }, // ລາຍລະອຽດ
+      { wch: 20 }, // ບັນຊີທີ່ກ່ຽວຂ້ອງ
+      { wch: 15 }, // ຈຳນວນເງິນ FCY
+      { wch: 15 }, // ເດບິດ FCY
+      { wch: 15 }, // ເຄຣດິດ FCY
+      { wch: 12 }, // ອັດຕາແລກປ່ຽນ
+      { wch: 10 }, // ສະກຸນເງິນ
+      { wch: 8 },  // Dr/Cr
+      { wch: 12 }, // ສະຖານະອະນຸມັດ
+      { wch: 18 }, // ວັນທີບັນທຶກ
+      { wch: 12 }, // ຜູ້ບັນທຶກ
+      { wch: 20 }  // ເລກບັນຊີເຕັມ
+    ]
+    ws['!cols'] = colWidths
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Journal Report ACTB')
+
+    // Generate filename with maker info if selected
+    const makerSuffix = selectedMakerId.value ? `_${selectedMakerId.value}` : ''
+    const filename = `Journal_Report_ACTB_${selectedFinancialCycle.value}_${selectedPeriodCode.value}${makerSuffix}_${new Date().toISOString().split('T')[0]}.xlsx`
+    
+    XLSX.writeFile(wb, filename)
+
+    showSnackbar(
+      `ສົ່ງອອກສຳເລັດ - ${dataToExport.length} ລາຍການ${selectedMakerId.value ? ` (ຜູ້ບັນທຶກ: ${selectedMakerId.value})` : ''}`, 
+      'success', 
+      'mdi-download'
+    )
+
+  } catch (error) {
+    console.error('Export error:', error)
+    showSnackbar('ເກີດຂໍ້ຜິດພາດໃນການສົ່ງອອກ', 'error', 'mdi-alert-circle')
+  }
+}
+
 // Main fetch function for journal data
 const fetchJournalData = async () => {
   try {
@@ -770,65 +1014,6 @@ const handleApiError = (error: any) => {
 
 const showSnackbar = (message: string, color: string = 'success', icon: string = 'mdi-check-circle') => {
   snackbar.value = { show: true, message, color, icon }
-}
-
-// Export to Excel function
-const exportToExcel = () => {
-  try {
-    if (!journalData.value.length) {
-      showSnackbar('ບໍ່ມີຂໍ້ມູນໃຫ້ສົ່ງອອກ', 'warning', 'mdi-alert')
-      return
-    }
-
-    const exportData = journalData.value.map(item => ({
-      'Module ID': item.module_id,
-      'Transaction Code': item.trn_code_id,
-      'Transaction Date': item.trn_dt,
-      'Reference No': item.trn_ref_no,
-      'Period Code': item.period_code_id,
-      'Value Date': item.value_dt,
-      'Sub Reference': item.trn_ref_sub_no,
-      'Description': item.addl_sub_text,
-      'Account Relative': item.ac_relative,
-      'FCY Amount': item.fcy_amount,
-      'FCY Dr': item.fcy_dr,
-      'FCY Cr': item.fcy_cr,
-      'Exchange Rate': item.exch_rate,
-      'Currency': item.ac_ccy_id,
-      'Dr/Cr Indicator': item.drcr_ind,
-      'Auth Status': item.Auth_Status,
-      'Maker Date': item.Maker_DT_Stamp,
-      'Maker ID': item.Maker_id_id,
-      'Account Full': item.ac_no_full
-    }))
-
-    const wb = XLSX.utils.book_new()
-    const ws = XLSX.utils.json_to_sheet(exportData)
-    
-    // Set column widths
-    const colWidths = [
-      { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 25 },
-      { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 20 }, { wch: 25 },
-      { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 },
-      { wch: 15 }, { wch: 12 }, { wch: 10 }, { wch: 5 }, { wch: 10 }
-    ]
-    ws['!cols'] = colWidths
-
-    XLSX.utils.book_append_sheet(wb, ws, 'Journal Report')
-
-    const filename = `Journal_Report_${selectedFinancialCycle.value}_${selectedPeriodCode.value}_${new Date().toISOString().split('T')[0]}.xlsx`
-    XLSX.writeFile(wb, filename)
-
-    showSnackbar(
-      `ສົ່ງອອກສຳເລັດ - ${journalData.value.length} ລາຍການ`, 
-      'success', 
-      'mdi-download'
-    )
-
-  } catch (error) {
-    console.error('Export error:', error)
-    showSnackbar('ເກີດຂໍ້ຜິດພາດໃນການສົ່ງອອກ', 'error', 'mdi-alert-circle')
-  }
 }
 
 // Initialize component

@@ -485,7 +485,7 @@ const exportData = () => {
     const accountInfo = searchResult.value.account_info
     const headerInfo = [
       `Account Statement Report`,
-      `Account Number: ${accountInfo.gl_code || 'All Accounts'}`,
+      `Account Number: ${accountInfo.gl_code || 'ທຸກເລກບັນຊີ'}`,
       `Currency: ${accountInfo.currency_code}`,
       `Period: ${formatDate(accountInfo.date_start)} - ${formatDate(accountInfo.date_end)}`,
       `Opening Balance: ${formatCurrency(accountInfo.open_balance)}`,
@@ -532,61 +532,98 @@ const printData = () => {
     showNotification('ບໍ່ມີຂໍ້ມູນເພື່ອພິມ', 'warning', 'mdi-alert')
     return
   }
-  
+
   try {
-    const printWindow = window.open('', '', 'width=800,height=600')
-    
+    const printWindow = window.open('', '', 'width=1200,height=800')
+
     const accountInfo = searchResult.value.account_info
+    const reportType = activeTab.value.toUpperCase()
+    
+    // Build table rows dynamically from tableHeaders
     const tableRows = transactions.value.map(row => {
       return '<tr>' +
         '<td class="text-center">' + row.rID + '</td>' +
+        '<td class="text-left">' + (row.GL_Code_7 || '') + '</td>' +
+        '<td class="text-left">' + (row.GL_Account || '') + '</td>' +
         '<td class="text-center">' + formatDate(row.T_DATE) + '</td>' +
-        '<td>' + row.TRN_DESC + '</td>' +
+        '<td class="text-left desc-col">' + (row.TRN_DESC || '') + '</td>' +
         '<td class="text-right">' + formatCurrency(row.DR) + '</td>' +
         '<td class="text-right">' + formatCurrency(row.CR) + '</td>' +
         '<td class="text-right">' + formatCurrency(row.BALANCE) + '</td>' +
         '</tr>'
     }).join('')
-    
+
     const printContent = '<!DOCTYPE html>' +
       '<html>' +
       '<head>' +
-      '<title>Account Statement - ' + accountInfo.gl_code + '</title>' +
+      '<meta charset="UTF-8">' +
+      '<title>Account Statement - ' + reportType + ' - ' + accountInfo.gl_code + '</title>' +
       '<style>' +
-      'body { font-family: Arial, sans-serif; padding: 20px; }' +
+      'body { font-family: Phetsarath OT, sans-serif; padding: 20px; margin: 0; }' +
       '.header { text-align: center; margin-bottom: 30px; }' +
-      '.info-section { margin-bottom: 20px; }' +
+      '.header h2 { margin: 0; font-size: 1.3rem; }' +
+      '.info-section { margin-bottom: 20px; font-size: 0.9rem; }' +
       '.info-row { display: flex; justify-content: space-between; padding: 5px 0; }' +
-      'table { width: 100%; border-collapse: collapse; margin-top: 20px; }' +
-      'th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }' +
-      'th { background-color: #f2f2f2; font-weight: bold; }' +
+      'table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9rem; }' +
+      'th, td { border: 1px solid #ddd; padding: 6px 4px; }' +
+      'th { background-color: #f2f2f2; font-weight: bold; text-align: center; }' +
+      
+      '/* Column width optimization for landscape */' +
+      'th:nth-child(1), td:nth-child(1) { width: 4%; }' +  /* No */
+      'th:nth-child(2), td:nth-child(2) { width: 12%; }' + /* ເລກບັນຊີ */
+      'th:nth-child(3), td:nth-child(3) { width: 12%; }' + /* ເລກບັນຊີຫຍ່ອຍ */
+      'th:nth-child(4), td:nth-child(4) { width: 10%; }' +  /* Date */
+      'th:nth-child(5), td:nth-child(5) { width: 26%; }' + /* Description - More space in landscape */
+      'th:nth-child(6), td:nth-child(6) { width: 12%; }' + /* Debit */
+      'th:nth-child(7), td:nth-child(7) { width: 12%; }' + /* Credit */
+      'th:nth-child(8), td:nth-child(8) { width: 12%; }' + /* Balance */
+      
+      '.desc-col { ' +
+      '  word-wrap: break-word; ' +
+      '  word-break: break-word; ' +
+      '  max-width: 180px; ' +
+      '  overflow-wrap: break-word; ' +
+      '}' +
+      
       '.text-right { text-align: right; }' +
       '.text-center { text-align: center; }' +
-      '.summary { margin-top: 20px; font-weight: bold; }' +
-      '@media print { body { padding: 10px; } }' +
+      '.text-left { text-align: left; }' +
+      '.summary { margin-top: 20px; font-weight: bold; font-size: 0.9rem; }' +
+      '.sign-row { margin-top: 40px; display: flex; justify-content: space-between; }' +
+      '.sign-label { font-size: 1rem; font-weight: 500; padding: 0 40px; }' +
+      
+      '@media print { ' +
+      '  body { padding: 10px; } ' +
+      '  @page { size: A4 landscape; margin: 15mm; }' +
+      '  html, body { width: 297mm; height: 210mm; }' +
+      '}' +
       '</style>' +
       '</head>' +
       '<body>' +
       '<div class="header">' +
-      '<h2>Account Statement Report</h2>' +
-      '<p>ລາຍງານບັນຊີ</p>' +
+      '<h2>ລາຍງານການເຄື່ອນໄຫວບັນຊີຫຍ່ອຍ - ຫຼັງປິດບັນຊີ (Account Statements)</h2>' +
       '</div>' +
       '<div class="info-section">' +
       '<div class="info-row">' +
-      '<span><strong>Account Number:</strong> ' + accountInfo.gl_code + '</span>' +
-      '<span><strong>Currency:</strong> ' + accountInfo.currency_code + '</span>' +
+      '<span><strong>ເລກບັນຊີ:</strong> ' + (accountInfo.gl_code || 'ເລກບັນຊີທັງໝົດ') + '</span>' +
+      '<span><strong>ສະກຸນເງິນ:</strong> ' + accountInfo.currency_code + '</span>' +
+      '</div>' +
+      '<div class="info-row">' +
+      '<span><strong>ປະເພດການລາຍງານ:</strong> ' + 'ຫຼັງປິດບັນຊີ' + '</span>' +
+      '<span><strong>ຍອດເປີດ:</strong> ' + formatCurrency(accountInfo.open_balance) + '</span>' +
       '</div>' +
       '<div class="info-row">' +
       '<span><strong>Period:</strong> ' + formatDate(accountInfo.date_start) + ' - ' + formatDate(accountInfo.date_end) + '</span>' +
-      '<span><strong>Opening Balance:</strong> ' + formatCurrency(accountInfo.open_balance) + '</span>' +
       '</div>' +
       '</div>' +
       '<table>' +
       '<thead>' +
       '<tr>' +
       '<th class="text-center">No</th>' +
+      '<th class="text-center">ເລກບັນຊີ</th>' +
+      '<th class="text-center">ເລກບັນຊີຫຍ່ອຍ</th>' +
       '<th class="text-center">Date</th>' +
-      '<th>Description</th>' +
+      '<th class="text-center">Description</th>' +
       '<th class="text-right">Debit</th>' +
       '<th class="text-right">Credit</th>' +
       '<th class="text-right">Balance</th>' +
@@ -598,20 +635,24 @@ const printData = () => {
       '</table>' +
       '<div class="summary">' +
       '<div class="info-row">' +
-      '<span>Total Debit: ' + formatCurrency(totalDebit.value) + '</span>' +
-      '<span>Total Credit: ' + formatCurrency(totalCredit.value) + '</span>' +
-      '<span>Closing Balance: ' + formatCurrency(closingBalance.value) + '</span>' +
+      '<span>ລວມເດບິດ (Total DR): ' + formatCurrency(totalDebit.value) + '</span>' +
+      '<span>ລວມເຄຣິດ (Total CR): ' + formatCurrency(totalCredit.value) + '</span>' +
+      '<span>ຍອດປິດ (Closing Balance): ' + formatCurrency(closingBalance.value) + '</span>' +
       '</div>' +
+      '</div>' +
+      '<div class="sign-row">' +
+      '<span class="sign-label">ຫົວໜ້າບັນຊີ:</span>' +
+      '<span class="sign-label">ພະນັກງານຜູ້ບັນທຶກ:</span>' +
       '</div>' +
       '<script>' +
       'window.onload = function () { window.print(); };' +
       '<\/script>' +
       '</body>' +
       '</html>'
-    
+
     printWindow.document.write(printContent)
     printWindow.document.close()
-    
+
   } catch (error) {
     console.error('Print error:', error)
     showNotification('ມີຂໍ້ຜິດພາດໃນການພິມ', 'error', 'mdi-alert-circle')
