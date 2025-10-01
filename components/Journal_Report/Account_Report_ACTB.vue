@@ -325,6 +325,9 @@
               <template #item.T_DATE="{ item }">
                 <span>{{ formatDate(item.T_DATE) }}</span>
               </template>
+              <template #item.GL_Code_7="{ item }">
+                <span>{{ item.GL_Code_7 }}</span>
+              </template>
               
               <template #item.TRN_DESC="{ item }">
                 <span class="text-truncate" style="max-width: 300px; display: inline-block;" :title="item.TRN_DESC">
@@ -444,7 +447,8 @@ const currencies = [
 
 const tableHeaders = [
   { title: 'ລໍາດັບ', key: 'rID', align: 'center', width: '80px' },
-  { title: 'ວັນທີ່', key: 'T_DATE', align: 'center', width: '120px' },
+  { title: 'ເລກບັນຊີ', key: 'GL_Code_7', align: 'center', width: '120px' },
+  { title: 'ວັນທີ່', key: 'T_DATE', align: 'center', width: '80px' },
   { title: 'ລາຍລະອຽດ', key: 'TRN_DESC', align: 'start' },
   { title: 'ເດບິດ (DR)', key: 'DR', align: 'end', width: '140px' },
   { title: 'ເຄຣດິດ (CR)', key: 'CR', align: 'end', width: '140px' },
