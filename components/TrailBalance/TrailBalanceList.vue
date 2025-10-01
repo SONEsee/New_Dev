@@ -908,10 +908,14 @@ const loading = ref(false)
 const searchText = ref('')
 const results = ref<TrialBalanceItem[]>([])
 
+// Add EOD state
+const eodInfo = ref<any>(null)
+const targetDate = ref('')
+
 const filters = ref({
   currency: null as string | null,
-  date_start: new Date().toISOString().split('T')[0],
-  date_end: new Date().toISOString().split('T')[0]
+  date_start: '', // will be set by EOD
+  date_end: ''    // will be set by EOD
 })
 
 // Dialog states
@@ -1044,6 +1048,24 @@ watch(activeTab, (newTab, oldTab) => {
     fetchTrialBalance()
   }
 })
+
+// Helper to fetch EOD info and set defaults
+const fetchEodInfo = async () => {
+  try {
+    const res = await axios.get('/api/end-of-day-journal/check/', getAuthHeaders())
+    if (res.data && res.data.target_date) {
+      eodInfo.value = res.data
+      targetDate.value = res.data.target_date
+
+      // Set all date-related fields to target_date
+      filters.value.date_start = targetDate.value
+      filters.value.date_end = targetDate.value
+    }
+  } catch (err) {
+    console.error('Failed to fetch EOD info', err)
+    showSnackbar('ບໍ່ສາມາດດຶງຂໍ້ມູນ EOD', 'warning', 'mdi-alert')
+  }
+}
 
 // Helper functions
 const getAuthHeaders = () => {
@@ -1321,14 +1343,11 @@ const exportToACTBReport = async () => {
 }
 
 // Initialize
-onMounted(() => {
+onMounted(async () => {
   const token = localStorage.getItem("token")
   if (token) {
-    const today = new Date()
-    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
-    filters.value.date_start = firstDay.toISOString().split('T')[0]
-    filters.value.date_end = today.toISOString().split('T')[0]
-    
+    await fetchEodInfo() // <-- fetch EOD and set default dates
+
     // Only fetch data if we're on the main tab
     if (activeTab.value === 'somtop_trial') {
       fetchTrialBalance()
@@ -1354,6 +1373,45 @@ onMounted(() => {
 /* Tab Content Transitions */
 .v-window-item {
   min-height: 300px;
+}
+
+/* Professional Action Buttons Styling */
+.action-buttons-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.action-btn {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 8px !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+}
+
+.action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
+}
+
+.primary-action {
+  margin-right: 8px;
+  box-shadow: 0 3px 6px rgba(33, 150, 243, 0.3) !important;
+}
+
+.primary-action:hover {
+  box-shadow: 0 6px 12px rgba(33, 150, 243, 0.4) !important;
+}
+
+.action-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background: rgba(0,0,0,0.02);
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.08);
 }
 
 /* Custom Table Container */
@@ -1756,494 +1814,6 @@ onMounted(() => {
     overflow: visible !important;
     text-overflow: clip !important;
   }
-}
-
-.v-tab {
-  font-size: 0.875rem;
-  font-weight: 500;
-  min-width: 120px;
-}
-
-.v-tab--selected {
-  font-weight: 600;
-}
-
-/* Tab Content Transitions */
-.v-window-item {
-  min-height: 300px;
-}
-
-/* Professional Action Buttons Styling */
-.action-buttons-container {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  justify-content: flex-end;
-  width: 100%;
-}
-
-.action-btn {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  border-radius: 8px !important;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
-}
-
-.action-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
-}
-
-.primary-action {
-  margin-right: 8px;
-  box-shadow: 0 3px 6px rgba(33, 150, 243, 0.3) !important;
-}
-
-.primary-action:hover {
-  box-shadow: 0 6px 12px rgba(33, 150, 243, 0.4) !important;
-}
-
-.action-group {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px;
-  background: rgba(0,0,0,0.02);
-  border-radius: 12px;
-  border: 1px solid rgba(0,0,0,0.08);
-}
-
-/* Custom Table Container */
-.custom-table-container {
-  width: 100%;
-  max-height: 65vh;
-  overflow: auto;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  background: #fff;
-  position: relative;
-}
-
-/* Custom Table */
-.custom-trial-balance-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  font-size: 0.875rem;
-  min-width: 1000px;
-}
-
-/* Header Rows */
-.main-header-row {
-  background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
-}
-
-.sub-header-row {
-  background: #fafafa;
-}
-
-/* Header Cells */
-.header-cell {
-  padding: 12px 8px;
-  font-weight: 600;
-  color: #37474f;
-  border: 1px solid #dee2e6;
-  vertical-align: middle;
-  text-align: center;
-  white-space: nowrap;
-}
-
-/* GL Code Header - Optimized Width */
-.account-code-header {
-  width: 150px;
-  min-width: 150px;
-  max-width: 150px;
-}
-
-.header-content-center {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-}
-
-/* Description Header - Fixed for no-wrap */
-.description-header {
-  width: 400px;
-  min-width: 400px;
-  max-width: 400px;
-  text-align: left;
-}
-
-.header-content-left {
-  display: flex;
-  align-items: center;
-  padding-left: 16px;
-  width: 100%;
-  height: 100%;
-}
-
-.group-header {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-}
-
-.group-header-content {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-}
-
-.sub-header {
-  width: 140px;
-  min-width: 140px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  background: #fafafa;
-  color: #546e7a;
-}
-
-/* Sticky Column */
-.sticky-column {
-  position: sticky;
-  left: 0;
-  z-index: 2;
-  background: white;
-  border-right: 2px solid #dee2e6 !important;
-}
-
-.main-header-row .sticky-column,
-.sub-header-row .sticky-column {
-  background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
-}
-
-/* Data Rows */
-.data-row {
-  transition: background-color 0.2s;
-  background: white;
-}
-
-.data-row:hover {
-  background-color: #f8f9fa !important;
-}
-
-.data-row:nth-child(even) {
-  background-color: #fafafa;
-}
-
-/* Data Cells */
-.data-cell {
-  padding: 10px 8px;
-  border: 1px solid #f0f0f0;
-  vertical-align: middle;
-}
-
-/* GL Code Cell - Optimized */
-.account-code-cell {
-  width: 150px;
-  min-width: 150px;
-  max-width: 150px;
-  text-align: right;
-  font-weight: 500;
-  background: white;
-}
-
-.gl-code-content {
-  display: flex;
-  align-items: left;
-  justify-content: left;
-  width: 100%;
-  padding: 0 8px;
-}
-
-.data-row:hover .account-code-cell {
-  background-color: #f8f9fa;
-}
-
-/* Description Cell - No Wrap with Ellipsis */
-.description-cell {
-  width: 400px;
-  min-width: 400px;
-  max-width: 400px;
-  padding: 10px 16px;
-}
-
-.description-content {
-  width: 100%;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: block;
-  cursor: default;
-}
-
-.description-content:hover {
-  cursor: help;
-}
-
-/* Amount Cells */
-.amount-cell {
-  width: 140px;
-  min-width: 140px;
-  text-align: right;
-  padding-right: 12px;
-}
-
-.amount-value {
-  font-family: 'Roboto Mono', 'Consolas', monospace;
-  font-size: 0.875rem;
-  font-weight: 500;
-  display: inline-block;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: rgba(0,0,0,0.02);
-  min-width: 100px;
-  text-align: right;
-}
-
-.amount-value.text-success {
-  color: #4caf50;
-  background: rgba(76, 175, 80, 0.08);
-}
-
-.amount-value.text-error {
-  color: #f44336;
-  background: rgba(244, 67, 54, 0.08);
-}
-
-/* Scrollbar Styling */
-.custom-table-container::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-.custom-table-container::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 5px;
-}
-
-.custom-table-container::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 5px;
-}
-
-.custom-table-container::-webkit-scrollbar-thumb:hover {
-  background: #555;
-}
-
-.custom-table-container::-webkit-scrollbar-corner {
-  background: #f1f1f1;
-}
-
-/* Responsive Design for Action Buttons */
-@media (max-width: 1400px) {
-  .description-header,
-  .description-cell {
-    width: 350px;
-    min-width: 350px;
-    max-width: 350px;
-  }
-  
-  .action-buttons-container {
-    gap: 6px;
-  }
-  
-  .action-group {
-    gap: 3px;
-    padding: 3px;
-  }
-  
-  .primary-action {
-    margin-right: 6px;
-  }
-}
-
-@media (max-width: 1200px) {
-  .custom-trial-balance-table {
-    font-size: 0.8rem;
-  }
-  
-  .account-code-header,
-  .account-code-cell {
-    width: 130px;
-    min-width: 130px;
-    max-width: 130px;
-  }
-  
-  .description-header,
-  .description-cell {
-    width: 300px;
-    min-width: 300px;
-    max-width: 300px;
-  }
-  
-  .header-cell {
-    padding: 10px 6px;
-  }
-  
-  .data-cell {
-    padding: 8px 6px;
-  }
-  
-  .amount-value {
-    font-size: 0.8rem;
-    min-width: 85px;
-  }
-  
-  .sub-header {
-    width: 130px;
-    min-width: 130px;
-  }
-  
-  .amount-cell {
-    width: 130px;
-    min-width: 130px;
-  }
-  
-  .v-tab {
-    font-size: 0.8rem;
-    min-width: 100px;
-  }
-  
-  .action-buttons-container {
-    gap: 6px;
-  }
-  
-  .action-group {
-    gap: 3px;
-    padding: 3px;
-  }
-}
-
-@media (max-width: 960px) {
-  .custom-trial-balance-table {
-    font-size: 0.75rem;
-    min-width: 900px;
-  }
-  
-  .account-code-header,
-  .account-code-cell {
-    width: 110px;
-    min-width: 110px;
-    max-width: 110px;
-  }
-  
-  .description-header,
-  .description-cell {
-    width: 250px;
-    min-width: 250px;
-    max-width: 250px;
-  }
-  
-  .header-cell {
-    padding: 8px 4px;
-    font-size: 0.75rem;
-  }
-  
-  .sub-header {
-    font-size: 0.7rem;
-    width: 120px;
-    min-width: 120px;
-  }
-  
-  .data-cell {
-    padding: 6px 4px;
-    font-size: 0.75rem;
-  }
-  
-  .amount-cell {
-    width: 120px;
-    min-width: 120px;
-  }
-  
-  .amount-value {
-    font-size: 0.75rem;
-    min-width: 75px;
-    padding: 1px 4px;
-  }
-  
-  .v-tab {
-    font-size: 0.75rem;
-    min-width: 80px;
-  }
-  
-  .action-buttons-container {
-    gap: 4px;
-  }
-  
-  .action-group {
-    gap: 2px;
-    padding: 2px;
-  }
-  
-  .primary-action {
-    margin-right: 4px;
-  }
-  
-  .action-btn {
-    border-radius: 6px !important;
-  }
-}
-
-@media (max-width: 768px) {
-  .action-buttons-container {
-    display: none; /* Hide desktop actions on mobile */
-  }
-}
-
-@media (max-width: 600px) {
-  .custom-table-container {
-    border-radius: 4px;
-  }
-  
-  .custom-trial-balance-table {
-    font-size: 0.7rem;
-    min-width: 800px;
-  }
-  
-  .account-code-header,
-  .account-code-cell {
-    width: 100px;
-    min-width: 100px;
-    max-width: 100px;
-  }
-  
-  .description-header,
-  .description-cell {
-    width: 200px;
-    min-width: 200px;
-    max-width: 200px;
-  }
-  
-  .description-content {
-    font-size: 0.7rem;
-  }
-  
-  .sub-header,
-  .amount-cell {
-    width: 100px;
-    min-width: 100px;
-  }
-  
-  .amount-value {
-    font-size: 0.7rem;
-    min-width: 65px;
-  }
-  
-  .v-tab {
-    font-size: 0.7rem;
-    min-width: 60px;
-  }
-}
-
-/* Enhanced Button States */
-.action-btn.v-btn--disabled {
-  opacity: 0.4 !important;
-  transform: none !important;
-}
-
-.action-btn.v-btn--loading {
-  transform: none !important;
 }
 
 /* Tooltip Styling */

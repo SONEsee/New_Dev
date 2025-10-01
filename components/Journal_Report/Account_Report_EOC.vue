@@ -1,247 +1,124 @@
 <template>
   <v-container fluid>
     <h1 class="page-title">
-      <v-icon size="32" color="primary">mdi-book-open-page-variant</v-icon>
-      ລາຍງານບັນຊີ - Account Reports
+      <v-icon size="32" color="primary">mdi-magnify</v-icon>
+      ຄົ້ນຫາບັນຊີ - Account Statement Search
     </h1>
     
-    <!-- Tab Navigation -->
-    <v-card class="elevation-2 mb-6">
-      <v-tabs
-        v-model="activeTab"
-        bg-color="primary"
-        dark
-        grow
-      >
-        <v-tab value="actb">
-          <v-icon start>mdi-bank-transfer</v-icon>
-          ACTB Report
-        </v-tab>
-        <v-tab value="eoc">
-          <v-icon start>mdi-calendar-clock</v-icon>
-          EOC Report
-        </v-tab>
-      </v-tabs>
+    <!-- Search Form Card -->
+    <v-card class="search-card elevation-2">
+      <v-card-title class="bg-primary text-white">
+        <v-icon start>mdi-filter</v-icon>
+        ຟອມຄົ້ນຫາ
+      </v-card-title>
       
-      <v-tabs-window v-model="activeTab">
-        <!-- ACTB Tab Content -->
-        <v-tabs-window-item value="actb">
-          <v-card-title class="bg-grey-lighten-4">
-            <v-icon start color="primary">mdi-bank-transfer</v-icon>
-            Account Statement Search - ACTB
-          </v-card-title>
-          
-          <!-- ACTB Search Form -->
-          <v-card-text class="pa-6">
-            <v-form ref="searchFormACTB" v-model="formValidACTB">
-              <v-row>
-                <!-- Account Number - Optional -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    v-model="searchParamsACTB.gl_code"
-                    label="ເລກບັນຊີ (Account Number)"
-                    placeholder="1234567 (ທາງເລືອກ - Optional)"
-                    :rules="accountRules"
-                    prepend-inner-icon="mdi-card-account-details"
-                    variant="outlined"
-                    density="comfortable"
-                    maxlength="25"
-                    counter
-                    clearable
-                    hint="ປ່ອຍວ່າງເພື່ອຄົ້ນຫາທຸກບັນຊີ (7+ ຫຼັກ)"
-                    persistent-hint
-                  />
-                </v-col>
-                
-                <!-- Currency Code -->
-                <v-col cols="12" md="6">
-                  <v-select
-                    v-model="searchParamsACTB.currency_code"
-                    :items="currencies"
-                    item-title="text"
-                    item-value="value"
-                    label="ສະກຸນເງິນ (Currency) *"
-                    :rules="requiredRules"
-                    prepend-inner-icon="mdi-currency-usd"
-                    variant="outlined"
-                    density="comfortable"
-                  />
-                </v-col>
-                
-                <!-- Start Date -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    v-model="searchParamsACTB.date_start"
-                    label="ວັນທີ່ເລີ່ມຕົ້ນ (Start Date) *"
-                    type="date"
-                    :rules="dateRules"
-                    prepend-inner-icon="mdi-calendar-start"
-                    variant="outlined"
-                    density="comfortable"
-                  />
-                </v-col>
-                
-                <!-- End Date -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    v-model="searchParamsACTB.date_end"
-                    label="ວັນທີ່ສິ້ນສຸດ (End Date) *"
-                    type="date"
-                    :rules="dateRules"
-                    prepend-inner-icon="mdi-calendar-end"
-                    variant="outlined"
-                    density="comfortable"
-                  />
-                </v-col>
-              </v-row>
-            </v-form>
-          </v-card-text>
-          
-          <v-card-actions class="pa-6 pt-0">
-            <v-spacer />
-            <v-btn
-              color="grey"
-              variant="outlined"
-              prepend-icon="mdi-refresh"
-              @click="resetForm('ACTB')"
-              :disabled="loading"
-            >
-              ລ້າງຟອມ
-            </v-btn>
-            <v-btn
-              color="primary"
-              variant="elevated"
-              prepend-icon="mdi-magnify"
-              @click="searchAccount('ACTB')"
-              :loading="loading"
-              :disabled="!formValidACTB"
-            >
-              ຄົ້ນຫາ
-            </v-btn>
-          </v-card-actions>
-        </v-tabs-window-item>
-        
-        <!-- EOC Tab Content -->
-        <v-tabs-window-item value="eoc">
-          <v-card-title class="bg-grey-lighten-4">
-            <v-icon start color="primary">mdi-calendar-clock</v-icon>
-            End of Cycle Report - EOC
-          </v-card-title>
-          
-          <!-- EOC Search Form -->
-          <v-card-text class="pa-6">
-            <v-form ref="searchFormEOC" v-model="formValidEOC">
-              <v-row>
-                <!-- Account Number - Optional -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    v-model="searchParamsEOC.gl_code"
-                    label="ເລກບັນຊີ (Account Number)"
-                    placeholder="1234567 (ທາງເລືອກ - Optional)"
-                    :rules="accountRules"
-                    prepend-inner-icon="mdi-card-account-details"
-                    variant="outlined"
-                    density="comfortable"
-                    maxlength="25"
-                    counter
-                    clearable
-                    hint="ປ່ອຍວ່າງເພື່ອຄົ້ນຫາທຸກບັນຊີ (7+ ຫຼັກ)"
-                    persistent-hint
-                  />
-                </v-col>
-                
-                <!-- Currency Code -->
-                <v-col cols="12" md="6">
-                  <v-select
-                    v-model="searchParamsEOC.currency_code"
-                    :items="currencies"
-                    item-title="text"
-                    item-value="value"
-                    label="ສະກຸນເງິນ (Currency) *"
-                    :rules="requiredRules"
-                    prepend-inner-icon="mdi-currency-usd"
-                    variant="outlined"
-                    density="comfortable"
-                  />
-                </v-col>
-                
-                <!-- Start Date -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    v-model="searchParamsEOC.date_start"
-                    label="ວັນທີ່ເລີ່ມຕົ້ນ (Start Date) *"
-                    type="date"
-                    :rules="dateRules"
-                    prepend-inner-icon="mdi-calendar-start"
-                    variant="outlined"
-                    density="comfortable"
-                  />
-                </v-col>
-                
-                <!-- End Date -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    v-model="searchParamsEOC.date_end"
-                    label="ວັນທີ່ສິ້ນສຸດ (End Date) *"
-                    type="date"
-                    :rules="dateRules"
-                    prepend-inner-icon="mdi-calendar-end"
-                    variant="outlined"
-                    density="comfortable"
-                  />
-                </v-col>
-              </v-row>
-            </v-form>
-          </v-card-text>
-          
-          <v-card-actions class="pa-6 pt-0">
-            <v-spacer />
-            <v-btn
-              color="grey"
-              variant="outlined"
-              prepend-icon="mdi-refresh"
-              @click="resetForm('EOC')"
-              :disabled="loading"
-            >
-              ລ້າງຟອມ
-            </v-btn>
-            <v-btn
-              color="primary"
-              variant="elevated"
-              prepend-icon="mdi-magnify"
-              @click="searchAccount('EOC')"
-              :loading="loading"
-              :disabled="!formValidEOC"
-            >
-              ຄົ້ນຫາ
-            </v-btn>
-          </v-card-actions>
-        </v-tabs-window-item>
-      </v-tabs-window>
+      <v-card-text class="pa-6">
+        <v-form ref="searchForm" v-model="formValid">
+          <v-row>
+            <!-- Account Number - Now Optional -->
+            <v-col cols="12" md="6">
+              <v-text-field
+                v-model="searchParams.gl_code"
+                label="ເລກບັນຊີ (Account Number)"
+                placeholder="1234567 (ທາງເລືອກ - Optional)"
+                :rules="accountRules"
+                prepend-inner-icon="mdi-card-account-details"
+                variant="outlined"
+                density="comfortable"
+                maxlength="25"
+                counter
+                clearable
+                hint="ປ່ອຍວ່າງເພື່ອຄົ້ນຫາທຸກບັນຊີ (7+ ຫຼັກ)"
+                persistent-hint
+              />
+            </v-col>
+            
+            <!-- Currency Code -->
+            <v-col cols="12" md="6">
+              <v-select
+                v-model="searchParams.currency_code"
+                :items="currencies"
+                item-title="text"
+                item-value="value"
+                label="ສະກຸນເງິນ (Currency) *"
+                :rules="requiredRules"
+                prepend-inner-icon="mdi-currency-usd"
+                variant="outlined"
+                density="comfortable"
+              />
+            </v-col>
+            
+            <!-- Start Date -->
+            <v-col cols="12" md="6">
+              <v-text-field
+                v-model="searchParams.date_start"
+                label="ວັນທີ່ເລີ່ມຕົ້ນ (Start Date) *"
+                type="date"
+                :rules="dateRules"
+                prepend-inner-icon="mdi-calendar-start"
+                variant="outlined"
+                density="comfortable"
+              />
+            </v-col>
+            
+            <!-- End Date -->
+            <v-col cols="12" md="6">
+              <v-text-field
+                v-model="searchParams.date_end"
+                label="ວັນທີ່ສິ້ນສຸດ (End Date) *"
+                type="date"
+                :rules="dateRules"
+                prepend-inner-icon="mdi-calendar-end"
+                variant="outlined"
+                density="comfortable"
+              />
+            </v-col>
+          </v-row>
+        </v-form>
+      </v-card-text>
+      
+      <v-card-actions class="pa-6 pt-0">
+        <v-spacer />
+        <v-btn
+          color="grey"
+          variant="outlined"
+          prepend-icon="mdi-refresh"
+          @click="resetForm"
+          :disabled="loading"
+        >
+          ລ້າງຟອມ
+        </v-btn>
+        <v-btn
+          color="primary"
+          variant="elevated"
+          prepend-icon="mdi-magnify"
+          @click="searchAccount"
+          :loading="loading"
+          :disabled="!formValid"
+        >
+          ຄົ້ນຫາ
+        </v-btn>
+      </v-card-actions>
     </v-card>
     
-    <!-- Results Section (Shared for both tabs) -->
+    <!-- Results Section -->
     <div v-if="searchResult">
       <!-- Account Info Card -->
       <v-card class="result-card elevation-2">
         <div class="account-header">
           <v-row align="center">
-            <v-col cols="12" md="3">
+            <v-col cols="12" md="4">
               <div class="text-subtitle-2">ເລກບັນຊີ</div>
               <div class="text-h5 font-weight-bold">
                 {{ searchResult.account_info?.gl_code || 'ທຸກບັນຊີ' }}
               </div>
             </v-col>
-            <v-col cols="12" md="3">
+            <v-col cols="12" md="4">
               <div class="text-subtitle-2">ສະກຸນເງິນ</div>
               <div class="text-h5 font-weight-bold">{{ searchResult.account_info.currency_code }}</div>
             </v-col>
-            <v-col cols="12" md="3">
-              <div class="text-subtitle-2">ປະເພດລາຍງານ</div>
-              <div class="text-h5 font-weight-bold">{{ activeTab.toUpperCase() }}</div>
-            </v-col>
-            <v-col cols="12" md="3">
-              <div class="text-subtitle-2">ຍອດເປີດບັນຊີ</div>
+            <v-col cols="12" md="4">
+              <div class="text-subtitle-2">ຍອດເປີດບັນຊີ (Opening Balance)</div>
               <div class="balance-display">{{ formatCurrency(searchResult.account_info.open_balance) }}</div>
             </v-col>
           </v-row>
@@ -380,7 +257,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import axios from '@/helpers/axios'
 
 // =============================================
@@ -402,22 +279,12 @@ const getAuthHeaders = () => {
 // =============================================
 // STATE
 // =============================================
-const activeTab = ref('actb')
-const searchFormACTB = ref(null)
-const searchFormEOC = ref(null)
-const formValidACTB = ref(false)
-const formValidEOC = ref(false)
+const searchForm = ref(null)
+const formValid = ref(false)
 const loading = ref(false)
 const searchResult = ref(null)
 
-const searchParamsACTB = ref({
-  gl_code: '',
-  currency_code: 'LAK',
-  date_start: '',
-  date_end: ''
-})
-
-const searchParamsEOC = ref({
+const searchParams = ref({
   gl_code: '',
   currency_code: 'LAK',
   date_start: '',
@@ -452,7 +319,7 @@ const tableHeaders = [
 ]
 
 // =============================================
-// VALIDATION
+// VALIDATION - Updated for 7+ digits
 // =============================================
 const accountRules = [
   v => {
@@ -540,12 +407,8 @@ const handleAPIError = (error) => {
 // =============================================
 // MAIN METHODS
 // =============================================
-const searchAccount = async (reportType) => {
+const searchAccount = async () => {
   try {
-    const searchForm = reportType === 'ACTB' ? searchFormACTB : searchFormEOC
-    const formValid = reportType === 'ACTB' ? formValidACTB : formValidEOC
-    const searchParams = reportType === 'ACTB' ? searchParamsACTB : searchParamsEOC
-    
     const { valid } = await searchForm.value.validate()
     if (!valid) {
       showNotification('ກະລຸນາກວດສອບຂໍ້ມູນ', 'error', 'mdi-alert-circle')
@@ -569,20 +432,15 @@ const searchAccount = async (reportType) => {
       gl_code: searchParams.value.gl_code?.trim() || null
     }
     
-    // Different endpoints for ACTB and EOC
-    const endpoint = reportType === 'ACTB' 
-      ? 'api/account/statement/search/actb/'
-      : 'api/account/statement/search/eoc/'
-    
     const response = await axios.post(
-      endpoint,
+      'api/account/statement/search/eoc',
       requestData,
       getAuthHeaders()
     )
     
     if (response.data.status === 'success') {
       searchResult.value = response.data.data
-      showNotification(`${reportType} Report: ${response.data.message}`, 'success', 'mdi-check-circle')
+      showNotification(response.data.message, 'success', 'mdi-check-circle')
     } else {
       showNotification(response.data.message, 'error', 'mdi-alert-circle')
     }
@@ -594,26 +452,19 @@ const searchAccount = async (reportType) => {
   }
 }
 
-const resetForm = (reportType) => {
-  if (reportType === 'ACTB') {
-    searchFormACTB.value?.reset()
-    searchParamsACTB.value.gl_code = ''
-    searchParamsACTB.value.currency_code = 'LAK'
-    const today = new Date()
-    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
-    searchParamsACTB.value.date_start = formatDateInput(firstDay)
-    searchParamsACTB.value.date_end = formatDateInput(today)
-  } else {
-    searchFormEOC.value?.reset()
-    searchParamsEOC.value.gl_code = ''
-    searchParamsEOC.value.currency_code = 'LAK'
-    const today = new Date()
-    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
-    searchParamsEOC.value.date_start = formatDateInput(firstDay)
-    searchParamsEOC.value.date_end = formatDateInput(today)
-  }
-  
+const resetForm = () => {
+  searchForm.value.reset()
   searchResult.value = null
+  
+  const today = new Date()
+  const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
+  
+  searchParams.value = {
+    gl_code: '',
+    currency_code: 'LAK',
+    date_start: formatDateInput(firstDay),
+    date_end: formatDateInput(today)
+  }
 }
 
 const exportData = () => {
@@ -624,13 +475,11 @@ const exportData = () => {
   
   try {
     const accountInfo = searchResult.value.account_info
-    const reportType = activeTab.value.toUpperCase()
     const headerInfo = [
-      `Account Statement Report - ${reportType}`,
+      `Account Statement Report`,
       `Account Number: ${accountInfo.gl_code || 'All Accounts'}`,
       `Currency: ${accountInfo.currency_code}`,
       `Period: ${formatDate(accountInfo.date_start)} - ${formatDate(accountInfo.date_end)}`,
-      `Report Type: ${reportType}`,
       `Opening Balance: ${formatCurrency(accountInfo.open_balance)}`,
       `Closing Balance: ${formatCurrency(closingBalance.value)}`,
       `Total Debit: ${formatCurrency(totalDebit.value)}`,
@@ -654,7 +503,7 @@ const exportData = () => {
     const link = document.createElement('a')
     const url = URL.createObjectURL(blob)
     
-    const fileName = `account_statement_${reportType}_${searchParams.value.gl_code || 'all'}_${formatDateInput(new Date())}.csv`
+    const fileName = `account_statement_${searchParams.value.gl_code || 'all'}_${formatDateInput(new Date())}.csv`
     
     link.setAttribute('href', url)
     link.setAttribute('download', fileName)
@@ -680,7 +529,6 @@ const printData = () => {
     const printWindow = window.open('', '', 'width=800,height=600')
     
     const accountInfo = searchResult.value.account_info
-    const reportType = activeTab.value.toUpperCase()
     const tableRows = transactions.value.map(row => {
       return '<tr>' +
         '<td class="text-center">' + row.rID + '</td>' +
@@ -695,7 +543,7 @@ const printData = () => {
     const printContent = '<!DOCTYPE html>' +
       '<html>' +
       '<head>' +
-      '<title>Account Statement - ' + reportType + ' - ' + accountInfo.gl_code + '</title>' +
+      '<title>Account Statement - ' + accountInfo.gl_code + '</title>' +
       '<style>' +
       'body { font-family: Arial, sans-serif; padding: 20px; }' +
       '.header { text-align: center; margin-bottom: 30px; }' +
@@ -712,20 +560,17 @@ const printData = () => {
       '</head>' +
       '<body>' +
       '<div class="header">' +
-      '<h2>Account Statement Report - ' + reportType + '</h2>' +
+      '<h2>Account Statement Report</h2>' +
       '<p>ລາຍງານບັນຊີ</p>' +
       '</div>' +
       '<div class="info-section">' +
       '<div class="info-row">' +
-      '<span><strong>Account Number:</strong> ' + (accountInfo.gl_code || 'All Accounts') + '</span>' +
+      '<span><strong>Account Number:</strong> ' + accountInfo.gl_code + '</span>' +
       '<span><strong>Currency:</strong> ' + accountInfo.currency_code + '</span>' +
       '</div>' +
       '<div class="info-row">' +
-      '<span><strong>Report Type:</strong> ' + reportType + '</span>' +
-      '<span><strong>Opening Balance:</strong> ' + formatCurrency(accountInfo.open_balance) + '</span>' +
-      '</div>' +
-      '<div class="info-row">' +
       '<span><strong>Period:</strong> ' + formatDate(accountInfo.date_start) + ' - ' + formatDate(accountInfo.date_end) + '</span>' +
+      '<span><strong>Opening Balance:</strong> ' + formatCurrency(accountInfo.open_balance) + '</span>' +
       '</div>' +
       '</div>' +
       '<table>' +
@@ -765,10 +610,6 @@ const printData = () => {
   }
 }
 
-// Watch for tab changes to clear results
-watch(activeTab, () => {
-  searchResult.value = null
-})
 
 // =============================================
 // LIFECYCLE
@@ -777,13 +618,8 @@ onMounted(() => {
   const today = new Date()
   const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
   
-  // Initialize ACTB search params
-  searchParamsACTB.value.date_start = formatDateInput(firstDay)
-  searchParamsACTB.value.date_end = formatDateInput(today)
-  
-  // Initialize EOC search params
-  searchParamsEOC.value.date_start = formatDateInput(firstDay)
-  searchParamsEOC.value.date_end = formatDateInput(today)
+  searchParams.value.date_start = formatDateInput(firstDay)
+  searchParams.value.date_end = formatDateInput(today)
 })
 </script>
 
@@ -812,7 +648,7 @@ onMounted(() => {
 }
 
 .balance-display {
-  font-size: 1.5rem;
+  font-size: 2rem;
   font-weight: 700;
   margin-top: 8px;
 }
@@ -852,24 +688,13 @@ onMounted(() => {
   margin-bottom: 16px;
 }
 
-/* Tab Styling */
-.v-tab {
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
 @media (max-width: 768px) {
   .page-title {
     font-size: 1.5rem;
   }
   
   .balance-display {
-    font-size: 1.25rem;
-  }
-  
-  .v-tab {
-    font-size: 0.875rem;
+    font-size: 1.5rem;
   }
 }
 </style>

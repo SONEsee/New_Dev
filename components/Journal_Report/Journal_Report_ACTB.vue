@@ -1,458 +1,420 @@
-<!-- JournalReportACTB.vue -->
 <template>
-  <v-container fluid class="pa-6">
-    <v-card elevation="0" style="border: 1px solid #e0e0e0; width: 100%;">
-      <!-- Header Section -->
-      <v-card-title class="px-6 py-4 d-flex align-center" style="background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%); color: white;">
-        <v-icon start size="24">mdi-book-open-page-variant</v-icon>
-        <span class="text-h6 font-weight-medium text-styles">
-          ລາຍງານການເຄື່ອນໄຫວບັນຊີກ່ອນປິດບັນຊີ (Journal Report)
-        </span>
-        <v-spacer />
-        <v-chip 
-          color="white" 
-          text-color="success" 
-          size="small" 
-          variant="outlined"
-        >
-          Journal Entries
-        </v-chip>
-      </v-card-title>
+  <v-container fluid>
+    <h1 class="page-title">
+      <v-icon size="32" color="primary">mdi-book-open-page-variant</v-icon>
+      ລາຍງານບັນຊີ - Account Reports
+    </h1>
+    
+    <!-- EOD Information Banner -->
+    <v-alert
+      v-if="eodInfo"
+      type="info"
+      variant="tonal"
+      density="compact"
+      class="mb-4"
+    >
+      <div class="d-flex align-center justify-space-between">
+        <div>
+          <v-icon start>mdi-calendar-clock</v-icon>
+          <strong>EOD Date:</strong> {{ formatDate(targetDate) }}
+          <span v-if="eodInfo.is_back_date" class="ml-2">
+            <v-chip size="x-small" color="warning" variant="flat">Back-dated</v-chip>
+          </span>
+          <span v-if="eodInfo.current_eod" class="ml-2">
+            | <strong>Next Working Day:</strong> {{ formatDate(eodInfo.current_eod.next_working_day) }}
+          </span>
+        </div>
+        <v-btn
+          size="small"
+          icon="mdi-refresh"
+          variant="text"
+          @click="fetchEodInfo"
+          title="Refresh EOD Info"
+        />
+      </div>
+    </v-alert>
+    
+    <!-- Tab Navigation -->
+    <v-card class="elevation-2 mb-6">
+      <v-tabs
+        v-model="activeTab"
+        bg-color="primary"
+        dark
+        grow
+      >
+        <v-tab value="actb">
+          <v-icon start>mdi-bank-transfer</v-icon>
+          ACTB Report
+        </v-tab>
+        <v-tab value="eoc">
+          <v-icon start>mdi-calendar-clock</v-icon>
+          EOC Report
+        </v-tab>
+      </v-tabs>
       
-      <v-card-text class="px-6 py-4">
-        <!-- Filter Form -->
-        <v-form @submit.prevent="fetchJournalData" class="mb-4">
-          <!-- First Row: Main Filters -->
-          <v-row no-gutters class="mb-3">
-            <!-- Financial Cycle -->
-            <v-col cols="12" md="3" class="pe-md-2 mb-3 mb-md-0">
-              <v-text-field
-                v-model="selectedFinancialCycle"
-                label="ວົງຈອນການເງິນ (Financial Cycle)"
-                variant="outlined"
-                density="compact"
-                prepend-inner-icon="mdi-calendar-range"
-                hide-details="auto"
-                type="number"
-                min="2020"
-                max="2050"
-                :rules="[validateFinancialCycle]"
-              />
-            </v-col>
-            
-            <!-- Period Code -->
-            <v-col cols="12" md="3" class="px-md-1 mb-3 mb-md-0">
-              <v-text-field
-                v-model="selectedPeriodCode"
-                label="ລະຫັດງວດ (Period Code)"
-                variant="outlined"
-                density="compact"
-                prepend-inner-icon="mdi-calendar-month"
-                hide-details="auto"
-                placeholder="202508"
-                maxlength="6"
-                :rules="[validatePeriodCode]"
-              />
-            </v-col>
-            
-            <!-- Module ID -->
-            <v-col cols="12" md="3" class="px-md-1 mb-3 mb-md-0">
-              <v-select
-                v-model="selectedModuleId"
-                :items="moduleOptions"
-                :loading="loadingOptions"
-                label="ໂມດູນ (Module)"
-                variant="outlined"
-                density="compact"
-                prepend-inner-icon="mdi-view-module"
-                hide-details="auto"
-                clearable
-                item-title="title"
-                item-value="value"
-              >
-                <template #item="{ props, item }">
-                  <v-list-item v-bind="props">
-                    <template #prepend>
-                      <v-icon icon="mdi-view-module" size="20" />
-                    </template>
-                    <v-list-item-subtitle>{{ item.raw.subtitle }}</v-list-item-subtitle>
-                  </v-list-item>
-                </template>
-              </v-select>
-            </v-col>
-
-            <!-- Transaction Code -->
-            <v-col cols="12" md="3" class="ps-md-2 mb-3 mb-md-0">
-              <v-select
-                v-model="selectedTrnCode"
-                :items="transactionCodeOptions"
-                :loading="loadingOptions"
-                label="ລະຫັດລາຍການ (Transaction Code)"
-                variant="outlined"
-                density="compact"
-                prepend-inner-icon="mdi-code-tags"
-                hide-details="auto"
-                clearable
-                item-title="title"
-                item-value="value"
-              >
-                <template #item="{ props, item }">
-                  <v-list-item v-bind="props">
-                    <template #prepend>
-                      <v-icon icon="mdi-code-tags" size="20" />
-                    </template>
-                    <v-list-item-subtitle>{{ item.raw.subtitle }}</v-list-item-subtitle>
-                  </v-list-item>
-                </template>
-              </v-select>
-            </v-col>
-          </v-row>
-
-          <!-- Second Row: Date Range -->
-          <v-row no-gutters class="mb-3">
-            <!-- Start Date -->
-            <v-col cols="12" md="3" class="pe-md-2 mb-3 mb-md-0">
-              <v-text-field
-                v-model="selectedStartDate"
-                label="ວັນທີ່ເລີ່ມຕົ້ນ (Start Date)"
-                variant="outlined"
-                density="compact"
-                prepend-inner-icon="mdi-calendar-start"
-                hide-details="auto"
-                type="date"
-                clearable
-              />
-            </v-col>
-            
-            <!-- End Date -->
-            <v-col cols="12" md="3" class="px-md-1 mb-3 mb-md-0">
-              <v-text-field
-                v-model="selectedEndDate"
-                label="ວັນທີ່ສິ້ນສຸດ (End Date)"
-                variant="outlined"
-                density="compact"
-                prepend-inner-icon="mdi-calendar-end"
-                hide-details="auto"
-                type="date"
-                clearable
-              />
-            </v-col>
-
-            <!-- Maker ID Dropdown -->
-            <v-col cols="12" md="2" class="px-md-1 mb-3 mb-md-0">
-              <v-select
-                v-model="selectedMakerId"
-                :items="makerIdOptions"
-                :loading="loadingOptions"
-                label="ຜູ້ບັນທຶກ (Maker ID)"
-                variant="outlined"
-                density="compact"
-                prepend-inner-icon="mdi-account"
-                hide-details="auto"
-                clearable
-                item-title="title"
-                item-value="value"
-              />
-            </v-col>
-
-            <!-- Search Field -->
-            <v-col cols="12" md="2" class="px-md-1 mb-3 mb-md-0">
-              <v-text-field
-                v-model="searchText"
-                label="ຄົ້ນຫາໃນຕາຕະລາງ"
-                prepend-inner-icon="mdi-magnify"
-                variant="outlined"
-                density="compact"
-                hide-details
-                clearable
-                placeholder="ຄົ້ນຫາບັນຊີ, ອ້າງອີງ, ລາຍລະອຽດ"
-              />
-            </v-col>
-
-            <!-- Action Buttons -->
-            <v-col cols="12" md="2" class="ps-md-2 d-flex gap-2">
-              <v-btn
-                type="submit"
-                color="success"
-                prepend-icon="mdi-refresh"
-                :loading="loading"
-                class="flex-grow-1"
-                density="compact"
-                style="height: 40px;"
-              >
-                ດຶງຂໍ້ມູນ
-              </v-btn>
-            </v-col>
-          </v-row>
-
-          <!-- Third Row: Export Actions -->
-          <v-row no-gutters class="mb-4">
-            <v-col cols="12" class="d-flex gap-2 justify-end">
-              <v-btn
-                color="primary"
-                prepend-icon="mdi-microsoft-excel"
-                :disabled="!journalData.length || loading"
-                @click="exportToExcel"
-                density="compact"
-                variant="outlined"
-                style="height: 40px;"
-              >
-                ສົ່ງອອກ Excel
-              </v-btn>
-            </v-col>
-          </v-row>
-        </v-form>
-
-        <v-divider class="mb-4" thickness="1" color="grey-lighten-3" />
-
-        <!-- Table Info Bar -->
-        <div class="d-flex justify-space-between align-center mb-3 pa-3 bg-grey-lighten-5 rounded">
-          <div class="text-h6 font-weight-medium text-styles">
-            ຜົນການຄົ້ນຫາ: {{ filteredData.length }} ລາຍ
-            <v-chip size="small" color="success" variant="tonal" class="ml-2">
-              Journal Entries
-            </v-chip>
-          </div>
-          <div class="text-caption text-grey-darken-1">
-            API: journal-report | {{ selectedFinancialCycle }}-{{ selectedPeriodCode }}
-          </div>
-        </div>
-
-        <!-- Parameter Summary -->
-        <div v-if="lastUsedParams" class="mb-3 pa-2 bg-green-lighten-5 rounded">
-          <div class="text-caption text-green-darken-2">
-            <strong>ພາລາມິເຕີທີ່ໃຊ້:</strong> 
-            Cycle: {{ lastUsedParams.financial_cycle_id }}, 
-            Period: {{ lastUsedParams.period_code_id }}, 
-            Module: {{ lastUsedParams.module_id || 'All' }},
-            Dates: {{ lastUsedParams.date_start || 'N/A' }} - {{ lastUsedParams.date_end || 'N/A' }}
-          </div>
-        </div>
-
-        <!-- Custom Table Implementation -->
-        <div class="custom-table-container">
-          <table class="custom-journal-table">
-            <!-- Table Header -->
-            <thead>
-              <tr class="main-header-row">
-                <th class="header-cell sticky-column entry-no-header">
-                  <div class="header-content-center">Module</div>
-                </th>
-                <th class="header-cell">
-                  <div class="header-content-center">Trn Code</div>
-                </th>
-                <th class="header-cell">
-                  <div class="header-content-center">Reference No</div>
-                </th>
-                <th class="header-cell">
-                  <div class="header-content-center">Description</div>
-                </th>
-                <th class="header-cell">
-                  <div class="header-content-center">Account Full</div>
-                </th>
-                <th class="header-cell amount-header">
-                  <div class="header-content-center">FCY Dr</div>
-                </th>
-                <th class="header-cell amount-header">
-                  <div class="header-content-center">FCY Cr</div>
-                </th>
-                <th class="header-cell amount-header">
-                  <div class="header-content-center">Exchange Rate</div>
-                </th>
-                <th class="header-cell">
-                  <div class="header-content-center">Currency</div>
-                </th>
-                <th class="header-cell">
-                  <div class="header-content-center">Trn Date</div>
-                </th>
-                <th class="header-cell">
-                  <div class="header-content-center">Maker ID</div>
-                </th>
-                <th class="header-cell">
-                  <div class="header-content-center">Status</div>
-                </th>
-              </tr>
-            </thead>
-            
-            <!-- Table Body -->
-            <tbody>
-              <tr v-if="loading">
-                <td colspan="12" class="text-center pa-8">
-                  <v-progress-circular indeterminate color="success" />
-                  <div class="mt-3">ກຳລັງໂຫຼດຂໍ້ມູນ...</div>
-                </td>
-              </tr>
-              
-              <tr v-else-if="!filteredData.length">
-                <td colspan="12" class="text-center pa-8">
-                  <v-icon size="64" color="grey-lighten-2" class="mb-4">mdi-book-open-page-variant</v-icon>
-                  <div class="text-h6 text-grey-darken-1 mb-2 text-styles">ບໍ່ມີຂໍ້ມູນ</div>
-                  <div class="text-body-2 text-grey text-styles">
-                    ກະລຸນາປ້ອນເງື່ອນໄຂການຄົ້ນຫາແລ້ວກົດດຶງຂໍ້ມູນ
-                  </div>
-                </td>
-              </tr>
-              
-              <!-- Data Rows -->
-              <tr 
-                v-for="(item, index) in filteredData" 
-                :key="index"
-                class="data-row"
-                :class="getRowClass(item)"
-              >
-                <td class="data-cell sticky-column module-cell">
-                  <v-chip 
-                    size="small" 
-                    :color="getModuleColor(item.module_id)" 
+      <v-tabs-window v-model="activeTab">
+        <!-- ACTB Tab Content -->
+        <v-tabs-window-item value="actb">
+          <v-card-title class="bg-grey-lighten-4">
+            <v-icon start color="primary">mdi-bank-transfer</v-icon>
+            Account Statement Search - ACTB
+          </v-card-title>
+          
+          <!-- ACTB Search Form -->
+          <v-card-text class="pa-6">
+            <v-form ref="searchFormACTB" v-model="formValidACTB">
+              <v-row>
+                <!-- Account Number - Optional -->
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    v-model="searchParamsACTB.gl_code"
+                    label="ເລກບັນຊີ (Account Number)"
+                    placeholder="1234567 (ທາງເລືອກ - Optional)"
+                    :rules="accountRules"
+                    prepend-inner-icon="mdi-card-account-details"
                     variant="outlined"
-                  >
-                    {{ item.module_id }}
-                  </v-chip>
-                </td>
-                <td class="data-cell trn-code-cell">
-                  <span class="code-value">{{ item.trn_code_id }}</span>
-                </td>
-                <td class="data-cell ref-cell">
-                  <div class="ref-content" :title="item.trn_ref_no">
-                    {{ item.trn_ref_no }}
-                  </div>
-                </td>
-                <td class="data-cell description-cell">
-                  <div class="description-content" :title="item.addl_sub_text">
-                    {{ item.addl_sub_text || '-' }}
-                  </div>
-                </td>
-                <td class="data-cell account-full-cell">
-                  <span class="account-full-value">{{ item.ac_no_full }}</span>
-                </td>
-                <td class="data-cell amount-cell">
-                  <span class="amount-value" :class="item.fcy_dr > 0 ? 'text-success' : ''">
-                    {{ formatCurrency(item.fcy_dr) }}
-                  </span>
-                </td>
-                <td class="data-cell amount-cell">
-                  <span class="amount-value" :class="item.fcy_cr > 0 ? 'text-error' : ''">
-                    {{ formatCurrency(item.fcy_cr) }}
-                  </span>
-                </td>
-                <td class="data-cell amount-cell">
-                  <span class="rate-value">{{ formatExchangeRate(item.exch_rate) }}</span>
-                </td>
-                <td class="data-cell currency-cell">
-                  <v-chip 
-                    size="small" 
-                    :color="getCurrencyColor(item.ac_ccy_id)" 
-                    variant="tonal"
-                  >
-                    {{ item.ac_ccy_id }}
-                  </v-chip>
-                </td>
-                <td class="data-cell date-cell">
-                  <span class="date-value">{{ formatDate(item.trn_dt) }}</span>
-                </td>
-                <td class="data-cell maker-cell">
-                  <span class="maker-value">{{ item.Maker_id_id }}</span>
-                </td>
-                <td class="data-cell status-cell">
-                  <v-chip 
-                    size="small" 
-                    :color="getStatusColor(item.Auth_Status)" 
-                    variant="tonal"
-                  >
-                    {{ getStatusText(item.Auth_Status) }}
-                  </v-chip>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </v-card-text>
+                    density="comfortable"
+                    maxlength="25"
+                    counter
+                    clearable
+                    hint="ປ່ອຍວ່າງເພື່ອຄົ້ນຫາທຸກບັນຊີ (7+ ຫຼັກ)"
+                    persistent-hint
+                  />
+                </v-col>
+                
+                <!-- Currency Code -->
+                <v-col cols="12" md="6">
+                  <v-select
+                    v-model="searchParamsACTB.currency_code"
+                    :items="currencies"
+                    item-title="text"
+                    item-value="value"
+                    label="ສະກຸນເງິນ (Currency) *"
+                    :rules="requiredRules"
+                    prepend-inner-icon="mdi-currency-usd"
+                    variant="outlined"
+                    density="comfortable"
+                  />
+                </v-col>
+                
+                <!-- Start Date -->
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    v-model="searchParamsACTB.date_start"
+                    label="ວັນທີ່ເລີ່ມຕົ້ນ (Start Date) *"
+                    type="date"
+                    :rules="dateRules"
+                    prepend-inner-icon="mdi-calendar-start"
+                    variant="outlined"
+                    density="comfortable"
+                  />
+                </v-col>
+                
+                <!-- End Date -->
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    v-model="searchParamsACTB.date_end"
+                    label="ວັນທີ່ສິ້ນສຸດ (End Date) *"
+                    type="date"
+                    :rules="dateRules"
+                    prepend-inner-icon="mdi-calendar-end"
+                    variant="outlined"
+                    density="comfortable"
+                  />
+                </v-col>
+              </v-row>
+            </v-form>
+          </v-card-text>
+          
+          <v-card-actions class="pa-6 pt-0">
+            <v-spacer />
+            <v-btn
+              color="grey"
+              variant="outlined"
+              prepend-icon="mdi-refresh"
+              @click="resetForm('ACTB')"
+              :disabled="loading"
+            >
+              ລ້າງຟອມ
+            </v-btn>
+            <v-btn
+              color="primary"
+              variant="elevated"
+              prepend-icon="mdi-magnify"
+              @click="searchAccount('ACTB')"
+              :loading="loading"
+              :disabled="!formValidACTB"
+            >
+              ຄົ້ນຫາ
+            </v-btn>
+          </v-card-actions>
+        </v-tabs-window-item>
+        
+        <!-- EOC Tab Content -->
+        <v-tabs-window-item value="eoc">
+          <v-card-title class="bg-grey-lighten-4">
+            <v-icon start color="primary">mdi-calendar-clock</v-icon>
+            End of Cycle Report - EOC
+          </v-card-title>
+          
+          <!-- EOC Search Form -->
+          <v-card-text class="pa-6">
+            <v-form ref="searchFormEOC" v-model="formValidEOC">
+              <v-row>
+                <!-- Account Number - Optional -->
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    v-model="searchParamsEOC.gl_code"
+                    label="ເລກບັນຊີ (Account Number)"
+                    placeholder="1234567 (ທາງເລືອກ - Optional)"
+                    :rules="accountRules"
+                    prepend-inner-icon="mdi-card-account-details"
+                    variant="outlined"
+                    density="comfortable"
+                    maxlength="25"
+                    counter
+                    clearable
+                    hint="ປ່ອຍວ່າງເພື່ອຄົ້ນຫາທຸກບັນຊີ (7+ ຫຼັກ)"
+                    persistent-hint
+                  />
+                </v-col>
+                
+                <!-- Currency Code -->
+                <v-col cols="12" md="6">
+                  <v-select
+                    v-model="searchParamsEOC.currency_code"
+                    :items="currencies"
+                    item-title="text"
+                    item-value="value"
+                    label="ສະກຸນເງິນ (Currency) *"
+                    :rules="requiredRules"
+                    prepend-inner-icon="mdi-currency-usd"
+                    variant="outlined"
+                    density="comfortable"
+                  />
+                </v-col>
+                
+                <!-- Start Date -->
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    v-model="searchParamsEOC.date_start"
+                    label="ວັນທີ່ເລີ່ມຕົ້ນ (Start Date) *"
+                    type="date"
+                    :rules="dateRules"
+                    prepend-inner-icon="mdi-calendar-start"
+                    variant="outlined"
+                    density="comfortable"
+                  />
+                </v-col>
+                
+                <!-- End Date -->
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    v-model="searchParamsEOC.date_end"
+                    label="ວັນທີ່ສິ້ນສຸດ (End Date) *"
+                    type="date"
+                    :rules="dateRules"
+                    prepend-inner-icon="mdi-calendar-end"
+                    variant="outlined"
+                    density="comfortable"
+                  />
+                </v-col>
+              </v-row>
+            </v-form>
+          </v-card-text>
+          
+          <v-card-actions class="pa-6 pt-0">
+            <v-spacer />
+            <v-btn
+              color="grey"
+              variant="outlined"
+              prepend-icon="mdi-refresh"
+              @click="resetForm('EOC')"
+              :disabled="loading"
+            >
+              ລ້າງຟອມ
+            </v-btn>
+            <v-btn
+              color="primary"
+              variant="elevated"
+              prepend-icon="mdi-magnify"
+              @click="searchAccount('EOC')"
+              :loading="loading"
+              :disabled="!formValidEOC"
+            >
+              ຄົ້ນຫາ
+            </v-btn>
+          </v-card-actions>
+        </v-tabs-window-item>
+      </v-tabs-window>
     </v-card>
-
-    <!-- Notification Snackbar -->
+    
+    <!-- Results Section (Shared for both tabs) -->
+    <div v-if="searchResult">
+      <!-- Account Info Card -->
+      <v-card class="result-card elevation-2">
+        <div class="account-header">
+          <v-row align="center">
+            <v-col cols="12" md="3">
+              <div class="text-subtitle-2">ເລກບັນຊີ</div>
+              <div class="text-h5 font-weight-bold">
+                {{ searchResult.account_info?.gl_code || 'ທຸກບັນຊີ' }}
+              </div>
+            </v-col>
+            <v-col cols="12" md="3">
+              <div class="text-subtitle-2">ສະກຸນເງິນ</div>
+              <div class="text-h5 font-weight-bold">{{ searchResult.account_info.currency_code }}</div>
+            </v-col>
+            <v-col cols="12" md="3">
+              <div class="text-subtitle-2">ປະເພດລາຍງານ</div>
+              <div class="text-h5 font-weight-bold">{{ activeTab.toUpperCase() }}</div>
+            </v-col>
+            <v-col cols="12" md="3">
+              <div class="text-subtitle-2">ຍອດເປີດບັນຊີ</div>
+              <div class="balance-display">{{ formatCurrency(searchResult.account_info.open_balance) }}</div>
+            </v-col>
+          </v-row>
+        </div>
+        
+        <v-card-text>
+          <div class="d-flex justify-space-between align-center mb-4 flex-wrap gap-2">
+            <div class="text-h6">
+              <v-icon start color="primary">mdi-format-list-bulleted</v-icon>
+              ລາຍການເຄື່ອນໄຫວ ({{ transactionCount }} ລາຍການ)
+            </div>
+            <div class="d-flex align-center gap-2">
+              <v-chip color="primary" variant="outlined">
+                {{ formatDate(searchResult.account_info.date_start) }} - 
+                {{ formatDate(searchResult.account_info.date_end) }}
+              </v-chip>
+              <v-btn
+                icon="mdi-download"
+                size="small"
+                variant="text"
+                color="primary"
+                @click="exportData"
+                title="ດາວໂຫຼດ CSV"
+              />
+              <v-btn
+                icon="mdi-printer"
+                size="small"
+                variant="text"
+                color="primary"
+                @click="printData"
+                title="ພິມ"
+              />
+            </div>
+          </div>
+          
+          <!-- Summary Cards -->
+          <v-row class="mb-4">
+            <v-col cols="12" sm="6" md="3">
+              <v-card class="summary-card" color="success" variant="tonal">
+                <v-card-text>
+                  <div class="text-subtitle-2">ລວມເດບິດ (Total DR)</div>
+                  <div class="text-h6 font-weight-bold">{{ formatCurrency(totalDebit) }}</div>
+                </v-card-text>
+              </v-card>
+            </v-col>
+            <v-col cols="12" sm="6" md="3">
+              <v-card class="summary-card" color="error" variant="tonal">
+                <v-card-text>
+                  <div class="text-subtitle-2">ລວມເຄຣດິດ (Total CR)</div>
+                  <div class="text-h6 font-weight-bold">{{ formatCurrency(totalCredit) }}</div>
+                </v-card-text>
+              </v-card>
+            </v-col>
+            <v-col cols="12" sm="6" md="3">
+              <v-card class="summary-card" color="info" variant="tonal">
+                <v-card-text>
+                  <div class="text-subtitle-2">ຍອດເປີດ (Opening)</div>
+                  <div class="text-h6 font-weight-bold">{{ formatCurrency(searchResult.account_info.open_balance) }}</div>
+                </v-card-text>
+              </v-card>
+            </v-col>
+            <v-col cols="12" sm="6" md="3">
+              <v-card class="summary-card" color="primary" variant="tonal">
+                <v-card-text>
+                  <div class="text-subtitle-2">ຍອດປິດ (Closing)</div>
+                  <div class="text-h6 font-weight-bold">{{ formatCurrency(closingBalance) }}</div>
+                </v-card-text>
+              </v-card>
+            </v-col>
+          </v-row>
+          
+          <!-- Transactions Table -->
+          <div v-if="transactions.length > 0" class="table-container">
+            <v-data-table
+              :headers="tableHeaders"
+              :items="transactions"
+              :items-per-page="10"
+              class="data-table elevation-1"
+              :loading="loading"
+            >
+              <template #item.T_DATE="{ item }">
+                <span>{{ formatDate(item.T_DATE) }}</span>
+              </template>
+              
+              <template #item.TRN_DESC="{ item }">
+                <span class="text-truncate" style="max-width: 300px; display: inline-block;" :title="item.TRN_DESC">
+                  {{ item.TRN_DESC }}
+                </span>
+              </template>
+              
+              <template #item.DR="{ item }">
+                <span :class="item.DR > 0 ? 'positive-amount' : ''">
+                  {{ formatCurrency(item.DR) }}
+                </span>
+              </template>
+              
+              <template #item.CR="{ item }">
+                <span :class="item.CR > 0 ? 'negative-amount' : ''">
+                  {{ formatCurrency(item.CR) }}
+                </span>
+              </template>
+              
+              <template #item.BALANCE="{ item }">
+                <v-chip
+                  :color="item.BALANCE >= 0 ? 'success' : 'error'"
+                  variant="flat"
+                  size="small"
+                >
+                  {{ formatCurrency(item.BALANCE) }}
+                </v-chip>
+              </template>
+            </v-data-table>
+          </div>
+          
+          <!-- Empty State -->
+          <div v-else class="empty-state">
+            <div class="empty-state-icon">📭</div>
+            <div class="text-h6 mb-2">ບໍ່ມີຂໍ້ມູນ</div>
+            <div class="text-body-2">ບໍ່ພົບລາຍການເຄື່ອນໄຫວໃນຊ່ວງເວລາທີ່ເລືອກ</div>
+          </div>
+        </v-card-text>
+      </v-card>
+    </div>
+    
+    <!-- Snackbar for notifications -->
     <v-snackbar
       v-model="snackbar.show"
       :color="snackbar.color"
-      :timeout="5000"
+      :timeout="3000"
       location="top"
-      elevation="6"
     >
-      <div class="d-flex align-center">
-        <v-icon start :icon="snackbar.icon" />
-        {{ snackbar.message }}
-      </div>
-      <template #actions>
-        <v-btn 
-          variant="text" 
-          @click="snackbar.show = false"
-          icon="mdi-close"
-          size="small"
-        />
-      </template>
+      <v-icon start>{{ snackbar.icon }}</v-icon>
+      {{ snackbar.message }}
     </v-snackbar>
   </v-container>
 </template>
 
-<script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue'
+<script setup>
+import { ref, computed, onMounted, watch } from 'vue'
 import axios from '@/helpers/axios'
-import * as XLSX from 'xlsx'
 
-// Page Meta
-definePageMeta({
-  title: 'Journal Report',
-  layout: 'default'
-})
-
-// Types
-interface JournalItem {
-  ac_entry_sr_no: number
-  module_id: string
-  trn_code_id: string
-  trn_dt: string
-  trn_ref_no: string
-  financial_cycle_id: string
-  period_code_id: string
-  value_dt: string
-  trn_ref_sub_no: string
-  external_ref_no: string
-  addl_text: string
-  addl_sub_text: string
-  ac_no_id: string
-  ac_relative: string
-  fcy_amount: number
-  lcy_amount: number
-  fcy_dr: number
-  fcy_cr: number
-  lcy_dr: number
-  lcy_cr: number
-  exch_rate: number
-  ac_ccy_id: string
-  drcr_ind: string
-  delete_stat: string
-  category: string
-  product: string
-  event: string
-  event_sr_no: number
-  entry_seq_no: number
-  Auth_Status: string
-  Checker_DT_Stamp: string
-  Checker_id_id: string
-  Maker_DT_Stamp: string
-  Maker_id_id: string
-  ac_no_full: string
-  glType: string
-  glid_id: string
-}
-
-interface ApiResponse {
-  status: 'success' | 'error'
-  message: string
-  count?: number
-  data: JournalItem[]
-}
-
-// Authentication helper
+// =============================================
+// AUTHENTICATION
+// =============================================
 const getAuthHeaders = () => {
   const token = localStorage.getItem("token")
   if (!token) {
@@ -466,22 +428,32 @@ const getAuthHeaders = () => {
   }
 }
 
-// Add EOD state
-const eodInfo = ref<any>(null)
+// =============================================
+// STATE
+// =============================================
+const activeTab = ref('actb')
+const searchFormACTB = ref(null)
+const searchFormEOC = ref(null)
+const formValidACTB = ref(false)
+const formValidEOC = ref(false)
+const loading = ref(false)
+const searchResult = ref(null)
+const eodInfo = ref(null)
 const targetDate = ref('')
 
-// Reactive state
-const loading = ref(false)
-const searchText = ref('')
-const selectedFinancialCycle = ref('') // will be set by EOD
-const selectedPeriodCode = ref('')
-const selectedModuleId = ref('')
-const selectedTrnCode = ref('')
-const selectedStartDate = ref('')
-const selectedEndDate = ref('')
-const selectedMakerId = ref('')
-const journalData = ref<JournalItem[]>([])
-const lastUsedParams = ref<any>(null)
+const searchParamsACTB = ref({
+  gl_code: '',
+  currency_code: 'LAK',
+  date_start: '',
+  date_end: ''
+})
+
+const searchParamsEOC = ref({
+  gl_code: '',
+  currency_code: 'LAK',
+  date_start: '',
+  date_end: ''
+})
 
 const snackbar = ref({
   show: false,
@@ -490,135 +462,110 @@ const snackbar = ref({
   icon: 'mdi-check-circle'
 })
 
-// Dynamic options from API
-const moduleOptions = ref([])
-const transactionCodeOptions = ref([])
-const makerIdOptions = ref([])
-const loadingOptions = ref(false)
+// =============================================
+// DATA
+// =============================================
+const currencies = [
+  { text: 'LAK - ກີບ', value: 'LAK' },
+  { text: 'USD - ໂດລາ', value: 'USD' },
+  { text: 'THB - ບາດ', value: 'THB' },
+  { text: 'EUR - ເອີໂຣ', value: 'EUR' },
+  { text: 'CNY - ຢວນ', value: 'CNY' }
+]
 
-// Validation functions
-const validateFinancialCycle = (value: string) => {
-  if (!value) return true // Optional field
-  const year = parseInt(value)
-  if (year < 2020 || year > 2050) return 'ປີການເງິນຕ້ອງຢູ່ລະຫວ່າງ 2020-2050'
-  return true
-}
+const tableHeaders = [
+  { title: 'ລໍາດັບ', key: 'rID', align: 'center', width: '80px' },
+  { title: 'ວັນທີ່', key: 'T_DATE', align: 'center', width: '120px' },
+  { title: 'ລາຍລະອຽດ', key: 'TRN_DESC', align: 'start' },
+  { title: 'ເດບິດ (DR)', key: 'DR', align: 'end', width: '140px' },
+  { title: 'ເຄຣດິດ (CR)', key: 'CR', align: 'end', width: '140px' },
+  { title: 'ຍອດເງິນ (Balance)', key: 'BALANCE', align: 'end', width: '160px' }
+]
 
-const validatePeriodCode = (value: string) => {
-  if (!value) return true // Optional field
-  if (!/^\d{6}$/.test(value)) return 'ລະຫັດງວດຕ້ອງເປັນຕົວເລກ 6 ຫຼັກ (YYYYMM)'
-  const year = parseInt(value.substring(0, 4))
-  const month = parseInt(value.substring(4, 6))
-  if (year < 2020 || year > 2050) return 'ປີໃນລະຫັດງວດບໍ່ຖືກຕ້ອງ'
-  if (month < 1 || month > 12) return 'ເດືອນໃນລະຫັດງວດບໍ່ຖືກຕ້ອງ'
-  return true
-}
+// =============================================
+// VALIDATION
+// =============================================
+const accountRules = [
+  v => {
+    if (!v || v.trim() === '') return true // Allow empty
+    const cleaned = String(v).trim()
+    return (/^\d+$/.test(cleaned) && cleaned.length >= 7) || 'ເລກບັນຊີຕ້ອງເປັນຕົວເລກຢ່າງໜ້ອຍ 7 ຫຼັກ'
+  }
+]
 
-// Computed properties
-const filteredData = computed(() => {
-  if (!searchText.value && !selectedMakerId.value) return journalData.value
+const requiredRules = [
+  v => !!v || 'ກະລຸນາປ້ອນຂໍ້ມູນ'
+]
 
-  const search = searchText.value.toLowerCase()
-  return journalData.value.filter(item =>
-    (
-      !searchText.value ||
-      item.ac_no_id?.toLowerCase().includes(search) ||
-      item.ac_no_full?.toLowerCase().includes(search) ||
-      item.trn_ref_no?.toLowerCase().includes(search) ||
-      item.addl_text?.toLowerCase().includes(search) ||
-      item.addl_sub_text?.toLowerCase().includes(search) ||
-      item.ac_ccy_id?.toLowerCase().includes(search) ||
-      item.module_id?.toLowerCase().includes(search) ||
-      item.Maker_id_id?.toLowerCase().includes(search)
-    ) &&
-    (
-      !selectedMakerId.value ||
-      item.Maker_id_id === selectedMakerId.value
-    )
-  )
+const dateRules = [
+  v => !!v || 'ກະລຸນາເລືອກວັນທີ່',
+  v => /^\d{4}-\d{2}-\d{2}$/.test(v) || 'ຮູບແບບວັນທີ່ບໍ່ຖືກຕ້ອງ'
+]
+
+// =============================================
+// COMPUTED
+// =============================================
+const transactions = computed(() => searchResult.value?.transactions || [])
+const transactionCount = computed(() => transactions.value.length)
+const totalDebit = computed(() => transactions.value.reduce((sum, item) => sum + (parseFloat(item.DR) || 0), 0))
+const totalCredit = computed(() => transactions.value.reduce((sum, item) => sum + (parseFloat(item.CR) || 0), 0))
+const closingBalance = computed(() => {
+  if (transactions.value.length === 0) return 0
+  return transactions.value[transactions.value.length - 1].BALANCE || 0
 })
 
-// API calls for dropdown data
-const fetchModules = async () => {
-  try {
-    loadingOptions.value = true
-    const apiResponse = await axios.get('/api/modules/', getAuthHeaders())
+// =============================================
+// HELPERS
+// =============================================
+const formatCurrency = (value) => {
+  if (!value && value !== 0) return '0.00'
+  return parseFloat(value).toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })
+}
+
+const formatDate = (dateString) => {
+  if (!dateString) return '-'
+  const date = new Date(dateString)
+  return date.toLocaleDateString('lo-LA', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  })
+}
+
+const formatDateInput = (date) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+const showNotification = (message, color = 'success', icon = 'mdi-check-circle') => {
+  snackbar.value = { show: true, message, color, icon }
+}
+
+const handleAPIError = (error) => {
+  let errorMessage = 'ມີຂໍ້ຜິດພາດໃນການເຊື່ອມຕໍ່ລະບົບ'
+  
+  if (error.message === 'Authentication token not found') {
+    errorMessage = 'ກະລຸນາເຂົ້າສູ່ລະບົບກ່ອນ'
+  } else if (error.response) {
+    const status = error.response.status
+    const data = error.response.data
     
-    if (apiResponse.data && Array.isArray(apiResponse.data)) {
-      moduleOptions.value = apiResponse.data.map(module => ({
-        title: `${module.module_Id} - ${module.module_name_la}`,
-        value: module.module_Id,
-        subtitle: module.module_name_la,
-        icon: 'mdi-view-module'
-      }))
-    }
-  } catch (error) {
-    console.error('Error fetching modules:', error)
-    showSnackbar('ບໍ່ສາມາດດຶງຂໍ້ມູນໂມດູນໄດ້', 'warning', 'mdi-alert')
+    if (status === 400) errorMessage = data.message || 'ຂໍ້ມູນທີ່ສົ່ງບໍ່ຖືກຕ້ອງ'
+    else if (status === 401) errorMessage = 'ໝົດອາຍຸການເຂົ້າສູ່ລະບົບ ກະລຸນາເຂົ້າສູ່ລະບົບໃໝ່'
+    else if (status === 403) errorMessage = 'ທ່ານບໍ່ມີສິດເຂົ້າເຖິງຂໍ້ມູນນີ້'
+    else if (status === 404) errorMessage = 'ບໍ່ພົບຂໍ້ມູນທີ່ຄົ້ນຫາ'
+    else if (status === 500) errorMessage = data.message || 'ມີຂໍ້ຜິດພາດໃນລະບົບ'
+    else errorMessage = data.message || 'ມີຂໍ້ຜິດພາດທີ່ບໍ່ຄາດຄິດ'
+  } else if (error.request) {
+    errorMessage = 'ບໍ່ສາມາດເຊື່ອມຕໍ່ກັບເຊີເວີໄດ້'
   }
-}
-
-const fetchTransactionCodes = async () => {
-  try {
-    const apiResponse = await axios.get('/api/trn-codes/', getAuthHeaders())
-    if (apiResponse.data && Array.isArray(apiResponse.data)) {
-      transactionCodeOptions.value = apiResponse.data.map(code => ({
-        title: `${code.trn_code} - ${code.trn_Desc_la}`,
-        value: code.trn_code,
-        subtitle: code.trn_Desc_la,
-        icon: 'mdi-code-tags'
-      }))
-    }
-  } catch (error) {
-    console.error('Error fetching transaction codes:', error)
-    showSnackbar('ບໍ່ສາມາດດຶງຂໍ້ມູນລະຫັດລາຍການໄດ້', 'warning', 'mdi-alert')
-  } finally {
-    loadingOptions.value = false
-  }
-}
-
-// Main fetch function for journal data
-const fetchJournalData = async () => {
-  try {
-    loading.value = true
-
-    const params = {
-      financial_cycle_id: selectedFinancialCycle.value || null,
-      period_code_id: selectedPeriodCode.value || null,
-      date_start: selectedStartDate.value || null,
-      date_end: selectedEndDate.value || null,
-      module_id: selectedModuleId.value || null,
-      trn_code_id: selectedTrnCode.value || null
-    }
-
-    console.log('Calling Journal Report API with params:', params)
-
-    const apiResponse = await axios.post('/api/journal-report-actb/', params, getAuthHeaders())
-    const response: ApiResponse = apiResponse.data
-
-    if (response.status === 'success') {
-      journalData.value = response.data || []
-      lastUsedParams.value = params
-
-      showSnackbar(
-        `ດຶງຂໍ້ມູນລາຍງານສຳເລັດ (${journalData.value.length} ລາຍການ)`,
-        'success',
-        'mdi-check-circle'
-      )
-
-      console.log(`Data loaded successfully: ${journalData.value.length} records`)
-    } else {
-      throw new Error(response.message || 'Unknown error occurred')
-    }
-
-  } catch (error: any) {
-    console.error('Error fetching journal data:', error)
-    handleApiError(error)
-    journalData.value = []
-
-  } finally {
-    loading.value = false
-  }
+  
+  return errorMessage
 }
 
 // Helper to fetch EOD info and set defaults
@@ -628,565 +575,387 @@ const fetchEodInfo = async () => {
     if (res.data && res.data.target_date) {
       eodInfo.value = res.data
       targetDate.value = res.data.target_date
-
-      // Set all date-related fields to target_date
-      selectedFinancialCycle.value = targetDate.value.substring(0, 4)
-      selectedPeriodCode.value = targetDate.value.replace(/-/g, '').substring(0, 6)
-      selectedStartDate.value = targetDate.value
-      selectedEndDate.value = targetDate.value
+      
+      // Set both ACTB and EOC date ranges to target_date
+      searchParamsACTB.value.date_start = targetDate.value
+      searchParamsACTB.value.date_end = targetDate.value
+      
+      searchParamsEOC.value.date_start = targetDate.value
+      searchParamsEOC.value.date_end = targetDate.value
+      
+      // Show notification if it's back-dated
+      if (res.data.is_back_date) {
+        showNotification(`ໃຊ້ວັນທີ່ຍ້ອນຫຼັງ: ${formatDate(targetDate.value)}`, 'info', 'mdi-calendar-check')
+      }
     }
   } catch (err) {
     console.error('Failed to fetch EOD info', err)
-    showSnackbar('ບໍ່ສາມາດດຶງຂໍ້ມູນ EOD', 'warning', 'mdi-alert')
+    showNotification('ບໍ່ສາມາດດຶງຂໍ້ມູນ EOD - ໃຊ້ວັນທີ່ເລີ່ມຕົ້ນຂອງລະບົບ', 'warning', 'mdi-alert')
+    
+    // Fallback to default dates if API fails
+    const today = new Date()
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
+    const defaultStartDate = formatDateInput(firstDay)
+    const defaultEndDate = formatDateInput(today)
+    
+    searchParamsACTB.value.date_start = defaultStartDate
+    searchParamsACTB.value.date_end = defaultEndDate
+    
+    searchParamsEOC.value.date_start = defaultStartDate
+    searchParamsEOC.value.date_end = defaultEndDate
   }
 }
 
-// Utility functions
-const formatDate = (dateString: string): string => {
-  if (!dateString) return '-'
-  const date = new Date(dateString)
-  return date.toLocaleDateString('en-GB', { 
-    day: '2-digit',
-    month: '2-digit', 
-    year: 'numeric'
-  })
-}
-
-const formatDateTime = (dateTimeString: string): string => {
-  if (!dateTimeString) return '-'
-  const date = new Date(dateTimeString)
-  return date.toLocaleString('en-GB', { 
-    day: '2-digit',
-    month: '2-digit', 
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-}
-
-const formatExchangeRate = (rate: number | string | undefined): string => {
-  const numValue = Number(rate || 0)
-  if (numValue === 0) return '-'
-  return numValue.toFixed(4)
-}
-
-const formatCurrency = (value: number | string | undefined): string => {
-  const numValue = Number(value || 0)
-  if (numValue === 0) return '-'
-  return numValue.toLocaleString('en-US', { 
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  })
-}
-
-const getCurrencyColor = (currency: string) => {
-  const colors = {
-    'LAK': 'success',
-    'USD': 'primary', 
-    'THB': 'warning',
-    'EUR': 'info'
-  }
-  return colors[currency as keyof typeof colors] || 'grey'
-}
-
-const getModuleColor = (module: string) => {
-  const colors = {
-    'GL': 'success',
-    'CM': 'primary',
-    'LM': 'warning', 
-    'FA': 'info'
-  }
-  return colors[module as keyof typeof colors] || 'grey'
-}
-
-const getStatusColor = (status: string) => {
-  const colors = {
-    'A': 'success', // Authorized
-    'U': 'warning', // Unauthorized
-    'R': 'error',   // Rejected
-    'P': 'info'     // Pending
-  }
-  return colors[status as keyof typeof colors] || 'grey'
-}
-
-const getStatusText = (status: string) => {
-  const texts = {
-    'A': 'Authorized',
-    'U': 'Unauthorized', 
-    'R': 'Rejected',
-    'P': 'Pending'
-  }
-  return texts[status as keyof typeof texts] || status
-}
-
-const getRowClass = (item: JournalItem) => {
-  return {
-    'debit-row': item.drcr_ind === 'D',
-    'credit-row': item.drcr_ind === 'C'
-  }
-}
-
-const handleApiError = (error: any) => {
-  let errorMessage = 'ເກີດຂໍ້ຜິດພາດໃນການດຶງຂໍ້ມູນ'
-  let errorIcon = 'mdi-alert-circle'
-  
-  if (error?.response?.status === 401) {
-    errorMessage = 'ໂທເຄນໝົດອາຍຸ ກະລຸນາເຂົ້າສູ່ລະບົບໃໝ່'
-    errorIcon = 'mdi-account-alert'
-  } else if (error?.response?.status === 403) {
-    errorMessage = 'ທ່ານບໍ່ມີສິດໃນການເຂົ້າເຖິງຂໍ້ມູນນີ້'
-    errorIcon = 'mdi-lock-alert'
-  } else if (error?.response?.status === 500) {
-    errorMessage = 'ເກີດຂໍ້ຜິດພາດຈາກເຊີຟເວີ ກະລຸນາລອງໃໝ່ໃນພາຍຫຼັງ'
-    errorIcon = 'mdi-server-network-off'
-  } else if (error?.response?.data?.message) {
-    errorMessage = error.response.data.message
-  }
-  
-  showSnackbar(errorMessage, 'error', errorIcon)
-}
-
-const showSnackbar = (message: string, color: string = 'success', icon: string = 'mdi-check-circle') => {
-  snackbar.value = { show: true, message, color, icon }
-}
-
-// Fetch Maker IDs from journalData (unique values)
-const updateMakerIdOptions = () => {
-  const uniqueMakers = Array.from(
-    new Set(journalData.value.map(item => item.Maker_id_id).filter(Boolean))
-  )
-  makerIdOptions.value = uniqueMakers.map(maker => ({
-    title: maker,
-    value: maker
-  }))
-}
-
-// Watch journalData to update Maker ID dropdown options
-watch(journalData, updateMakerIdOptions, { immediate: true })
-
-// Export to Excel function
-const exportToExcel = () => {
+// =============================================
+// MAIN METHODS
+// =============================================
+const searchAccount = async (reportType) => {
   try {
-    if (!journalData.value.length) {
-      showSnackbar('ບໍ່ມີຂໍ້ມູນໃຫ້ສົ່ງອອກ', 'warning', 'mdi-alert')
+    const searchForm = reportType === 'ACTB' ? searchFormACTB : searchFormEOC
+    const formValid = reportType === 'ACTB' ? formValidACTB : formValidEOC
+    const searchParams = reportType === 'ACTB' ? searchParamsACTB : searchParamsEOC
+    
+    const { valid } = await searchForm.value.validate()
+    if (!valid) {
+      showNotification('ກະລຸນາກວດສອບຂໍ້ມູນ', 'error', 'mdi-alert-circle')
       return
     }
-
-    const exportData = journalData.value.map(item => ({
-      'Module ID': item.module_id,
-      'Transaction Code': item.trn_code_id,
-      'Transaction Date': item.trn_dt,
-      'Reference No': item.trn_ref_no,
-      'Period Code': item.period_code_id,
-      'Value Date': item.value_dt,
-      'Sub Reference': item.trn_ref_sub_no,
-      'Description': item.addl_sub_text,
-      'Account Relative': item.ac_relative,
-      'FCY Amount': item.fcy_amount,
-      'FCY Dr': item.fcy_dr,
-      'FCY Cr': item.fcy_cr,
-      'Exchange Rate': item.exch_rate,
-      'Currency': item.ac_ccy_id,
-      'Dr/Cr Indicator': item.drcr_ind,
-      'Auth Status': item.Auth_Status,
-      'Maker Date': item.Maker_DT_Stamp,
-      'Maker ID': item.Maker_id_id,
-      'Account Full': item.ac_no_full
-    }))
-
-    const wb = XLSX.utils.book_new()
-    const ws = XLSX.utils.json_to_sheet(exportData)
     
-    // Set column widths
-    const colWidths = [
-      { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 25 },
-      { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 20 }, { wch: 25 },
-      { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 },
-      { wch: 15 }, { wch: 12 }, { wch: 10 }, { wch: 5 }, { wch: 10 }
-    ]
-    ws['!cols'] = colWidths
-
-    XLSX.utils.book_append_sheet(wb, ws, 'Journal Report')
-
-    const filename = `Journal_Report_${selectedFinancialCycle.value}_${selectedPeriodCode.value}_${new Date().toISOString().split('T')[0]}.xlsx`
-    XLSX.writeFile(wb, filename)
-
-    showSnackbar(
-      `ສົ່ງອອກສຳເລັດ - ${journalData.value.length} ລາຍການ`, 
-      'success', 
-      'mdi-download'
+    // Validate date range
+    const startDate = new Date(searchParams.value.date_start)
+    const endDate = new Date(searchParams.value.date_end)
+    if (startDate > endDate) {
+      showNotification('ວັນທີ່ເລີ່ມຕົ້ນຕ້ອງມາກ່ອນຫຼືເທົ່າກັບວັນທີ່ສິ້ນສຸດ', 'error', 'mdi-alert-circle')
+      return
+    }
+    
+    loading.value = true
+    searchResult.value = null
+    
+    // Prepare request - send null if gl_code is empty
+    const requestData = {
+      ...searchParams.value,
+      gl_code: searchParams.value.gl_code?.trim() || null
+    }
+    
+    // Different endpoints for ACTB and EOC
+    const endpoint = reportType === 'ACTB' 
+      ? 'api/account/statement/search/actb'
+      : 'api/account/statement/search/eoc'
+    
+    const response = await axios.post(
+      endpoint,
+      requestData,
+      getAuthHeaders()
     )
-
+    
+    if (response.data.status === 'success') {
+      searchResult.value = response.data.data
+      showNotification(`${reportType} Report: ${response.data.message}`, 'success', 'mdi-check-circle')
+    } else {
+      showNotification(response.data.message, 'error', 'mdi-alert-circle')
+    }
   } catch (error) {
-    console.error('Export error:', error)
-    showSnackbar('ເກີດຂໍ້ຜິດພາດໃນການສົ່ງອອກ', 'error', 'mdi-alert-circle')
+    console.error('Search error:', error)
+    showNotification(handleAPIError(error), 'error', 'mdi-alert-circle')
+  } finally {
+    loading.value = false
   }
 }
 
-// Initialize component
-onMounted(async () => {
-  try {
-    const token = localStorage.getItem("token")
-    if (token) {
-      console.log('Component mounted')
-      
-      await fetchEodInfo() // <-- fetch EOD and set defaults
-
-      // Fetch dropdown data
-      await Promise.all([
-        fetchModules(),
-        fetchTransactionCodes()
-      ])
-      
-      showSnackbar('ເລືອກເງື່ອນໄຂການຄົ້ນຫາແລ້ວກົດດຶງຂໍ້ມູນ', 'info', 'mdi-information')
+const resetForm = (reportType) => {
+  if (reportType === 'ACTB') {
+    searchFormACTB.value?.reset()
+    searchParamsACTB.value.gl_code = ''
+    searchParamsACTB.value.currency_code = 'LAK'
+    // Use targetDate if available, otherwise use defaults
+    if (targetDate.value) {
+      searchParamsACTB.value.date_start = targetDate.value
+      searchParamsACTB.value.date_end = targetDate.value
     } else {
-      showSnackbar('ກະລຸນາເຂົ້າສູ່ລະບົບເພື່ອເຂົ້າເຖິງຂໍ້ມູນ', 'warning', 'mdi-account-alert')
+      const today = new Date()
+      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
+      searchParamsACTB.value.date_start = formatDateInput(firstDay)
+      searchParamsACTB.value.date_end = formatDateInput(today)
     }
-  } catch (error) {
-    console.error('Initialization error:', error)
+  } else {
+    searchFormEOC.value?.reset()
+    searchParamsEOC.value.gl_code = ''
+    searchParamsEOC.value.currency_code = 'LAK'
+    // Use targetDate if available, otherwise use defaults
+    if (targetDate.value) {
+      searchParamsEOC.value.date_start = targetDate.value
+      searchParamsEOC.value.date_end = targetDate.value
+    } else {
+      const today = new Date()
+      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
+      searchParamsEOC.value.date_start = formatDateInput(firstDay)
+      searchParamsEOC.value.date_end = formatDateInput(today)
+    }
   }
+  
+  searchResult.value = null
+}
+
+const exportData = () => {
+  if (!transactions.value.length) {
+    showNotification('ບໍ່ມີຂໍ້ມູນເພື່ອດາວໂຫຼດ', 'warning', 'mdi-alert')
+    return
+  }
+  
+  try {
+    const accountInfo = searchResult.value.account_info
+    const reportType = activeTab.value.toUpperCase()
+    const headerInfo = [
+      `Account Statement Report - ${reportType}`,
+      `Account Number: ${accountInfo.gl_code || 'All Accounts'}`,
+      `Currency: ${accountInfo.currency_code}`,
+      `Period: ${formatDate(accountInfo.date_start)} - ${formatDate(accountInfo.date_end)}`,
+      `Report Type: ${reportType}`,
+      `EOD Date: ${targetDate.value}${eodInfo.value?.is_back_date ? ' (Back-dated)' : ''}`,
+      `Opening Balance: ${formatCurrency(accountInfo.open_balance)}`,
+      `Closing Balance: ${formatCurrency(closingBalance.value)}`,
+      `Total Debit: ${formatCurrency(totalDebit.value)}`,
+      `Total Credit: ${formatCurrency(totalCredit.value)}`,
+      `Generated: ${new Date().toLocaleString()}`,
+      ``,
+      ``
+    ]
+    
+    const headers = ['No,Date,Description,Debit,Credit,Balance']
+    const csvRows = transactions.value.map(row => [
+      row.rID,
+      formatDate(row.T_DATE),
+      `"${row.TRN_DESC.replace(/"/g, '""')}"`,
+      row.DR || 0,
+      row.CR || 0,
+      row.BALANCE
+    ].join(','))
+    
+    const csvContent = [...headerInfo, ...headers, ...csvRows].join('\n')
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    
+    const searchParams = activeTab.value === 'actb' ? searchParamsACTB : searchParamsEOC
+    const fileName = `account_statement_${reportType}_${searchParams.value.gl_code || 'all'}_${formatDateInput(new Date())}.csv`
+    
+    link.setAttribute('href', url)
+    link.setAttribute('download', fileName)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    
+    showNotification('ດາວໂຫຼດສໍາເລັດ', 'success', 'mdi-check-circle')
+  } catch (error) {
+    console.error('Export error:', error)
+    showNotification('ມີຂໍ້ຜິດພາດໃນການດາວໂຫຼດ', 'error', 'mdi-alert-circle')
+  }
+}
+
+const printData = () => {
+  if (!transactions.value.length) {
+    showNotification('ບໍ່ມີຂໍ້ມູນເພື່ອພິມ', 'warning', 'mdi-alert')
+    return
+  }
+  
+  try {
+    const printWindow = window.open('', '', 'width=800,height=600')
+    
+    const accountInfo = searchResult.value.account_info
+    const reportType = activeTab.value.toUpperCase()
+    const tableRows = transactions.value.map(row => {
+      return '<tr>' +
+        '<td class="text-center">' + row.rID + '</td>' +
+        '<td class="text-center">' + formatDate(row.T_DATE) + '</td>' +
+        '<td>' + row.TRN_DESC + '</td>' +
+        '<td class="text-right">' + formatCurrency(row.DR) + '</td>' +
+        '<td class="text-right">' + formatCurrency(row.CR) + '</td>' +
+        '<td class="text-right">' + formatCurrency(row.BALANCE) + '</td>' +
+        '</tr>'
+    }).join('')
+    
+    const eodDateInfo = targetDate.value ? 
+      '<div class="info-row">' +
+      '<span><strong>EOD Date:</strong> ' + formatDate(targetDate.value) + 
+      (eodInfo.value?.is_back_date ? ' (Back-dated)' : '') + '</span>' +
+      '</div>' : ''
+    
+    const printContent = '<!DOCTYPE html>' +
+      '<html>' +
+      '<head>' +
+      '<title>Account Statement - ' + reportType + ' - ' + accountInfo.gl_code + '</title>' +
+      '<style>' +
+      'body { font-family: Arial, sans-serif; padding: 20px; }' +
+      '.header { text-align: center; margin-bottom: 30px; }' +
+      '.info-section { margin-bottom: 20px; }' +
+      '.info-row { display: flex; justify-content: space-between; padding: 5px 0; }' +
+      'table { width: 100%; border-collapse: collapse; margin-top: 20px; }' +
+      'th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }' +
+      'th { background-color: #f2f2f2; font-weight: bold; }' +
+      '.text-right { text-align: right; }' +
+      '.text-center { text-align: center; }' +
+      '.summary { margin-top: 20px; font-weight: bold; }' +
+      '@media print { body { padding: 10px; } }' +
+      '</style>' +
+      '</head>' +
+      '<body>' +
+      '<div class="header">' +
+      '<h2>Account Statement Report - ' + reportType + '</h2>' +
+      '<p>ລາຍງານບັນຊີ</p>' +
+      '</div>' +
+      '<div class="info-section">' +
+      '<div class="info-row">' +
+      '<span><strong>Account Number:</strong> ' + (accountInfo.gl_code || 'All Accounts') + '</span>' +
+      '<span><strong>Currency:</strong> ' + accountInfo.currency_code + '</span>' +
+      '</div>' +
+      '<div class="info-row">' +
+      '<span><strong>Report Type:</strong> ' + reportType + '</span>' +
+      '<span><strong>Opening Balance:</strong> ' + formatCurrency(accountInfo.open_balance) + '</span>' +
+      '</div>' +
+      eodDateInfo +
+      '<div class="info-row">' +
+      '<span><strong>Period:</strong> ' + formatDate(accountInfo.date_start) + ' - ' + formatDate(accountInfo.date_end) + '</span>' +
+      '</div>' +
+      '</div>' +
+      '<table>' +
+      '<thead>' +
+      '<tr>' +
+      '<th class="text-center">No</th>' +
+      '<th class="text-center">Date</th>' +
+      '<th>Description</th>' +
+      '<th class="text-right">Debit</th>' +
+      '<th class="text-right">Credit</th>' +
+      '<th class="text-right">Balance</th>' +
+      '</tr>' +
+      '</thead>' +
+      '<tbody>' +
+      tableRows +
+      '</tbody>' +
+      '</table>' +
+      '<div class="summary">' +
+      '<div class="info-row">' +
+      '<span>Total Debit: ' + formatCurrency(totalDebit.value) + '</span>' +
+      '<span>Total Credit: ' + formatCurrency(totalCredit.value) + '</span>' +
+      '<span>Closing Balance: ' + formatCurrency(closingBalance.value) + '</span>' +
+      '</div>' +
+      '<div class="info-row" style="margin-top: 10px; font-size: 12px; color: #666;">' +
+      '<span>Generated: ' + new Date().toLocaleString() + '</span>' +
+      '</div>' +
+      '</div>' +
+      '<script>' +
+      'window.onload = function () { window.print(); };' +
+      '<\/script>' +
+      '</body>' +
+      '</html>'
+    
+    printWindow.document.write(printContent)
+    printWindow.document.close()
+    
+  } catch (error) {
+    console.error('Print error:', error)
+    showNotification('ມີຂໍ້ຜິດພາດໃນການພິມ', 'error', 'mdi-alert-circle')
+  }
+}
+
+// Watch for tab changes to clear results
+watch(activeTab, () => {
+  searchResult.value = null
+})
+
+// =============================================
+// LIFECYCLE
+// =============================================
+onMounted(async () => {
+  // Fetch EOD info and set dates based on target_date
+  await fetchEodInfo()
 })
 </script>
 
 <style scoped>
-/* Custom Table Container */
-.custom-table-container {
-  width: 100%;
-  max-height: 70vh;
-  overflow: auto;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  background: #fff;
-  position: relative;
-}
-
-/* Custom Table */
-.custom-journal-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  font-size: 0.875rem;
-  min-width: 2400px; /* Updated for more columns */
-}
-
-/* Header Rows */
-.main-header-row {
-  background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
-}
-
-/* Header Cells */
-.header-cell {
-  padding: 12px 8px;
+.page-title {
+  font-size: 1.75rem;
   font-weight: 600;
-  color: #37474f;
-  border: 1px solid #dee2e6;
-  vertical-align: middle;
-  text-align: center;
-  white-space: nowrap;
-}
-
-.header-content-center {
+  color: #1a237e;
+  margin-bottom: 24px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
+  gap: 12px;
 }
 
-/* Entry No Header - Sticky Column */
-.entry-no-header {
-  width: 70px;
-  min-width: 70px;
-  max-width: 70px;
+.search-card,
+.result-card {
+  border-radius: 12px;
+  margin-bottom: 24px;
 }
 
-.amount-header {
-  width: 100px;
-  min-width: 100px;
+.account-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 20px;
+  border-radius: 8px 8px 0 0;
 }
 
-/* Sticky Column */
-.sticky-column {
-  position: sticky;
-  left: 0;
-  z-index: 2;
-  background: white;
-  border-right: 2px solid #dee2e6 !important;
+.balance-display {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-top: 8px;
 }
 
-.main-header-row .sticky-column {
-  background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+.summary-card {
+  border-radius: 8px;
+  transition: transform 0.2s;
 }
 
-/* Data Rows */
-.data-row {
-  transition: background-color 0.2s;
-  background: white;
+.summary-card:hover {
+  transform: translateY(-2px);
 }
 
-.data-row:hover {
-  background-color: #f8f9fa !important;
+.table-container {
+  overflow-x: auto;
+  border-radius: 8px;
 }
 
-.data-row:nth-child(even) {
-  background-color: #fafafa;
+.positive-amount {
+  color: #2e7d32;
+  font-weight: 600;
 }
 
-.debit-row {
-  border-left: 3px solid #4caf50;
+.negative-amount {
+  color: #c62828;
+  font-weight: 600;
 }
 
-.credit-row {
-  border-left: 3px solid #f44336;
-}
-
-/* Data Cells */
-.data-cell {
-  padding: 8px;
-  border: 1px solid #f0f0f0;
-  vertical-align: middle;
-}
-
-/* Entry No Cell - Now Module Cell */
-.entry-no-cell {
-  width: 60px;
-  min-width: 60px;
-  max-width: 60px;
+.empty-state {
   text-align: center;
+  padding: 60px 20px;
+  color: #757575;
+}
+
+.empty-state-icon {
+  font-size: 72px;
+  margin-bottom: 16px;
+}
+
+/* Tab Styling */
+.v-tab {
   font-weight: 500;
-  background: white;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-/* New cell types */
-.trn-code-cell {
-  width: 60px;
-  min-width: 60px;
-  text-align: center;
-}
-
-.code-value {
-  font-family: 'Roboto Mono', monospace;
-  font-size: 0.8rem;
-  font-weight: 500;
-}
-
-.period-cell {
-  width: 60px;
-  min-width: 60px;
-  text-align: center;
-}
-
-.period-value {
-  font-family: 'Roboto Mono', monospace;
-  font-size: 0.8rem;
-}
-
-.ref-sub-cell {
-  width: 120px;
-  min-width: 120px;
-}
-
-.account-relative-cell {
-  width: 100px;
-  min-width: 100px;
-}
-
-.account-relative-value {
-  font-family: 'Roboto Mono', monospace;
-  font-size: 0.8rem;
-}
-
-.rate-value {
-  font-family: 'Roboto Mono', monospace;
-  font-size: 0.8rem;
-  font-weight: 500;
-}
-
-.drcr-cell {
-  width: 60px;
-  min-width: 60px;
-  text-align: center;
-}
-
-.datetime-cell {
-  width: 130px;
-  min-width: 130px;
-}
-
-.datetime-value {
-  font-family: 'Roboto Mono', monospace;
-  font-size: 0.75rem;
-}
-
-.maker-cell {
-  width: 80px;
-  min-width: 80px;
-  text-align: center;
-}
-
-.maker-value {
-  font-family: 'Roboto Mono', monospace;
-  font-size: 0.8rem;
-  font-weight: 500;
-}
-
-.account-full-cell {
-  width: 70px;
-  min-width: 70px;
-}
-
-.account-full-value {
-  font-family: 'Roboto Mono', monospace;
-  font-size: 0.8rem;
-}
-
-/* Date Cell */
-.date-cell {
-  width: 80px;
-  min-width: 80px;
-  text-align: center;
-}
-
-.date-value {
-  font-family: 'Roboto Mono', monospace;
-  font-size: 0.8rem;
-}
-
-/* Reference Cell */
-.ref-cell {
-  width: 200px;
-  min-width: 200px;
-}
-
-.ref-content {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-family: 'Roboto Mono', monospace;
-  font-size: 0.8rem;
-}
-
-/* Account Cell */
-.account-cell {
-  width: 150px;
-  min-width: 150px;
-}
-
-.account-content {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.account-code {
-  font-size: 0.9rem;
-}
-
-/* Description Cell */
-.description-cell {
-  width: 200px;
-  min-width: 200px;
-  max-width: 200px;
-}
-
-.description-content {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  cursor: help;
-}
-
-/* Amount Cells */
-.amount-cell {
-  width: 120px;
-  min-width: 120px;
-  text-align: right;
-  padding-right: 12px;
-}
-
-.amount-value {
-  font-family: 'Roboto Mono', monospace;
-  font-size: 0.875rem;
-  font-weight: 500;
-  display: inline-block;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: rgba(0,0,0,0.02);
-  min-width: 90px;
-  text-align: right;
-}
-
-.amount-value.text-success {
-  color: #4caf50;
-  background: rgba(76, 175, 80, 0.08);
-}
-
-.amount-value.text-error {
-  color: #f44336;
-  background: rgba(244, 67, 54, 0.08);
-}
-
-/* Currency, Module, Status Cells */
-.currency-cell,
-.module-cell,
-.status-cell {
-  width: 90px;
-  min-width: 90px;
-  text-align: center;
-  padding: 8px;
-}
-
-/* Scrollbar Styling */
-.custom-table-container::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-.custom-table-container::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 5px;
-}
-
-.custom-table-container::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 5px;
-}
-
-.custom-table-container::-webkit-scrollbar-thumb:hover {
-  background: #555;
-}
-
-/* Responsive Design */
-@media (max-width: 1200px) {
-  .custom-journal-table {
-    font-size: 0.8rem;
-    min-width: 1200px;
+@media (max-width: 768px) {
+  .page-title {
+    font-size: 1.5rem;
   }
   
-  .data-cell {
-    padding: 6px;
+  .balance-display {
+    font-size: 1.25rem;
   }
   
-  .amount-value {
-    font-size: 0.8rem;
-    min-width: 75px;
-  }
-}
-
-@media (max-width: 960px) {
-  .custom-journal-table {
-    font-size: 0.75rem;
-    min-width: 1100px;
-  }
-  
-  .header-cell,
-  .data-cell {
-    padding: 4px;
-  }
-  
-  .amount-value {
-    font-size: 0.75rem;
-    min-width: 65px;
+  .v-tab {
+    font-size: 0.875rem;
   }
 }
 </style>

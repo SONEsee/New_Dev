@@ -338,7 +338,11 @@ const selectedCurrency = ref('')
 const incomeStatementData = ref<IncomeStatementItem[]>([])
 const showCompareDialog = ref(false)
 const compareResults = ref<any>(null)
-const periodCodeId = ref(getCurrentPeriodCodeId()) // Fixed: Now properly calling the function
+const periodCodeId = ref('') // will be set by EOD
+
+// Add EOD state
+const eodInfo = ref<any>(null)
+const targetDate = ref('')
 
 const snackbar = ref({
   show: false,
@@ -502,6 +506,23 @@ const onSegmentChange = () => {
   // Auto-select LAK for LCY
   if (selectedSegment.value === 'LCY') {
     selectedCurrency.value = 'LAK'
+  }
+}
+
+// Helper to fetch EOD info and set default periodCodeId
+const fetchEodInfo = async () => {
+  try {
+    const res = await axios.get('/api/end-of-day-journal/check/', getAuthHeaders())
+    if (res.data && res.data.target_date) {
+      eodInfo.value = res.data
+      targetDate.value = res.data.target_date
+
+      // Set periodCodeId to target_date (YYYYMM)
+      periodCodeId.value = targetDate.value.replace(/-/g, '').substring(0, 6)
+    }
+  } catch (err) {
+    console.error('Failed to fetch EOD info', err)
+    showSnackbar('ບໍ່ສາມາດດຶງຂໍ້ມູນ EOD', 'warning', 'mdi-alert')
   }
 }
 
