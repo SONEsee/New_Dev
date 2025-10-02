@@ -603,13 +603,17 @@ watch(selectedTab, () => {
   console.log(`🔄 Tab changed to: ${selectedTab.value.toUpperCase()}`)
 })
 
-// Initialize component
 onMounted(async () => {
   try {
     const token = localStorage.getItem("token")
     if (token) {
       console.log('🚀 Income Statement component mounted')
+      
+      // Fetch EOD info to set default period
+      await fetchEodInfo()
+      
       console.log(`📅 Current period: ${periodCodeId.value} (${formatPeriodDisplay(periodCodeId.value)})`)
+      
       // Set default values
       selectedSegment.value = 'LCY'
       selectedCurrency.value = 'LAK'
@@ -634,6 +638,7 @@ onMounted(async () => {
   overflow: hidden;
   width: 100%;
 }
+  
 
 .table-row {
   transition: all 0.2s ease;

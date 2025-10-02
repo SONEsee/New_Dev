@@ -748,8 +748,8 @@ const printData = () => {
       '</div>' +
       '</div>' +
       '<div class="sign-row">' +
-      '<span class="sign-label">ຫົວໜ້າບັນຊີ:</span>' +
-      '<span class="sign-label">ພະນັກງານຜູ້ບັນທຶກ:</span>' +
+      '<span class="sign-label">ຜູ້ກວດສອບ</span>' +
+      '<span class="sign-label">ຜູ້ບັນທຶກ</span>' +
       '</div>' +
       '<script>' +
       'window.onload = function () { window.print(); };' +
@@ -977,10 +977,10 @@ const getStatusColor = (status: string) => {
 
 const getStatusText = (status: string) => {
   const texts = {
-    'A': 'Authorized',
-    'U': 'Unauthorized', 
-    'R': 'Rejected',
-    'P': 'Pending'
+    'A': 'ອະນຸມັດ',
+    'U': 'ລໍຖ້າອະນຸມັດ',
+    'R': 'ປະຕິເສດ',
+    'P': 'ລໍຖ້າເເກ້ໄຂ'
   }
   return texts[status as keyof typeof texts] || status
 }
