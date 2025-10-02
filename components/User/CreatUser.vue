@@ -105,7 +105,7 @@
 
                 <!-- File Info Display -->
                 <v-chip
-                  v-if="createForm.profile_image instanceof File"
+                  v-if="createForm.profile_image"
                   color="success"
                   size="small"
                   class="mt-2"

@@ -25,7 +25,7 @@ export interface FaAsset{
     accu_dpca_value_total:   string;
     asset_accu_dpca_value:   string;
     asset_value_remain:      string;
-    asset_value_remainMonth: string;
+    asset_value_remainMonth: string ;
     asset_value_remainBegin: string;
     asset_value_remainLast:  string;
     acc_no:                  string;

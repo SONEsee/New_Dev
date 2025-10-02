@@ -8,7 +8,47 @@ const title = "ຈົດບັນທຶກຮັບຮູ້ຊັບສິນ";
 const id = route.query.asset_list_id as string;
 const assetStore = faAssetStore();
 const masterStore = useMasterStore();
+const eodStore = useDateStore();
+const eodData = computed(() => {
+  const data = eodStore.response_data_eod;
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (data && typeof data === "object") {
+    return [data];
+  }
+  return [];
+});
+const getEodDates = () => {
+  const eod = eodData.value?.[0];
 
+  if (!eod || !eod.start_date) {
+    // ຖ້າບໍ່ມີຂໍ້ມູນ EOD ໃຫ້ໃຊ້ວັນທີ່ປະຈຸບັນ
+    const currentDate = new Date();
+    return {
+      startDate: currentDate,
+      year: currentDate.getFullYear().toString(),
+      yearMonth: `${currentDate.getFullYear()}${(currentDate.getMonth() + 1)
+        .toString()
+        .padStart(2, "0")}`,
+      dateString: `${currentDate.getFullYear()}${(currentDate.getMonth() + 1)
+        .toString()
+        .padStart(2, "0")}${currentDate.getDate().toString().padStart(2, "0")}`,
+    };
+  }
+
+  const startDate = new Date(eod.start_date);
+  const year = startDate.getFullYear().toString();
+  const month = (startDate.getMonth() + 1).toString().padStart(2, "0");
+  const day = startDate.getDate().toString().padStart(2, "0");
+
+  return {
+    startDate,
+    year,
+    yearMonth: `${year}${month}`,
+    dateString: `${year}${month}${day}`,
+  };
+};
 // ✅ ຕົວແປຄວບຄຸມການບັນທຶກ
 let isSaving = false;
 
@@ -548,27 +588,93 @@ const goBack = () => {
   router.go(-1);
 };
 
+// const generateReferenceNumber = () => {
+//   const currentDate = new Date();
+//   const year = currentDate.getFullYear().toString();
+//   const month = String(currentDate.getMonth() + 1).padStart(2, "0");
+//   const day = String(currentDate.getDate()).padStart(2, "0");
+//   const dateString = `${year}${month}${day}`;
+//   const assetListCode = response.value?.asset_list_code || "000";
+//   return `AS-ARC-${dateString}-${assetListCode}`;
+// };
 const generateReferenceNumber = () => {
-  const currentDate = new Date();
-  const year = currentDate.getFullYear().toString();
-  const month = String(currentDate.getMonth() + 1).padStart(2, "0");
-  const day = String(currentDate.getDate()).padStart(2, "0");
-  const dateString = `${year}${month}${day}`;
+  const { dateString } = getEodDates();
   const assetListCode = response.value?.asset_list_code || "000";
   return `AS-ARC-${dateString}-${assetListCode}`;
 };
+// const generateCompleteJournalEntry = () => {
+//   if (!response.value) {
+//     return null;
+//   }
 
+//   const currentDate = new Date();
+//   const currentYear = currentDate.getFullYear().toString();
+//   const currentMonth = String(currentDate.getMonth() + 1).padStart(2, "0");
+//   const periodCode = `${currentYear}${currentMonth}`;
+//   const valueDateISO = currentDate.toISOString();
+
+//   const referenceNo = generateReferenceNumber();
+//   const mastercodeName =
+//     response.value.mastercode_detail?.MC_name_la ||
+//     response.value.asset_id_detail?.asset_type_detail?.type_name_la ||
+//     "";
+//   const assetName =
+//     response.value.mastercode_detail?.chart_detail?.asset_name_la ||
+//     response.value.asset_id_detail?.asset_name_la ||
+//     response.value.asset_tag ||
+//     "";
+//   const addlText = `${mastercodeName}-${assetName}`;
+
+//   const accountNumbers = getAccountNumbers.value;
+
+//   const journalEntry = {
+//     Reference_No: referenceNo,
+//     Ccy_cd: response.value.asset_currency || "LAK",
+//     Txn_code: "ARC",
+//     Value_date: valueDateISO,
+//     Addl_text: addlText.length > 0 ? addlText : "Asset Recognition Entry",
+//     fin_cycle: currentYear,
+//     Period_code: periodCode,
+//     module_id: "AS",
+//     entries: [
+//       {
+//         Account_no: accountNumbers.dr || "",
+//         Amount: parseFloat(response.value.asset_value || "0"),
+//         Dr_cr: "D",
+//         Addl_sub_text:
+//           response.value.asset_spec || response.value.asset_tag || "",
+//         Ac_relatives: response.value.asset_list_id || "",
+//       },
+//       {
+//         Account_no: accountNumbers.cr || "",
+//         Amount: parseFloat(response.value.asset_value || "0"),
+//         Dr_cr: "C",
+//         Addl_sub_text:
+//           response.value.asset_spec || response.value.asset_tag || "",
+//         Ac_relatives: response.value.asset_list_id || "",
+//       },
+//     ],
+//   };
+
+//   return journalEntry;
+// };
+
+// ✅ ປັບປຸງຟັງຊັນ saveCalculation ໃຫ້ແກ້ບັນຫາຫຼັກ
 const generateCompleteJournalEntry = () => {
   if (!response.value) {
     return null;
   }
 
-  const currentDate = new Date();
-  const currentYear = currentDate.getFullYear().toString();
-  const currentMonth = String(currentDate.getMonth() + 1).padStart(2, "0");
-  const periodCode = `${currentYear}${currentMonth}`;
-  const valueDateISO = currentDate.toISOString();
-
+  const eodDates = getEodDates();
+  const periodCode = eodDates.yearMonth;
+  const valueDateISO = eodDates.startDate;
+  console.log(
+    "🚀 ~ file: CreateRealizeTheProperty.vue ~ line 145 ~ valueDateISO",
+    valueDateISO
+  );
+  console.log("=== DEBUG EOD DATA ===");
+  console.log("eodData.value:", eodData.value);
+  console.log("eodData.value[0]:", eodData.value?.[0]);
   const referenceNo = generateReferenceNumber();
   const mastercodeName =
     response.value.mastercode_detail?.MC_name_la ||
@@ -589,7 +695,7 @@ const generateCompleteJournalEntry = () => {
     Txn_code: "ARC",
     Value_date: valueDateISO,
     Addl_text: addlText.length > 0 ? addlText : "Asset Recognition Entry",
-    fin_cycle: currentYear,
+    fin_cycle: eodDates.year,
     Period_code: periodCode,
     module_id: "AS",
     entries: [
@@ -615,32 +721,117 @@ const generateCompleteJournalEntry = () => {
   return journalEntry;
 };
 
-// ✅ ປັບປຸງຟັງຊັນ saveCalculation ໃຫ້ແກ້ບັນຫາຫຼັກ
+// const saveCalculation = async () => {
+//   try {
+//     const notification = await CallSwal({
+//       icon: "warning",
+//       title: "ກຳລັງບັນທຶກ...",
+//       text: "ທ່ານຕ້ອງການບັນທຶກຂໍ້ມູນນີ້ແທ້ບໍ?",
+//       showCancelButton: true,
+//       confirmButtonText: "ຕົກລົງ",
+//       cancelButtonText: "ຍົກເລີກ",
+//     });
+
+//     if (notification.isConfirmed) {
+//       // ✅ ເລີ່ມການບັນທຶກ - ປ້ອງກັນ watcher override
+//       isSaving = true;
+
+//       // ✅ ເກັບຄ່າທີ່ຄິດໄວ້ກ່ອນທຸກຢ່າງ
+//       const setupValueToSave = finalMonthlySetupValue.value;
+//       const endValueToSave = displayMonthlyEndValue.value;
+
+//       console.log("=== ຄ່າທີ່ຈະບັນທຶກ (ກ່ອນ API calls) ===");
+//       console.log("setupValueToSave:", setupValueToSave);
+//       console.log("endValueToSave:", endValueToSave);
+//       console.log("displayStartDate:", displayStartDate.value);
+
+//       // ✅ ບັງຄັບໃຫ້ໃຊ້ຄ່າທີ່ຄິດໄວ້ກ່ອນທຸກ API call
+//       request.asset_value_remainBegin = setupValueToSave.toFixed(2);
+//       request.asset_value_remainLast = endValueToSave.toFixed(2);
+
+//       if (depreciationBasicCalculation.value) {
+//         request.accu_dpca_value_total =
+//           depreciationBasicCalculation.value.depreciableAmount;
+//       }
+
+//       await assetStore.Update(id);
+
+//       // ✅ ຢືນຢັນຄ່າອີກຄັ້ງຫຼັງ Update
+//       request.asset_value_remainBegin = setupValueToSave.toFixed(2);
+//       request.asset_value_remainLast = endValueToSave.toFixed(2);
+
+//       console.log("=== ຄ່າສຸດທ້າຍທີ່ບັນທຶກ ===");
+//       console.log("asset_value_remainBegin:", request.asset_value_remainBegin);
+//       console.log("asset_value_remainLast:", request.asset_value_remainLast);
+
+//       const journalData = generateCompleteJournalEntry();
+
+//       if (journalData) {
+//         assetStore.creat_form_jornal = {
+//           Reference_No: journalData.Reference_No,
+//           Ccy_cd: journalData.Ccy_cd,
+//           Txn_code: journalData.Txn_code,
+//           Value_date: journalData.Value_date,
+//           Addl_text: journalData.Addl_text,
+//           fin_cycle: journalData.fin_cycle,
+//           Period_code: journalData.Period_code,
+//           module_id: journalData.module_id,
+//           entries: journalData.entries,
+//         };
+
+//         await assetStore.CreateJournalto(false);
+
+//         CallSwal({
+//           icon: "success",
+//           title: "ສຳເລັດ!",
+//           text: "ບັນທຶກຂໍ້ມູນແລະສ້າງ Journal Entry ສຳເລັດແລ້ວ",
+//           timer: 2000,
+//         });
+//       } else {
+//         CallSwal({
+//           icon: "warning",
+//           title: "ແຈ້ງເຕືອນ!",
+//           text: "ບັນທຶກຂໍ້ມູນສຳເລັດ ແຕ່ບໍ່ສາມາດສ້າງ Journal Entry ໄດ້",
+//         });
+//       }
+//     }
+//   } catch (error) {
+//     console.error("Error saving calculation:", error);
+//     CallSwal({
+//       icon: "error",
+//       title: "ຜິດພາດ!",
+//       text: `ເກີດຂໍ້ຜິດພາດ: ${error.message || error}`,
+//     });
+//   } finally {
+//     editableValues.value.isEditing = false;
+//     editableValues.value.salvageValue = 0;
+
+//     // ✅ ຢຸດການບັນທຶກຫຼັງ 2 ວິນາທີ (ເພີ່ມເວລາ)
+//     setTimeout(() => {
+//       isSaving = false;
+//       console.log("🔓 isSaving reset to false");
+//     }, 2000);
+//   }
+// };
+
+// ✅ Watchers - ປັບປຸງໃຫ້ມີ debug ແລະ ປ້ອງກັນ override
 const saveCalculation = async () => {
   try {
     const notification = await CallSwal({
       icon: "warning",
-      title: "ກຳລັງບັນທຶກ...",
-      text: "ທ່ານຕ້ອງການບັນທຶກຂໍ້ມູນນີ້ແທ້ບໍ?",
+      title: "ກຳລງບັນທືກ...",
+      text: "ທ່ານຕອ້ງການບັນທືກຂໍ້ມູນນີ້ແທ້ບໍ?",
       showCancelButton: true,
       confirmButtonText: "ຕົກລົງ",
-      cancelButtonText: "ຍົກເລີກ",
+      cancelButtonText: "ຍົເລີກ",
     });
 
     if (notification.isConfirmed) {
-      // ✅ ເລີ່ມການບັນທຶກ - ປ້ອງກັນ watcher override
       isSaving = true;
 
-      // ✅ ເກັບຄ່າທີ່ຄິດໄວ້ກ່ອນທຸກຢ່າງ
       const setupValueToSave = finalMonthlySetupValue.value;
       const endValueToSave = displayMonthlyEndValue.value;
 
-      console.log("=== ຄ່າທີ່ຈະບັນທຶກ (ກ່ອນ API calls) ===");
-      console.log("setupValueToSave:", setupValueToSave);
-      console.log("endValueToSave:", endValueToSave);
-      console.log("displayStartDate:", displayStartDate.value);
-
-      // ✅ ບັງຄັບໃຫ້ໃຊ້ຄ່າທີ່ຄິດໄວ້ກ່ອນທຸກ API call
       request.asset_value_remainBegin = setupValueToSave.toFixed(2);
       request.asset_value_remainLast = endValueToSave.toFixed(2);
 
@@ -651,13 +842,8 @@ const saveCalculation = async () => {
 
       await assetStore.Update(id);
 
-      // ✅ ຢືນຢັນຄ່າອີກຄັ້ງຫຼັງ Update
       request.asset_value_remainBegin = setupValueToSave.toFixed(2);
       request.asset_value_remainLast = endValueToSave.toFixed(2);
-
-      console.log("=== ຄ່າສຸດທ້າຍທີ່ບັນທຶກ ===");
-      console.log("asset_value_remainBegin:", request.asset_value_remainBegin);
-      console.log("asset_value_remainLast:", request.asset_value_remainLast);
 
       const journalData = generateCompleteJournalEntry();
 
@@ -679,37 +865,34 @@ const saveCalculation = async () => {
         CallSwal({
           icon: "success",
           title: "ສຳເລັດ!",
-          text: "ບັນທຶກຂໍ້ມູນແລະສ້າງ Journal Entry ສຳເລັດແລ້ວ",
+          text: "ບັນທືກຂໍ້ມູນ Journal Entry ສຳເລັດແລ້ວ",
           timer: 2000,
         });
       } else {
         CallSwal({
           icon: "warning",
           title: "ແຈ້ງເຕືອນ!",
-          text: "ບັນທຶກຂໍ້ມູນສຳເລັດ ແຕ່ບໍ່ສາມາດສ້າງ Journal Entry ໄດ້",
+          text: "ບັນທືກຂໍ້ມູນ Journal Entry ບໍ່ສາມາດສະແດງໄດ້",
         });
       }
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error saving calculation:", error);
     CallSwal({
       icon: "error",
-      title: "ຜິດພາດ!",
-      text: `ເກີດຂໍ້ຜິດພາດ: ${error.message || error}`,
+      title: "ຜີດພາດ!",
+      text: `ຜີດພາດ: ${error.message || error}`,
     });
   } finally {
     editableValues.value.isEditing = false;
     editableValues.value.salvageValue = 0;
 
-    // ✅ ຢຸດການບັນທຶກຫຼັງ 2 ວິນາທີ (ເພີ່ມເວລາ)
     setTimeout(() => {
       isSaving = false;
       console.log("🔓 isSaving reset to false");
     }, 2000);
   }
 };
-
-// ✅ Watchers - ປັບປຸງໃຫ້ມີ debug ແລະ ປ້ອງກັນ override
 watch(
   () => response.value?.asset_id_detail?.asset_type_detail?.type_code,
   (newTypeCode) => {
@@ -781,9 +964,7 @@ watch(
         }
       });
 
-      
       if (!request.dpca_start_date) {
-        
         if (req.dpca_start_date) {
           request.dpca_start_date = new Date(req.dpca_start_date);
         } else {
@@ -837,6 +1018,7 @@ onMounted(async () => {
     // ✅ Load ຂໍ້ມູນ
     await assetStore.GetFaAssetDetail(id);
     await masterStore.getDataAsset();
+    eodStore.GetEOD();
 
     // ✅ ຕັ້ງວັນທີ່ເລີ່ມຖ້າຍັງບໍ່ມີ
     if (!request.dpca_start_date) {

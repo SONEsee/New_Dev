@@ -3,6 +3,7 @@ import dayjs from '#build/dayjs.imports.mjs';
 const deprecationUPda = useDrepecitoinUpdat();
 const accoutStore = accountMethodStore();
 const dreptriptionStore = useFassetLidtDescription();
+<<<<<<< HEAD
 const dataUpdate = computed(()=>{
   const data = deprecationUPda.response_data_drepecation_lis?.overdue_items;
   if(Array.isArray(data)){
@@ -12,6 +13,18 @@ const dataUpdate = computed(()=>{
   }
   return []
 
+=======
+const deprecationUPda = useDrepecitoinUpdat();
+const dataUpdate = computed(()=>{
+  const data = deprecationUPda.response_data_drepecation_lis?.all_items_needing_attention;
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (data && typeof data === "object") {
+    return [data];
+  }
+  return [];
+>>>>>>> 4054f8a194ed4790bc7248e232f84c5a467097dd
 })
 const respontest = computed(() => {
   return dreptriptionStore.response_data_get_overdue;
@@ -113,11 +126,16 @@ onMounted(() => {
   accoutStore.GetAccountMethodList();
   dreptriptionStore.getdataCalculated();
   dreptriptionStore.getArrears();
+  deprecationUPda.getDataDrepecation();
 });
 </script>
 
 <template>
   <v-container fluid>
+<<<<<<< HEAD
+=======
+ 
+>>>>>>> 4054f8a194ed4790bc7248e232f84c5a467097dd
     <v-row v-if="dreptriptionStore.isLoading">
       <v-col cols="12" class="text-center">
         <v-progress-circular
@@ -154,6 +172,7 @@ onMounted(() => {
               ຢືນຢັນການຫັກຄ່າຫຼູຍຫ້ຽນ
             </v-btn></div></v-col>
             </v-row>
+<<<<<<< HEAD
             <pre>{{ dataUpdate.length }}</pre>
             <v-data-table :items="dataUpdate" :headers="headers">
               <template v-slot:item.category="{ item }">
@@ -165,6 +184,11 @@ onMounted(() => {
                   {{ item.asset_id }}
                 </v-chip>
               </template>
+=======
+           
+            
+         <!-- <pre>{{ dataUpdate }}</pre> -->
+>>>>>>> 4054f8a194ed4790bc7248e232f84c5a467097dd
 
               <template v-slot:item.expected_depreciation="{ item }">
                 <span class="font-weight-bold">
@@ -206,7 +230,7 @@ onMounted(() => {
             </v-data-table>
             <!-- <v-data-table
               :headers="headers"
-              :items="allItems"
+              :items="dataUpdate"
               :items-per-page="10"
               class="elevation-1"
               :loading="dreptriptionStore.isLoading"
