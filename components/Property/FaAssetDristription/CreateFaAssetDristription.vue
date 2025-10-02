@@ -158,7 +158,7 @@ onMounted(() => {
             </v-row>
            
             
-         <pre>{{ dataUpdate }}</pre>
+         <!-- <pre>{{ dataUpdate }}</pre> -->
 
             <v-data-table
               :headers="headers"

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import dayjs from "#build/dayjs.imports.mjs";
-import { formats } from "numeral";
+import numeral, { formats } from "numeral";
 import { useRoute } from "vue-router";
 
 const masterStore = useMasterStore();
@@ -150,24 +150,23 @@ const creditAccountNumber = computed(() => {
   return "";
 });
 
-// ✅ ແກ້ໄຂການດຶງຂໍ້ມູນ - ໃຊ້ mapping_id ທີ່ຖືກຕ້ອງ
+
 watch(selectedAssetId, async (newAssetId: any) => {
   if (newAssetId) {
     try {
       await assetListStore.GetFaAssetDetail(newAssetId);
       
-      // ✅ ຫາ mapping_id ທີ່ຖືກຕ້ອງຈາກ asset data
-      // ຖ້າມີ id ຈາກ route ໃຫ້ໃຊ້ id ນັ້ນ
+      
       if (id && id > 0) {
         await accountMethodStoreInstance.GetAccountMethodDetail(id);
       }
-      // ຖ້າບໍ່ງັ້ນລອງຫາຈາກ asset detail
+     
       else {
         console.warn("No mapping_id found, might be creating new record");
       }
-    } catch (error) {
+    } catch (error:any) {
       console.error("Error loading asset details:", error);
-      // ບໍ່ alert ຖ້າເປັນ 404 - record ອາດຍັງບໍ່ມີ
+      
       if (error.response?.status !== 404) {
         CallSwal({
           icon: "error",
@@ -195,20 +194,20 @@ watch(
     () => accountMethodStoreInstance.response_account_method_detail,
     () => dataupdate.value,
   ],
-  ([req, assetData]) => {
-    // ແກ້ໄຂ: ເຮັດວຽກກັບທັງ req ແລະ assetData
+  ([req, assetData] : any ) => {
+    
     if (assetData || req) {
-      // ✅ ເພີ່ມ mapping_id
+      
       request.mapping_id = id || req?.mapping_id || null;
       request.asset_id = req?.asset_id || null;
       request.acc_type = req?.acc_type || "ASSET";
       
       request.ref_id = assetData?.asset_list_id || req?.ref_id;
       
-      // ✅ ກຳນົດ default description ຖ້າວ່າງ
+    
       request.description = req?.description || "ຫັກຄ່າເສື່ອມຊັບສິນ";
       
-      // ✅ ໃຊ້ DB values ຈາກ asset
+      
       request.amount = assetData?.asset_value_remainMonth || req?.amount || "0";
       request.amount_start = assetData?.asset_value_remainBegin || req?.amount_start || "0";
       request.amount_end = assetData?.asset_value_remainLast || req?.amount_end || "0";
@@ -216,7 +215,6 @@ watch(
       request.debit_account_id = debitAccountNumber.value;
       request.credit_account_id = creditAccountNumber.value;
       
-      // ✅ ແກ້ໄຂວັນທີ່ - ບໍ່ໃຫ້ວ່າງ
       request.transaction_date = assetData?.Maker_DT_Stamp
         ? dayjs(assetData.Maker_DT_Stamp).format("YYYY-MM-DD")
         : req?.transaction_date || dayjs().format("YYYY-MM-DD");
@@ -227,7 +225,7 @@ watch(
   { immediate: true }
 );
 
-// ✅ ແກ້ໄຂການ submit - ເພີ່ມການກວດສອບ
+
 const handelSuvmit = async () => {
   if (!selectedAssetId.value) {
     CallSwal({
@@ -238,7 +236,7 @@ const handelSuvmit = async () => {
     return;
   }
 
-  // ✅ ກວດສອບແລະແກ້ໄຂຂໍ້ມູນກ່ອນ submit
+ 
   if (!request.description || request.description.trim() === "") {
     request.description = "ຫັກຄ່າເສື່ອມຊັບສິນ";
   }
@@ -286,7 +284,40 @@ const handelSuvmit = async () => {
     }
   }
 };
+const formatNumber1 = (value: any) => {
+  if (!value) return '';
+  const number = String(value).replace(/,/g, '');
+  return Number(number).toLocaleString('en-US', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
+  });
+};
 
+const parseNumber = (value: string) => {
+  if (!value) return '';
+  return value.replace(/,/g, '');
+};
+
+
+const displayAmount = computed({
+  get: () => formatNumber1(request.amount),
+  set: (value) => {
+    request.amount = parseNumber(value);
+  }
+});
+const displayAmountStart = computed({
+  get:()=>formatNumber1(request.amount_start),
+  set:(value)=>{
+    request.amount_start = parseNumber(value);
+  }
+
+});
+const displayAmountEnd = computed({
+  get:()=>formatNumber1(request.amount_end),
+  set:(value)=>{
+    request.amount_end = parseNumber(value);
+  }
+})
 onMounted(async () => {
   try {
     await masterStore.getSettingupdate();
@@ -294,7 +325,7 @@ onMounted(async () => {
 
     if (selectedAssetId.value) {
       await assetListStore.GetFaAssetDetail(selectedAssetId.value);
-      // ✅ ໃຊ້ id (mapping_id) ທີ່ຖືກຕ້ອງ
+      
       if (id && id > 0) {
         await accountMethodStoreInstance.GetAccountMethodDetail(id);
       }
@@ -345,7 +376,7 @@ const title = "ລາຍລະອຽດການຕັ້ງຄ່າທືກ�
     </v-card>
 
     <v-form ref="form" @submit.prevent="handelSuvmit">
-      <!-- ✅ ແກ້ໄຂ condition - ບໍ່ຈຳເປັນຕ້ອງມີ detail ເພື່ອສະແດງຟອມ -->
+    
       <div v-if="selectedAssetId">
         <v-card variant="outlined">
           <v-card-title class="text-h6 pb-2 bg-success">
@@ -396,7 +427,7 @@ const title = "ລາຍລະອຽດການຕັ້ງຄ່າທືກ�
 
                 <v-label class="mb-1">ມູນຄ່າຕໍ່ເດືອນ</v-label>
                 <v-text-field
-                  v-model="request.amount"
+                  v-model="displayAmount"
                   variant="outlined"
                   density="compact"
                   class="formatted-number-input"
@@ -419,7 +450,7 @@ const title = "ລາຍລະອຽດການຕັ້ງຄ່າທືກ�
 
                 <v-label class="mb-1">ມູນຄ່າຕົ້ນ</v-label>
                 <v-text-field
-                  v-model="request.amount_start"
+                  v-model="displayAmountStart"
                   variant="outlined"
                   density="compact"
                   class="formatted-number-input"
@@ -449,7 +480,7 @@ const title = "ລາຍລະອຽດການຕັ້ງຄ່າທືກ�
 
                 <v-label class="mb-1">ມູນຄ່າທ້າຍ</v-label>
                 <v-text-field
-                  v-model="request.amount_end"
+                  v-model="displayAmountEnd"
                   variant="outlined"
                   density="compact"
                   class="formatted-number-input"
