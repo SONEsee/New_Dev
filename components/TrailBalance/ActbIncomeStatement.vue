@@ -509,6 +509,7 @@ const onSegmentChange = () => {
   }
 }
 
+//     Update Th Main Code from psylsy
 // Helper to fetch EOD info and set default periodCodeId
 const fetchEodInfo = async () => {
   try {
@@ -638,7 +639,6 @@ onMounted(async () => {
   overflow: hidden;
   width: 100%;
 }
-  
 
 .table-row {
   transition: all 0.2s ease;
