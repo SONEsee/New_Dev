@@ -286,7 +286,20 @@ const getAuthHeaders = () => {
   }
 }
 
-// Utility function to get current period
+
+// State for EOD info
+const eodInfo = ref<any>(null)
+const targetDate = ref<string>('')
+
+// Convert date string (YYYY-MM-DD) to period code (YYYYMM)
+const getPeriodCodeFromDate = (dateStr: string): string => {
+  if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    return getCurrentPeriodCodeId()
+  }
+  return dateStr.slice(0, 4) + dateStr.slice(5, 7)
+}
+
+// Utility function to get current period (fallback)
 const getCurrentPeriodCodeId = (): string => {
   const now = new Date()
   const year = now.getFullYear()
@@ -314,7 +327,7 @@ const selectedTab = ref('acc')
 const selectedSegment = ref('')
 const selectedCurrency = ref('')
 const balanceSheetData = ref<BalanceSheetItem[]>([])
-const periodCodeId = ref(getCurrentPeriodCodeId()) // Fixed: Now properly calling the function
+const periodCodeId = ref(getCurrentPeriodCodeId()) // will be updated on mount
 
 const snackbar = ref<SnackbarState>({
   show: false,
@@ -590,11 +603,31 @@ watch(selectedTab, () => {
   console.log(`🔄 Tab changed to: ${selectedTab.value.toUpperCase()}`)
 })
 
+// Fetch EOD info and set default period code
+const fetchEodInfo = async () => {
+  try {
+    const axiosInstance = (await import('@/helpers/axios')).default
+    const res = await axiosInstance.get('/api/end-of-day-journal/check/', getAuthHeaders())
+    if (res.data && res.data.target_date) {
+      eodInfo.value = res.data
+      targetDate.value = res.data.target_date
+      periodCodeId.value = getPeriodCodeFromDate(targetDate.value)
+    } else {
+      periodCodeId.value = getCurrentPeriodCodeId()
+    }
+  } catch (err) {
+    console.error('Failed to fetch EOD info', err)
+    showSnackbar('ບໍ່ສາມາດດຶງຂໍ້ມູນ EOD', 'warning', 'mdi-alert')
+    periodCodeId.value = getCurrentPeriodCodeId()
+  }
+}
+
 // Initialize component
 onMounted(async () => {
   try {
     const token = localStorage.getItem("token")
     if (token) {
+      await fetchEodInfo()
       console.log('🚀 Balance Sheet component mounted')
       console.log(`📅 Current period: ${periodCodeId.value} (${formatPeriodDisplay(periodCodeId.value)})`)
       // Set default values

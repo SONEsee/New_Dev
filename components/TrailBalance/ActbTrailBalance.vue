@@ -560,14 +560,40 @@ const exportToSOmTopReport = async () => {
 }
 
 // Initialize
-onMounted(() => {
+const eodInfo = ref<any>(null)
+const targetDate = ref<string>('')
+
+// Fetch EOD info and set default dates
+const fetchEodInfo = async () => {
+  try {
+    const res = await axios.get('/api/end-of-day-journal/check/', getAuthHeaders())
+    if (res.data && res.data.target_date) {
+      eodInfo.value = res.data
+      targetDate.value = res.data.target_date
+
+      // Set all date-related fields to target_date
+      filters.value.date_start = targetDate.value
+      filters.value.date_end = targetDate.value
+    } else {
+      // fallback to today if API fails
+      const today = new Date().toISOString().split('T')[0]
+      filters.value.date_start = today
+      filters.value.date_end = today
+    }
+  } catch (err) {
+    console.error('Failed to fetch EOD info', err)
+    showSnackbar('ບໍ່ສາມາດດຶງຂໍ້ມູນ EOD', 'warning', 'mdi-alert')
+    // fallback to today
+    const today = new Date().toISOString().split('T')[0]
+    filters.value.date_start = today
+    filters.value.date_end = today
+  }
+}
+
+onMounted(async () => {
   const token = localStorage.getItem("token")
   if (token) {
-    const today = new Date()
-    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
-    filters.value.date_start = firstDay.toISOString().split('T')[0]
-    filters.value.date_end = today.toISOString().split('T')[0]
-    
+    await fetchEodInfo()
     fetchTrialBalance()
   } else {
     showSnackbar('🔑 ກະລຸນາເຂົ້າສູ່ລະບົບ', 'warning', 'mdi-account-alert')

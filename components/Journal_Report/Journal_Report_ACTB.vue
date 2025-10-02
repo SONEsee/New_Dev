@@ -865,7 +865,7 @@ const fetchJournalData = async () => {
 
     console.log('Calling Journal Report API with params:', params)
 
-    const apiResponse = await axios.post('/api/journal-report/', params, getAuthHeaders())
+    const apiResponse = await axios.post('/api/journal-report-actb/', params, getAuthHeaders())
     const response: ApiResponse = apiResponse.data
 
     if (response.status === 'success') {

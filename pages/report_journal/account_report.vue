@@ -1,7 +1,7 @@
 <template>
-    <!-- <JournalReport /> -->
-     <JournalReportLisr />
+    <AccountReportACTB />
 </template>
+
 <script setup lang="ts">
 
 </script>

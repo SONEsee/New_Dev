@@ -338,7 +338,11 @@ const selectedCurrency = ref('')
 const incomeStatementData = ref<IncomeStatementItem[]>([])
 const showCompareDialog = ref(false)
 const compareResults = ref<any>(null)
-const periodCodeId = ref(getCurrentPeriodCodeId()) // Fixed: Now properly calling the function
+const periodCodeId = ref('') // will be set by EOD
+
+// Add EOD state
+const eodInfo = ref<any>(null)
+const targetDate = ref('')
 
 const snackbar = ref({
   show: false,
@@ -505,6 +509,24 @@ const onSegmentChange = () => {
   }
 }
 
+//     Update Th Main Code from psylsy
+// Helper to fetch EOD info and set default periodCodeId
+const fetchEodInfo = async () => {
+  try {
+    const res = await axios.get('/api/end-of-day-journal/check/', getAuthHeaders())
+    if (res.data && res.data.target_date) {
+      eodInfo.value = res.data
+      targetDate.value = res.data.target_date
+
+      // Set periodCodeId to target_date (YYYYMM)
+      periodCodeId.value = targetDate.value.replace(/-/g, '').substring(0, 6)
+    }
+  } catch (err) {
+    console.error('Failed to fetch EOD info', err)
+    showSnackbar('ບໍ່ສາມາດດຶງຂໍ້ມູນ EOD', 'warning', 'mdi-alert')
+  }
+}
+
 // Utility functions
 const formatCurrency = (value: number): string => {
   if (!value || value === 0) return '-'
@@ -582,13 +604,17 @@ watch(selectedTab, () => {
   console.log(`🔄 Tab changed to: ${selectedTab.value.toUpperCase()}`)
 })
 
-// Initialize component
 onMounted(async () => {
   try {
     const token = localStorage.getItem("token")
     if (token) {
       console.log('🚀 Income Statement component mounted')
+      
+      // Fetch EOD info to set default period
+      await fetchEodInfo()
+      
       console.log(`📅 Current period: ${periodCodeId.value} (${formatPeriodDisplay(periodCodeId.value)})`)
+      
       // Set default values
       selectedSegment.value = 'LCY'
       selectedCurrency.value = 'LAK'
