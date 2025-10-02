@@ -1,10 +1,18 @@
 <script setup lang="ts">
 import dayjs from '#build/dayjs.imports.mjs';
-
+const deprecationUPda = useDrepecitoinUpdat();
 const accoutStore = accountMethodStore();
 const dreptriptionStore = useFassetLidtDescription();
+const dataUpdate = computed(()=>{
+  const data = deprecationUPda.response_data_drepecation_lis?.overdue_items;
+  if(Array.isArray(data)){
+    return data
+  }if(data && typeof data==="object"){
+    return [data]
+  }
+  return []
 
-
+})
 const respontest = computed(() => {
   return dreptriptionStore.response_data_get_overdue;
 });
@@ -77,7 +85,7 @@ const formatCurrency = (value: number) => {
 
 const getCategoryColor = (category: string) => {
   switch (category) {
-    case "ຄ້າງຫັກ":
+    case "ຍັງບໍ່ໄດ້ຫັກ":
       return "blue";
     case "ຕ້ອງຫັກ":
       return "orange";
@@ -101,6 +109,7 @@ const handelSubmit = async () => {
   
 };
 onMounted(() => {
+  deprecationUPda.getDataDrepecation();
   accoutStore.GetAccountMethodList();
   dreptriptionStore.getdataCalculated();
   dreptriptionStore.getArrears();
@@ -109,12 +118,6 @@ onMounted(() => {
 
 <template>
   <v-container fluid>
-    <!-- Debug ຂໍ້ມູນ (ລຶບອອກເມື່ອໃຊ້ງານຈິງ) -->
-    <!-- <details>
-      <summary>Debug Data</summary>
-     
-    </details> -->
- <!-- <pre>{{ respontest }}</pre> -->
     <v-row v-if="dreptriptionStore.isLoading">
       <v-col cols="12" class="text-center">
         <v-progress-circular
@@ -151,11 +154,57 @@ onMounted(() => {
               ຢືນຢັນການຫັກຄ່າຫຼູຍຫ້ຽນ
             </v-btn></div></v-col>
             </v-row>
-           
-            
-         
+            <pre>{{ dataUpdate.length }}</pre>
+            <v-data-table :items="dataUpdate" :headers="headers">
+              <template v-slot:item.category="{ item }">
+                <v-chip
+                  :color="getCategoryColor(item.last_depreciation_date)"
+                  variant="flat"
+                  size="small"
+                >
+                  {{ item.asset_id }}
+                </v-chip>
+              </template>
 
-            <v-data-table
+              <template v-slot:item.expected_depreciation="{ item }">
+                <span class="font-weight-bold">
+                  {{ formatCurrency(item.expected_depreciation) }}
+                </span>
+              </template>
+
+              <template v-slot:item.current_month="{ item }">
+                <v-chip variant="outlined" size="small">
+                  {{ item.current_month }}/{{ item.total_months }}
+                </v-chip>
+              </template>
+              <template v-slot:item.due_date="{ item }">
+                <v-chip variant="outlined" size="small">
+
+                  {{ dayjs(item.due_end_date.split('/').reverse().join('-')).format('MM/YYYY') }}
+  
+                </v-chip>
+              </template>
+
+              <template v-slot:item.completion_percentage="{ item }">
+                <v-progress-linear
+                  :model-value="item.completion_percentage"
+                  :color="
+                    item.completion_percentage >= 100 ? 'green' : 'primary'
+                  "
+                  height="20"
+                  rounded
+                >
+                  <template v-slot:default="{ value }">
+                    <small class="text-white">{{ Math.ceil(value) }}%</small>
+                  </template>
+                </v-progress-linear>
+              </template>
+
+              <template v-slot:item.status_message="{ item }">
+                <small>{{ item.status_message }}</small>
+              </template>
+            </v-data-table>
+            <!-- <v-data-table
               :headers="headers"
               :items="allItems"
               :items-per-page="10"
@@ -187,10 +236,9 @@ onMounted(() => {
               </template>
               <template v-slot:item.due_date="{ item }">
                 <v-chip variant="outlined" size="small">
-                  <!-- {{ item.due_end_date }}  -->
+
                   {{ dayjs(item.due_end_date.split('/').reverse().join('-')).format('MM/YYYY') }}
-    <!-- <span style="color: #666;"> ຫາ </span>
-    {{ dayjs().format('MM/YYYY') }} -->
+  
                 </v-chip>
               </template>
 
@@ -212,7 +260,7 @@ onMounted(() => {
               <template v-slot:item.status_message="{ item }">
                 <small>{{ item.status_message }}</small>
               </template>
-            </v-data-table>
+            </v-data-table> -->
           </v-card>
         </v-col>
       </v-row>

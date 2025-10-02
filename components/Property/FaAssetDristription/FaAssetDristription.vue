@@ -160,18 +160,30 @@ const handleNotificationClick = () => {
                       {{ responseData.data.target_period.year }}
                     </v-card-title>
                     <v-card-text class="pa-0">
-                      <!-- <pre>{{ dataShow }}</pre> -->
                       <v-data-table :items="dataShow" :headers="header1">
+                        <template
+                          v-slot:header.total_items_need_depreciation="{
+                            column,
+                          }"
+                        >
+                          {{ column.title }}
+                        </template>
                         <template v-slot:item.index="{ item, index }">
                           {{ index + 1 }}
                         </template>
                         <template v-slot:item.dates="{ item }">
-                          <v-chip color="success">{{ dataDate[0].month }}/{{ dataDate[0].year }}</v-chip>
-                          
+                          <v-chip color="success"
+                            >{{ dataDate[0].month }}/{{
+                              dataDate[0].year
+                            }}</v-chip
+                          >
                         </template>
-                        <template v-slot:item.total_items_need_depreciation="{ item }">
-                          <v-chip color="success">{{item.total_items_need_depreciation }}</v-chip>
-                          
+                        <template
+                          v-slot:item.total_items_need_depreciation="{ item }"
+                        >
+                          <v-chip color="success">{{
+                            item.total_items_need_depreciation
+                          }}</v-chip>
                         </template>
                         <template
                           v-slot:item.total_depreciation_amount="{ item }"
@@ -181,84 +193,17 @@ const handleNotificationClick = () => {
                           }}</v-chip>
                         </template>
                         <template v-slot:item.action>
-                          <v-btn color="primary" flat> ລາຍລະອຽດການຫັກ </v-btn>
+                          <v-btn
+                            color="primary"
+                            flat
+                            @click="
+                              goPath(`/property/faassetdetription/create`)
+                            "
+                          >
+                            ລາຍລະອຽດການຫັກ
+                          </v-btn>
                         </template>
                       </v-data-table>
-                      <!-- {{ dataDate }} -->
-                      <!-- <v-table class="text-center">
-                        <thead>
-                          <tr class="bg-grey-lighten-3">
-                            <th
-                              class="text-center font-weight-bold text-primary"
-                            >
-                              ຫັກປະຈຳເດືອນ
-                            </th>
-                            <th
-                              class="text-center font-weight-bold text-primary"
-                            >
-                              ຈຳນວນລາຍການທີ່ຫັກ
-                            </th>
-                            <th
-                              class="text-center font-weight-bold text-primary"
-                            >
-                              ຈຳນວນເງິນທີ່ຕ້ອງຫັກ
-                            </th>
-                            <th
-                              class="text-center font-weight-bold text-primary"
-                            >
-                              ຫັກຄ່າຫຼູ້ຍຫ້ຽນ
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td class="pa-4">
-                              <div
-                                class="text-h5 text-primary font-weight-bold"
-                              >
-                                {{ responseData.data.target_period.month }}/{{
-                                  responseData.data.target_period.year
-                                }}
-                              </div>
-                              <div class="text-body-2 text-grey-600">
-                                {{
-                                  responseData.data.target_period.month_name_la
-                                }}
-                              </div>
-                            </td>
-                            <td class="pa-4">
-                              <div class="text-h5 text-info font-weight-bold">
-                                {{
-                                  formatNumber(
-                                    responseData.data.summary.total_up_to_date
-                                  )
-                                }}
-                              </div>
-                              <div class="text-body-2 text-grey-600">
-                                ລາຍການທັງໝົດ
-                              </div>
-                            </td>
-                            <td class="pa-4">
-                              <div class="text-h5 text-error font-weight-bold">
-                                {{ total(responseData.data.up_to_date_items) }}
-                                ₭
-                              </div>
-                              <div class="text-body-2 text-grey-600">
-                                ລາຍການທີ່ຕ້ອງຫັກ
-                              </div>
-                            </td>
-                            <td class="pa-4">
-                              <v-btn
-                                color="primary"
-                                @click="
-                                  goPath(`/property/faassetdetription/create`)
-                                "
-                                >ລາຍລະອຽດການຫັກຄ່າຫຼູ້ຍຫ້ຽນ</v-btn
-                              >
-                            </td>
-                          </tr>
-                        </tbody>
-                      </v-table> -->
                     </v-card-text>
                   </v-card>
                 </v-tabs-window-item>
