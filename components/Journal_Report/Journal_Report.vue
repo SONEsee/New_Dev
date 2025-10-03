@@ -711,7 +711,7 @@ const printData = () => {
       '<span><strong>ລະຫັດງວດ:</strong> ' + (selectedPeriodCode.value || '-') + '</span>' +
       '</div>' +
       '<div class="info-row">' +
-      '<span><strong>ໄລຍະວັນທີ:</strong> ' + (selectedStartDate.value || '-') + ' - ' + (selectedEndDate.value || '-') + '</span>' +
+      '<span><strong>ວັນທີ:</strong> ' + (selectedStartDate.value || '-') + ' - ' + (selectedEndDate.value || '-') + '</span>' +
       '<span><strong>' + makerInfo + '</strong></span>' +
       '</div>' +
       '<div class="info-row">' +
