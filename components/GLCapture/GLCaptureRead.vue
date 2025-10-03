@@ -8,8 +8,8 @@
           ລາຍການບັນທຶກບັນຊີ
         </h1>
 
-        <!-- Permission indicators -->
-        <div class="permission-indicators" v-if="permissions">
+        <!-- Permission indicators - Only show when ready -->
+        <div class="permission-indicators" v-if="isReady && permissions">
           <v-tooltip text="ສິດເຂົ້າເຖິງຂອງທ່ານ" location="bottom">
             <template #activator="{ props }">
               <div v-bind="props" class="d-flex gap-1">
@@ -40,339 +40,456 @@
       </div>
     </div>
 
-
-
-    <!-- Permission Access Check -->
-    <div v-if="!canView" class="permission-denied-state">
+    <!-- Permission Loading State -->
+    <div v-if="!permissionCheckComplete || permissionsLoading" class="loading-overlay">
       <v-card class="text-center py-12" elevation="1">
-        <v-icon size="80" color="error" class="mb-6">mdi-shield-lock</v-icon>
-        <div class="text-h5 mb-3 text-error">ບໍ່ມີສິດເຂົ້າເຖິງ</div>
-        <div class="text-body-1 mb-4 text-grey">ທ່ານບໍ່ມີສິດເຂົ້າເຖິງໜ້ານີ້</div>
-        <div class="text-caption text-grey mb-6 px-4">
-          <v-icon size="16" class="mr-1">mdi-information-outline</v-icon>
-          ກະລຸນາຕິດຕໍ່ຜູ້ດູແລລະບົບເພື່ອຂໍສິດເຂົ້າເຖິງ
-        </div>
-        <v-btn variant="outlined" @click="$router.go(-1)" prepend-icon="mdi-arrow-left" size="large">
-          ກັບໄປໜ້າກ່ອນ
+        <v-progress-circular
+          indeterminate
+          color="primary"
+          :size="60"
+          :width="4"
+          class="mb-6"
+        />
+        <div class="text-h6 mb-3">ກຳລັງກວດສອບສິດການນຳໃຊ້...</div>
+        <div class="text-body-2 text-grey">ກະລຸນາລໍຖ້າ...</div>
+      </v-card>
+    </div>
+
+    <!-- Permission Error State -->
+    <div v-else-if="initializationError" class="permission-error-state">
+      <v-card class="text-center py-12" elevation="1">
+        <v-icon size="80" color="error" class="mb-6">mdi-alert-circle</v-icon>
+        <div class="text-h5 mb-3 text-error">ເກີດຂໍ້ຜິດພາດ</div>
+        <div class="text-body-1 mb-4 text-grey">{{ initializationError }}</div>
+        <v-btn
+          color="primary"
+          variant="elevated"
+          @click="retryPermissionLoad"
+          prepend-icon="mdi-refresh"
+          size="large"
+        >
+          ລອງໃໝ່
         </v-btn>
       </v-card>
     </div>
 
-    <!-- Main Content (only show if user has view permission) -->
-    <div v-else>
-      <!-- Data Access Info -->
-      <v-alert v-if="canAuthorize" type="success" variant="tonal" density="compact" class="mb-3">
-        <template #prepend>
-          <v-icon>mdi-check-circle</v-icon>
-        </template>
-        <strong>ສິດເຂົ້າເຖິງ:</strong> ທ່ານສາມາດເບິ່ງລາຍການທັງໝົດໄດ້
-      </v-alert>
-
-      <v-alert v-else type="info" variant="tonal" density="compact" class="mb-3">
-        <template #prepend>
-          <v-icon>mdi-information</v-icon>
-        </template>
-        <strong>ສິດເຂົ້າເຖິງ:</strong> ທ່ານສາມາດເບິ່ງລາຍການທີ່ທ່ານສ້າງເທົ່ານັ້ນ
-      </v-alert>
-
-      <!-- Filter Section - Thinner -->
-      <v-card class="filter-card-thin mb-2" elevation="1">
-        <v-card-text class="pa-2">
-          <v-row dense>
-            <v-col cols="12" md="3">
-              <v-text-field v-model="filters.search" label="ຄົ້ນຫາ" prepend-inner-icon="mdi-magnify" variant="outlined"
-                density="compact" clearable placeholder="ເລກອ້າງອີງ, ຂໍ້ຄວາມ..." @update:model-value="searchDebounced"
-                hide-details></v-text-field>
-            </v-col>
-            <v-col cols="12" md="2">
-              <v-select v-model="filters.module_id" :items="modules" item-title="module_name_la" item-value="module_Id"
-                label="ໂມດູນ" variant="outlined" density="compact" clearable @update:model-value="handleFilterChange"
-                hide-details></v-select>
-            </v-col>
-            <v-col cols="12" md="2">
-              <v-select v-model="filters.Ccy_cd" :items="currencies" item-title="ccy_code" item-value="ccy_code"
-                label="ສະກຸນເງິນ" variant="outlined" density="compact" clearable @update:model-value="handleFilterChange"
-                hide-details></v-select>
-            </v-col>
-            <v-col cols="12" md="2">
-              <v-select v-model="filters.Auth_Status" :items="authStatusOptions" item-title="text" item-value="value"
-                label="ສະຖານະອະນຸມັດ" variant="outlined" density="compact" clearable @update:model-value="loadData"
-                hide-details :loading="loadingAuthStatus"></v-select>
-            </v-col>
-            <v-col cols="12" md="2">
-              <v-text-field 
-                v-model="filters.date" 
-                label="ວັນທີເລີ່ມ" 
-                type="date" 
-                variant="outlined" 
-                density="compact"
-                @update:model-value="handleFilterChange" 
-                hide-details
-                :hint="getDateHint()"
-                persistent-hint
-              ></v-text-field>
-            </v-col>
-            <v-col cols="12" md="1">
-              <v-btn color="primary" variant="flat" @click="loadData" :loading="loading" block size="small">
-                <v-icon size="16">mdi-filter</v-icon>
-                ຄົ້ນຫາ
-              </v-btn>
-            </v-col>
-          </v-row>
-          
-          <!-- Clear Filters Button -->
-          <v-row dense class="mt-1">
-            <v-col cols="12" class="text-right">
-              <v-btn color="grey" variant="text" @click="clearAllFilters" size="x-small">
-                <v-icon left size="14">mdi-filter-off</v-icon>
-                ລຶບຕົວກອງ
-              </v-btn>
-            </v-col>
-          </v-row>
-        </v-card-text>
-      </v-card>
-
-      <!-- Summary Cards - Updated with active state -->
-      <v-row dense class="mb-3">
-        <v-col cols="6" sm="3" md="2">
-          <v-card 
-            class="summary-card-thin" 
-            :class="{ 'active-filter': filters.Auth_Status === null }"
-            elevation="1" 
-            @click="setAuthStatusFilter(null)" 
-            style="cursor:pointer"
-          >
-            <v-card-text class="pa-2">
-              <div class="d-flex align-center">
-                <v-icon size="20" color="primary" class="mr-2">mdi-file-document-multiple</v-icon>
-                <div>
-                  <div class="summary-value-thin">{{ summary.total }}</div>
-                  <div class="summary-label-thin">ລາຍການທັງໝົດ</div>
-                </div>
-              </div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-        <v-col cols="6" sm="3" md="2">
-          <v-card 
-            class="summary-card-thin" 
-            :class="{ 'active-filter': filters.Auth_Status === 'U' }"
-            elevation="1" 
-            @click="setAuthStatusFilter('U')" 
-            style="cursor:pointer"
-          >
-            <v-card-text class="pa-2">
-              <div class="d-flex align-center">
-                <v-icon size="20" color="warning" class="mr-2">mdi-clock-outline</v-icon>
-                <div>
-                  <div class="summary-value-thin">{{ summary.pending }}</div>
-                  <div class="summary-label-thin">ລໍຖ້າອະນຸມັດ</div>
-                </div>
-              </div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-        <v-col cols="6" sm="3" md="2">
-          <v-card 
-            class="summary-card-thin" 
-            :class="{ 'active-filter': filters.Auth_Status === 'A' }"
-            elevation="1" 
-            @click="setAuthStatusFilter('A')" 
-            style="cursor:pointer"
-          >
-            <v-card-text class="pa-2">
-              <div class="d-flex align-center">
-                <v-icon size="20" color="success" class="mr-2">mdi-check-circle</v-icon>
-                <div>
-                  <div class="summary-value-thin">{{ summary.approved }}</div>
-                  <div class="summary-label-thin">ອະນຸມັດແລ້ວ</div>
-                </div>
-              </div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-        <v-col cols="6" sm="3" md="2">
-          <v-card 
-            class="summary-card-thin" 
-            :class="{ 'active-filter': filters.Auth_Status === 'R' }"
-            elevation="1" 
-            @click="setAuthStatusFilter('R')" 
-            style="cursor:pointer"
-          >
-            <v-card-text class="pa-2">
-              <div class="d-flex align-center">
-                <v-icon size="20" color="error" class="mr-2">mdi-close-circle</v-icon>
-                <div>
-                  <div class="summary-value-thin">{{ summary.rejected }}</div>
-                  <div class="summary-label-thin">ປະຕິເສດ</div>
-                </div>
-              </div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-        <v-col cols="6" sm="3" md="2">
-          <v-card 
-            class="summary-card-thin" 
-            :class="{ 'active-filter': filters.Auth_Status === 'P' }"
-            elevation="1" 
-            @click="setAuthStatusFilter('P')" 
-            style="cursor:pointer"
-          >
-            <v-card-text class="pa-2">
-              <div class="d-flex align-center">
-                <v-icon size="20" color="info" class="mr-2">mdi-pencil-circle</v-icon>
-                <div>
-                  <div class="summary-value-thin">{{ summary.correction }}</div>
-                  <div class="summary-label-thin">ຖ້າເແກ້ໄຂ</div>
-                </div>
-              </div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-      </v-row>
-
-      <!-- Data Table - Compact -->
-      <v-card elevation="1" class="data-table-card-thin">
-        <!-- Updated Data Table Title -->
-        <v-card-title class="d-flex justify-space-between align-center pa-3">
-          <span class="text-h6">
-            ລາຍການບັນທຶກບັນຊີ
-            <v-chip size="small" color="primary" variant="outlined" class="ml-2">
-              {{ canAuthorize ? 'ທັງໝົດ' : 'ຂອງຂ້ອຍ' }}
-            </v-chip>
-            <!-- Show current filter status -->
-            <v-chip 
-              v-if="filters.Auth_Status" 
-              size="small" 
-              :color="getStatusColor(filters.Auth_Status)" 
-              variant="flat" 
-              class="ml-2"
-            >
-              <v-icon left size="12">{{ getStatusIcon(filters.Auth_Status) }}</v-icon>
-              {{ getStatusText(filters.Auth_Status) }}
-            </v-chip>
-            <v-chip 
-              v-else 
-              size="small" 
-              color="grey" 
-              variant="flat" 
-              class="ml-2"
-            >
-              <v-icon left size="12">mdi-filter-off</v-icon>
-              ທັງໝົດ
-            </v-chip>
-          </span>
-          <div>
-            <v-btn v-if="canAdd" color="primary" variant="flat" @click="navigateToCreate" prepend-icon="mdi-plus"
-              class="mr-2" size="small">
-              ເພີ່ມບັນທຶກໃຫມ່
-            </v-btn>
-            <v-btn color="success" variant="text" @click="exportData" :disabled="items.length === 0" class="mr-2"
-              size="small">
-              <v-icon left size="16">mdi-download</v-icon>
-              ສົ່ງອອກ
-            </v-btn>
-            <v-btn color="primary" variant="text" @click="loadData" size="small">
-              <v-icon left size="16">mdi-refresh</v-icon>
-              ໂຫຼດໃໝ່
-            </v-btn>
+    <!-- Main Content - Only show when permissions are ready -->
+    <div v-else-if="isReady">
+      <!-- Permission Access Check -->
+      <div v-if="!canView" class="permission-denied-state">
+        <v-card class="text-center py-12" elevation="1">
+          <v-icon size="80" color="error" class="mb-6">mdi-shield-lock</v-icon>
+          <div class="text-h5 mb-3 text-error">ບໍ່ມີສິດເຂົ້າເຖິງ</div>
+          <div class="text-body-1 mb-4 text-grey">ທ່ານບໍ່ມີສິດເຂົ້າເຖິງໜ້ານີ້</div>
+          <div class="text-caption text-grey mb-6 px-4">
+            <v-icon size="16" class="mr-1">mdi-information-outline</v-icon>
+            ກະລຸນາຕິດຕໍ່ຜູ້ດູແລລະບົບເພື່ອຂໍສິດເຂົ້າເຖິງ
           </div>
-        </v-card-title>
+          <v-btn variant="outlined" @click="$router.go(-1)" prepend-icon="mdi-arrow-left" size="large">
+            ກັບໄປໜ້າກ່ອນ
+          </v-btn>
+        </v-card>
+      </div>
 
-        <v-data-table :headers="headers" :items="items" :loading="loading" :search="filters.search" :items-per-page="10"
-          density="compact" class="elevation-0 full-width-table-thin" item-value="JRNLLog_id">
-          <!-- Reference No -->
-          <template v-slot:item.Reference_No="{ item }">
-            <v-chip v-if="canView" size="x-small" color="primary" variant="outlined" @click="viewDetails(item)"
-              class="cursor-pointer">
-              {{ item.Reference_No }}
-            </v-chip>
+      <!-- Main Content (only show if user has view permission) -->
+      <div v-else>
+        <!-- Data Access Info -->
+        <!-- <v-alert v-if="canAuthorize" type="success" variant="tonal" density="compact" class="mb-3">
+          <template #prepend>
+            <v-icon>mdi-check-circle</v-icon>
           </template>
+          <strong>ສິດເຂົ້າເຖິງ:</strong> ທ່ານສາມາດເບິ່ງລາຍການທັງໝົດໄດ້
+        </v-alert>
 
-          <!-- Module -->
-          <template v-slot:item.module_id="{ item }">
-            <span v-if="item.module_id" class="text-compact">
-              {{ getModuleName(item.module_id) }}
+        <v-alert v-else type="info" variant="tonal" density="compact" class="mb-3">
+          <template #prepend>
+            <v-icon>mdi-information</v-icon>
+          </template>
+          <strong>ສິດເຂົ້າເຖິງ:</strong> ທ່ານສາມາດເບິ່ງລາຍການທີ່ທ່ານສ້າງເທົ່ານັ້ນ
+        </v-alert> -->
+
+        <!-- Filter Section - Thinner -->
+        <v-card class="filter-card-thin mb-2" elevation="1">
+          <v-card-text class="pa-2">
+            <v-row dense>
+              <v-col cols="12" md="3">
+                <v-text-field 
+                  v-model="filters.search" 
+                  label="ຄົ້ນຫາ" 
+                  prepend-inner-icon="mdi-magnify" 
+                  variant="outlined"
+                  density="compact" 
+                  clearable 
+                  placeholder="ເລກອ້າງອີງ, ຂໍ້ຄວາມ..." 
+                  @update:model-value="searchDebounced"
+                  hide-details
+                />
+              </v-col>
+              <v-col cols="12" md="2">
+                <v-select 
+                  v-model="filters.module_id" 
+                  :items="modules" 
+                  item-title="module_name_la" 
+                  item-value="module_Id"
+                  label="ໂມດູນ" 
+                  variant="outlined" 
+                  density="compact" 
+                  clearable 
+                  @update:model-value="handleFilterChange"
+                  hide-details
+                />
+              </v-col>
+              <v-col cols="12" md="2">
+                <v-select 
+                  v-model="filters.Ccy_cd" 
+                  :items="currencies" 
+                  item-title="ccy_code" 
+                  item-value="ccy_code"
+                  label="ສະກຸນເງິນ" 
+                  variant="outlined" 
+                  density="compact" 
+                  clearable 
+                  @update:model-value="handleFilterChange"
+                  hide-details
+                />
+              </v-col>
+              <v-col cols="12" md="2">
+                <v-select 
+                  v-model="filters.Auth_Status" 
+                  :items="authStatusOptions" 
+                  item-title="text" 
+                  item-value="value"
+                  label="ສະຖານະອະນຸມັດ" 
+                  variant="outlined" 
+                  density="compact" 
+                  clearable 
+                  @update:model-value="loadData"
+                  hide-details 
+                  :loading="loadingAuthStatus"
+                />
+              </v-col>
+              <v-col cols="12" md="2">
+                <v-text-field 
+                  v-model="filters.date" 
+                  label="ວັນທີເລີ່ມ" 
+                  type="date" 
+                  variant="outlined" 
+                  density="compact"
+                  @update:model-value="handleFilterChange" 
+                  hide-details
+                  :hint="getDateHint()"
+                  persistent-hint
+                />
+              </v-col>
+              <v-col cols="12" md="1">
+                <v-btn 
+                  color="primary" 
+                  variant="flat" 
+                  @click="loadData" 
+                  :loading="loading" 
+                  block 
+                  size="small"
+                >
+                  <v-icon size="16">mdi-filter</v-icon>
+                  ຄົ້ນຫາ
+                </v-btn>
+              </v-col>
+            </v-row>
+            
+            <!-- Clear Filters Button -->
+            <v-row dense class="mt-1">
+              <v-col cols="12" class="text-right">
+                <v-btn color="grey" variant="text" @click="clearAllFilters" size="x-small">
+                  <v-icon left size="14">mdi-filter-off</v-icon>
+                  ລຶບຕົວກອງ
+                </v-btn>
+              </v-col>
+            </v-row>
+          </v-card-text>
+        </v-card>
+
+        <!-- Summary Cards - Updated with active state -->
+        <v-row dense class="mb-3">
+          <v-col cols="6" sm="3" md="2">
+            <v-card 
+              class="summary-card-thin" 
+              :class="{ 'active-filter': filters.Auth_Status === null }"
+              elevation="1" 
+              @click="setAuthStatusFilter(null)" 
+              style="cursor:pointer"
+            >
+              <v-card-text class="pa-2">
+                <div class="d-flex align-center">
+                  <v-icon size="20" color="primary" class="mr-2">mdi-file-document-multiple</v-icon>
+                  <div>
+                    <div class="summary-value-thin">{{ summary.total }}</div>
+                    <div class="summary-label-thin">ລາຍການທັງໝົດ</div>
+                  </div>
+                </div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+          <v-col cols="6" sm="3" md="2">
+            <v-card 
+              class="summary-card-thin" 
+              :class="{ 'active-filter': filters.Auth_Status === 'U' }"
+              elevation="1" 
+              @click="setAuthStatusFilter('U')" 
+              style="cursor:pointer"
+            >
+              <v-card-text class="pa-2">
+                <div class="d-flex align-center">
+                  <v-icon size="20" color="warning" class="mr-2">mdi-clock-outline</v-icon>
+                  <div>
+                    <div class="summary-value-thin">{{ summary.pending }}</div>
+                    <div class="summary-label-thin">ລໍຖ້າອະນຸມັດ</div>
+                  </div>
+                </div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+          <v-col cols="6" sm="3" md="2">
+            <v-card 
+              class="summary-card-thin" 
+              :class="{ 'active-filter': filters.Auth_Status === 'A' }"
+              elevation="1" 
+              @click="setAuthStatusFilter('A')" 
+              style="cursor:pointer"
+            >
+              <v-card-text class="pa-2">
+                <div class="d-flex align-center">
+                  <v-icon size="20" color="success" class="mr-2">mdi-check-circle</v-icon>
+                  <div>
+                    <div class="summary-value-thin">{{ summary.approved }}</div>
+                    <div class="summary-label-thin">ອະນຸມັດແລ້ວ</div>
+                  </div>
+                </div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+          <v-col cols="6" sm="3" md="2">
+            <v-card 
+              class="summary-card-thin" 
+              :class="{ 'active-filter': filters.Auth_Status === 'R' }"
+              elevation="1" 
+              @click="setAuthStatusFilter('R')" 
+              style="cursor:pointer"
+            >
+              <v-card-text class="pa-2">
+                <div class="d-flex align-center">
+                  <v-icon size="20" color="error" class="mr-2">mdi-close-circle</v-icon>
+                  <div>
+                    <div class="summary-value-thin">{{ summary.rejected }}</div>
+                    <div class="summary-label-thin">ປະຕິເສດ</div>
+                  </div>
+                </div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+          <v-col cols="6" sm="3" md="2">
+            <v-card 
+              class="summary-card-thin" 
+              :class="{ 'active-filter': filters.Auth_Status === 'P' }"
+              elevation="1" 
+              @click="setAuthStatusFilter('P')" 
+              style="cursor:pointer"
+            >
+              <v-card-text class="pa-2">
+                <div class="d-flex align-center">
+                  <v-icon size="20" color="info" class="mr-2">mdi-pencil-circle</v-icon>
+                  <div>
+                    <div class="summary-value-thin">{{ summary.correction }}</div>
+                    <div class="summary-label-thin">ຖ້າເແກ້ໄຂ</div>
+                  </div>
+                </div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+        </v-row>
+
+        <!-- Data Table - Compact -->
+        <v-card elevation="1" class="data-table-card-thin">
+          <!-- Updated Data Table Title -->
+          <v-card-title class="d-flex justify-space-between align-center pa-3">
+            <span class="text-h6">
+              ລາຍການບັນທຶກບັນຊີ
+              <v-chip size="small" color="primary" variant="outlined" class="ml-2">
+                {{ canAuthorize ? 'ທັງໝົດ' : 'ຂອງຂ້ອຍ' }}
+              </v-chip>
+              <!-- Show current filter status -->
+              <v-chip 
+                v-if="filters.Auth_Status" 
+                size="small" 
+                :color="getStatusColor(filters.Auth_Status)" 
+                variant="flat" 
+                class="ml-2"
+              >
+                <v-icon left size="12">{{ getStatusIcon(filters.Auth_Status) }}</v-icon>
+                {{ getStatusText(filters.Auth_Status) }}
+              </v-chip>
+              <v-chip 
+                v-else 
+                size="small" 
+                color="grey" 
+                variant="flat" 
+                class="ml-2"
+              >
+                <v-icon left size="12">mdi-filter-off</v-icon>
+                ທັງໝົດ
+              </v-chip>
             </span>
-            <span v-else class="text-grey">-</span>
-          </template>
-
-          <!-- Currency and Amount -->
-          <template v-slot:item.Fcy_Amount="{ item }">
-            <div class="text-right text-compact">
-              <strong>{{ formatNumber(item.Fcy_Amount) }}</strong>
-              <span class="text-grey ml-1">{{ item.Ccy_cd }}</span>
-            </div>
-          </template>
-
-          <!-- LCY Amount -->
-          <template v-slot:item.Lcy_Amount="{ item }">
-            <div class="text-right text-compact">
-              {{ formatNumber(item.Lcy_Amount) }} LAK
-            </div>
-          </template>
-
-          <!-- Transaction Code -->
-          <template v-slot:item.Txn_code="{ item }">
-            <v-chip size="x-small" variant="flat" color="info">
-              {{ item.Txn_code || '-' }}
-            </v-chip>
-          </template>
-
-          <template v-slot:item.Addl_text="{ item }">
-            <div class="text-truncate text-compact">
-              <v-tooltip v-if="item.Addl_text" location="top">
-                <template v-slot:activator="{ props }">
-                  <span v-bind="props">{{ item.Addl_text || '-' }}</span>
-                </template>
-                <span>{{ item.Addl_text }}</span>
-              </v-tooltip>
-              <span v-else>-</span>
-            </div>
-          </template>
-
-          <!-- Value Date -->
-          <template v-slot:item.Value_date="{ item }">
-            <span class="text-compact text-grey">{{ formatDate(item.Value_date) }}</span>
-          </template>
-
-          <!-- Auth Status -->
-          <template v-slot:item.Auth_Status="{ item }">
-            <v-chip :color="getStatusColor(item.Auth_Status)" size="x-small" variant="flat">
-              <v-icon left size="x-small">{{ getStatusIcon(item.Auth_Status) }}</v-icon>
-              {{ getStatusText(item.Auth_Status) }}
-            </v-chip>
-          </template>
-
-          <!-- Maker Info -->
-          <template v-slot:item.maker_name="{ item }">
-            <div class="text-caption-thin">
-              <div v-if="item.Maker_Id" class="text-compact">{{ item.maker_name || item.Maker_Id }}</div>
-            </div>
-          </template>
-
-          <!-- Actions -->
-          <template v-slot:item.actions="{ item }">
-            <div class="d-flex gap-1">
-              <v-btn v-if="canView" icon size="x-small" variant="text" color="info" @click="viewDetails(item)"
-                title="ເບິ່ງລາຍລະອຽດ">
-                <v-icon size="14">mdi-eye</v-icon>
+            <div>
+              <v-btn 
+                v-if="canAdd" 
+                color="primary" 
+                variant="flat" 
+                @click="navigateToCreate" 
+                prepend-icon="mdi-plus"
+                class="mr-2" 
+                size="small"
+              >
+                ເພີ່ມບັນທຶກໃຫມ່
               </v-btn>
-
-              <v-btn
-                v-if="canDelete && (canAuthorize || item.Maker_Id === currentUser?.user_id) && item.Auth_Status !== 'A' && item.Auth_Status !== 'R'"
-                icon size="x-small" variant="text" color="error" @click="deleteItem(item)" title="ລຶບ">
-                <v-icon size="14">mdi-delete</v-icon>
+              <v-btn 
+                color="success" 
+                variant="text" 
+                @click="exportData" 
+                :disabled="items.length === 0" 
+                class="mr-2"
+                size="small"
+              >
+                <v-icon left size="16">mdi-download</v-icon>
+                ສົ່ງອອກ
+              </v-btn>
+              <v-btn color="primary" variant="text" @click="loadData" size="small">
+                <v-icon left size="16">mdi-refresh</v-icon>
+                ໂຫຼດໃໝ່
               </v-btn>
             </div>
-          </template>
-        </v-data-table>
-      </v-card>
+          </v-card-title>
+
+          <v-data-table 
+            :headers="headers" 
+            :items="items" 
+            :loading="loading" 
+            :search="filters.search" 
+            :items-per-page="10"
+            density="compact" 
+            class="elevation-0 full-width-table-thin" 
+            item-value="JRNLLog_id"
+          >
+            <!-- Reference No -->
+            <template v-slot:item.Reference_No="{ item }">
+              <v-chip 
+                v-if="canView" 
+                size="x-small" 
+                color="primary" 
+                variant="outlined" 
+                @click="viewDetails(item)"
+                class="cursor-pointer"
+              >
+                {{ item.Reference_No }}
+              </v-chip>
+            </template>
+
+            <!-- Module -->
+            <template v-slot:item.module_id="{ item }">
+              <span v-if="item.module_id" class="text-compact">
+                {{ getModuleName(item.module_id) }}
+              </span>
+              <span v-else class="text-grey">-</span>
+            </template>
+
+            <!-- Currency and Amount -->
+            <template v-slot:item.Fcy_Amount="{ item }">
+              <div class="text-right text-compact">
+                <strong>{{ formatNumber(item.Fcy_Amount) }}</strong>
+                <span class="text-grey ml-1">{{ item.Ccy_cd }}</span>
+              </div>
+            </template>
+
+            <!-- LCY Amount -->
+            <template v-slot:item.Lcy_Amount="{ item }">
+              <div class="text-right text-compact">
+                {{ formatNumber(item.Lcy_Amount) }} LAK
+              </div>
+            </template>
+
+            <!-- Transaction Code -->
+            <template v-slot:item.Txn_code="{ item }">
+              <v-chip size="x-small" variant="flat" color="info">
+                {{ item.Txn_code || '-' }}
+              </v-chip>
+            </template>
+
+            <template v-slot:item.Addl_text="{ item }">
+              <div class="text-truncate text-compact">
+                <v-tooltip v-if="item.Addl_text" location="top">
+                  <template v-slot:activator="{ props }">
+                    <span v-bind="props">{{ item.Addl_text || '-' }}</span>
+                  </template>
+                  <span>{{ item.Addl_text }}</span>
+                </v-tooltip>
+                <span v-else>-</span>
+              </div>
+            </template>
+
+            <!-- Value Date -->
+            <template v-slot:item.Value_date="{ item }">
+              <span class="text-compact text-grey">{{ formatDate(item.Value_date) }}</span>
+            </template>
+
+            <!-- Auth Status -->
+            <template v-slot:item.Auth_Status="{ item }">
+              <v-chip :color="getStatusColor(item.Auth_Status)" size="x-small" variant="flat">
+                <v-icon left size="x-small">{{ getStatusIcon(item.Auth_Status) }}</v-icon>
+                {{ getStatusText(item.Auth_Status) }}
+              </v-chip>
+            </template>
+
+            <!-- Maker Info -->
+            <template v-slot:item.maker_name="{ item }">
+              <div class="text-caption-thin">
+                <div v-if="item.Maker_Id" class="text-compact">{{ item.maker_name || item.Maker_Id }}</div>
+              </div>
+            </template>
+
+            <!-- Actions -->
+            <template v-slot:item.actions="{ item }">
+              <div class="d-flex gap-1">
+                <v-btn 
+                  v-if="canView" 
+                  icon 
+                  size="x-small" 
+                  variant="text" 
+                  color="info" 
+                  @click="viewDetails(item)"
+                  title="ເບິ່ງລາຍລະອຽດ"
+                >
+                  <v-icon size="14">mdi-eye</v-icon>
+                </v-btn>
+
+                <v-btn
+                  v-if="canDelete && (canAuthorize || item.Maker_Id === currentUser?.user_id) && item.Auth_Status !== 'A' && item.Auth_Status !== 'R'"
+                  icon 
+                  size="x-small" 
+                  variant="text" 
+                  color="error" 
+                  @click="deleteItem(item)" 
+                  title="ລຶບ"
+                >
+                  <v-icon size="14">mdi-delete</v-icon>
+                </v-btn>
+              </div>
+            </template>
+          </v-data-table>
+        </v-card>
+      </div>
     </div>
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from '@/helpers/axios'
@@ -386,27 +503,33 @@ const route = useRoute()
 const router = useRouter()
 
 // Get sub_menu_id from route
-const submenu_id = route.query.sub_menu_id || 'GL_NOTE_CAP'
-console.log('Submenu ID:', submenu_id)
-const roleStore = RoleStore()
-const role1 = computed(() =>{
-  return roleStore.respons_data_role;
-})
+const submenu_id = route.query.sub_menu_id as string || 'GL_NOTE_CAP'
 
-// Role Permissions
+// Role Store (for legacy support)
+const roleStore = RoleStore()
+
+// Role Permissions - Initialize with new composable
 const {
   initializeRole,
+  isReady,
+  isLoading: permissionsLoading,
+  initializationError,
   canView,
   canEdit,
   canDelete,
   canAuthorize,
   canAdd,
-  permissions
+  permissions,
+  debugPermissions,
+  waitForReady
 } = useRolePermissions()
+
+// Permission loading state
+const permissionCheckComplete = ref(false)
 
 // Journal Permission - Initialize composable
 const journalPermission = useJournalPermission({
-  autoRedirect: false, // We'll handle redirect manually if needed
+  autoRedirect: false,
   redirectPath: '/glcapture/permission-denied'
 })
 
@@ -418,10 +541,10 @@ const modules = ref([])
 const currencies = ref([])
 const authStatusOptions = ref([])
 
-// Auth Status Mapping (for consistent reference)
+// Auth Status Mapping
 const authStatusMapping = ref(new Map())
 
-// Current user (get from localStorage or auth store)
+// Current user
 const currentUser = computed(() => {
   try {
     const userData = localStorage.getItem('user')
@@ -432,7 +555,7 @@ const currentUser = computed(() => {
   }
 })
 
-// Get default date - use target date from journal permission if available, otherwise today
+// Get default date
 const getDefaultDate = () => {
   if (journalPermission.targetDate.value) {
     return new Date(journalPermission.targetDate.value).toISOString().slice(0, 10)
@@ -440,12 +563,12 @@ const getDefaultDate = () => {
   return new Date().toISOString().slice(0, 10)
 }
 
-// Filters - initialize with computed default date
+// Filters
 const filters = reactive({
   search: '',
   module_id: null,
   Ccy_cd: null,
-  Auth_Status: 'U', // Default to pending approval
+  Auth_Status: 'U',
   date: getDefaultDate(),
 })
 
@@ -458,16 +581,14 @@ const summary = reactive({
   correction: 0
 })
 
-// Watch for target date changes and update filter date accordingly
+// Watch for target date changes
 watch(
   () => journalPermission.targetDate.value,
   (newTargetDate) => {
     if (newTargetDate) {
       const formattedDate = new Date(newTargetDate).toISOString().slice(0, 10)
-      console.log('Target date updated, setting filter date to:', formattedDate)
       filters.date = formattedDate
-      // Optionally reload data when target date changes
-      if (canView.value) {
+      if (canView.value && permissionCheckComplete.value) {
         handleFilterChange()
       }
     }
@@ -475,14 +596,14 @@ watch(
   { immediate: true }
 )
 
-// Method to get date hint text
+// Get date hint
 const getDateHint = () => {
   if (journalPermission.targetDate.value) {
     if (journalPermission.isBackDate.value) {
       return `ວັນທີຍ້ອນຫຼັງ: ${formatEodDate(journalPermission.targetDate.value)}`
     } else {
-        return `ວັນທີເປົ້າໝາຍ: ${formatEodDate(journalPermission.targetDate.value)}`
-      }
+      return `ວັນທີເປົ້າໝາຍ: ${formatEodDate(journalPermission.targetDate.value)}`
+    }
   }
   return 'ວັນທີປັດຈຸບັນ'
 }
@@ -507,88 +628,72 @@ const getAuthHeaders = () => ({
   }
 })
 
-// Navigate to details page
+// Navigate to details
 const viewDetails = (item) => {
-  const detailUrl = `/glcapture/detail?Reference_No=${item.Reference_No}&sub_menu_id=${submenu_id}`
-  router.push(detailUrl)
+  router.push({
+    path: '/glcapture/detail',
+    query: {
+      Reference_No: item.Reference_No,
+      sub_menu_id: submenu_id
+    }
+  })
 }
 
-// Navigate to create page
+// Navigate to create
 const navigateToCreate = () => {
-  const createUrl = `/glcapture/create?sub_menu_id=${submenu_id}`
-  router.push(createUrl)
+  router.push({
+    path: '/glcapture/create',
+    query: { sub_menu_id: submenu_id }
+  })
 }
 
-// ALSO FIX: loadSummaryData method
+// Load summary data (without Auth_Status filter)
 const loadSummaryData = async () => {
   try {
-    console.log('Loading summary data...')
-    
-    // Build query params for summary (without Auth_Status filter)
     const params = {
-      show_all: canAuthorize.value ? 'true' : 'false'
+      show_all: canAuthorize.value ? 'true' : 'false',
+      delete_stat__ne: 'D'
     }
 
-    // Add other filters but NOT Auth_Status
     if (filters.search) params.search = filters.search
     if (filters.module_id) params.module_id = filters.module_id
     if (filters.Ccy_cd) params.Ccy_cd = filters.Ccy_cd
     if (filters.date) params.Value_date = filters.date
-
-    // Exclude soft deleted (backend already excludes ARD)
-    params.delete_stat__ne = 'D'
-
-    console.log('Loading summary with params:', params)
 
     const response = await axios.get('/api/journal-log-master/', {
       params,
       ...getAuthHeaders()
     })
 
-    // FIXED: Properly define allItems first
     const allItems = response.data.results || response.data || []
-    
-    // Client-side safety: filter out any ARD records that might slip through
     const filteredItems = allItems.filter(item => item.Txn_code !== 'ARD')
     
-    // Update summary with filtered records
     summary.total = filteredItems.length
     summary.pending = filteredItems.filter(i => i.Auth_Status === 'U').length
     summary.approved = filteredItems.filter(i => i.Auth_Status === 'A').length
     summary.rejected = filteredItems.filter(i => i.Auth_Status === 'R').length
     summary.correction = filteredItems.filter(i => i.Auth_Status === 'P').length
 
-    console.log('Summary updated:', {
-      total: summary.total,
-      pending: summary.pending,
-      approved: summary.approved,
-      rejected: summary.rejected,
-      correction: summary.correction
-    })
-
   } catch (error) {
-    console.error('Error loading summary data:', error)
+    console.error('Error loading summary:', error)
   }
 }
 
-// Load Auth Status Options from API
+// Load Auth Status Options
 const loadAuthStatusOptions = async () => {
   try {
     loadingAuthStatus.value = true
-    console.log('Loading auth status options from API...')
 
     const response = await axios.get('/api/master-types/tree/A', getAuthHeaders())
 
     if (response.data && response.data.MasterCodes) {
-      // Map API response to component format
       authStatusOptions.value = response.data.MasterCodes
-        .filter(code => code.Status === 'T') // Only active statuses
+        .filter(code => code.Status === 'T')
         .map(code => ({
           value: code.MC_code,
           text: code.MC_name_la
         }))
 
-      // Create mapping for status text lookup
       authStatusMapping.value.clear()
       response.data.MasterCodes
         .filter(code => code.Status === 'T')
@@ -599,13 +704,9 @@ const loadAuthStatusOptions = async () => {
             icon: getStatusIconFromCode(code.MC_code)
           })
         })
-
-      console.log('Auth status options loaded:', authStatusOptions.value)
-      console.log('Auth status mapping created:', authStatusMapping.value)
     }
   } catch (error) {
-    console.error('Error loading auth status options:', error)
-    // Fallback to default options if API fails
+    console.error('Error loading auth status:', error)
     authStatusOptions.value = [
       { value: 'U', text: 'ລໍຖ້າອະນຸມັດ' },
       { value: 'A', text: 'ອະນຸມັດແລ້ວ' },
@@ -617,7 +718,7 @@ const loadAuthStatusOptions = async () => {
   }
 }
 
-// Helper function to determine status color based on code
+// Helper functions
 const getStatusColorFromCode = (code) => {
   switch (code) {
     case 'A': return 'success'
@@ -628,7 +729,6 @@ const getStatusColorFromCode = (code) => {
   }
 }
 
-// Helper function to determine status icon based on code
 const getStatusIconFromCode = (code) => {
   switch (code) {
     case 'A': return 'mdi-check-circle'
@@ -639,7 +739,6 @@ const getStatusIconFromCode = (code) => {
   }
 }
 
-// Methods
 const formatNumber = (num, decimals = 2) => {
   if (!num) return '0.00'
   return new Intl.NumberFormat('en-US', {
@@ -653,47 +752,24 @@ const formatDate = (date) => {
   return new Date(date).toLocaleDateString('lo-LA')
 }
 
-const formatDateTime = (date) => {
-  if (!date) return '-'
-  return new Date(date).toLocaleString('lo-LA')
-}
-
 const getStatusColor = (status) => {
-  // Use dynamic mapping if available, otherwise fallback to hardcoded
   if (authStatusMapping.value.has(status)) {
     return authStatusMapping.value.get(status).color
   }
-  // Fallback for backward compatibility
-  switch (status) {
-    case 'A': return 'success'
-    case 'R': return 'error'
-    case 'U': return 'warning'
-    case 'P': return 'info'
-    default: return 'grey'
-  }
+  return getStatusColorFromCode(status)
 }
 
 const getStatusIcon = (status) => {
-  // Use dynamic mapping if available, otherwise fallback to hardcoded
   if (authStatusMapping.value.has(status)) {
     return authStatusMapping.value.get(status).icon
   }
-  // Fallback for backward compatibility
-  switch (status) {
-    case 'A': return 'mdi-check-circle'
-    case 'R': return 'mdi-close-circle'
-    case 'U': return 'mdi-clock-outline'
-    case 'P': return 'mdi-pencil-circle'
-    default: return 'mdi-help-circle'
-  }
+  return getStatusIconFromCode(status)
 }
 
 const getStatusText = (status) => {
-  // Use dynamic mapping if available, otherwise fallback to hardcoded
   if (authStatusMapping.value.has(status)) {
     return authStatusMapping.value.get(status).text
   }
-  // Fallback for backward compatibility
   switch (status) {
     case 'A': return 'ອະນຸມັດແລ້ວ'
     case 'R': return 'ປະຕິເສດ'
@@ -709,53 +785,32 @@ const getModuleName = (moduleId) => {
   return module ? module.module_name_la : moduleId
 }
 
-// FIXED: Load filtered data for table (ARD already excluded by backend)
+// Load filtered data
 const loadData = async () => {
   try {
     loading.value = true
 
-    // Load summary data first (this gets all records for accurate counts)
     await loadSummaryData()
 
-    // Build query params for table data (including Auth_Status filter)
     const params = {
-      show_all: canAuthorize.value ? 'true' : 'false'
+      show_all: canAuthorize.value ? 'true' : 'false',
+      delete_stat__ne: 'D',
+      ordering: '-Maker_DT_Stamp'
     }
 
-    // Add ALL filters including Auth_Status
     if (filters.search) params.search = filters.search
     if (filters.module_id) params.module_id = filters.module_id
     if (filters.Ccy_cd) params.Ccy_cd = filters.Ccy_cd
     if (filters.Auth_Status) params.Auth_Status = filters.Auth_Status
     if (filters.date) params.Value_date = filters.date
 
-    // Exclude soft deleted (backend already handles ARD exclusion)
-    params.delete_stat__ne = 'D'
-    params.ordering = '-Maker_DT_Stamp'
-
-    console.log('Loading table data with params:', params)
-    console.log('User permissions:', {
-      canAdd: canAdd.value, 
-      canView: canView.value,
-      canEdit: canEdit.value,
-      canDelete: canDelete.value,
-      canAuthorize: canAuthorize.value,
-      showingAllRecords: canAuthorize.value
-    })
-
     const response = await axios.get('/api/journal-log-master/', {
       params,
       ...getAuthHeaders()
     })
 
-    // FIXED: Properly define rawItems first
     const rawItems = response.data.results || response.data || []
-    
-    // Client-side safety: filter out any ARD records that might slip through
     items.value = rawItems.filter(item => item.Txn_code !== 'ARD')
-
-    console.log(`Loaded ${items.value.length} filtered items for table (ARD excluded)`)
-    console.log(`Auth_Status filter: ${filters.Auth_Status || 'none'}`)
 
   } catch (error) {
     console.error('Error loading data:', error)
@@ -791,39 +846,26 @@ const loadCurrencies = async () => {
 // Set Auth Status Filter
 const setAuthStatusFilter = (status) => {
   filters.Auth_Status = status
-  loadData() // This will reload table data with new filter but keep summary intact
-}
-
-// Method to handle non-Auth_Status filter changes
-const handleFilterChange = () => {
-  // When other filters change, we still want to maintain the current Auth_Status filter
-  // and update both summary and table data
   loadData()
 }
 
-// Method to clear all filters with updated default date logic
+// Handle filter changes
+const handleFilterChange = () => {
+  loadData()
+}
+
+// Clear all filters
 const clearAllFilters = () => {
   filters.search = ''
   filters.module_id = null
   filters.Ccy_cd = null
-  filters.Auth_Status = 'U' // Reset to default
-  filters.date = getDefaultDate() // Use updated default date function
+  filters.Auth_Status = 'U'
+  filters.date = getDefaultDate()
   loadData()
 }
 
-// Method to show filter summary in console (for debugging)
-const logCurrentFilters = () => {
-  console.log('Current Filters:', {
-    search: filters.search,
-    module_id: filters.module_id,
-    Ccy_cd: filters.Ccy_cd,
-    Auth_Status: filters.Auth_Status,
-    date: filters.date
-  })
-}
-
+// Delete item
 const deleteItem = async (item) => {
-  // Check if user can delete this specific item
   const canDeleteItem = canDelete.value && (canAuthorize.value || item.Maker_Id === currentUser.value?.user_id)
 
   if (!canDeleteItem) {
@@ -835,15 +877,17 @@ const deleteItem = async (item) => {
     })
     return
   }
+
   if (item.Txn_code === 'ARD') {
-  Swal.fire({
-    icon: 'warning',
-    title: 'ບໍ່ສາມາດລຶບໄດ້',
-    text: 'ບໍ່ສາມາດລຶບລາຍການປະເພດ ARD ໄດ້',
-    confirmButtonText: 'ຕົກລົງ'
-  })
-  return
-}
+    Swal.fire({
+      icon: 'warning',
+      title: 'ບໍ່ສາມາດລຶບໄດ້',
+      text: 'ບໍ່ສາມາດລຶບລາຍການປະເພດ ARD ໄດ້',
+      confirmButtonText: 'ຕົກລົງ'
+    })
+    return
+  }
+
   const result = await Swal.fire({
     icon: 'warning',
     title: 'ຢືນຢັນການລຶບ',
@@ -881,8 +925,8 @@ const deleteItem = async (item) => {
   }
 }
 
+// Export data
 const exportData = () => {
-  // Implement export functionality
   Swal.fire({
     icon: 'info',
     title: 'ກຳລັງພັດທະນາ',
@@ -896,48 +940,107 @@ const searchDebounced = debounce(() => {
   handleFilterChange()
 }, 500)
 
+// Retry permission load
+const retryPermissionLoad = async () => {
+  permissionCheckComplete.value = false
+  
+  const subMenuId = route.query.sub_menu_id as string || 'GL_NOTE_CAP'
+  const success = await initializeRole(subMenuId, true)
+  
+  if (success) {
+    await waitForReady(5000)
+    permissionCheckComplete.value = true
+    
+    if (canView.value) {
+      await Promise.all([
+        loadAuthStatusOptions(),
+        loadModules(),
+        loadCurrencies()
+      ])
+      loadData()
+    }
+  } else {
+    permissionCheckComplete.value = true
+  }
+}
+
 // Lifecycle
 onMounted(async () => {
-  console.log('Journal list page mounted')
+  console.log('=== Journal list page mounted ===')
+  
+  try {
+    // Step 1: Get sub_menu_id
+    const subMenuId = route.query.sub_menu_id as string || 'GL_NOTE_CAP'
+    console.log('Sub Menu ID:', subMenuId)
 
-  // Initialize permissions first
-  await initializeRole()
-  roleStore.GetRoleDetail()
+    // Step 2: Initialize permissions with sub_menu_id
+    console.log('Initializing permissions...')
+    const permissionsInitialized = await initializeRole(subMenuId, false)
+    
+    if (!permissionsInitialized) {
+      console.error('Failed to initialize permissions:', initializationError.value)
+      permissionCheckComplete.value = true
+      
+      Swal.fire({
+        icon: 'error',
+        title: 'ເກີດຂໍ້ຜິດພາດ',
+        text: 'ບໍ່ສາມາດໂຫຼດສິດການນຳໃຊ້ໄດ້',
+        confirmButtonText: 'ຕົກລົງ'
+      })
+      return
+    }
 
-  // Initialize journal permission check
-  await journalPermission.checkPermission()
+    // Step 3: Wait for permissions to be ready
+    console.log('Waiting for permissions to be ready...')
+    const ready = await waitForReady(5000)
+    
+    if (!ready) {
+      console.error('Permission loading timeout')
+      permissionCheckComplete.value = true
+      return
+    }
 
-  // Debug permissions
-  console.log('Permissions initialized:', {
-    canAdd: canAdd.value,
-    canView: canView.value,
-    canEdit: canEdit.value,
-    canDelete: canDelete.value,
-    canAuthorize: canAuthorize.value,
-    permissions: permissions.value
-  })
+    permissionCheckComplete.value = true
+    
+    // Step 4: Debug permissions
+    debugPermissions()
 
-  console.log('Journal permission status:', {
-    isAvailable: journalPermission.isAvailable.value,
-    targetDate: journalPermission.targetDate.value,
-    isBackDate: journalPermission.isBackDate.value,
-    reason: journalPermission.permissionReason.value
-  })
+    // Step 5: Initialize journal permission
+    await journalPermission.checkPermission()
 
-  // Load reference data concurrently
-  await Promise.all([
-    loadAuthStatusOptions(),
-    loadModules(),
-    loadCurrencies()
-  ])
+    console.log('Journal permission status:', {
+      isAvailable: journalPermission.isAvailable.value,
+      targetDate: journalPermission.targetDate.value,
+      isBackDate: journalPermission.isBackDate.value
+    })
 
-  // Set default filter to 'U' (pending approval) - already set in reactive definition
-  console.log('Default filter set to:', filters.Auth_Status)
-  console.log('Default date filter set to:', filters.date)
+    // Step 6: Load data if user has view permission
+    if (canView.value) {
+      console.log('User has view permission, loading data...')
+      
+      await Promise.all([
+        loadAuthStatusOptions(),
+        loadModules(),
+        loadCurrencies()
+      ])
 
-  // Load main data (only if user has view permission)
-  if (canView.value) {
-    loadData()
+      loadData()
+    } else {
+      console.warn('User does not have view permission')
+    }
+
+    console.log('=== Page initialization complete ===')
+    
+  } catch (error) {
+    console.error('Error during initialization:', error)
+    permissionCheckComplete.value = true
+    
+    Swal.fire({
+      icon: 'error',
+      title: 'ເກີດຂໍ້ຜິດພາດ',
+      text: 'ບໍ່ສາມາດໂຫຼດໜ້ານີ້ໄດ້',
+      confirmButtonText: 'ຕົກລົງ'
+    })
   }
 })
 </script>
@@ -947,7 +1050,6 @@ onMounted(async () => {
   padding: 16px;
 }
 
-/* Permission indicators */
 .permission-indicators {
   background: rgba(255, 255, 255, 0.1);
   border-radius: 8px;
@@ -961,13 +1063,13 @@ onMounted(async () => {
   font-size: 0.7rem;
 }
 
-/* Permission denied state */
-.permission-denied-state {
+.permission-denied-state,
+.loading-overlay,
+.permission-error-state {
   max-width: 600px;
   margin: 40px auto;
 }
 
-/* Compact header */
 .page-header-compact {
   padding: 8px 0;
   margin-bottom: 16px;
@@ -983,13 +1085,11 @@ onMounted(async () => {
   line-height: 1.2;
 }
 
-/* Thinner filter card */
 .filter-card-thin {
   background: #f9f9f9;
   border: 1px solid #e0e0e0;
 }
 
-/* Thinner summary cards */
 .summary-card-thin {
   height: auto;
   min-height: 60px;
@@ -1001,7 +1101,6 @@ onMounted(async () => {
   transform: translateY(-1px);
 }
 
-/* Active filter state for summary cards */
 .summary-card-thin.active-filter {
   border: 2px solid #1976d2 !important;
   background: linear-gradient(135deg, rgba(25, 118, 210, 0.05) 0%, rgba(25, 118, 210, 0.1) 100%);
@@ -1032,12 +1131,10 @@ onMounted(async () => {
   line-height: 1;
 }
 
-/* Thinner data table card */
 .data-table-card-thin {
   border: 1px solid #e0e0e0;
 }
 
-/* Compact text */
 .text-compact {
   font-size: 0.8rem;
   line-height: 1.1;
@@ -1048,12 +1145,6 @@ onMounted(async () => {
   line-height: 1.1;
 }
 
-.text-xs {
-  font-size: 0.65rem;
-  line-height: 1;
-}
-
-/* Full width table - thinner */
 .full-width-table-thin {
   width: 100%;
 }
@@ -1062,7 +1153,6 @@ onMounted(async () => {
   cursor: pointer;
 }
 
-/* Vuetify overrides for compact design */
 :deep(.v-data-table) {
   font-size: 0.8rem;
   width: 100% !important;
@@ -1082,70 +1172,12 @@ onMounted(async () => {
   font-size: 0.8rem;
 }
 
-:deep(.v-data-table-wrapper) {
-  width: 100% !important;
-  overflow-x: auto;
-}
-
-:deep(.v-table__wrapper) {
-  width: 100% !important;
-}
-
 :deep(.v-field__input) {
   min-height: 32px !important;
   padding-top: 4px !important;
   padding-bottom: 4px !important;
 }
 
-:deep(.v-field__field) {
-  height: 32px !important;
-}
-
-:deep(.v-input--density-compact .v-field--variant-outlined .v-field__outline__start) {
-  border-radius: 4px 0 0 4px;
-}
-
-:deep(.v-input--density-compact .v-field--variant-outlined .v-field__outline__end) {
-  border-radius: 0 4px 4px 0;
-}
-
-:deep(.v-btn--size-small) {
-  min-height: 28px;
-  padding: 0 12px;
-  font-size: 0.75rem;
-}
-
-:deep(.v-btn--size-x-small) {
-  min-height: 24px;
-  padding: 0 8px;
-  font-size: 0.7rem;
-}
-
-:deep(.v-chip--size-x-small) {
-  height: 20px;
-  font-size: 0.65rem;
-  padding: 0 6px;
-}
-
-:deep(.v-card-title) {
-  font-size: 1rem;
-  font-weight: 500;
-  padding: 12px 16px;
-}
-
-:deep(.v-card-text) {
-  font-size: 0.8rem;
-}
-
-:deep(.v-card-actions) {
-  min-height: 40px;
-}
-
-:deep(.v-dialog .v-card) {
-  max-height: 90vh;
-}
-
-/* Responsive adjustments */
 @media (max-width: 768px) {
   .page-title-compact {
     font-size: 1.2rem;
@@ -1161,16 +1193,6 @@ onMounted(async () => {
 
   .permission-indicators {
     margin-top: 8px;
-  }
-
-  :deep(.v-data-table th) {
-    padding: 4px 8px !important;
-    font-size: 0.7rem;
-  }
-
-  :deep(.v-data-table td) {
-    padding: 4px 8px !important;
-    font-size: 0.75rem;
   }
 }
 

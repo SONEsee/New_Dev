@@ -7,9 +7,9 @@
           <div class="d-flex align-center">
             <v-icon color="primary" class="mr-3" size="28">mdi-database-edit</v-icon>
             <div>
-              <h2 class="text-h5 font-weight-bold mb-1 text-styles">ຈັດການການຕັ້ງຄ່າການປ້ອນຂໍ້ມູນ</h2>
+              <h2 class="text-h5 font-weight-bold mb-1 text-styles">ຈັດການຕັ້ງຄ່າການບັນທຶກບັນຊີ</h2>
               <p class="text-body-2 text-medium-emphasis mb-0 text-styles">
-                ກຳນົດການຢືນຢັນແລະການອະນຸຍາດສຳລັບການປ້ອນຂໍ້ມູນ MTTB
+                ກຳນົດການຢືນຢັນແລະການອະນຸຍາດສຳລັບການບັນທຶກບັນຊີ
               </p>
             </div>
           </div>
@@ -38,16 +38,7 @@
           </v-col>
           
           <v-col cols="12" md="3">
-            <v-btn
-              variant="outlined"
-              prepend-icon="mdi-refresh"
-              @click="refresh"
-              :loading="loading"
-              class="text-none"
-              block
-            >
-              ໂຫຼດໃໝ່
-            </v-btn>
+
           </v-col>
 
           <v-col cols="12" md="6">
