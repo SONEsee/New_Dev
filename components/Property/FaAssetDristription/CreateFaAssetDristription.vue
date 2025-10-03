@@ -1,22 +1,10 @@
 <script setup lang="ts">
-import dayjs from '#build/dayjs.imports.mjs';
+import dayjs from "#build/dayjs.imports.mjs";
 const deprecationUPda = useDrepecitoinUpdat();
 const accoutStore = accountMethodStore();
 const dreptriptionStore = useFassetLidtDescription();
-<<<<<<< HEAD
-const dataUpdate = computed(()=>{
-  const data = deprecationUPda.response_data_drepecation_lis?.overdue_items;
-  if(Array.isArray(data)){
-    return data
-  }if(data && typeof data==="object"){
-    return [data]
-  }
-  return []
-
-=======
-const deprecationUPda = useDrepecitoinUpdat();
-const dataUpdate = computed(()=>{
-  const data = deprecationUPda.response_data_drepecation_lis?.all_items_needing_attention;
+const dataUpdate = computed(() => {
+  const data = deprecationUPda.response_data_drepecation_lis?.due_items;
   if (Array.isArray(data)) {
     return data;
   }
@@ -24,8 +12,7 @@ const dataUpdate = computed(()=>{
     return [data];
   }
   return [];
->>>>>>> 4054f8a194ed4790bc7248e232f84c5a467097dd
-})
+});
 const respontest = computed(() => {
   return dreptriptionStore.response_data_get_overdue;
 });
@@ -109,33 +96,28 @@ const getCategoryColor = (category: string) => {
   }
 };
 const handelSubmit = async () => {
-  const notification =  await CallSwal({
-    icon:"warning",
-    title:"ຄຳເຕືອນ",
-    text:"ທ່ານຕອ້ງການຫັກຄ່າຫຼູຍຫ້ຽນນີ້ບໍ...?",
-    showConfirmButton:true,
-    confirmButtonText:"ຕົກລົງ",
-    cancelButtonText:"ຍົກເລີກ"
-  });if(notification.isConfirmed){
+  const notification = await CallSwal({
+    icon: "warning",
+    title: "ຄຳເຕືອນ",
+    text: "ທ່ານຕອ້ງການຫັກຄ່າຫຼູຍຫ້ຽນນີ້ບໍ...?",
+    showConfirmButton: true,
+    confirmButtonText: "ຕົກລົງ",
+    cancelButtonText: "ຍົກເລີກ",
+  });
+  if (notification.isConfirmed) {
     await dreptriptionStore.Caculater();
   }
-  
 };
 onMounted(() => {
   deprecationUPda.getDataDrepecation();
   accoutStore.GetAccountMethodList();
   dreptriptionStore.getdataCalculated();
   dreptriptionStore.getArrears();
-  deprecationUPda.getDataDrepecation();
 });
 </script>
 
 <template>
   <v-container fluid>
-<<<<<<< HEAD
-=======
- 
->>>>>>> 4054f8a194ed4790bc7248e232f84c5a467097dd
     <v-row v-if="dreptriptionStore.isLoading">
       <v-col cols="12" class="text-center">
         <v-progress-circular
@@ -150,9 +132,9 @@ onMounted(() => {
     <div v-else-if="respontest?.success">
       <v-row>
         <v-col cols="12" class="text-center">
-          <h2 class=" mb-2">ລາຍການຫັກຄ່າຫຼູ້ຍຫ້ຽນປະຈຳເດືອນ</h2>
+          <h2 class="mb-2">ລາຍການຫັກຄ່າຫຼູ້ຍຫ້ຽນປະຈຳເດືອນ</h2>
           <div v-if="targetPeriod">
-            <h3 class=" text-primary">
+            <h3 class="text-primary">
               {{ targetPeriod.month_name_la }} {{ targetPeriod.year }}
             </h3>
             <p class="text-subtitle-1 text-grey">{{ targetPeriod.period }}</p>
@@ -164,16 +146,22 @@ onMounted(() => {
         <v-col cols="12">
           <v-card class="pa-2">
             <v-row>
-              <v-col cols="12" md="6"> <v-card-title>
-              <v-icon left>mdi-table</v-icon>
-              ລາຍລະອຽດທຸກລາຍການ
-            </v-card-title> </v-col>
-              <v-col cols="12" md="6"><div class="d-flex mb-2 justify-end"><v-btn color="error" @click="handelSubmit" >
-              ຢືນຢັນການຫັກຄ່າຫຼູຍຫ້ຽນ
-            </v-btn></div></v-col>
+              <v-col cols="12" md="6">
+                <v-card-title>
+                  <v-icon left>mdi-table</v-icon>
+                  ລາຍລະອຽດທຸກລາຍການ
+                </v-card-title>
+              </v-col>
+              <v-col cols="12" md="6"
+                ><div class="d-flex mb-2 justify-end">
+                  <v-btn color="error" @click="handelSubmit">
+                    ຢືນຢັນການຫັກຄ່າຫຼູຍຫ້ຽນ
+                  </v-btn>
+                </div></v-col
+              >
+              <!-- <pre>{{ dataUpdate }}</pre> -->
             </v-row>
-<<<<<<< HEAD
-            <pre>{{ dataUpdate.length }}</pre>
+            <!-- <pre>{{ dataUpdate.length }}</pre> -->
             <v-data-table :items="dataUpdate" :headers="headers">
               <template v-slot:item.category="{ item }">
                 <v-chip
@@ -184,11 +172,6 @@ onMounted(() => {
                   {{ item.asset_id }}
                 </v-chip>
               </template>
-=======
-           
-            
-         <!-- <pre>{{ dataUpdate }}</pre> -->
->>>>>>> 4054f8a194ed4790bc7248e232f84c5a467097dd
 
               <template v-slot:item.expected_depreciation="{ item }">
                 <span class="font-weight-bold">
@@ -203,9 +186,11 @@ onMounted(() => {
               </template>
               <template v-slot:item.due_date="{ item }">
                 <v-chip variant="outlined" size="small">
-
-                  {{ dayjs(item.due_end_date.split('/').reverse().join('-')).format('MM/YYYY') }}
-  
+                  {{
+                    dayjs(
+                      item.due_end_date.split("/").reverse().join("-")
+                    ).format("MM/YYYY")
+                  }}
                 </v-chip>
               </template>
 
@@ -230,7 +215,7 @@ onMounted(() => {
             </v-data-table>
             <!-- <v-data-table
               :headers="headers"
-              :items="dataUpdate"
+              :items="allItems"
               :items-per-page="10"
               class="elevation-1"
               :loading="dreptriptionStore.isLoading"

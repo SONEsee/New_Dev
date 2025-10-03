@@ -215,64 +215,6 @@ const handleNotificationClick = () => {
           </v-tab>
         </v-tabs>
 
-<<<<<<< HEAD
-            <v-card-text>
-              <v-tabs-window v-model="tab">
-                <v-tabs-window-item value="one">
-                  <v-card class="elevation-2">
-                    <v-card-title
-                      class="text-h6 font-weight-bold bg-blue-accent-1 text-white"
-                    >
-                      ຂໍ້ມູນທີ່ຕອ້ງຫັກຄ່າຫຼູ້ຍຫ້ຽນພາຍໃນເດືອນ -
-                      {{ responseData.data.target_period.month_name_la }}
-                      {{ responseData.data.target_period.year }}
-                    </v-card-title>
-                    <v-card-text class="pa-0">
-                      <v-data-table :items="dataShow" :headers="header1">
-                        <template
-                          v-slot:header.total_items_need_depreciation="{
-                            column,
-                          }"
-                        >
-                          {{ column.title }}
-                        </template>
-                        <template v-slot:item.index="{ item, index }">
-                          {{ index + 1 }}
-                        </template>
-                        <template v-slot:item.dates="{ item }">
-                          <v-chip color="success"
-                            >{{ dataDate[0].month }}/{{
-                              dataDate[0].year
-                            }}</v-chip
-                          >
-                        </template>
-                        <template
-                          v-slot:item.total_items_need_depreciation="{ item }"
-                        >
-                          <v-chip color="success">{{
-                            item.total_items_need_depreciation
-                          }}</v-chip>
-                        </template>
-                        <template
-                          v-slot:item.total_depreciation_amount="{ item }"
-                        >
-                          <v-chip variant="flat" size="small" color="info">{{
-                            formatNumber(item.total_depreciation_amount)
-                          }}</v-chip>
-                        </template>
-                        <template v-slot:item.action>
-                          <v-btn
-                            color="primary"
-                            flat
-                            @click="
-                              goPath(`/property/faassetdetription/create`)
-                            "
-                          >
-                            ລາຍລະອຽດການຫັກ
-                          </v-btn>
-                        </template>
-                      </v-data-table>
-=======
         <v-divider class="my-0" />
 
         <v-tabs-window v-model="tab" class="tabs-content">
@@ -296,7 +238,6 @@ const handleNotificationClick = () => {
                       <p class="summary-subtitle">
                         {{ responseData.data.target_period.month_name_la }}
                       </p>
->>>>>>> 4054f8a194ed4790bc7248e232f84c5a467097dd
                     </v-card-text>
                   </v-card>
                 </v-col>
