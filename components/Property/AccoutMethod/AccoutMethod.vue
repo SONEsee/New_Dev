@@ -439,6 +439,7 @@ const confirmDelete = async (item: any) => {
 
     if (notification.isConfirmed) {
       await accountMethodStoreInstance.DeleteAccountMethod(item.mapping_id);
+      
     }
   } catch (error) {
     console.error("Error confirming delete:", error);
@@ -602,9 +603,7 @@ onMounted(async () => {
           </v-btn>
         </v-col>
       </v-row>
-      <!-- <pre>{{ detailassetlis }}</pre> -->
-      <!-- <pre>{{  }}</pre> -->
-      <!-- <pre>{{ filteredData }}</pre> -->
+     
 
       <v-data-table
         :headers="headers"
