@@ -358,7 +358,7 @@ export const useJournalPermissionWithAutoRefresh = (
 // Simplified composable with auto-redirect enabled by default
 export const useJournalPermissionWithRedirect = (
   redirectPath: string = '/glcapture/permission-denied',
-  redirectDelay: number = 2000
+  redirectDelay: number = 0
 ) => {
   return useJournalPermission({
     autoRedirect: true,

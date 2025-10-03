@@ -1,4 +1,605 @@
-<script setup>
+<template>
+  <div class="gl-detail-page">
+    <!-- Page Header -->
+    <div class="page-header-improved">
+      <div class="d-flex align-center justify-space-between flex-wrap gap-3">
+        <div class="header-left">
+          <h1 class="page-title-improved">
+            <v-icon color="primary" size="24" class="mr-3">mdi-book-open</v-icon>
+            ລາຍລະອຽດບັນທຶກບັນຊີ
+          </h1>
+          <div v-if="referenceNo" class="page-subtitle">
+            <v-chip color="primary" variant="outlined" size="default" class="mr-2">
+              <v-icon left size="16">mdi-identifier</v-icon>
+              {{ referenceNo }}
+            </v-chip>
+            <span v-if="selectedItem" class="text-caption text-grey">
+              <v-icon color="gray" size="16" class="mr-1">mdi-clock-outline</v-icon>
+              {{ formatDateTime(selectedItem.Value_date) }}
+            </span>
+          </div>
+        </div>
+        <div class="header-actions">
+          <div class="permission-indicators" v-if="isReady && permissions">
+            <v-tooltip text="ສິດເຂົ້າເຖິງຂອງທ່ານ" location="bottom">
+              <template #activator="{ props }">
+                <div v-bind="props" class="d-flex gap-1">
+                  <v-chip v-if="canView" color="info" size="x-small" variant="flat">
+                    <v-icon size="12">mdi-eye</v-icon> ເບິ່ງ
+                  </v-chip>
+                  <v-chip v-if="canEdit" color="warning" size="x-small" variant="flat">
+                    <v-icon size="12">mdi-pencil</v-icon> ແກ້
+                  </v-chip>
+                  <v-chip v-if="canDelete" color="error" size="x-small" variant="flat">
+                    <v-icon size="12">mdi-delete</v-icon> ລຶບ
+                  </v-chip>
+                  <v-chip v-if="canAuthorize" color="success" size="x-small" variant="flat">
+                    <v-icon size="12">mdi-check-circle</v-icon> ອະນຸມັດ
+                  </v-chip>
+                </div>
+              </template>
+            </v-tooltip>
+          </div>
+          <v-btn variant="outlined" @click="$router.go(-1)" prepend-icon="mdi-arrow-left" size="default" class="action-btn">
+            ກັບ
+          </v-btn>
+          <v-btn v-if="referenceNo && isReady" variant="text" @click="loadData" prepend-icon="mdi-refresh" size="default" :loading="loading" class="action-btn">
+            ໂຫຼດໃໝ່
+          </v-btn>
+        </div>
+      </div>
+    </div>
+
+    <!-- Permission Loading State -->
+    <div v-if="!permissionCheckComplete || permissionsLoading" class="loading-overlay">
+      <v-card class="text-center py-12" elevation="1">
+        <v-progress-circular
+          indeterminate
+          color="primary"
+          :size="60"
+          :width="4"
+          class="mb-6"
+        />
+        <div class="text-h6 mb-3">ກຳລັງກວດສອບສິດການນຳໃຊ້...</div>
+        <div class="text-body-2 text-grey">ກະລຸນາລໍຖ້າ...</div>
+      </v-card>
+    </div>
+
+    <!-- Permission Error State -->
+    <div v-else-if="initializationError" class="permission-error-state">
+      <v-card class="text-center py-12" elevation="1">
+        <v-icon size="80" color="error" class="mb-6">mdi-alert-circle</v-icon>
+        <div class="text-h5 mb-3 text-error">ເກີດຂໍ້ຜິດພາດ</div>
+        <div class="text-body-1 mb-4 text-grey">{{ initializationError }}</div>
+        <v-btn
+          color="primary"
+          variant="elevated"
+          @click="retryPermissionLoad"
+          prepend-icon="mdi-refresh"
+          size="large"
+        >
+          ລອງໃໝ່
+        </v-btn>
+      </v-card>
+    </div>
+
+    <!-- Main Content - Only show when permissions are ready -->
+    <div v-else-if="isReady">
+      <!-- Data Loading State -->
+      <div v-if="loading" class="loading-state">
+        <v-card class="text-center py-12" elevation="1">
+          <v-progress-circular indeterminate color="primary" size="64" width="4"></v-progress-circular>
+          <div class="mt-6 text-h6">ກຳລັງໂຫຼດຂໍ້ມູນ...</div>
+        </v-card>
+      </div>
+
+      <!-- Error State -->
+      <div v-else-if="error" class="error-state">
+        <v-card class="text-center py-12" elevation="1">
+          <v-icon size="80" color="error" class="mb-6">mdi-alert-circle-outline</v-icon>
+          <div class="text-h5 mb-3 text-error">ບໍ່ພົບຂໍ້ມູນ</div>
+          <div class="text-body-1 mb-4 text-grey">{{ error }}</div>
+          <v-btn color="primary" @click="loadData" v-if="referenceNo" prepend-icon="mdi-refresh" size="large">
+            ລອງໃໝ່
+          </v-btn>
+          <v-btn variant="outlined" @click="$router.go(-1)" prepend-icon="mdi-arrow-left" size="large" class="ml-2">
+            ກັບ
+          </v-btn>
+        </v-card>
+      </div>
+
+      <!-- Permission Denied State -->
+      <div v-else-if="!canView" class="permission-denied-state">
+        <v-card class="text-center py-12" elevation="1">
+          <v-icon size="80" color="error" class="mb-6">mdi-shield-lock</v-icon>
+          <div class="text-h5 mb-3 text-error">ບໍ່ມີສິດເຂົ້າເຖິງ</div>
+          <div class="text-body-1 mb-4 text-grey">ທ່ານບໍ່ມີສິດເຂົ້າເຖິງໜ້ານີ້</div>
+          <v-btn variant="outlined" @click="$router.go(-1)" prepend-icon="mdi-arrow-left" size="large">
+            ກັບ
+          </v-btn>
+        </v-card>
+      </div>
+
+      <!-- Main Content (when data is loaded and user has permission) -->
+      <div v-else-if="selectedItem" class="main-content">
+        <!-- Master Information Card -->
+        <v-card class="master-card mb-6" elevation="2">
+          <v-card-text class="master-content">
+            <div class="info-grid-improved">
+              <div class="info-section">
+                <h3 class="section-header">
+                  <v-icon color="primary" size="18" class="mr-2">mdi-information</v-icon>
+                  ຂໍ້ມູນທົ່ວໄປ
+                </h3>
+                <div class="info-rows">
+                  <div class="info-row">
+                    <span class="info-label">ໂມດູນ:</span>
+                    <span class="info-value">{{ getModuleName(selectedItem.module_id) }} - {{ selectedItem.Txn_code }}</span>
+                  </div>
+                  <div class="info-row">
+                    <span class="info-label">ຜູ້ສ້າງ:</span>
+                    <span class="info-value">{{ getMakerName() }}</span>
+                  </div>
+                  <div class="info-row">
+                    <span class="info-label">ເນື້ອໃນ:</span>
+                    <span class="info-value">{{ selectedItem.Addl_text || '-' }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="info-section">
+                <h3 class="section-header">
+                  <v-icon color="success" size="18" class="mr-2">mdi-cash</v-icon>
+                  ຂໍ້ມູນການເງິນ
+                </h3>
+                <div class="amount-cards">
+                  <div class="amount-card primary">
+                    <div class="amount-label">FCY Amount</div>
+                    <div class="amount-value">{{ formatNumber(selectedItem.Fcy_Amount) }}</div>
+                    <div class="amount-currency">{{ selectedItem.Ccy_cd }}</div>
+                  </div>
+                  <div class="amount-card success">
+                    <div class="amount-label">LCY Amount</div>
+                    <div class="amount-value">{{ formatNumber(selectedItem.Lcy_Amount) }}</div>
+                    <div class="amount-currency">LAK</div>
+                  </div>
+                  <div class="amount-card info">
+                    <div class="amount-label">Exchange Rate</div>
+                    <div class="amount-value">{{ formatNumber(selectedItem.Exch_rate, 6) }}</div>
+                    <div class="amount-currency">Rate</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </v-card-text>
+        </v-card>
+
+        <!-- Journal Entries Card -->
+        <v-card class="entries-card" elevation="2">
+          <v-card-title class="entries-header">
+            <div class="entries-info">
+              <div class="entries-title">
+                <v-icon color="primary" size="20" class="mr-2">mdi-table</v-icon>
+                ລາຍການບັນທຶກ
+                <v-chip color="primary" variant="outlined" size="small" class="ml-2">
+                  {{ journalEntries.length }} ລາຍການ
+                </v-chip>
+              </div>
+              <div v-if="journalEntries.some(entry => entry.Auth_Status === 'P')" class="entries-warning">
+                <v-chip color="warning" variant="flat" size="small">
+                  <v-icon left size="16">mdi-alert</v-icon>
+                  {{ journalEntries.filter(e => e.Auth_Status === 'P').length }} ລາຍການຕ້ອງແກ້ໄຂ
+                </v-chip>
+              </div>
+            </div>
+            
+            <div class="entries-status">
+              <v-chip :color="isBalanced ? 'success' : 'error'" variant="flat" size="default" class="balance-chip">
+                <v-icon left size="18">{{ isBalanced ? 'mdi-scale-balance' : 'mdi-scale-unbalanced' }}</v-icon>
+                {{ isBalanced ? 'ສົມດຸນ' : 'ບໍ່ສົມດຸນ' }}
+              </v-chip>
+            </div>
+          </v-card-title>
+          
+          <v-card-text class="pa-0">
+            <div class="table-wrapper">
+              <div class="table-container">
+                <table class="entries-table">
+                  <thead>
+                    <tr>
+                      <th class="th-ref">ເລກອ້າງອີງຄູ່</th>
+                      <th class="th-description">ເນື້ອໃນ</th>
+                      <th class="th-account">ບັນຊີ</th>
+                      <th class="th-debit">Debit (FCY)</th>
+                      <th class="th-credit">Credit (FCY)</th>
+                      <th class="th-status">ສະຖານະ</th>
+                      <th class="th-actions">ການກະທຳ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr 
+                      v-for="entry in journalEntries" 
+                      :key="entry.JRNLLog_id" 
+                      :class="{ 'correction-row': entry.Auth_Status === 'P' }"
+                      class="entry-row"
+                    >
+                      <td class="td-ref">
+                        <v-chip size="small" variant="outlined" color="primary" class="ref-chip">
+                          {{ entry.Reference_sub_No }}
+                        </v-chip>
+                      </td>
+                      
+                      <td class="td-description">
+                        <div v-if="entry.Addl_sub_text" class="description-text">
+                          {{ entry.Addl_sub_text }}
+                        </div>
+                        <div v-else class="text-grey text-center">-</div>
+                      </td>
+                      
+                      <td class="td-account">
+                        <div class="account-info">
+                          <div class="account-code">{{ getFormattedAccountCode(entry) }}</div>
+                          <div class="account-name">{{ entry.account_name }}</div>
+                        </div>
+                      </td>
+                      
+                      <td class="td-debit">
+                        <div v-if="parseFloat(entry.fcy_dr) > 0" class="amount-display debit">
+                          {{ formatNumber(entry.fcy_dr) }}
+                        </div>
+                        <div v-else class="text-grey text-center">-</div>
+                      </td>
+                      
+                      <td class="td-credit">
+                        <div v-if="parseFloat(entry.fcy_cr) > 0" class="amount-display credit">
+                          {{ formatNumber(entry.fcy_cr) }}
+                        </div>
+                        <div v-else class="text-grey text-center">-</div>
+                      </td>
+                      
+                      <td class="td-status">
+                        <v-chip 
+                          :color="getStatusColor(entry.Auth_Status)"
+                          variant="flat"
+                          size="small"
+                          class="status-mini-chip"
+                        >
+                          <v-icon size="14">{{ getStatusIcon(entry.Auth_Status) }}</v-icon>
+                        </v-chip>
+                      </td>
+                      
+                      <td class="td-actions">
+                        <div class="action-buttons">
+                          <v-tooltip text="ແກ້ໄຂຄູ່ບັນທຶກ" location="top">
+                            <template #activator="{ props }">
+                              <v-btn
+                                v-if="(entry.Auth_Status === 'U' || entry.Auth_Status === 'P') && canEdit"
+                                v-bind="props"
+                                icon
+                                size="small"
+                                variant="text"
+                                color="info"
+                                @click="handleEdit(entry)"
+                                :disabled="isEditingPair"
+                                :loading="editingRefSubNo === entry.Reference_sub_No"
+                                class="action-btn-small"
+                              >
+                                <v-icon size="16">mdi-pencil</v-icon>
+                              </v-btn>
+                            </template>
+                          </v-tooltip>
+
+                          <v-tooltip text="ປະຕິເສດຄູ່ບັນທຶກ" location="top">
+                            <template #activator="{ props }">
+                              <v-btn
+                                v-if="canAuthorize"
+                                v-bind="props"
+                                icon
+                                size="small"
+                                variant="text"
+                                color="warning"
+                                @click="rejectByPairAccount(entry.Reference_sub_No, entry)"
+                                :disabled="isRejectingPair || entry.Auth_Status === 'R' || entry.Auth_Status === 'A'"
+                                :loading="rejectingRefSubNo === entry.Reference_sub_No"
+                                class="action-btn-small"
+                              >
+                                <v-icon size="16">mdi-close-circle</v-icon>
+                              </v-btn>
+                            </template>
+                          </v-tooltip>
+
+                          <v-tooltip text="ລຶບຄູ່ບັນທຶກ" location="top">
+                            <template #activator="{ props }">
+                              <v-btn
+                                v-if="canDelete && entry.Auth_Status !== 'A' && entry.Auth_Status !== 'R'"
+                                v-bind="props"
+                                icon
+                                size="small"
+                                variant="text"
+                                color="error"
+                                @click="deleteByPairAccount(entry.Reference_sub_No)"
+                                :disabled="isDeletingPair"
+                                :loading="deletingRefSubNo === entry.Reference_sub_No"
+                                class="action-btn-small"
+                              >
+                                <v-icon size="16">mdi-delete</v-icon>
+                              </v-btn>
+                            </template>
+                          </v-tooltip>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                  <tfoot>
+                    <tr class="totals-row">
+                      <td colspan="3" class="totals-label">
+                        <div class="d-flex align-center">
+                          <v-icon size="18" class="mr-2">mdi-calculator</v-icon>
+                          <strong>ລວມທັງໝົດ:</strong>
+                        </div>
+                      </td>
+                      <td class="totals-debit">
+                        <div class="total-amount debit">{{ formatNumber(totalFcyDebit) }}</div>
+                      </td>
+                      <td class="totals-credit">
+                        <div class="total-amount credit">{{ formatNumber(totalFcyCredit) }}</div>
+                      </td>
+                      <td colspan="2" class="totals-status">
+                        <v-chip :color="isBalanced ? 'success' : 'error'" variant="flat" size="small">
+                          <v-icon size="14">{{ isBalanced ? 'mdi-check' : 'mdi-alert' }}</v-icon>
+                        </v-chip>
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          </v-card-text>
+        </v-card>
+
+        <!-- Action Panel -->
+        <v-card class="action-panel mt-6" elevation="2">
+          <v-card-text class="pa-6">
+            <div class="status-alerts mb-4">
+              <v-alert
+                v-if="journalEntries.some(entry => entry.Auth_Status === 'P')"
+                type="warning"
+                variant="tonal"
+                density="comfortable"
+                class="mb-3"
+              >
+                <template #prepend>
+                  <v-icon>mdi-alert-circle</v-icon>
+                </template>
+                <strong>ບໍ່ສາມາດອະນຸມັດໄດ້:</strong> ມີລາຍການທີ່ຕ້ອງແກ້ໄຂກ່ອນ
+              </v-alert>
+            </div>
+
+            <div class="action-buttons-main">
+              <div class="buttons-group">
+                <v-btn
+                  v-if="canApproveMaster && canAuthorize"
+                  color="success"
+                  variant="flat"
+                  @click="approveItem(selectedItem)"
+                  prepend-icon="mdi-check-circle"
+                  size="large"
+                  class="primary-action-btn"
+                >
+                  ອະນຸມັດລາຍການ
+                </v-btn>
+                
+                <v-btn
+                  v-if="selectedItem?.Auth_Status === 'U' && canAuthorize"
+                  color="error"
+                  variant="flat"
+                  @click="rejectItem(selectedItem)"
+                  prepend-icon="mdi-close-circle"
+                  size="large"
+                  class="primary-action-btn"
+                >
+                  ປະຕິເສດລາຍການ
+                </v-btn>
+              </div>
+            </div>
+          </v-card-text>
+        </v-card>
+      </div>
+    </div>
+
+    <!-- Edit Dialog -->
+    <v-dialog v-model="editDialog" max-width="1000px" persistent>
+      <v-card class="edit-dialog-card">
+        <v-card-title class="edit-dialog-header">
+          <div class="d-flex align-center">
+            <v-icon color="white" size="22" class="mr-3">mdi-pencil</v-icon>
+            <div>
+              <div class="dialog-title">ແກ້ໄຂບັນທຶກຄູ່</div>
+              <div class="dialog-subtitle">ປັບປຸງຂໍ້ມູນລາຍການບັນທຶກ</div>
+            </div>
+          </div>
+          <v-btn 
+            icon="mdi-close" 
+            variant="text" 
+            size="small"
+            color="white"
+            @click="closeEditDialog"
+            class="dialog-close-btn"
+          ></v-btn>
+        </v-card-title>
+
+        <v-card-text class="edit-dialog-content">
+          <div class="reference-info mb-6">
+            <h3 class="text-subtitle-1 mb-3">ຂໍ້ມູນອ້າງອີງ:</h3>
+            <div class="d-flex flex-wrap gap-3 mb-3">
+              <v-chip color="primary" variant="outlined" size="default">
+                <v-icon left size="16">mdi-identifier</v-icon>
+                {{ editForm.Reference_sub_No }}
+              </v-chip>
+              
+              <v-chip v-if="editFormCurrency" color="success" variant="outlined" size="default">
+                <v-icon left size="16">mdi-currency-usd</v-icon>
+                {{ editForm.currency_code }} - {{ editFormCurrency.Ccy_Name_la || editFormCurrency.Ccy_Name_en }}
+              </v-chip>
+            </div>
+            
+            <div v-if="editForm.debit_account_code || editForm.credit_account_code" class="current-accounts mb-3">
+              <h4 class="text-subtitle-2 mb-2">ບັນຊີປັດຈຸບັນ:</h4>
+              <div class="d-flex flex-wrap gap-2">
+                <v-chip v-if="editForm.debit_account_code" color="info" variant="flat" size="small">
+                  <v-icon left size="14">mdi-plus</v-icon>
+                  Debit: {{ formatAccountDisplay(editForm.debit_account_code, editForm.currency_code) }}
+                </v-chip>
+                <v-chip v-if="editForm.credit_account_code" color="warning" variant="flat" size="small">
+                  <v-icon left size="14">mdi-minus</v-icon>
+                  Credit: {{ formatAccountDisplay(editForm.credit_account_code, editForm.currency_code) }}
+                </v-chip>
+              </div>
+            </div>
+
+            <div v-if="previousComments" class="previous-comments mb-3">
+              <h4 class="text-subtitle-2 mb-2">
+                <v-icon size="16" color="warning" class="mr-1">mdi-comment-alert</v-icon>
+                ເຫດຜົນການແກ້ໄຂກ່ອນໜ້າ:
+              </h4>
+              <div class="comments-display">
+                <v-icon size="16" color="grey" class="mr-2">mdi-comment-text-outline</v-icon>
+                <span class="comments-text">{{ previousComments }}</span>
+              </div>
+            </div>
+            
+            <v-alert type="info" variant="tonal" density="compact">
+              <template #prepend>
+                <v-icon>mdi-information</v-icon>
+              </template>
+              ສະຖານະຈະປ່ຽນຈາກ 'P' (ຕ້ອງແກ້ໄຂ) ເປັນ 'U' (ລໍຖ້າອະນຸມັດ)
+            </v-alert>
+          </div>
+
+          <v-form ref="editFormRef" class="edit-form">
+            <v-row dense>
+              <v-col cols="12" md="6">
+                <v-autocomplete
+                  v-model="editForm.glsub_id"
+                  :items="formattedAccountsForSelect"
+                  item-title="account_display"
+                  item-value="glsub_id"
+                  label="ບັນຊີ Debit"
+                  variant="outlined"
+                  density="comfortable"
+                  prepend-inner-icon="mdi-plus"
+                  clearable
+                  :loading="loadingAccounts"
+                  :rules="[v => !editForm.relative_glsub_id || !!v || 'ກະລຸນາເລືອກບັນຊີ Debit']"
+                  :menu-props="{ maxHeight: 300 }"
+                  @update:model-value="onDebitAccountChange"
+                ></v-autocomplete>
+              </v-col>
+
+              <v-col cols="12" md="6">
+                <v-autocomplete
+                  v-model="editForm.relative_glsub_id"
+                  :items="formattedAccountsForSelect"
+                  item-title="account_display"
+                  item-value="glsub_id"
+                  label="ບັນຊີ Credit"
+                  variant="outlined"
+                  density="comfortable"
+                  prepend-inner-icon="mdi-minus"
+                  clearable
+                  :loading="loadingAccounts"
+                  :rules="[v => !editForm.glsub_id || !!v || 'ກະລຸນາເລືອກບັນຊີ Credit']"
+                  :menu-props="{ maxHeight: 300 }"
+                  @update:model-value="onCreditAccountChange"
+                ></v-autocomplete>
+              </v-col>
+
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="editForm.Fcy_Amount"
+                  label="ຈຳນວນເງິນ FCY *"
+                  type="number"
+                  step="0.01"
+                  variant="outlined"
+                  density="comfortable"
+                  prepend-inner-icon="mdi-currency-usd"
+                  :rules="[
+                    v => !!v || 'ກະລຸນາໃສ່ຈຳນວນເງິນ',
+                    v => v > 0 || 'ຈຳນວນເງິນຕ້ອງມາກກ່ວາ 0'
+                  ]"
+                  :suffix="editForm.currency_code"
+                  required
+                ></v-text-field>
+              </v-col>
+
+              <v-col cols="12" md="6">
+                <v-textarea
+                  v-model="editForm.Addl_sub_text"
+                  label="ເນື້ອໃນຍ່ອຍ"
+                  variant="outlined"
+                  density="comfortable"
+                  prepend-inner-icon="mdi-text-box"
+                  rows="2"
+                  counter="255"
+                  :rules="[v => !v || v.length <= 255 || 'ເນື້ອໃນຕ້ອງບໍ່ເກີນ 255 ຕົວອັກສອນ']"
+                ></v-textarea>
+              </v-col>
+
+              <v-col cols="12">
+                <v-textarea
+                  v-model="editForm.comments"
+                  label="ເຫດຜົນການແກ້ໄຂ *"
+                  variant="outlined"
+                  density="comfortable"
+                  prepend-inner-icon="mdi-comment-edit"
+                  rows="3"
+                  counter="1000"
+                  placeholder="ກະລຸນາອະທິບາຍເຫດຜົນການແກ້ໄຂ..."
+                  :rules="[
+                    v => !!v || 'ກະລຸນາໃສ່ເຫດຜົນການແກ້ໄຂ',
+                    v => v && v.length >= 1 || 'ເຫດຜົນຕ້ອງມີຢ່າງນ້ອຍ 1 ຕົວອັກສອນ',
+                    v => !v || v.length <= 1000 || 'ເຫດຜົນຕ້ອງບໍ່ເກີນ 1000 ຕົວອັກສອນ'
+                  ]"
+                  required
+                ></v-textarea>
+              </v-col>
+            </v-row>
+          </v-form>
+        </v-card-text>
+
+        <v-divider></v-divider>
+
+        <v-card-actions class="edit-dialog-actions">
+          <v-spacer></v-spacer>
+          <v-btn
+            variant="outlined"
+            @click="closeEditDialog"
+            :disabled="isEditingPair"
+            size="large"
+            class="action-btn-dialog"
+          >
+            <v-icon left size="16">mdi-close</v-icon>
+            ຍົກເລີກ
+          </v-btn>
+          <v-btn
+            color="info"
+            variant="flat"
+            @click="fixRejectedEntry"
+            :loading="isEditingPair"
+            :disabled="!isEditFormValid"
+            size="large"
+            class="action-btn-dialog"
+          >
+            <v-icon left size="16">mdi-content-save</v-icon>
+            ບັນທຶກການແກ້ໄຂ
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+  </div>
+</template>
+
+<script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from '@/helpers/axios'
@@ -9,9 +610,12 @@ import { useRolePermissions } from '@/composables/useRolePermissions'
 const route = useRoute()
 const router = useRouter()
 
-// Role Permissions
+// Role Permissions - Initialize with new composable
 const {
   initializeRole,
+  isReady,
+  isLoading: permissionsLoading,
+  initializationError,
   canView,
   canEdit,
   canDelete,
@@ -20,8 +624,13 @@ const {
   hasPermission,
   hasAllPermissions,
   hasAnyPermission,
-  permissions
+  permissions,
+  debugPermissions,
+  waitForReady
 } = useRolePermissions()
+
+// Permission loading state
+const permissionCheckComplete = ref(false)
 
 // State
 const loading = ref(false)
@@ -38,7 +647,7 @@ const isEditingPair = ref(false)
 const editingRefSubNo = ref(null)
 const editDialog = ref(false)
 
-// Updated editForm reactive object definition
+// Edit form
 const editForm = ref({
   Reference_sub_No: '',
   Fcy_Amount: 0,
@@ -81,7 +690,6 @@ const getCurrencyInfo = (ccyCode) => {
   return currencies.value.find(c => c.ccy_code === ccyCode)
 }
 
-// Format account display with currency prefix
 const formatAccountDisplay = (accountCode, currencyCode) => {
   if (!accountCode) return ''
   
@@ -94,14 +702,12 @@ const formatAccountDisplay = (accountCode, currencyCode) => {
   return accountCode
 }
 
-// Get formatted account code for journal entry in table
 const getFormattedAccountCode = (entry) => {
   if (!entry) return ''
   const code = entry.account_code || getAccountCode(entry.Account)
   return formatAccountDisplay(code, entry.Ccy_cd || selectedItem.value?.Ccy_cd)
 }
 
-// Build account number like in GLCaptureCreate
 const buildAccountNo = (accountId, currencyCode = null) => {
   let code = getAccountCode(accountId)
   if (!code) return ''
@@ -170,7 +776,6 @@ const isEditFormValid = computed(() => {
   return hasAmount && hasComments && accountsValid
 })
 
-// Computed property for accounts with currency prefix formatting in edit dialog
 const formattedAccountsForSelect = computed(() => {
   if (!editFormCurrency.value || !accounts.value.length) return accounts.value
   
@@ -252,13 +857,10 @@ const loadAccounts = async () => {
     const response = await axios.get('/api/gl-sub/', getAuthHeaders())
     const accountData = response.data.results || response.data || []
     
-    // Load accounts WITHOUT currency prefix - will be formatted when displayed
     accounts.value = accountData.map(account => ({
       ...account,
       account_display: `${account.glsub_code} - ${account.glsub_Desc_la || account.glsub_Desc_en || ''}`
     }))
-    
-    console.log('Accounts loaded:', accounts.value.length)
     
   } catch (error) {
     console.error('Error loading accounts:', error)
@@ -335,7 +937,7 @@ const getStatusText = (status) => {
     case 'A': return 'ອະນຸມັດແລ້ວ'
     case 'R': return 'ປະຕິເສດ'
     case 'U': return 'ລໍຖ້າອະນຸມັດ'
-    case 'P': return 'ຖ້າເແກ້ໄຂ'
+    case 'P': return 'ຕ້ອງແກ້ໄຂ'
     default: return 'ບໍ່ຮູ້'
   }
 }
@@ -436,7 +1038,7 @@ const rejectByPairAccount = async (referenceSubNo, item) => {
 
   const result = await Swal.fire({
     icon: 'warning',
-    title: 'ດັດເເກ້ຄູ່ບັນຊີ',
+    title: 'ດັດແກ້ຄູ່ບັນຊີ',
     html: `
       <div class="rejection-content">
         <p class="rejection-subtitle">ທ່ານຕ້ອງການປະຕິເສດບັນທຶກຄູ່:</p>
@@ -536,9 +1138,6 @@ const rejectByPairAccount = async (referenceSubNo, item) => {
 
 // Edit by pair account function
 const editByPairAccount = (entry) => {
-  console.log('=== EDIT FORM DEBUG ===')
-  console.log('Editing entry:', entry)
-  
   const relatedEntry = journalEntries.value.find(e => 
     e.Reference_sub_No === entry.Reference_sub_No && e.JRNLLog_id !== entry.JRNLLog_id
   )
@@ -574,8 +1173,6 @@ const editByPairAccount = (entry) => {
   }
   
   editFormCurrency.value = getCurrencyInfo(entry.Ccy_cd)
-  
-  // Capture previous comments if they exist
   previousComments.value = entry.comments || ''
   
   editForm.value = {
@@ -612,8 +1209,6 @@ const editByPairAccount = (entry) => {
       }
     }
   }
-  
-  console.log('=== END EDIT FORM DEBUG ===')
   
   editDialog.value = true
 }
@@ -723,7 +1318,7 @@ const fixRejectedEntry = async () => {
       requestData.Ac_relatives = creditAccountNo
     }
 
-    const response = await axios.post(`/api/journal-entries/fix-rejected/`, requestData, getAuthHeaders())
+    await axios.post(`/api/journal-entries/fix-rejected/`, requestData, getAuthHeaders())
 
     let successDetails = [
       '• ອັດເດດສະຖານະຈາກ \'P\' ເປັນ \'U\'',
@@ -951,592 +1546,123 @@ const rejectItem = async (item) => {
   }
 }
 
+// Retry permission load
+const retryPermissionLoad = async () => {
+  permissionCheckComplete.value = false
+  
+  const subMenuId = route.query.sub_menu_id as string
+  if (!subMenuId) {
+    initializationError.value = 'ບໍ່ພົບ sub_menu_id ໃນ URL'
+    permissionCheckComplete.value = true
+    return
+  }
+  
+  const success = await initializeRole(subMenuId, true)
+  
+  if (success) {
+    await waitForReady(5000)
+    permissionCheckComplete.value = true
+    
+    if (canView.value) {
+      await Promise.all([
+        loadModules(),
+        loadAccounts(),
+        loadCurrencies()
+      ])
+      
+      if (referenceNo.value) {
+        loadData()
+      }
+    }
+  } else {
+    permissionCheckComplete.value = true
+  }
+}
+
 // Lifecycle
 onMounted(async () => {
-  await initializeRole()
+  console.log('=== Detail page mounted ===')
   
-  await Promise.all([
-    loadModules(),
-    loadAccounts(),
-    loadCurrencies()
-  ])
-  
-  if (referenceNo.value) {
-    loadData()
-  } else {
-    error.value = 'ບໍ່ພົບພາລາມິເຕີ Reference_No ໃນ URL'
+  try {
+    // Step 1: Get sub_menu_id
+    const subMenuId = route.query.sub_menu_id as string
+    
+    if (!subMenuId) {
+      initializationError.value = 'ບໍ່ພົບ sub_menu_id ໃນ URL'
+      permissionCheckComplete.value = true
+      return
+    }
+    
+    console.log('Sub Menu ID:', subMenuId)
+
+    // Step 2: Initialize permissions with sub_menu_id
+    console.log('Initializing permissions...')
+    const permissionsInitialized = await initializeRole(subMenuId, false)
+    
+    if (!permissionsInitialized) {
+      console.error('Failed to initialize permissions:', initializationError.value)
+      permissionCheckComplete.value = true
+      
+      Swal.fire({
+        icon: 'error',
+        title: 'ເກີດຂໍ້ຜິດພາດ',
+        text: 'ບໍ່ສາມາດໂຫຼດສິດການນຳໃຊ້ໄດ້',
+        confirmButtonText: 'ຕົກລົງ'
+      })
+      return
+    }
+
+    // Step 3: Wait for permissions to be ready
+    console.log('Waiting for permissions to be ready...')
+    const ready = await waitForReady(5000)
+    
+    if (!ready) {
+      console.error('Permission loading timeout')
+      permissionCheckComplete.value = true
+      return
+    }
+
+    permissionCheckComplete.value = true
+    
+    // Step 4: Debug permissions
+    debugPermissions()
+
+    // Step 5: Load reference data
+    await Promise.all([
+      loadModules(),
+      loadAccounts(),
+      loadCurrencies()
+    ])
+    
+    // Step 6: Load main data if user has permission
+    if (canView.value && referenceNo.value) {
+      console.log('User has view permission, loading detail data...')
+      loadData()
+    } else if (!referenceNo.value) {
+      error.value = 'ບໍ່ພົບພາລາມິເຕີ Reference_No ໃນ URL'
+    }
+
+    console.log('=== Page initialization complete ===')
+    
+  } catch (error) {
+    console.error('Error during initialization:', error)
+    permissionCheckComplete.value = true
+    
+    Swal.fire({
+      icon: 'error',
+      title: 'ເກີດຂໍ້ຜິດພາດ',
+      text: 'ບໍ່ສາມາດໂຫຼດໜ້ານີ້ໄດ້',
+      confirmButtonText: 'ຕົກລົງ'
+    })
   }
 })
 
 watch(() => route.query.Reference_No, (newVal, oldVal) => {
-  if (newVal && newVal !== oldVal) {
+  if (newVal && newVal !== oldVal && permissionCheckComplete.value && canView.value) {
     loadData()
   }
 }, { immediate: false })
 </script>
-
-<template>
-  <div class="gl-detail-page">
-    <!-- Page Header -->
-    <div class="page-header-improved">
-      <div class="d-flex align-center justify-space-between flex-wrap gap-3">
-        <div class="header-left">
-          <h1 class="page-title-improved">
-            <v-icon color="primary" size="24" class="mr-3">mdi-book-open</v-icon>
-            ລາຍລະອຽດບັນທຶກບັນຊີ
-          </h1>
-          <div v-if="referenceNo" class="page-subtitle">
-            <v-chip color="primary" variant="outlined" size="default" class="mr-2">
-              <v-icon left size="16">mdi-identifier</v-icon>
-              {{ referenceNo }}
-            </v-chip>
-            <span class="text-caption text-grey">
-              <v-icon color="gray" size="16" class="mr-1">mdi-clock-outline</v-icon>
-              {{ formatDateTime(selectedItem?.Value_date) }}
-            </span>
-          </div>
-        </div>
-        <div class="header-actions">
-          <div class="permission-indicators" v-if="permissions">
-            <v-tooltip text="ສິດເຂົ້າເຖິງຂອງທ່ານ" location="bottom">
-              <template #activator="{ props }">
-                <div v-bind="props" class="d-flex gap-1">
-                  <v-chip v-if="canView" color="info" size="x-small" variant="flat">
-                    <v-icon size="12">mdi-eye</v-icon> ເບິ່ງ
-                  </v-chip>
-                  <v-chip v-if="canEdit" color="warning" size="x-small" variant="flat">
-                    <v-icon size="12">mdi-pencil</v-icon> ແກ້
-                  </v-chip>
-                  <v-chip v-if="canDelete" color="error" size="x-small" variant="flat">
-                    <v-icon size="12">mdi-delete</v-icon> ລຶບ
-                  </v-chip>
-                  <v-chip v-if="canAuthorize" color="success" size="x-small" variant="flat">
-                    <v-icon size="12">mdi-check-circle</v-icon> ອະນຸມັດ
-                  </v-chip>
-                </div>
-              </template>
-            </v-tooltip>
-          </div>
-          <v-btn variant="outlined" @click="$router.go(-1)" prepend-icon="mdi-arrow-left" size="default" class="action-btn">ກັບ</v-btn>
-          <v-btn v-if="referenceNo" variant="text" @click="loadData" prepend-icon="mdi-refresh" size="default" :loading="loading" class="action-btn">ໂຫຼດໃໝ່</v-btn>
-        </div>
-      </div>
-    </div>
-
-    <!-- Loading State -->
-    <div v-if="loading" class="loading-state">
-      <v-card class="text-center py-12" elevation="1">
-        <v-progress-circular indeterminate color="primary" size="64" width="4"></v-progress-circular>
-        <div class="mt-6 text-h6">ກຳລັງໂຫຼດຂໍ້ມູນ...</div>
-      </v-card>
-    </div>
-
-    <!-- Error State -->
-    <div v-else-if="error" class="error-state">
-      <v-card class="text-center py-12" elevation="1">
-        <v-icon size="80" color="error" class="mb-6">mdi-alert-circle-outline</v-icon>
-        <div class="text-h5 mb-3 text-error">ບໍ່ພົບຂໍ້ມູນ</div>
-        <div class="text-body-1 mb-4 text-grey">{{ error }}</div>
-        <v-btn color="primary" @click="loadData" v-if="referenceNo" prepend-icon="mdi-refresh" size="large">ລອງໃໝ່</v-btn>
-        <v-btn variant="outlined" @click="$router.go(-1)" prepend-icon="mdi-arrow-left" size="large" class="ml-2">ກັບ</v-btn>
-      </v-card>
-    </div>
-
-    <!-- Permission Denied State -->
-    <div v-else-if="permissions && !canView" class="permission-denied-state">
-      <v-card class="text-center py-12" elevation="1">
-        <v-icon size="80" color="error" class="mb-6">mdi-shield-lock</v-icon>
-        <div class="text-h5 mb-3 text-error">ບໍ່ມີສິດເຂົ້າເຖິງ</div>
-        <div class="text-body-1 mb-4 text-grey">ທ່ານບໍ່ມີສິດເຂົ້າເຖິງໜ້ານີ້</div>
-        <v-btn variant="outlined" @click="$router.go(-1)" prepend-icon="mdi-arrow-left" size="large">ກັບ</v-btn>
-      </v-card>
-    </div>
-
-    <!-- Main Content -->
-    <div v-else-if="selectedItem" class="main-content">
-      <!-- Master Information Card -->
-      <v-card class="master-card mb-6" elevation="2">
-        <v-card-text class="master-content">
-          <div class="info-grid-improved">
-            <div class="info-section">
-              <h3 class="section-header">
-                <v-icon color="primary" size="18" class="mr-2">mdi-information</v-icon>
-                ຂໍ້ມູນທົ່ວໄປ
-              </h3>
-              <div class="info-rows">
-                <div class="info-row">
-                  <span class="info-label">ໂມດູນ:</span>
-                  <span class="info-value">{{ getModuleName(selectedItem.module_id) }} - {{ selectedItem.Txn_code }}</span>
-                </div>
-                <div class="info-row">
-                  <span class="info-label">ຜູ້ສ້າງ:</span>
-                  <span class="info-value">{{ getMakerName() }}</span>
-                </div>
-                <div class="info-row">
-                  <span class="info-label">ເນື້ອໃນ:</span>
-                  <span class="info-value">{{ selectedItem.Addl_text || '-' }}</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="info-section">
-              <h3 class="section-header">
-                <v-icon color="success" size="18" class="mr-2">mdi-cash</v-icon>
-                ຂໍ້ມູນການເງິນ
-              </h3>
-              <div class="amount-cards">
-                <div class="amount-card primary">
-                  <div class="amount-label">FCY Amount</div>
-                  <div class="amount-value">{{ formatNumber(selectedItem.Fcy_Amount) }}</div>
-                  <div class="amount-currency">{{ selectedItem.Ccy_cd }}</div>
-                </div>
-                <div class="amount-card success">
-                  <div class="amount-label">LCY Amount</div>
-                  <div class="amount-value">{{ formatNumber(selectedItem.Lcy_Amount) }}</div>
-                  <div class="amount-currency">LAK</div>
-                </div>
-                <div class="amount-card info">
-                  <div class="amount-label">Exchange Rate</div>
-                  <div class="amount-value">{{ formatNumber(selectedItem.Exch_rate, 6) }}</div>
-                  <div class="amount-currency">Rate</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </v-card-text>
-      </v-card>
-
-      <!-- Journal Entries Card -->
-      <v-card class="entries-card" elevation="2">
-        <v-card-title class="entries-header">
-          <div class="entries-info">
-            <div class="entries-title">
-              <v-icon color="primary" size="20" class="mr-2">mdi-table</v-icon>
-              ລາຍການບັນທຶກ
-              <v-chip color="primary" variant="outlined" size="small" class="ml-2">
-                {{ journalEntries.length }} ລາຍການ
-              </v-chip>
-            </div>
-            <div v-if="journalEntries.some(entry => entry.Auth_Status === 'P')" class="entries-warning">
-              <v-chip color="warning" variant="flat" size="small">
-                <v-icon left size="16">mdi-alert</v-icon>
-                {{ journalEntries.filter(e => e.Auth_Status === 'P').length }} ລາຍການຕ້ອງແກ້ໄຂ
-              </v-chip>
-            </div>
-          </div>
-          
-          <div class="entries-status">
-            <v-chip :color="isBalanced ? 'success' : 'error'" variant="flat" size="default" class="balance-chip">
-              <v-icon left size="18">{{ isBalanced ? 'mdi-scale-balance' : 'mdi-scale-unbalanced' }}</v-icon>
-              {{ isBalanced ? 'ສົມດຸນ' : 'ບໍ່ສົມດຸນ' }}
-            </v-chip>
-          </div>
-        </v-card-title>
-        
-        <v-card-text class="pa-0">
-          <div class="table-wrapper">
-            <div class="table-container">
-              <table class="entries-table">
-                <thead>
-                  <tr>
-                    <th class="th-ref">ເລກອ້າງອີງຄູ່</th>
-                    <th class="th-description">ເນື້ອໃນ</th>
-                    <th class="th-account">ບັນຊີ</th>
-                    <th class="th-debit">Debit (FCY)</th>
-                    <th class="th-credit">Credit (FCY)</th>
-                    <th class="th-status">ສະຖານະ</th>
-                    <th class="th-actions">ການກະທຳ</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr 
-                    v-for="entry in journalEntries" 
-                    :key="entry.JRNLLog_id" 
-                    :class="{ 'correction-row': entry.Auth_Status === 'P' }"
-                    class="entry-row"
-                  >
-                    <td class="td-ref">
-                      <v-chip size="small" variant="outlined" color="primary" class="ref-chip">
-                        {{ entry.Reference_sub_No }}
-                      </v-chip>
-                    </td>
-                    
-                    <td class="td-description">
-                      <div v-if="entry.Addl_sub_text" class="description-text">
-                        {{ entry.Addl_sub_text }}
-                      </div>
-                      <div v-else class="text-grey text-center">-</div>
-                    </td>
-                    
-                    <td class="td-account">
-                      <div class="account-info">
-                        <div class="account-code">{{ getFormattedAccountCode(entry) }}</div>
-                        <div class="account-name">{{ entry.account_name }}</div>
-                      </div>
-                    </td>
-                    
-                    <td class="td-debit">
-                      <div v-if="parseFloat(entry.fcy_dr) > 0" class="amount-display debit">
-                        {{ formatNumber(entry.fcy_dr) }}
-                      </div>
-                      <div v-else class="text-grey text-center">-</div>
-                    </td>
-                    
-                    <td class="td-credit">
-                      <div v-if="parseFloat(entry.fcy_cr) > 0" class="amount-display credit">
-                        {{ formatNumber(entry.fcy_cr) }}
-                      </div>
-                      <div v-else class="text-grey text-center">-</div>
-                    </td>
-                    
-                    <td class="td-status">
-                      <v-chip 
-                        :color="getStatusColor(entry.Auth_Status)"
-                        variant="flat"
-                        size="small"
-                        class="status-mini-chip"
-                      >
-                        <v-icon size="14">{{ getStatusIcon(entry.Auth_Status) }}</v-icon>
-                      </v-chip>
-                    </td>
-                    
-                    <td class="td-actions">
-                      <div class="action-buttons">
-                        <template v-if="canView">
-                          <v-tooltip text="ແກ້ໄຂຄູ່ບັນທຶກ" location="top">
-                            <template #activator="{ props }">
-                              <v-btn
-                                v-if="(entry.Auth_Status === 'U' || entry.Auth_Status === 'P') && canEdit"
-                                v-bind="props"
-                                icon
-                                size="small"
-                                variant="text"
-                                color="info"
-                                @click="handleEdit(entry)"
-                                :disabled="isEditingPair"
-                                :loading="editingRefSubNo === entry.Reference_sub_No"
-                                class="action-btn-small"
-                              >
-                                <v-icon size="16">mdi-pencil</v-icon>
-                              </v-btn>
-                            </template>
-                          </v-tooltip>
-
-                          <v-tooltip text="ປະຕິເສດຄູ່ບັນທຶກ" location="top">
-                            <template #activator="{ props }">
-                              <v-btn
-                                v-if="canAuthorize"
-                                v-bind="props"
-                                icon
-                                size="small"
-                                variant="text"
-                                color="warning"
-                                @click="rejectByPairAccount(entry.Reference_sub_No, entry)"
-                                :disabled="isRejectingPair || entry.Auth_Status === 'R' || entry.Auth_Status === 'A'"
-                                :loading="rejectingRefSubNo === entry.Reference_sub_No"
-                                class="action-btn-small"
-                              >
-                                <v-icon size="16">mdi-close-circle</v-icon>
-                              </v-btn>
-                            </template>
-                          </v-tooltip>
-
-                          <v-tooltip text="ລຶບຄູ່ບັນທຶກ" location="top">
-                            <template #activator="{ props }">
-                              <v-btn
-                                v-if="canDelete && entry.Auth_Status !== 'A' && entry.Auth_Status !== 'R'"
-                                v-bind="props"
-                                icon
-                                size="small"
-                                variant="text"
-                                color="error"
-                                @click="deleteByPairAccount(entry.Reference_sub_No)"
-                                :disabled="isDeletingPair"
-                                :loading="deletingRefSubNo === entry.Reference_sub_No"
-                                class="action-btn-small"
-                              >
-                                <v-icon size="16">mdi-delete</v-icon>
-                              </v-btn>
-                            </template>
-                          </v-tooltip>
-                        </template>
-
-                        <template v-else>
-                          <v-chip size="x-small" color="grey" variant="flat">
-                            <v-icon size="12">mdi-lock</v-icon> ບໍ່ມີສິດ
-                          </v-chip>
-                        </template>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-                <tfoot>
-                  <tr class="totals-row">
-                    <td colspan="3" class="totals-label">
-                      <div class="d-flex align-center">
-                        <v-icon size="18" class="mr-2">mdi-calculator</v-icon>
-                        <strong>ລວມທັງໝົດ:</strong>
-                      </div>
-                    </td>
-                    <td class="totals-debit">
-                      <div class="total-amount debit">{{ formatNumber(totalFcyDebit) }}</div>
-                    </td>
-                    <td class="totals-credit">
-                      <div class="total-amount credit">{{ formatNumber(totalFcyCredit) }}</div>
-                    </td>
-                    <td colspan="2" class="totals-status">
-                      <v-chip :color="isBalanced ? 'success' : 'error'" variant="flat" size="small">
-                        <v-icon size="14">{{ isBalanced ? 'mdi-check' : 'mdi-alert' }}</v-icon>
-                      </v-chip>
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          </div>
-        </v-card-text>
-      </v-card>
-
-      <!-- Action Panel -->
-      <v-card class="action-panel mt-6" elevation="2">
-        <v-card-text class="pa-6">
-          <div class="status-alerts mb-4">
-            <v-alert
-              v-if="journalEntries.some(entry => entry.Auth_Status === 'P')"
-              type="warning"
-              variant="tonal"
-              density="comfortable"
-              class="mb-3"
-            >
-              <template #prepend>
-                <v-icon>mdi-alert-circle</v-icon>
-              </template>
-              <strong>ບໍ່ສາມາດອະນຸມັດໄດ້:</strong> ມີລາຍການທີ່ຕ້ອງແກ້ໄຂກ່ອນ
-            </v-alert>
-          </div>
-
-          <div class="action-buttons-main">
-            <div class="buttons-group">
-              <v-btn
-                v-if="canApproveMaster && canAuthorize"
-                color="success"
-                variant="flat"
-                @click="approveItem(selectedItem)"
-                prepend-icon="mdi-check-circle"
-                size="large"
-                class="primary-action-btn"
-              >
-                ອະນຸມັດລາຍການ
-              </v-btn>
-              
-              <v-btn
-                v-if="selectedItem?.Auth_Status === 'U' && canAuthorize"
-                color="error"
-                variant="flat"
-                @click="rejectItem(selectedItem)"
-                prepend-icon="mdi-close-circle"
-                size="large"
-                class="primary-action-btn"
-              >
-                ປະຕິເສດລາຍການ
-              </v-btn>
-            </div>
-          </div>
-        </v-card-text>
-      </v-card>
-    </div>
-
-    <!-- Edit Dialog -->
-    <v-dialog v-model="editDialog" max-width="1000px" persistent>
-      <v-card class="edit-dialog-card">
-        <v-card-title class="edit-dialog-header">
-          <div class="d-flex align-center">
-            <v-icon color="white" size="22" class="mr-3">mdi-pencil</v-icon>
-            <div>
-              <div class="dialog-title">ແກ້ໄຂບັນທຶກຄູ່</div>
-              <div class="dialog-subtitle">ປັບປຸງຂໍ້ມູນລາຍການບັນທຶກ</div>
-            </div>
-          </div>
-          <v-btn 
-            icon="mdi-close" 
-            variant="text" 
-            size="small"
-            color="white"
-            @click="closeEditDialog"
-            class="dialog-close-btn"
-          ></v-btn>
-        </v-card-title>
-
-        <v-card-text class="edit-dialog-content">
-          <div class="reference-info mb-6">
-            <h3 class="text-subtitle-1 mb-3">ຂໍ້ມູນອ້າງອີງ:</h3>
-            <div class="d-flex flex-wrap gap-3 mb-3">
-              <v-chip color="primary" variant="outlined" size="default">
-                <v-icon left size="16">mdi-identifier</v-icon>
-                {{ editForm.Reference_sub_No }}
-              </v-chip>
-              
-              <v-chip v-if="editFormCurrency" color="success" variant="outlined" size="default">
-                <v-icon left size="16">mdi-currency-usd</v-icon>
-                {{ editForm.currency_code }} - {{ editFormCurrency.Ccy_Name_la || editFormCurrency.Ccy_Name_en }}
-              </v-chip>
-            </div>
-            
-            <div v-if="editForm.debit_account_code || editForm.credit_account_code" class="current-accounts mb-3">
-              <h4 class="text-subtitle-2 mb-2">ບັນຊີປັດຈຸບັນ:</h4>
-              <div class="d-flex flex-wrap gap-2">
-                <v-chip v-if="editForm.debit_account_code" color="info" variant="flat" size="small">
-                  <v-icon left size="14">mdi-plus</v-icon>
-                  Debit: {{ formatAccountDisplay(editForm.debit_account_code, editForm.currency_code) }}
-                </v-chip>
-                <v-chip v-if="editForm.credit_account_code" color="warning" variant="flat" size="small">
-                  <v-icon left size="14">mdi-minus</v-icon>
-                  Credit: {{ formatAccountDisplay(editForm.credit_account_code, editForm.currency_code) }}
-                </v-chip>
-              </div>
-            </div>
-
-            <!-- Previous Comments Display -->
-            <div v-if="previousComments" class="previous-comments mb-3">
-              <h4 class="text-subtitle-2 mb-2">
-                <v-icon size="16" color="warning" class="mr-1">mdi-comment-alert</v-icon>
-                ເຫດຜົນການແກ້ໄຂກ່ອນໜ້າ:
-              </h4>
-              <div class="comments-display">
-                <v-icon size="16" color="grey" class="mr-2">mdi-comment-text-outline</v-icon>
-                <span class="comments-text">{{ previousComments }}</span>
-              </div>
-            </div>
-            
-            <v-alert type="info" variant="tonal" density="compact">
-              <template #prepend>
-                <v-icon>mdi-information</v-icon>
-              </template>
-              ສະຖານະຈະປ່ຽນຈາກ 'P' (ຕ້ອງແກ້ໄຂ) ເປັນ 'U' (ລໍຖ້າອະນຸມັດ)
-            </v-alert>
-          </div>
-          <v-form ref="editFormRef" class="edit-form">
-            <v-row dense>
-              <v-col cols="12" md="6">
-                <v-autocomplete
-                  v-model="editForm.glsub_id"
-                  :items="formattedAccountsForSelect"
-                  item-title="account_display"
-                  item-value="glsub_id"
-                  label="ບັນຊີ Debit"
-                  variant="outlined"
-                  density="comfortable"
-                  prepend-inner-icon="mdi-plus"
-                  clearable
-                  :loading="loadingAccounts"
-                  :rules="[v => !editForm.relative_glsub_id || !!v || 'ກະລຸນາເລືອກບັນຊີ Debit']"
-                  :menu-props="{ maxHeight: 300 }"
-                  @update:model-value="onDebitAccountChange"
-                ></v-autocomplete>
-              </v-col>
-
-              <v-col cols="12" md="6">
-                <v-autocomplete
-                  v-model="editForm.relative_glsub_id"
-                  :items="formattedAccountsForSelect"
-                  item-title="account_display"
-                  item-value="glsub_id"
-                  label="ບັນຊີ Credit"
-                  variant="outlined"
-                  density="comfortable"
-                  prepend-inner-icon="mdi-minus"
-                  clearable
-                  :loading="loadingAccounts"
-                  :rules="[v => !editForm.glsub_id || !!v || 'ກະລຸນາເລືອກບັນຊີ Credit']"
-                  :menu-props="{ maxHeight: 300 }"
-                  @update:model-value="onCreditAccountChange"
-                ></v-autocomplete>
-              </v-col>
-
-              <v-col cols="12" md="6">
-                <v-text-field
-                  v-model="editForm.Fcy_Amount"
-                  label="ຈຳນວນເງິນ FCY *"
-                  type="number"
-                  step="0.01"
-                  variant="outlined"
-                  density="comfortable"
-                  prepend-inner-icon="mdi-currency-usd"
-                  :rules="[
-                    v => !!v || 'ກະລຸນາໃສ່ຈຳນວນເງິນ',
-                    v => v > 0 || 'ຈຳນວນເງິນຕ້ອງມາກກ່ວາ 0'
-                  ]"
-                  :suffix="editForm.currency_code"
-                  required
-                ></v-text-field>
-              </v-col>
-
-              <v-col cols="12" md="6">
-                <v-textarea
-                  v-model="editForm.Addl_sub_text"
-                  label="ເນື້ອໃນຍ່ອຍ"
-                  variant="outlined"
-                  density="comfortable"
-                  prepend-inner-icon="mdi-text-box"
-                  rows="2"
-                  counter="255"
-                  :rules="[v => !v || v.length <= 255 || 'ເນື້ອໃນຕ້ອງບໍ່ເກີນ 255 ຕົວອັກສອນ']"
-                ></v-textarea>
-              </v-col>
-
-              <v-col cols="12">
-                <v-textarea
-                  v-model="editForm.comments"
-                  label="ເຫດຜົນການແກ້ໄຂ *"
-                  variant="outlined"
-                  density="comfortable"
-                  prepend-inner-icon="mdi-comment-edit"
-                  rows="3"
-                  counter="1000"
-                  placeholder="ກະລຸນາອະທິບາຍເຫດຜົນການແກ້ໄຂ..."
-                  :rules="[
-                    v => !!v || 'ກະລຸນາໃສ່ເຫດຜົນການແກ້ໄຂ',
-                    v => v && v.length >= 1 || 'ເຫດຜົນຕ້ອງມີຢ່າງນ້ອຍ 1 ຕົວອັກສອນ',
-                    v => !v || v.length <= 1000 || 'ເຫດຜົນຕ້ອງບໍ່ເກີນ 1000 ຕົວອັກສອນ'
-                  ]"
-                  required
-                ></v-textarea>
-              </v-col>
-            </v-row>
-          </v-form>
-        </v-card-text>
-
-        <v-divider></v-divider>
-
-        <v-card-actions class="edit-dialog-actions">
-          <v-spacer></v-spacer>
-          <v-btn
-            variant="outlined"
-            @click="closeEditDialog"
-            :disabled="isEditingPair"
-            size="large"
-            class="action-btn-dialog"
-          >
-            <v-icon left size="16">mdi-close</v-icon>
-            ຍົກເລີກ
-          </v-btn>
-          <v-btn
-            color="info"
-            variant="flat"
-            @click="fixRejectedEntry"
-            :loading="isEditingPair"
-            :disabled="!isEditFormValid"
-            size="large"
-            class="action-btn-dialog"
-          >
-            <v-icon left size="16">mdi-content-save</v-icon>
-            ບັນທຶກການແກ້ໄຂ
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-  </div>
-</template>
 
 <style scoped>
 .gl-detail-page {
@@ -1545,6 +1671,15 @@ watch(() => route.query.Reference_No, (newVal, oldVal) => {
   margin: 0 auto;
   min-height: 100vh;
   background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+}
+
+.loading-overlay,
+.permission-error-state,
+.loading-state,
+.error-state,
+.permission-denied-state {
+  max-width: 600px;
+  margin: 40px auto;
 }
 
 .page-header-improved {
@@ -1575,6 +1710,14 @@ watch(() => route.query.Reference_No, (newVal, oldVal) => {
   gap: 12px;
   align-items: center;
   flex-wrap: wrap;
+}
+
+.permission-indicators {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 4px 8px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .action-btn {
@@ -1828,10 +1971,6 @@ watch(() => route.query.Reference_No, (newVal, oldVal) => {
   z-index: 10;
 }
 
-.dialog-close-btn:hover {
-  background: rgba(255, 255, 255, 0.1) !important;
-}
-
 .dialog-title {
   font-size: 1.3rem;
   font-weight: 600;
@@ -1849,8 +1988,30 @@ watch(() => route.query.Reference_No, (newVal, oldVal) => {
   padding: 12px;
 }
 
+.previous-comments {
+  background: #fef3c7;
+  border-radius: 8px;
+  padding: 12px;
+  border-left: 4px solid #f59e0b;
+}
+
+.comments-display {
+  display: flex;
+  align-items: flex-start;
+}
+
+.comments-text {
+  color: #78350f;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
 @media (max-width: 1024px) {
   .info-grid-improved {
+    grid-template-columns: 1fr;
+  }
+
+  .amount-cards {
     grid-template-columns: 1fr;
   }
 }

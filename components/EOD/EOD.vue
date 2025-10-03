@@ -26,7 +26,7 @@
                   {{ isBackDateMode ? 'ການປິດບັນຊີຍ້ອນຫຼັງວັນທີ' : 'ການກວດສອບກ່ອນປິດບັນຊີ' }} {{ displayDate }}
                 </h1>
                 <p class="text-h6 opacity-90">
-                  {{ isBackDateMode ? 'Back-Date EOD Processing' : 'Pre-EOD Validation Check' }}
+                  {{ isBackDateMode ? 'ກວດສອບການລົງບັນຊີຍ້ອນຫຼັງ' : 'ກວດຄືນເງື່ອນໄຂການລົງບັນຊີ' }}
                 </p>
               </div>
             </div>
@@ -110,7 +110,7 @@
                     </v-chip>
                   </div>
                   <p class="text-body-2 text-grey">
-                    ກຳລັງປະມວນຜົນ EOD ສຳລັບວັນທີ {{ targetDate }} 
+                    ກຳລັງປະມວນຜົນການປິດບັນຊີ ສຳລັບວັນທີ {{ targetDate }} 
                     ({{ currentEODInfo.eod_status === 'Y' ? 'ສຳເລັດແລ້ວ' : 'ລໍຖ້າສຳເລັດ' }})
                   </p>
                 </div>
@@ -163,7 +163,7 @@
                 <strong>{{ isBackDateMode ? 'ພ້ອມສຳລັບການປິດບັນຊີຍ້ອນຫຼັງ' : 'ພ້ອມສຳລັບການປິດບັນຊີ' }}</strong>
               </template>
               <div class="mt-2">
-                <p>{{ isBackDateMode ? `ສາມາດປະມວນຜົນ EOD ສຳລັບວັນທີ ${targetDate} ໄດ້` : 'ທຸກສິ່ງທຸກຢ່າງພ້ອມແລ້ວ ສາມາດເລີ່ມການປິດບັນຊີໄດ້' }}</p>
+                <p>{{ isBackDateMode ? `ສາມາດປະມວນຜົນປິດບັນຊີປະຈໍາວັນ ສຳລັບວັນທີ ${targetDate} ໄດ້` : 'ທຸກສິ່ງທຸກຢ່າງພ້ອມແລ້ວ ສາມາດເລີ່ມການປິດບັນຊີໄດ້' }}</p>
                   <p class="text-body-2 mt-1">
                     ຈະປະມວນຜົນ {{ readyEOCFunctionsCount }} ຟັງຊັນ EOC{{ isBackDateMode ? ` ສຳລັບວັນທີ ${targetDate}` : '' }}
                   </p>
