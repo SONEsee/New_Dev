@@ -29,7 +29,7 @@
             <v-col cols="12" md="3" class="pe-md-2 mb-3 mb-md-0">
               <v-text-field
                 v-model="selectedFinancialCycle"
-                label="ວົງຈອນການເງິນ (Financial Cycle)"
+                label="ຮອບວຽນບັນຊີ (Financial Cycle)"
                 variant="outlined"
                 density="compact"
                 prepend-inner-icon="mdi-calendar-range"
@@ -45,7 +45,7 @@
             <v-col cols="12" md="3" class="px-md-1 mb-3 mb-md-0">
               <v-text-field
                 v-model="selectedPeriodCode"
-                label="ລະຫັດງວດ (Period Code)"
+                label="ລາຍງານປະຈໍາເດືອນ (Period Code)"
                 variant="outlined"
                 density="compact"
                 prepend-inner-icon="mdi-calendar-month"
@@ -88,7 +88,7 @@
                 v-model="selectedTrnCode"
                 :items="transactionCodeOptions"
                 :loading="loadingOptions"
-                label="ລະຫັດລາຍການ (Transaction Code)"
+                label="ລະຫັດທຸລະກໍາ (Transaction Code)"
                 variant="outlined"
                 density="compact"
                 prepend-inner-icon="mdi-code-tags"
@@ -711,7 +711,7 @@ const printData = () => {
       '<span><strong>ລະຫັດງວດ:</strong> ' + (selectedPeriodCode.value || '-') + '</span>' +
       '</div>' +
       '<div class="info-row">' +
-      '<span><strong>ໄລຍະວັນທີ:</strong> ' + (selectedStartDate.value || '-') + ' - ' + (selectedEndDate.value || '-') + '</span>' +
+      '<span><strong>ວັນທີ:</strong> ' + (selectedStartDate.value || '-') + ' - ' + (selectedEndDate.value || '-') + '</span>' +
       '<span><strong>' + makerInfo + '</strong></span>' +
       '</div>' +
       '<div class="info-row">' +

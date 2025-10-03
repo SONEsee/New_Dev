@@ -565,7 +565,7 @@
                 <template #prepend>
                   <v-icon color="primary">mdi-calendar-range</v-icon>
                 </template>
-                <v-list-item-title class="font-weight-medium text-styles">ໄລຍະວັນທີ</v-list-item-title>
+                <v-list-item-title class="font-weight-medium text-styles">ວັນທີ</v-list-item-title>
                 <v-list-item-subtitle class="text-primary">
                   {{ filters.date_start }} ຫາ {{ filters.date_end }}
                 </v-list-item-subtitle>
@@ -711,7 +711,7 @@
                 <template #prepend>
                   <v-icon color="primary">mdi-calendar-range</v-icon>
                 </template>
-                <v-list-item-title class="font-weight-medium">ໄລຍະວັນທີ</v-list-item-title>
+                <v-list-item-title class="font-weight-medium">ວັນທີ</v-list-item-title>
                 <v-list-item-subtitle class="text-primary">
                   {{ filters.date_start }} ຫາ {{ filters.date_end }}
                 </v-list-item-subtitle>

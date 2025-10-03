@@ -300,7 +300,7 @@ const pagination = reactive<Pagination>({
 const dateFilterTypes = ref<DateFilterType[]>([
   { value: "all", text: "ທັງໝົດ", icon: "mdi-calendar-multiple" },
   { value: "date", text: "ວັນທີສະເພາະ", icon: "mdi-calendar" },
-  { value: "range", text: "ໄລຍະວັນທີ", icon: "mdi-calendar-range" },
+  { value: "range", text: "ວັນທີ", icon: "mdi-calendar-range" },
   { value: "month", text: "ເດືອນ", icon: "mdi-calendar-month" },
   { value: "year", text: "ປີ", icon: "mdi-calendar-year" },
 ]);
