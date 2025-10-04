@@ -686,18 +686,43 @@ const exportToExcel = () => {
   }
 }
 
+// Utility function to get current period as YYYYMM from API
+const getCurrentPeriodCodeId = async (): Promise<string> => {
+  try {
+    const axiosInstance = (await import('@/helpers/axios')).default
+    const res = await axiosInstance.get('/api/end-of-day-journal/check/')
+    const targetDate = res.data?.target_date // e.g. "2024-12-31"
+    if (targetDate && /^\d{4}-\d{2}-\d{2}$/.test(targetDate)) {
+      // Format to YYYYMM
+      return targetDate.slice(0, 4) + targetDate.slice(5, 7)
+    }
+  } catch (e) {
+    // fallback to local date if API fails
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    return `${year}${month}`
+  }
+  // fallback if no target_date
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  return `${year}${month}`
+}
+
 // Initialize component
 onMounted(async () => {
   try {
     const token = localStorage.getItem("token")
     if (token) {
       console.log('🚀 Component mounted')
-      // Set default period code to current year-month
-      const now = new Date()
-      const year = now.getFullYear()
-      const month = String(now.getMonth() + 1).padStart(2, '0')
-      selectedPeriodCode.value = `${year}${month}`
-      
+      // Set default period code to current period from API
+      const periodCode = await getCurrentPeriodCodeId()
+      selectedPeriodCode.value = periodCode
+      // Set selectedFinYear from periodCode if possible
+      if (periodCode && periodCode.length === 6) {
+        selectedFinYear.value = periodCode.substring(0, 4)
+      }
       // Don't auto-fetch data - wait for user to complete form
       showSnackbar('📋 ກະລຸນາເລືອກຂໍ້ມູນໃນແບບຟອມແລ້ວກົດດຶງຂໍ້ມູນ', 'info', 'mdi-information')
     } else {

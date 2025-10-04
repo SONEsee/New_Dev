@@ -14,7 +14,7 @@
     ></v-app-bar-nav-icon>
 
     <v-app-bar-title class="text-center flex-grow-1">
-      ລະບົບບັນຊີ ບໍລິສັດລັດ ບໍລິຫານໜີ້ ແລະ ຊັບສິນ ຈຳກັດຜູ້ດຽວ (SAMC'S Accounting System)
+      ລະບົບບັນຊີ ບໍລິສັດລັດ ບໍລິຫານໜີ້ ແລະ ຊັບສິນ ຈຳກັດຜູ່ດຽວ (SAMC'S Accounting System)
     </v-app-bar-title>
 
     <!-- Working Day Status Indicator -->
@@ -518,6 +518,8 @@ import { computed, onMounted, onUnmounted, ref } from "vue"
 import { useMenuStore } from "~/stores/menu"
 import axios from "@/helpers/axios"
 import { useAuthCheck } from "@/composables/useAuthCheck"
+import { useAppEvents, APP_EVENTS } from '@/composables/useAppEvents'
+
 // Working Day Check Interface
 interface WorkingDayResponse {
   available: boolean
@@ -706,21 +708,50 @@ const goToProfile = () => {
   }
 }
 
+// Initialize app events helper
+const { on } = useAppEvents()
+
 // Auto-check working day on component mount
 onMounted(() => {
   roleStore.filter_role_id.query.sub_menu_id = sub_menu_id || ""
   
-  // Auto-check working day status
+  // Initial working day check
   checkWorkingDay()
   
-  // Optional: Set up periodic checking (every 30 minutes)
+  // *** NEW: Listen for data entry updates ***
+  const unsubscribeDataEntry = on(APP_EVENTS.DATA_ENTRY_UPDATED, async (data: any) => {
+    console.log('Data entry updated, refreshing permissions...', data)
+    
+    // Re-check working day status
+    await checkWorkingDay()
+    
+    // Optionally reload menu if needed
+    const userId = getUserIdFromLocalStorage()
+    if (userId) {
+      await loadMenu(userId)
+    }
+    
+    // Show notification
+    workingDayMessage.value = 'ການຕັ້ງຄ່າອັບເດດແລ້ວ, ກຳລັງໂຫຼດຂໍ້ມູນໃໝ່...'
+    showWorkingDaySnackbar.value = true
+  })
+  
+  // *** NEW: Listen for manual working day checks ***
+  const unsubscribeWorkingDay = on(APP_EVENTS.WORKING_DAY_CHECK, async () => {
+    console.log('Manual working day check requested')
+    await checkWorkingDay()
+  })
+  
+  // Set up periodic checking (every 30 minutes)
   const workingDayInterval = setInterval(() => {
     checkWorkingDay()
-  }, 30 * 60 * 1000) // 30 minutes
+  }, 30 * 60 * 1000)
   
-  // Clean up interval on component unmount
+  // Clean up on unmount
   onUnmounted(() => {
     clearInterval(workingDayInterval)
+    try { unsubscribeDataEntry && unsubscribeDataEntry() } catch (e) { /* ignore */ }
+    try { unsubscribeWorkingDay && unsubscribeWorkingDay() } catch (e) { /* ignore */ }
   })
 })
 

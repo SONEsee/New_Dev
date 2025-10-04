@@ -158,7 +158,7 @@
                         color="primary"
                         variant="tonal"
                       >
-                        {{ period.period_code }}
+                        {{ period.period_code }}: {{ period.PC_StartDate }}
                       </v-chip>
                       <v-chip
                         v-if="getPreviewPeriods().length > 6"
@@ -282,7 +282,6 @@ import { FinCycleModel } from '~/models'
 
 const router = useRouter()
 
-// For creation, we omit read-only and generated fields:
 type CreateFinCyclePayload = Omit<
   FinCycleModel.FinCycleResponse,
   'Maker_DT_Stamp' | 'Checker_DT_Stamp' | 'Maker_Id' | 'Checker_Id'
@@ -304,7 +303,6 @@ const showError = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
 
-// New state for simplified workflow
 const cycleYear = ref<number | null>(null)
 const generatePeriods = ref(false)
 const selectedPeriodType = ref<'monthly' | 'quarterly' | 'half-yearly'>('monthly')
@@ -312,14 +310,27 @@ const selectedPeriodType = ref<'monthly' | 'quarterly' | 'half-yearly'>('monthly
 const form = ref<CreateFinCyclePayload>({
   fin_cycle: '',
   cycle_Desc: '',
-  StartDate: '',   // YYYY-MM-DD
+  StartDate: '',
   EndDate: '',
   Record_Status: 'C',
   Auth_Status: 'U',
   Once_Auth: 'N',
 })
 
-// Computed property for duration calculation
+// Helper function to format date without timezone issues
+function formatDate(year: number, month: number, day: number): string {
+  const y = String(year)
+  const m = String(month).padStart(2, '0')
+  const d = String(day).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+// Helper function to get last day of month
+function getLastDayOfMonth(year: number, month: number): number {
+  // month is 1-12
+  return new Date(year, month, 0).getDate()
+}
+
 const duration = computed(() => {
   if (form.value.StartDate && form.value.EndDate) {
     return calculateDuration(form.value.StartDate, form.value.EndDate)
@@ -327,7 +338,6 @@ const duration = computed(() => {
   return null
 })
 
-// Dropdown options
 const recordStatusItems = [
   { title: 'ເປີດໃຊ້ງານ', value: 'C' },
   { title: 'ປິດໃຊ້ງານ', value: 'O' }
@@ -343,7 +353,6 @@ const onceAuthItems = [
   { title: 'ບໍ່', value: 'N' }
 ]
 
-// Validation rules
 const rules = {
   required: (value: any) => !!value || 'ຈຳເປັນຕ້ອງມີຂໍ້ມູນນີ້',
   yearValidation: (value: any) => {
@@ -354,12 +363,10 @@ const rules = {
   }
 }
 
-// Watch cycleYear changes to auto-update form
 watch(cycleYear, (newYear) => {
   updateCycleData()
 })
 
-// Helper functions
 function updateCycleData() {
   if (cycleYear.value) {
     const year = parseInt(cycleYear.value.toString())
@@ -394,7 +401,6 @@ function calculateDuration(startDate: string, endDate: string): string {
   }
 }
 
-// Period generation preview function
 function getPreviewPeriods(): PeriodCode[] {
   if (!cycleYear.value || !selectedPeriodType.value) return []
   
@@ -412,7 +418,7 @@ function getPreviewPeriods(): PeriodCode[] {
   }
 }
 
-// Period generation functions
+// FIXED: Generate monthly periods without timezone issues
 function generateMonthlyPeriods(year: number): PeriodCode[] {
   const periods: PeriodCode[] = []
   const monthNames = [
@@ -420,16 +426,17 @@ function generateMonthlyPeriods(year: number): PeriodCode[] {
     'ກໍລະກົດ', 'ສິງຫາ', 'ກັນຍາ', 'ຕຸລາ', 'ພະຈິກ', 'ທັນວາ'
   ]
   
-  for (let month = 0; month < 12; month++) {
-    const startDate = new Date(year, month, 1)
-    const endDate = new Date(year, month + 1, 0) // Last day of month
+  for (let month = 1; month <= 12; month++) {
+    const lastDay = getLastDayOfMonth(year, month)
+    const startDate = formatDate(year, month, 1)
+    const endDate = formatDate(year, month, lastDay)
     
     periods.push({
-      period_code: `${year}${String(month + 1).padStart(2, '0')}`,
-      PC_StartDate: startDate.toISOString().split('T')[0],
-      PC_EndDate: endDate.toISOString().split('T')[0],
+      period_code: `${year}${String(month).padStart(2, '0')}`,
+      PC_StartDate: startDate,
+      PC_EndDate: endDate,
       Fin_cycle: form.value.fin_cycle,
-      description: `${monthNames[month]} ${year}`,
+      description: `${monthNames[month - 1]} ${year}`,
       type: 'monthly'
     })
   }
@@ -437,23 +444,25 @@ function generateMonthlyPeriods(year: number): PeriodCode[] {
   return periods
 }
 
+// FIXED: Generate quarterly periods without timezone issues
 function generateQuarterlyPeriods(year: number): PeriodCode[] {
   const periods: PeriodCode[] = []
   const quarters = [
-    { start: [year, 0, 1], end: [year, 2, 31], name: 'ໄຕມາດທີ 1' },
-    { start: [year, 3, 1], end: [year, 5, 30], name: 'ໄຕມາດທີ 2' },
-    { start: [year, 6, 1], end: [year, 8, 30], name: 'ໄຕມາດທີ 3' },
-    { start: [year, 9, 1], end: [year, 11, 31], name: 'ໄຕມາດທີ 4' }
+    { startMonth: 1, endMonth: 3, name: 'ໄຕມາດທີ 1' },
+    { startMonth: 4, endMonth: 6, name: 'ໄຕມາດທີ 2' },
+    { startMonth: 7, endMonth: 9, name: 'ໄຕມາດທີ 3' },
+    { startMonth: 10, endMonth: 12, name: 'ໄຕມາດທີ 4' }
   ]
   
   quarters.forEach((quarter, index) => {
-    const startDate = new Date(quarter.start[0], quarter.start[1], quarter.start[2])
-    const endDate = new Date(quarter.end[0], quarter.end[1], quarter.end[2])
+    const startDate = formatDate(year, quarter.startMonth, 1)
+    const lastDay = getLastDayOfMonth(year, quarter.endMonth)
+    const endDate = formatDate(year, quarter.endMonth, lastDay)
     
     periods.push({
       period_code: `${year}Q${index + 1}`,
-      PC_StartDate: startDate.toISOString().split('T')[0],
-      PC_EndDate: endDate.toISOString().split('T')[0],
+      PC_StartDate: startDate,
+      PC_EndDate: endDate,
       Fin_cycle: form.value.fin_cycle,
       description: `${quarter.name} ${year}`,
       type: 'quarterly'
@@ -463,21 +472,23 @@ function generateQuarterlyPeriods(year: number): PeriodCode[] {
   return periods
 }
 
+// FIXED: Generate half-yearly periods without timezone issues
 function generateHalfYearlyPeriods(year: number): PeriodCode[] {
   const periods: PeriodCode[] = []
   const halves = [
-    { start: [year, 0, 1], end: [year, 5, 30], name: 'ຄິ້ງແຮກ' },
-    { start: [year, 6, 1], end: [year, 11, 31], name: 'ຄິ້ງຫຼັງ' }
+    { startMonth: 1, endMonth: 6, name: 'ຄິ້ງແຮກ' },
+    { startMonth: 7, endMonth: 12, name: 'ຄິ້ງຫຼັງ' }
   ]
   
   halves.forEach((half, index) => {
-    const startDate = new Date(half.start[0], half.start[1], half.start[2])
-    const endDate = new Date(half.end[0], half.end[1], half.end[2])
+    const startDate = formatDate(year, half.startMonth, 1)
+    const lastDay = getLastDayOfMonth(year, half.endMonth)
+    const endDate = formatDate(year, half.endMonth, lastDay)
     
     periods.push({
       period_code: `${year}H${index + 1}`,
-      PC_StartDate: startDate.toISOString().split('T')[0],
-      PC_EndDate: endDate.toISOString().split('T')[0],
+      PC_StartDate: startDate,
+      PC_EndDate: endDate,
       Fin_cycle: form.value.fin_cycle,
       description: `${half.name} ${year}`,
       type: 'half-yearly'
@@ -487,13 +498,11 @@ function generateHalfYearlyPeriods(year: number): PeriodCode[] {
   return periods
 }
 
-// Main submit function - handles both financial cycle and periods
 async function submitForm() {
   if (!isValid.value || !cycleYear.value) return
   
   loading.value = true
   try {
-    // Step 1: Create Financial Cycle
     console.log('Creating financial cycle:', form.value)
     await axios.post('/api/fin-cycles/', form.value, {
       headers: {
@@ -502,15 +511,13 @@ async function submitForm() {
       },
     })
     
-    let totalCreated = 1 // Financial cycle created
+    let totalCreated = 1
     let message = 'ສ້າງຮອບວຽນບັນຊີສຳເລັດແລ້ວ!'
     
-    // Step 2: Create Period Codes if selected
     if (generatePeriods.value && selectedPeriodType.value) {
       const periodsToCreate = getPreviewPeriods()
-      console.log('Creating periods:', periodsToCreate.length)
+      console.log('Creating periods:', periodsToCreate)
       
-      // Create all periods
       const periodPromises = periodsToCreate.map(period => 
         axios.post('/api/percodes/', {
           period_code: period.period_code,
@@ -533,7 +540,6 @@ async function submitForm() {
     showSuccess.value = true
     successMessage.value = message
     
-    // Redirect after success
     setTimeout(() => {
       router.push('/fincycle')
     }, 1500)
@@ -553,7 +559,6 @@ function goBack() {
 </script>
 
 <style scoped>
-/* Custom form styling */
 :deep(.v-field__outline) {
   border-radius: 8px;
 }
@@ -562,23 +567,19 @@ function goBack() {
   border-width: 2px;
 }
 
-/* Input field hover effects */
 :deep(.v-field:hover .v-field__outline) {
   border-color: rgba(var(--v-theme-primary), 0.5);
 }
 
-/* Better spacing for form sections */
 .v-col {
   padding-top: 8px;
   padding-bottom: 8px;
 }
 
-/* Clean card styling */
 .v-card {
   transition: box-shadow 0.2s ease;
 }
 
-/* Button hover effects */
 .v-btn {
   transition: all 0.2s ease;
 }
@@ -587,7 +588,6 @@ function goBack() {
   transform: translateY(-1px);
 }
 
-/* Icon styling */
 :deep(.v-field__prepend-inner .v-icon) {
   opacity: 0.7;
 }
@@ -596,7 +596,6 @@ function goBack() {
   opacity: 1;
 }
 
-/* Switch and radio styling */
 .v-switch {
   margin-bottom: 16px;
 }
@@ -605,12 +604,10 @@ function goBack() {
   margin-right: 24px;
 }
 
-/* Readonly field styling */
 :deep(.v-field--readonly) {
   opacity: 0.8;
 }
 
-/* Chip styling */
 .v-chip {
   margin: 2px;
 }

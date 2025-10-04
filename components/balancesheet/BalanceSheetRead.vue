@@ -287,7 +287,23 @@ const getAuthHeaders = () => {
 }
 
 // Utility function to get current period
-const getCurrentPeriodCodeId = (): string => {
+const getCurrentPeriodCodeId = async (): Promise<string> => {
+  try {
+    const axios = (await import('@/helpers/axios')).default
+    const res = await axios.get('/api/end-of-day-journal/check/')
+    const targetDate = res.data?.target_date // e.g. "2024-12-31"
+    if (targetDate && /^\d{4}-\d{2}-\d{2}$/.test(targetDate)) {
+      // Format to YYYYMM
+      return targetDate.slice(0, 4) + targetDate.slice(5, 7)
+    }
+  } catch (e) {
+    // fallback to local date if API fails
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    return `${year}${month}`
+  }
+  // fallback if no target_date
   const now = new Date()
   const year = now.getFullYear()
   const month = String(now.getMonth() + 1).padStart(2, '0')
@@ -314,7 +330,7 @@ const selectedTab = ref('acc')
 const selectedSegment = ref('')
 const selectedCurrency = ref('')
 const balanceSheetData = ref<BalanceSheetItem[]>([])
-const periodCodeId = ref(getCurrentPeriodCodeId()) // Fixed: Now properly calling the function
+const periodCodeId = ref('') // <-- initialize as empty
 
 const snackbar = ref<SnackbarState>({
   show: false,
@@ -596,6 +612,8 @@ onMounted(async () => {
   try {
     const token = localStorage.getItem("token")
     if (token) {
+      // Fetch current period from API
+      periodCodeId.value = await getCurrentPeriodCodeId()
       console.log('🚀 Balance Sheet component mounted')
       console.log(`📅 Current period: ${periodCodeId.value} (${formatPeriodDisplay(periodCodeId.value)})`)
       // Set default values

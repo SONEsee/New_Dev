@@ -15,9 +15,9 @@
           </v-btn>
           <v-icon color="primary" class="mr-3" size="28">mdi-database-edit</v-icon>
           <div>
-            <h2 class="text-h5 font-weight-bold mb-1 text-styles">ແກ້ໄຂການຕັ້ງຄ່າການປ້ອນຂໍ້ມູນ</h2>
+            <h2 class="text-h5 font-weight-bold mb-1 text-styles">ແກ້ໄຂການຕັ້ງຄ່າການບັນທຶກບັນຊີ</h2>
             <p class="text-body-2 text-medium-emphasis mb-0 text-styles">
-              ແກ້ໄຂການຢືນຢັນແລະການອະນຸຍາດສຳລັບການປ້ອນຂໍ້ມູນ MTTB
+              ແກ້ໄຂການຢືນຢັນແລະການອະນຸຍາດສຳລັບການບັນທຶກບັນຊີ
             </p>
           </div>
         </div>
@@ -94,7 +94,7 @@
 
           <!-- Rekey Settings -->
           <div class="mb-6">
-            <h3 class="text-subtitle-1 font-weight-bold mb-4 d-flex align-center">
+            <h3 class="text-subtitle-1 font-weight-bold mb-4 d-flex align-center text-styles">
               <v-icon color="primary" size="20" class="mr-2">mdi-keyboard</v-icon>
               ການຢືນຢັນຂໍ້ມູນ
             </h3>
@@ -103,8 +103,8 @@
             <v-card variant="outlined" class="pa-4 mb-4">
               <div class="d-flex align-center justify-space-between">
                 <div>
-                  <p class="text-body-1 font-weight-medium">ຢືນຢັນຂໍ້ມູນໃນເວລາກ່ອນອະນຸມັດບັນຊີ</p>
-                  <p class="text-caption text-medium-emphasis">ຜູ້ໃຊ້ຈະຕ້ອງຢືນຢັນຂໍ້ມູນກ່ອນການອະນຸມັດ</p>
+                  <p class="text-body-1 font-weight-medium text-styles">ຢືນຢັນຂໍ້ມູນໃນເວລາກ່ອນອະນຸມັດບັນຊີ</p>
+                  <p class="text-caption text-medium-emphasis text-styles">ຜູ້ໃຊ້ຈະຕ້ອງຢືນຢັນຂໍ້ມູນກ່ອນການອະນຸມັດ</p>
                 </div>
                 <v-switch
                   v-model="formData.JRN_REKEY_REQUIRED"
@@ -130,8 +130,8 @@
                       density="compact"
                     />
                     <div class="ml-3">
-                      <p class="text-body-2 font-weight-medium">ວັນທີເຮັດທຸລະກຳ</p>
-                      <p class="text-caption text-medium-emphasis">ຢືນຢັນຄືນວັນທີ</p>
+                      <p class="text-body-2 font-weight-medium text-styles">ວັນທີເຮັດທຸລະກຳ</p>
+                      <p class="text-caption text-medium-emphasis text-styles">ຢືນຢັນຄືນວັນທີ</p>
                     </div>
                   </div>
                 </v-col>
@@ -147,8 +147,8 @@
                       density="compact"
                     />
                     <div class="ml-3">
-                      <p class="text-body-2 font-weight-medium">ມູນຄ່າທີ່ປ້ອນ</p>
-                      <p class="text-caption text-medium-emphasis">ຢືນຢັນຈຳນວນເງິນ</p>
+                      <p class="text-body-2 font-weight-medium text-styles">ມູນຄ່າທີ່ປ້ອນ</p>
+                      <p class="text-caption text-medium-emphasis text-styles">ຢືນຢັນຈຳນວນເງິນ</p>
                     </div>
                   </div>
                 </v-col>
@@ -164,8 +164,8 @@
                       density="compact"
                     />
                     <div class="ml-3">
-                      <p class="text-body-2 font-weight-medium">ລະຫັດທຸລະກຳ</p>
-                      <p class="text-caption text-medium-emphasis">ຢືນຢັນລະຫັດ</p>
+                      <p class="text-body-2 font-weight-medium text-styles">ລະຫັດທຸລະກຳ</p>
+                      <p class="text-caption text-medium-emphasis text-styles">ຢືນຢັນລະຫັດ</p>
                     </div>
                   </div>
                 </v-col>
@@ -177,7 +177,7 @@
 
           <!-- Permission Settings -->
           <div class="mb-6">
-            <h3 class="text-subtitle-1 font-weight-bold mb-4 d-flex align-center">
+            <h3 class="text-subtitle-1 font-weight-bold mb-4 d-flex align-center text-styles">
               <v-icon color="primary" size="20" class="mr-2">mdi-shield-check</v-icon>
               ການອະນຸຍາດພິເສດ
             </h3>
@@ -187,8 +187,8 @@
                 <v-card variant="outlined" class="pa-4">
                   <div class="d-flex align-center justify-space-between">
                     <div>
-                      <p class="text-body-2 font-weight-medium">ອະນຸຍາດໃຫ້ລົງບັນຊີຍ້ອນຫຼັງ</p>
-                      <p class="text-caption text-medium-emphasis">ບັນທຶກທຸລະກຳວັນທີຜ່ານມາ</p>
+                      <p class="text-body-2 font-weight-medium text-styles">ອະນຸຍາດໃຫ້ລົງບັນຊີຍ້ອນຫຼັງ</p>
+                      <p class="text-caption text-medium-emphasis text-styles">ບັນທຶກທຸລະກຳວັນທີຜ່ານມາ</p>
                     </div>
                     <v-switch
                       v-model="formData.BACK_VALUE"
@@ -206,8 +206,8 @@
                 <v-card variant="outlined" class="pa-4">
                   <div class="d-flex align-center justify-space-between">
                     <div>
-                      <p class="text-body-2 font-weight-medium">ອະນຸຍາດໃຫ້ລົງບັນຊີມື້ພັກ</p>
-                      <p class="text-caption text-medium-emphasis">ບັນທຶກໃນວັນພັກການ</p>
+                      <p class="text-body-2 font-weight-medium text-styles">ອະນຸຍາດໃຫ້ລົງບັນຊີມື້ພັກ</p>
+                      <p class="text-caption text-medium-emphasis text-styles">ບັນທຶກໃນວັນພັກການ</p>
                     </div>
                     <v-switch
                       v-model="formData.MOD_NO"
@@ -227,7 +227,7 @@
 
           <!-- Authorization Settings -->
           <div class="mb-6">
-            <h3 class="text-subtitle-1 font-weight-bold mb-4 d-flex align-center">
+            <h3 class="text-subtitle-1 font-weight-bold mb-4 d-flex align-center text-styles">
               <v-icon color="primary" size="20" class="mr-2">mdi-lock</v-icon>
               ການອະນຸມັດ
             </h3>
@@ -246,8 +246,8 @@
                 <v-card variant="outlined" class="pa-4">
                   <div class="d-flex align-center justify-space-between">
                     <div>
-                      <p class="text-body-2 font-weight-medium">ອະນຸມັດຄັ້ງດຽວ</p>
-                      <p class="text-caption text-medium-emphasis">ບໍ່ຕ້ອງອະນຸມັດຊ້ຳ</p>
+                      <p class="text-body-2 font-weight-medium text-styles">ອະນຸມັດຄັ້ງດຽວ</p>
+                      <p class="text-caption text-medium-emphasis text-styles">ບໍ່ຕ້ອງອະນຸມັດຊ້ຳ</p>
                     </div>
                     <v-switch
                       v-model="formData.Once_Auth"
@@ -267,7 +267,7 @@
           <v-divider class="mb-6" />
           
           <div class="mb-6">
-            <h3 class="text-subtitle-1 font-weight-bold mb-4 d-flex align-center">
+            <h3 class="text-subtitle-1 font-weight-bold mb-4 d-flex align-center text-styles">
               <v-icon color="primary" size="20" class="mr-2">mdi-history</v-icon>
               ປະຫວັດການແກ້ໄຂ
             </h3>
@@ -275,7 +275,7 @@
             <v-row>
               <v-col cols="12" md="6">
                 <v-text-field
-                  :value="originalData.Maker_Id?.username || 'ລະບົບ'"
+                  :value="originalData.Maker_Id || 'ລະບົບ'"
                   label="ຜູ້ສ້າງ"
                   variant="outlined"
                   density="compact"
@@ -353,7 +353,7 @@
               density="compact"
               class="mb-4"
             >
-              <v-alert-title class="text-body-2">ມີການປ່ຽນແປງທີ່ຍັງບໍ່ໄດ້ບັນທຶກ</v-alert-title>
+              <v-alert-title class="text-body-2 font-weight-medium text-styles">ມີການປ່ຽນແປງທີ່ຍັງບໍ່ໄດ້ບັນທຶກ</v-alert-title>
               <div class="text-caption mt-2">
                 <div v-for="change in getChanges()" :key="change.field">
                   • {{ change.label }}: {{ change.oldValue }} → {{ change.newValue }}
@@ -424,9 +424,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import axios from '@/helpers/axios'
+import { useAppEvents, APP_EVENTS } from '@/composables/useAppEvents'
 
 // Router and route
 const router = useRouter()
@@ -615,6 +616,8 @@ watch(() => formData.value.JRN_REKEY_REQUIRED, (newVal) => {
 })
 
 // Form actions
+const { emit, on } = useAppEvents()
+
 const handleSubmit = async () => {
   const validation = await form.value.validate()
   if (!validation.valid) return
@@ -637,7 +640,17 @@ const handleSubmit = async () => {
     // Update original data
     await fetchData()
     
-    // Redirect after success
+    // *** NEW: Emit event to notify other components ***
+    emit(APP_EVENTS.DATA_ENTRY_UPDATED, {
+      data_entry_id: formData.value.data_entry_id,
+      changes: getChanges(),
+      timestamp: new Date().toISOString()
+    })
+    
+    // *** NEW: Also trigger working day re-check ***
+    emit(APP_EVENTS.WORKING_DAY_CHECK)
+    
+    // Show success message and redirect
     setTimeout(() => {
       router.push('/dataentry')
     }, 1500)
@@ -684,6 +697,89 @@ const confirmLeave = () => {
 // Initialize
 onMounted(() => {
   fetchData()
+
+  // best-effort: only attempt to access external globals/composables if they exist
+  try {
+    // If roleStore and sub_menu_id are available in this scope, set the filter
+    if (typeof (roleStore) !== 'undefined' && roleStore?.filter_role_id) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ;(roleStore.filter_role_id as any).query.sub_menu_id = typeof sub_menu_id !== 'undefined' ? sub_menu_id : ""
+    }
+  } catch (e) {
+    console.warn('roleStore or sub_menu_id not available:', e)
+  }
+
+  // Initial working day check if function exists
+  if (typeof (checkWorkingDay) === 'function') {
+    // call but don't await blocking the mount
+    void checkWorkingDay()
+  }
+
+  // *** NEW: Listen for data entry updates ***
+  let unsubscribeDataEntry: (() => void) | null = null
+  try {
+    unsubscribeDataEntry = on(APP_EVENTS.DATA_ENTRY_UPDATED, async (data: any) => {
+      console.log('Data entry updated, refreshing permissions...', data)
+
+      if (typeof (checkWorkingDay) === 'function') {
+        await checkWorkingDay()
+      }
+
+      // Optionally reload menu if loadMenu & helper exist
+      try {
+        const getUserIdFromLocalStorage = (window as any).getUserIdFromLocalStorage || undefined
+        if (typeof loadMenu === 'function') {
+          const userId = typeof getUserIdFromLocalStorage === 'function' ? getUserIdFromLocalStorage() : null
+          if (userId) {
+            await loadMenu(userId)
+          }
+        }
+      } catch (err) {
+        console.warn('loadMenu or helper not available', err)
+      }
+
+      // Show notification if reactive refs exist
+      try {
+        if (typeof workingDayMessage !== 'undefined' && typeof showWorkingDaySnackbar !== 'undefined') {
+          // @ts-ignore
+          workingDayMessage.value = 'ການຕັ້ງຄ່າອັບເດດແລ້ວ, ກຳລັງໂຫຼດຂໍ້ມູນໃໝ່...'
+          // @ts-ignore
+          showWorkingDaySnackbar.value = true
+        }
+      } catch (err) {
+        // ignore if those refs are not present
+      }
+    })
+  } catch (err) {
+    console.warn('Could not subscribe to DATA_ENTRY_UPDATED', err)
+  }
+
+  // *** NEW: Listen for manual working day checks ***
+  let unsubscribeWorkingDay: (() => void) | null = null
+  try {
+    unsubscribeWorkingDay = on(APP_EVENTS.WORKING_DAY_CHECK, async () => {
+      console.log('Manual working day check requested')
+      if (typeof (checkWorkingDay) === 'function') {
+        await checkWorkingDay()
+      }
+    })
+  } catch (err) {
+    console.warn('Could not subscribe to WORKING_DAY_CHECK', err)
+  }
+
+  // Set up periodic checking (every 30 minutes)
+  const workingDayInterval = setInterval(() => {
+    if (typeof (checkWorkingDay) === 'function') {
+      void checkWorkingDay()
+    }
+  }, 30 * 60 * 1000)
+
+  // Clean up on unmount
+  onUnmounted(() => {
+    clearInterval(workingDayInterval)
+    try { unsubscribeDataEntry && unsubscribeDataEntry() } catch (e) { /* ignore */ }
+    try { unsubscribeWorkingDay && unsubscribeWorkingDay() } catch (e) { /* ignore */ }
+  })
 })
 </script>
 

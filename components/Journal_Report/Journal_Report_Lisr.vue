@@ -1,6 +1,6 @@
 <template>
   <v-container fluid class="pa-2">
-    <!-- Enhanced Tabs Section with 5 tabs -->
+    <!-- Enhanced Tabs Section with 6 tabs including Journal Report ACTB -->
     <v-tabs 
       v-model="activeTab" 
       bg-color="primary" 
@@ -10,29 +10,19 @@
       slider-color="white"
     >
       <!-- Tab for the main table content -->
-      <v-tab value="somtop_trial">
-        <v-icon start>mdi-account-balance</v-icon>
-        <span class="d-none d-md-inline">ລາຍງານໃບສົມທົບ</span>
-        <span class="d-md-none">ST</span>
+      <!-- Journal Report ACTB Tab -->
+    <v-tab value="journal_report_actb">
+        <v-icon start>mdi-book-open-page-variant</v-icon>
+        <span class="d-none d-md-inline">ການເຄື່ອນໄຫວບັນຊີກ່ອນປິດບັນຊີ</span>
+        <span class="d-md-none">JR ACTB</span>
       </v-tab>
-      
-      <!-- Additional ACTB Tabs -->
-      <v-tab value="actb_trial">
-        <v-icon start>mdi-account-cash</v-icon>
-        <span class="d-none d-md-inline">DairyReport ລາຍງານໃບດຸ່ນດຽງ</span>
-        <span class="d-md-none">ACTB TB</span>
-      </v-tab>
-      <v-tab value="actb_balance">
-        <v-icon start>mdi-bank</v-icon>
-        <span class="d-none d-md-inline">DairyReport ລາຍງານຖານະການເງິນ</span>
-        <span class="d-md-none">ACTB BS</span>
-      </v-tab>
-      <v-tab value="actb_income">
-        <v-icon start>mdi-chart-line</v-icon>
-        <span class="d-none d-md-inline">DairyReport ລາຍງານຜົນການດໍາເນີນງານ</span>
-        <span class="d-md-none">ACTB IS</span>
+            <v-tab value="journal_report">
+        <v-icon start>mdi-book-open-page-variant</v-icon>
+        <span class="d-none d-md-inline">ການເຄື່ອນໄຫວບັນຊີຫຼັງປິດບັນຊີ</span>
+        <span class="d-md-none">JR</span>
       </v-tab>
     </v-tabs>
+    
 
     <!-- Tab Content Info Bar -->
     <v-card class="mb-3" elevation="0" style="border: 1px solid #e0e0e0;">
@@ -529,36 +519,12 @@
         </v-card>
       </v-window-item>
 
-      <!-- ACTB SomTop Trial Balance Tab -->
-      <v-window-item value="actb_somtop_trial">
-        <v-card class="mx-auto" elevation="0" style="border: 1px solid #e0e0e0;">
-          <v-card-title class="px-4 py-3 d-flex align-center" style="background: linear-gradient(135deg, #673ab7 0%, #512da8 100%); color: white;">
-            <v-icon start size="24">mdi-account-balance-wallet</v-icon>
-            <span class="text-h6 font-weight-medium">ACTB SomTop Trial Balance</span>
-          </v-card-title>
-          <v-card-text class="px-4 py-3">
-            <ActbTrailBalance />
-          </v-card-text>
-        </v-card>
+      <!-- Journal Report ACTB Tab - NEW TAB -->
+      <v-window-item value="journal_report_actb">
+        <JournalReportACTB />
       </v-window-item>
-
-      <!-- ACTB Trial Balance Tab -->
-      <v-window-item value="actb_trial">
-            <ActbMainTrialBalance />
-      </v-window-item>
-
-      <!-- ACTB Balance Sheet Tab -->
-      <v-window-item value="actb_balance">
-        
-            <ActbBalanceSheet />
-
-      </v-window-item>
-
-      <!-- ACTB Income Statement Tab -->
-      <v-window-item value="actb_income">
-
-            <ActbIncomeStatement />
-   
+      <v-window-item value="journal_report">
+        <JournalReport />
       </v-window-item>
     </v-window>
 
@@ -882,11 +848,8 @@ import { ref, computed, onMounted, watch } from 'vue'
 import axios from '@/helpers/axios'
 import * as XLSX from 'xlsx'
 
-// Import existing components
-import ActbTrailBalance from './ActbTrailBalance.vue'
-import ActbMainTrialBalance from './ActbMainTrialBalance.vue'
-import ActbBalanceSheet from './ActbBalanceSheet.vue'
-import ActbIncomeStatement from './ActbIncomeStatement.vue'
+// Import the new Journal Report ACTB component
+import JournalReportACTB from './Journal_Report_ACTB.vue'
 
 const activeTab = ref('somtop_trial') // Set default tab
 const viewMode = ref('table')
@@ -908,14 +871,10 @@ const loading = ref(false)
 const searchText = ref('')
 const results = ref<TrialBalanceItem[]>([])
 
-// Add EOD state
-const eodInfo = ref<any>(null)
-const targetDate = ref('')
-
 const filters = ref({
   currency: null as string | null,
-  date_start: '', // will be set by EOD
-  date_end: ''    // will be set by EOD
+  date_start: new Date().toISOString().split('T')[0],
+  date_end: new Date().toISOString().split('T')[0]
 })
 
 // Dialog states
@@ -968,13 +927,19 @@ const currencyOptions = [
   }
 ]
 
-// Tab management functions
+// Tab management functions - Updated to include Journal Report ACTB
 const tabConfig = {
   somtop_trial: { 
     title: 'SomTop Trail Balance', 
     description: 'ລາຍງານໃບສົມທົບ SomTop',
     icon: 'mdi-account-balance',
     color: 'primary'
+  },
+  journal_report_actb: { 
+    title: 'Journal Report ACTB', 
+    description: 'ລາຍງານການເຄື່ອນໄຫວບັນຊີກ່ອນປິດບັນຊີ',
+    icon: 'mdi-book-open-page-variant',
+    color: 'blue'
   },
   actb_somtop_trial: { 
     title: 'Dairy SomTop TB', 
@@ -1007,7 +972,7 @@ const getTabDescription = (tab: string) => tabConfig[tab]?.description || tab
 const getTabIcon = (tab: string) => tabConfig[tab]?.icon || 'mdi-file'
 const getTabColor = (tab: string) => tabConfig[tab]?.color || 'primary'
 
-const isACTBTab = (tab: string) => tab.startsWith('actb_')
+const isACTBTab = (tab: string) => tab.startsWith('actb_') || tab === 'journal_report_actb'
 
 // Computed
 const selectedCurrency = computed(() => filters.value.currency)
@@ -1048,24 +1013,6 @@ watch(activeTab, (newTab, oldTab) => {
     fetchTrialBalance()
   }
 })
-
-// Helper to fetch EOD info and set defaults
-const fetchEodInfo = async () => {
-  try {
-    const res = await axios.get('/api/end-of-day-journal/check/', getAuthHeaders())
-    if (res.data && res.data.target_date) {
-      eodInfo.value = res.data
-      targetDate.value = res.data.target_date
-
-      // Set all date-related fields to target_date
-      filters.value.date_start = targetDate.value
-      filters.value.date_end = targetDate.value
-    }
-  } catch (err) {
-    console.error('Failed to fetch EOD info', err)
-    showSnackbar('ບໍ່ສາມາດດຶງຂໍ້ມູນ EOD', 'warning', 'mdi-alert')
-  }
-}
 
 // Helper functions
 const getAuthHeaders = () => {
@@ -1343,11 +1290,14 @@ const exportToACTBReport = async () => {
 }
 
 // Initialize
-onMounted(async () => {
+onMounted(() => {
   const token = localStorage.getItem("token")
   if (token) {
-    await fetchEodInfo() // <-- fetch EOD and set default dates
-
+    const today = new Date()
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
+    filters.value.date_start = firstDay.toISOString().split('T')[0]
+    filters.value.date_end = today.toISOString().split('T')[0]
+    
     // Only fetch data if we're on the main tab
     if (activeTab.value === 'somtop_trial') {
       fetchTrialBalance()
@@ -1373,45 +1323,6 @@ onMounted(async () => {
 /* Tab Content Transitions */
 .v-window-item {
   min-height: 300px;
-}
-
-/* Professional Action Buttons Styling */
-.action-buttons-container {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  justify-content: flex-end;
-  width: 100%;
-}
-
-.action-btn {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  border-radius: 8px !important;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
-}
-
-.action-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
-}
-
-.primary-action {
-  margin-right: 8px;
-  box-shadow: 0 3px 6px rgba(33, 150, 243, 0.3) !important;
-}
-
-.primary-action:hover {
-  box-shadow: 0 6px 12px rgba(33, 150, 243, 0.4) !important;
-}
-
-.action-group {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px;
-  background: rgba(0,0,0,0.02);
-  border-radius: 12px;
-  border: 1px solid rgba(0,0,0,0.08);
 }
 
 /* Custom Table Container */
@@ -1637,13 +1548,65 @@ onMounted(async () => {
   background: #f1f1f1;
 }
 
-/* Responsive adjustments */
+/* Professional Action Buttons Styling */
+.action-buttons-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.action-btn {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 8px !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+}
+
+.action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
+}
+
+.primary-action {
+  margin-right: 8px;
+  box-shadow: 0 3px 6px rgba(33, 150, 243, 0.3) !important;
+}
+
+.primary-action:hover {
+  box-shadow: 0 6px 12px rgba(33, 150, 243, 0.4) !important;
+}
+
+.action-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background: rgba(0,0,0,0.02);
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.08);
+}
+
+/* Responsive Design */
 @media (max-width: 1400px) {
   .description-header,
   .description-cell {
     width: 350px;
     min-width: 350px;
     max-width: 350px;
+  }
+  
+  .action-buttons-container {
+    gap: 6px;
+  }
+  
+  .action-group {
+    gap: 3px;
+    padding: 3px;
+  }
+  
+  .primary-action {
+    margin-right: 6px;
   }
 }
 
@@ -1692,6 +1655,15 @@ onMounted(async () => {
   .v-tab {
     font-size: 0.8rem;
     min-width: 100px;
+  }
+  
+  .action-buttons-container {
+    gap: 6px;
+  }
+  
+  .action-group {
+    gap: 3px;
+    padding: 3px;
   }
 }
 
@@ -1746,6 +1718,29 @@ onMounted(async () => {
     font-size: 0.75rem;
     min-width: 80px;
   }
+  
+  .action-buttons-container {
+    gap: 4px;
+  }
+  
+  .action-group {
+    gap: 2px;
+    padding: 2px;
+  }
+  
+  .primary-action {
+    margin-right: 4px;
+  }
+  
+  .action-btn {
+    border-radius: 6px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .action-buttons-container {
+    display: none; /* Hide desktop actions on mobile */
+  }
 }
 
 @media (max-width: 600px) {
@@ -1793,27 +1788,14 @@ onMounted(async () => {
   }
 }
 
-/* Print styles */
-@media print {
-  .custom-table-container {
-    max-height: none;
-    overflow: visible;
-    border: none;
-  }
-  
-  .sticky-column {
-    position: static;
-  }
-  
-  .data-row:hover {
-    background-color: transparent !important;
-  }
-  
-  .description-content {
-    white-space: normal !important;
-    overflow: visible !important;
-    text-overflow: clip !important;
-  }
+/* Enhanced Button States */
+.action-btn.v-btn--disabled {
+  opacity: 0.4 !important;
+  transform: none !important;
+}
+
+.action-btn.v-btn--loading {
+  transform: none !important;
 }
 
 /* Tooltip Styling */
