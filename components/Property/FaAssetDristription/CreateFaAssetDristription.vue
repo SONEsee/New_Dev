@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import dayjs from '#build/dayjs.imports.mjs';
-
+import dayjs from "#build/dayjs.imports.mjs";
+const deprecationUPda = useDrepecitoinUpdat();
 const accoutStore = accountMethodStore();
 const dreptriptionStore = useFassetLidtDescription();
-const deprecationUPda = useDrepecitoinUpdat();
-const dataUpdate = computed(()=>{
-  const data = deprecationUPda.response_data_drepecation_lis?.all_items_needing_attention;
+const dataUpdate = computed(() => {
+  const data = deprecationUPda.response_data_drepecation_lis?.due_items;
   if (Array.isArray(data)) {
     return data;
   }
@@ -13,7 +12,7 @@ const dataUpdate = computed(()=>{
     return [data];
   }
   return [];
-})
+});
 const respontest = computed(() => {
   return dreptriptionStore.response_data_get_overdue;
 });
@@ -86,7 +85,7 @@ const formatCurrency = (value: number) => {
 
 const getCategoryColor = (category: string) => {
   switch (category) {
-    case "ຄ້າງຫັກ":
+    case "ຍັງບໍ່ໄດ້ຫັກ":
       return "blue";
     case "ຕ້ອງຫັກ":
       return "orange";
@@ -97,29 +96,28 @@ const getCategoryColor = (category: string) => {
   }
 };
 const handelSubmit = async () => {
-  const notification =  await CallSwal({
-    icon:"warning",
-    title:"ຄຳເຕືອນ",
-    text:"ທ່ານຕອ້ງການຫັກຄ່າຫຼູຍຫ້ຽນນີ້ບໍ...?",
-    showConfirmButton:true,
-    confirmButtonText:"ຕົກລົງ",
-    cancelButtonText:"ຍົກເລີກ"
-  });if(notification.isConfirmed){
+  const notification = await CallSwal({
+    icon: "warning",
+    title: "ຄຳເຕືອນ",
+    text: "ທ່ານຕອ້ງການຫັກຄ່າຫຼູຍຫ້ຽນນີ້ບໍ...?",
+    showConfirmButton: true,
+    confirmButtonText: "ຕົກລົງ",
+    cancelButtonText: "ຍົກເລີກ",
+  });
+  if (notification.isConfirmed) {
     await dreptriptionStore.Caculater();
   }
-  
 };
 onMounted(() => {
+  deprecationUPda.getDataDrepecation();
   accoutStore.GetAccountMethodList();
   dreptriptionStore.getdataCalculated();
   dreptriptionStore.getArrears();
-  deprecationUPda.getDataDrepecation();
 });
 </script>
 
 <template>
   <v-container fluid>
- 
     <v-row v-if="dreptriptionStore.isLoading">
       <v-col cols="12" class="text-center">
         <v-progress-circular
@@ -134,9 +132,9 @@ onMounted(() => {
     <div v-else-if="respontest?.success">
       <v-row>
         <v-col cols="12" class="text-center">
-          <h2 class=" mb-2">ລາຍການຫັກຄ່າຫຼູ້ຍຫ້ຽນປະຈຳເດືອນ</h2>
+          <h2 class="mb-2">ລາຍການຫັກຄ່າຫຼູ້ຍຫ້ຽນປະຈຳເດືອນ</h2>
           <div v-if="targetPeriod">
-            <h3 class=" text-primary">
+            <h3 class="text-primary">
               {{ targetPeriod.month_name_la }} {{ targetPeriod.year }}
             </h3>
             <p class="text-subtitle-1 text-grey">{{ targetPeriod.period }}</p>
@@ -148,21 +146,76 @@ onMounted(() => {
         <v-col cols="12">
           <v-card class="pa-2">
             <v-row>
-              <v-col cols="12" md="6"> <v-card-title>
-              <v-icon left>mdi-table</v-icon>
-              ລາຍລະອຽດທຸກລາຍການ
-            </v-card-title> </v-col>
-              <v-col cols="12" md="6"><div class="d-flex mb-2 justify-end"><v-btn color="error" @click="handelSubmit" >
-              ຢືນຢັນການຫັກຄ່າຫຼູຍຫ້ຽນ
-            </v-btn></div></v-col>
+              <v-col cols="12" md="6">
+                <v-card-title>
+                  <v-icon left>mdi-table</v-icon>
+                  ລາຍລະອຽດທຸກລາຍການ
+                </v-card-title>
+              </v-col>
+              <v-col cols="12" md="6"
+                ><div class="d-flex mb-2 justify-end">
+                  <v-btn color="error" @click="handelSubmit">
+                    ຢືນຢັນການຫັກຄ່າຫຼູຍຫ້ຽນ
+                  </v-btn>
+                </div></v-col
+              >
+              <!-- <pre>{{ dataUpdate }}</pre> -->
             </v-row>
-           
-            
-         <!-- <pre>{{ dataUpdate }}</pre> -->
+            <!-- <pre>{{ dataUpdate.length }}</pre> -->
+            <v-data-table :items="dataUpdate" :headers="headers">
+              <template v-slot:item.category="{ item }">
+                <v-chip
+                  :color="getCategoryColor(item.last_depreciation_date)"
+                  variant="flat"
+                  size="small"
+                >
+                  {{ item.asset_id }}
+                </v-chip>
+              </template>
 
-            <v-data-table
+              <template v-slot:item.expected_depreciation="{ item }">
+                <span class="font-weight-bold">
+                  {{ formatCurrency(item.expected_depreciation) }}
+                </span>
+              </template>
+
+              <template v-slot:item.current_month="{ item }">
+                <v-chip variant="outlined" size="small">
+                  {{ item.current_month }}/{{ item.total_months }}
+                </v-chip>
+              </template>
+              <template v-slot:item.due_date="{ item }">
+                <v-chip variant="outlined" size="small">
+                  {{
+                    dayjs(
+                      item.due_end_date.split("/").reverse().join("-")
+                    ).format("MM/YYYY")
+                  }}
+                </v-chip>
+              </template>
+
+              <template v-slot:item.completion_percentage="{ item }">
+                <v-progress-linear
+                  :model-value="item.completion_percentage"
+                  :color="
+                    item.completion_percentage >= 100 ? 'green' : 'primary'
+                  "
+                  height="20"
+                  rounded
+                >
+                  <template v-slot:default="{ value }">
+                    <small class="text-white">{{ Math.ceil(value) }}%</small>
+                  </template>
+                </v-progress-linear>
+              </template>
+
+              <template v-slot:item.status_message="{ item }">
+                <small>{{ item.status_message }}</small>
+              </template>
+            </v-data-table>
+            <!-- <v-data-table
               :headers="headers"
-              :items="dataUpdate"
+              :items="allItems"
               :items-per-page="10"
               class="elevation-1"
               :loading="dreptriptionStore.isLoading"
@@ -192,10 +245,9 @@ onMounted(() => {
               </template>
               <template v-slot:item.due_date="{ item }">
                 <v-chip variant="outlined" size="small">
-                  <!-- {{ item.due_end_date }}  -->
+
                   {{ dayjs(item.due_end_date.split('/').reverse().join('-')).format('MM/YYYY') }}
-    <!-- <span style="color: #666;"> ຫາ </span>
-    {{ dayjs().format('MM/YYYY') }} -->
+  
                 </v-chip>
               </template>
 
@@ -217,7 +269,7 @@ onMounted(() => {
               <template v-slot:item.status_message="{ item }">
                 <small>{{ item.status_message }}</small>
               </template>
-            </v-data-table>
+            </v-data-table> -->
           </v-card>
         </v-col>
       </v-row>
