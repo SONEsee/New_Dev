@@ -1,10 +1,14 @@
 <script setup lang="ts">
 import dayjs from "#build/dayjs.imports.mjs";
-const deprecationUPda = useDrepecitoinUpdat();
-const accoutStore = accountMethodStore();
-const dreptriptionStore = useFassetLidtDescription();
-const dataUpdate = computed(() => {
-  const data = deprecationUPda.response_data_drepecation_lis?.due_items;
+
+const deprecationUpdate = useDrepecitoinUpdat();
+const accountStore = accountMethodStore();
+const depreciationStore = useFassetLidtDescription();
+const journalStore = usejournalStore();
+const eodStore = useDateStore();
+
+const eodData = computed(() => {
+  const data = eodStore.response_data_eod;
   if (Array.isArray(data)) {
     return data;
   }
@@ -13,12 +17,53 @@ const dataUpdate = computed(() => {
   }
   return [];
 });
+
+// ປ່ຽນເປັນ selectedIds ແທນ selectedItems
+const selectedIds = ref<any[]>([]);
+
+// ສ້າງ computed ສຳລັບດຶງຂໍ້ມູນເຕັມຂອງລາຍການທີ່ເລືອກ
+const selectedItems = computed(() => {
+  return dataUpdate.value.filter(item => 
+    selectedIds.value.includes(item.mapping_id)
+  );
+});
+
+const journalData = computed(() => {
+  const data = journalStore.response_data_list_journal;
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (data && typeof data === "object") {
+    return [data];
+  }
+  return [];
+});
+
+const journalAssetIds = computed(() => {
+  return new Set(journalData.value.map((item) => item.Ac_relatives));
+});
+
+const dataUpdate = computed(() => {
+  const data = deprecationUpdate.response_data_drepecation_lis?.due_items;
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (data && typeof data === "object") {
+    return [data];
+  }
+  return [];
+});
+
+const selectableItems = computed(() => {
+  return dataUpdate.value.filter((item) => !hasJournal(item.asset_id));
+});
+
 const respontest = computed(() => {
-  return dreptriptionStore.response_data_get_overdue;
+  return depreciationStore.response_data_get_overdue;
 });
 
 const res = computed(() => {
-  return accoutStore.response_account_method_list;
+  return accountStore.response_account_method_list;
 });
 
 const overdueItems = computed(() => {
@@ -31,30 +76,6 @@ const dueItems = computed(() => {
 
 const upToDateItems = computed(() => {
   return respontest.value?.data?.up_to_date_items || [];
-});
-
-const allItems = computed(() => {
-  const overdue = respontest.value?.data?.overdue_items || [];
-  const due = respontest.value?.data?.due_items || [];
-  const upToDate = respontest.value?.data?.up_to_date_items || [];
-
-  return [
-    ...overdue.map((item) => ({
-      ...item,
-      category: "ຄ້າງຫັກ",
-      categoryColor: "red",
-    })),
-    ...due.map((item) => ({
-      ...item,
-      category: "ຕ້ອງຫັກ",
-      categoryColor: "orange",
-    })),
-    ...upToDate.map((item) => ({
-      ...item,
-      category: "ອັບເດດແລ້ວ",
-      categoryColor: "green",
-    })),
-  ];
 });
 
 const headers = [
@@ -95,44 +116,106 @@ const getCategoryColor = (category: string) => {
       return "grey";
   }
 };
+
+const hasJournal = (assetId: string) => {
+  return journalAssetIds.value.has(assetId);
+};
+
+// ຟັງຊັນ toggle ລາຍການດຽວ
+const toggleItem = (mappingId: string) => {
+  const index = selectedIds.value.indexOf(mappingId);
+  if (index > -1) {
+    selectedIds.value.splice(index, 1);
+  } else {
+    selectedIds.value.push(mappingId);
+  }
+};
+
+// ຟັງຊັນເລືອກທັງໝົດ (ສະເພາະລາຍການທີ່ເລືອກໄດ້)
+const selectAllSelectable = () => {
+  selectedIds.value = [...selectableItems.value.map(item => item.mapping_id)];
+};
+
+
+const clearSelection = () => {
+  selectedIds.value = [];
+};
+
 const handelSubmit = async () => {
+  if (selectedIds.value.length === 0) {
+    await CallSwal({
+      icon: "warning",
+      title: "ແຈ້ງເຕືອນ",
+      text: "ກະລຸນາເລືອກລາຍການກ່ອນ",
+      confirmButtonText: "ຕົກລົງ",
+    });
+    return;
+  }
+
   const notification = await CallSwal({
     icon: "warning",
     title: "ຄຳເຕືອນ",
-    text: "ທ່ານຕອ້ງການຫັກຄ່າຫຼູຍຫ້ຽນນີ້ບໍ...?",
+    text: `ທ່ານຕ້ອງການຫັກຄ່າຫຼູຍຫ້ຽນ ${selectedIds.value.length} ລາຍການນີ້ບໍ...?`,
     showConfirmButton: true,
     confirmButtonText: "ຕົກລົງ",
     cancelButtonText: "ຍົກເລີກ",
   });
+
   if (notification.isConfirmed) {
-    await dreptriptionStore.Caculater();
+    try {
+     
+      depreciationStore.postdata.mapping_ids = selectedIds.value;
+      
+     
+      const result = await depreciationStore.Caculater();
+      
+     
+      selectedIds.value = [];
+      
+      
+      await deprecationUpdate.getDataDrepecation();
+      await journalStore.getData();
+      
+    
+      if (result?.success  !== false) {
+        await CallSwal({
+          icon: "success",
+          title: "ສຳເລັດ",
+          text: "ຫັກຄ່າຫຼູຍຫ້ຽນສຳເລັດແລ້ວ",
+          confirmButtonText: "ຕົກລົງ",
+        });
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      await CallSwal({
+        icon: "error",
+        title: "ເກີດຂໍ້ຜິດພາດ",
+        text: "ກະລຸນາລອງໃໝ່ອີກຄັ້ງ",
+        confirmButtonText: "ຕົກລົງ",
+      });
+    }
   }
 };
+
 onMounted(() => {
-  deprecationUPda.getDataDrepecation();
-  accoutStore.GetAccountMethodList();
-  dreptriptionStore.getdataCalculated();
-  dreptriptionStore.getArrears();
+  deprecationUpdate.getDataDrepecation();
+  accountStore.GetAccountMethodList();
+  depreciationStore.getdataCalculated();
+  depreciationStore.getArrears();
+  journalStore.getData();
+  eodStore.GetEOD();
 });
 </script>
 
 <template>
   <v-container fluid>
-    <v-row v-if="dreptriptionStore.isLoading">
-      <v-col cols="12" class="text-center">
-        <v-progress-circular
-          indeterminate
-          color="primary"
-          size="64"
-        ></v-progress-circular>
-        <p class="mt-4">ກຳລັງໂຫຼດຂໍ້ມູນ...</p>
-      </v-col>
-    </v-row>
-
-    <div v-else-if="respontest?.success">
+    <div>
       <v-row>
         <v-col cols="12" class="text-center">
-          <h2 class="mb-2">ລາຍການຫັກຄ່າຫຼູ້ຍຫ້ຽນປະຈຳເດືອນ</h2>
+          <h2 class="mb-2">
+            ລາຍການຫັກຄ່າຫຼູ້ຍຫ້ຽນປະຈຳເດືອນ:
+            <b>{{ dayjs(eodData[0]?.start_date).format("MM-YYYY") }}</b>
+          </h2>
           <div v-if="targetPeriod">
             <h3 class="text-primary">
               {{ targetPeriod.month_name_la }} {{ targetPeriod.year }}
@@ -150,19 +233,97 @@ onMounted(() => {
                 <v-card-title>
                   <v-icon left>mdi-table</v-icon>
                   ລາຍລະອຽດທຸກລາຍການ
+                  <v-chip
+                    class="ml-2"
+                    size="small"
+                    color="info"
+                    variant="outlined"
+                  >
+                    ສາມາດເລືອກໄດ້: {{ selectableItems.length }}/{{
+                      dataUpdate.length
+                    }}
+                  </v-chip>
                 </v-card-title>
               </v-col>
-              <v-col cols="12" md="6"
-                ><div class="d-flex mb-2 justify-end">
-                  <v-btn color="error" @click="handelSubmit">
+              <v-col cols="12" md="6">
+                <div class="d-flex mb-2 justify-end align-center ga-2">
+                  <v-chip v-if="selectedIds.length > 0" color="primary">
+                    ເລືອກ: {{ selectedIds.length }}
+                  </v-chip>
+                  
+                  <v-btn
+                    v-if="selectableItems.length > 0"
+                    variant="outlined"
+                    color="primary"
+                    size="small"
+                    @click="selectAllSelectable"
+                    :disabled="selectedIds.length === selectableItems.length"
+                  >
+                    <v-icon left size="small">mdi-checkbox-multiple-marked</v-icon>
+                    ເລືອກທັງໝົດ
+                  </v-btn>
+                  
+                  <v-btn
+                    v-if="selectedIds.length > 0"
+                    variant="outlined"
+                    color="grey"
+                    size="small"
+                    @click="clearSelection"
+                  >
+                    <v-icon left size="small">mdi-close</v-icon>
+                    ຍົກເລີກ
+                  </v-btn>
+                  
+                  <v-btn
+                    color="error"
+                    @click="handelSubmit"
+                    :disabled="selectedIds.length === 0"
+                  >
+                    <v-icon left>mdi-check-circle</v-icon>
                     ຢືນຢັນການຫັກຄ່າຫຼູຍຫ້ຽນ
                   </v-btn>
-                </div></v-col
-              >
-              <!-- <pre>{{ dataUpdate }}</pre> -->
+                </div>
+              </v-col>
             </v-row>
-            <!-- <pre>{{ dataUpdate.length }}</pre> -->
-            <v-data-table :items="dataUpdate" :headers="headers">
+
+            <v-data-table
+              v-model="selectedIds"
+              :items="dataUpdate"
+              :headers="headers"
+              :loading="depreciationStore.isLoading"
+              show-select
+              item-value="mapping_id"
+              :item-selectable="(item) => !hasJournal(item.asset_id)"
+            >
+              <template
+                v-slot:item.data-table-select="{ item }"
+              >
+                <v-tooltip v-if="hasJournal(item.asset_id)" location="top">
+                  <template v-slot:activator="{ props }">
+                    <div
+                      v-bind="props"
+                      class="d-flex align-center justify-center"
+                    >
+                      <v-icon color="warning" size="small"> mdi-lock </v-icon>
+                    </div>
+                  </template>
+                  <span>
+                    ລໍຖ້າອະນຸມັດ ລາຍການຊັບສິນນີ້
+                    {{ item.asset_id }} ຖືກຫັກຄ່າຫຼູຍຫ້ຽນແລ້ວສຳຫຼັບເດືອນ
+                    {{ dayjs(eodData[0]?.start_date).format("MM/YYYY") }}
+                  </span>
+                </v-tooltip>
+
+                <v-checkbox-btn
+                  v-else
+                  :model-value="selectedIds.includes(item.mapping_id)"
+                  @click="toggleItem(item.mapping_id)"
+                  color="primary"
+                  hide-details
+                  density="compact"
+                />
+              </template>
+
               <template v-slot:item.category="{ item }">
                 <v-chip
                   :color="getCategoryColor(item.last_depreciation_date)"
@@ -184,6 +345,7 @@ onMounted(() => {
                   {{ item.current_month }}/{{ item.total_months }}
                 </v-chip>
               </template>
+
               <template v-slot:item.due_date="{ item }">
                 <v-chip variant="outlined" size="small">
                   {{
@@ -213,124 +375,10 @@ onMounted(() => {
                 <small>{{ item.status_message }}</small>
               </template>
             </v-data-table>
-            <!-- <v-data-table
-              :headers="headers"
-              :items="allItems"
-              :items-per-page="10"
-              class="elevation-1"
-              :loading="dreptriptionStore.isLoading"
-              loading-text="ກຳລັງໂຫຼດຂໍ້ມູນ..."
-              no-data-text="ບໍ່ມີຂໍ້ມູນ"
-            >
-              <template v-slot:item.category="{ item }">
-                <v-chip
-                  :color="getCategoryColor(item.category)"
-                  variant="flat"
-                  size="small"
-                >
-                  {{ item.asset_id }}
-                </v-chip>
-              </template>
-
-              <template v-slot:item.expected_depreciation="{ item }">
-                <span class="font-weight-bold">
-                  {{ formatCurrency(item.expected_depreciation) }}
-                </span>
-              </template>
-
-              <template v-slot:item.current_month="{ item }">
-                <v-chip variant="outlined" size="small">
-                  {{ item.current_month }}/{{ item.total_months }}
-                </v-chip>
-              </template>
-              <template v-slot:item.due_date="{ item }">
-                <v-chip variant="outlined" size="small">
-
-                  {{ dayjs(item.due_end_date.split('/').reverse().join('-')).format('MM/YYYY') }}
-  
-                </v-chip>
-              </template>
-
-              <template v-slot:item.completion_percentage="{ item }">
-                <v-progress-linear
-                  :model-value="item.completion_percentage"
-                  :color="
-                    item.completion_percentage >= 100 ? 'green' : 'primary'
-                  "
-                  height="20"
-                  rounded
-                >
-                  <template v-slot:default="{ value }">
-                    <small class="text-white">{{ Math.ceil(value) }}%</small>
-                  </template>
-                </v-progress-linear>
-              </template>
-
-              <template v-slot:item.status_message="{ item }">
-                <small>{{ item.status_message }}</small>
-              </template>
-            </v-data-table> -->
-          </v-card>
-        </v-col>
-      </v-row>
-
-      <v-row class="mt-6" v-if="false">
-        <v-col cols="12" v-if="overdueItems.length > 0">
-          <v-card>
-            <v-card-title class="bg-red-lighten-5">
-              <v-icon color="red" left>mdi-alert-circle</v-icon>
-              ລາຍການຄ້າງຫັກ ({{ overdueItems.length }})
-            </v-card-title>
-            <v-data-table
-              :headers="headers.filter((h) => h.key !== 'category')"
-              :items="overdueItems"
-              :items-per-page="5"
-              hide-default-footer
-            >
-              <template v-slot:item.expected_depreciation="{ item }">
-                {{ formatCurrency(item.expected_depreciation) }}
-              </template>
-            </v-data-table>
-          </v-card>
-        </v-col>
-
-        <v-col cols="12" v-if="dueItems.length > 0" class="mt-4">
-          <v-card>
-            <v-card-title class="bg-orange-lighten-5">
-              <v-icon color="orange" left>mdi-calendar-clock</v-icon>
-              ລາຍການຕ້ອງຫັກ ({{ dueItems.length }})
-            </v-card-title>
-            <v-data-table
-              :headers="headers.filter((h) => h.key !== 'category')"
-              :items="dueItems"
-              :items-per-page="5"
-              hide-default-footer
-            >
-              <template v-slot:item.expected_depreciation="{ item }">
-                {{ formatCurrency(item.expected_depreciation) }}
-              </template>
-              <template v-slot:item.due_date="{ item }">
-                {{ item.due_end_date }} - {{ item.due_end_date }}
-              </template>
-            </v-data-table>
           </v-card>
         </v-col>
       </v-row>
     </div>
-
-    <v-row v-else>
-      <v-col cols="12" class="text-center">
-        <v-icon color="error" size="64">mdi-alert-circle</v-icon>
-        <h3 class="text-h5 mt-4">ບໍ່ສາມາດດຶງຂໍ້ມູນໄດ້</h3>
-        <v-btn
-          color="primary"
-          class="mt-4"
-          @click="dreptriptionStore.getdataCalculated()"
-        >
-          ລອງໃໝ່
-        </v-btn>
-      </v-col>
-    </v-row>
   </v-container>
 </template>
 

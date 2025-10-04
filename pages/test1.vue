@@ -1,830 +1,2490 @@
+<script setup lang="ts">
+import {
+  ref,
+  reactive,
+  computed,
+  onMounted,
+  onBeforeUnmount,
+  watch,
+} from "vue";
+import { useRoute, useRouter } from "vue-router";
+import axios from "@/helpers/axios";
+import Swal from "sweetalert2";
+import { debounce } from "lodash";
+import { useRolePermissions } from "@/composables/useRolePermissions";
+
+interface JournalItem {
+  JRNLLog_id: string | number;
+  Reference_No: string;
+  Txn_code?: string;
+  Addl_text?: string;
+  Fcy_Amount: number;
+  Lcy_Amount?: number;
+  Value_date: string;
+  Auth_Status: "A" | "R" | "U" | "P";
+  Maker_Id: string;
+  Maker_DT_Stamp: string;
+  module_id?: string;
+  module_name_la?: string;
+  ccy_code?: string;
+  Ccy_cd?: string;
+  maker_name?: string;
+  jrnl_log_ac?: {
+    Ac_relatives: string;
+  };
+}
+
+interface DepreciationItem {
+  aldm_id: string | number;
+  asset_list_id: string;
+  Auth_Status: "A" | "R" | "U" | "P";
+  Maker_DT_Stamp: string;
+}
+
+interface CurrencyItem {
+  ccy_code: string;
+  ccy_name?: string;
+}
+
+interface StatusItem {
+  MC_code: string;
+  MC_name_la: string;
+}
+
+interface ModuleItem {
+  module_Id: string;
+  module_name_la: string;
+}
+
+interface DateFilterType {
+  value: "all" | "date" | "range" | "month" | "year";
+  text: string;
+  icon: string;
+}
+
+interface MonthItem {
+  value: number;
+  text: string;
+}
+
+interface YearItem {
+  value: number;
+  text: string;
+}
+
+interface User {
+  user_id: string;
+  name?: string;
+}
+
+interface FilterChip {
+  key: string;
+  label: string;
+  icon: string;
+}
+
+interface Pagination {
+  currentPage: number;
+  pageSize: number;
+  totalPages: number;
+  totalItems: number;
+}
+
+interface Summary {
+  total: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+  correction: number;
+}
+
+interface Filters {
+  search: string;
+  module_id: string | null;
+  Ccy_cd: string | null;
+  Auth_Status: string | null;
+  dateFilterType: "all" | "date" | "range" | "month" | "year";
+  specificDate: string;
+  dateFrom: string;
+  dateTo: string;
+  selectedMonth: number;
+  selectedYear: number;
+}
+
+interface ApiResponse {
+  results?: JournalItem[];
+  count?: number;
+  page_info?: {
+    total_pages: number;
+  };
+  summary?: Partial<Summary>;
+  reference_data?: {
+    modules?: ModuleItem[];
+    currencies?: CurrencyItem[];
+    auth_status_options?: StatusItem[];
+  };
+}
+
+const isComponentMounted = ref<boolean>(true);
+
+const mainStore = useFassetLidtDescription();
+const derpicationStore = useFassetLidtDescription();
+const cerrency = useCerrencyStore();
+const masterStore = useMasterStore();
+const jurnalStore = useJournalStor();
+
+const datadevcription = computed((): DepreciationItem[] => {
+  try {
+    const data = derpicationStore?.respons_data_driscription_main;
+    let processedData: any[] = [];
+
+    if (Array.isArray(data)) {
+      processedData = data.filter((item) => item != null);
+    } else if (data && typeof data === "object") {
+      processedData = [data];
+    }
+
+   
+    return processedData
+      .filter(
+        (item: any) =>
+          item && (item.Auth_Status === "U" || item.Auth_Status === "P")
+      )
+      .map((item: any): DepreciationItem => {
+       
+        let makerDate = item.Maker_DT_Stamp;
+        if (makerDate instanceof Date) {
+          makerDate = makerDate.toISOString();
+        }
+
+        return {
+          aldm_id: item.aldm_id,
+          asset_list_id: item.asset_list_id,
+          asset_list_id_detail: item.asset_list_id_detail,
+          dpca_year: item.dpca_year,
+          dpca_month: item.dpca_month,
+          dpca_amount: item.dpca_amount,
+          dpca_cum_amount: item.dpca_cum_amount,
+          dpca_date: item.dpca_date,
+          dpca_remark: item.dpca_remark,
+          dpca_status: item.dpca_status,
+          dpca_type: item.dpca_type,
+          Auth_Status: item.Auth_Status,
+          Maker_DT_Stamp: makerDate,
+          Maker_Id: item.Maker_Id,
+          Checker_DT_Stamp: item.Checker_DT_Stamp,
+          Checker_Id: item.Checker_Id,
+          ...item,
+        };
+      });
+  } catch (error) {
+    console.error("Error in datadevcription computed:", error);
+    return [];
+  }
+});
+
+const datajurnal = computed((): JournalItem[] => {
+  try {
+    const data = jurnalStore?.response_journal_list;
+    if (Array.isArray(data)) {
+      return data.filter((item) => item != null) as JournalItem[];
+    }
+    if (data && typeof data === "object") {
+      return [data as any];
+    }
+    return [];
+  } catch (error) {
+    console.error("Error in datajurnal computed:", error);
+    return [];
+  }
+});
+
+const status = computed((): StatusItem[] => {
+  try {
+    const data = masterStore?.respone_data_master?.MasterCodes || [];
+    if (Array.isArray(data)) {
+      return data.filter((item) => item != null) as StatusItem[];
+    }
+    if (data && typeof data === "object") {
+      return [data as StatusItem];
+    }
+    return [];
+  } catch (error) {
+    console.error("Error in status computed:", error);
+    return [];
+  }
+});
+
+const responscerrency = computed((): CurrencyItem[] => {
+  try {
+    const data = cerrency?.respons_cerrency_data;
+    if (Array.isArray(data)) {
+      return data.filter((item) => item != null) as CurrencyItem[];
+    }
+    if (data && typeof data === "object") {
+      return [data as CurrencyItem];
+    }
+    return [];
+  } catch (error) {
+    console.error("Error in responscerrency computed:", error);
+    return [];
+  }
+});
+
+const route = useRoute();
+const router = useRouter();
+
+const submenu_id = (route.query.sub_menu_id as string) || "GL_NOTE_CAP";
+console.log("Submenu ID:", submenu_id);
+
+const {
+  initializeRole,
+  canView,
+  canEdit,
+  canDelete,
+  canAuthorize,
+  canAdd,
+  permissions,
+} = useRolePermissions();
+
+const performanceTracker = {
+  startTime: 0,
+  start() {
+    this.startTime = performance.now();
+  },
+  end(operation: string) {
+    const duration = performance.now() - this.startTime;
+    console.log(`⚡ ${operation}: ${duration.toFixed(2)}ms`);
+    if (duration > 500) {
+      console.warn(`🐌 Slow operation: ${operation} - ${duration}ms`);
+    }
+  },
+};
+
+const loading = ref<boolean>(false);
+const loadingReferences = ref<boolean>(false);
+const items = ref<JournalItem[]>([]);
+const modules = ref<ModuleItem[]>([]);
+const currencies = ref<CurrencyItem[]>([]);
+const authStatusOptions = ref<StatusItem[]>([]);
+
+const selectedItems = ref<(string | number)[]>([]);
+const selectAll = ref<boolean>(false);
+
+const referenceDataCache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_DURATION = 5 * 60 * 1000;
+
+
+const currentUser = computed((): User | null => {
+  try {
+    const userData = localStorage.getItem("user");
+    return userData ? (JSON.parse(userData) as User) : null;
+  } catch (error) {
+    console.error("Error parsing user data:", error);
+    return null;
+  }
+});
+
+const today = new Date().toISOString().slice(0, 10);
+const currentYear = new Date().getFullYear();
+const currentMonth = new Date().getMonth() + 1;
+
+const pagination = reactive<Pagination>({
+  currentPage: 1,
+  pageSize: 25,
+  totalPages: 0,
+  totalItems: 0,
+});
+
+const dateFilterTypes = ref<DateFilterType[]>([
+  { value: "all", text: "ທັງໝົດ", icon: "mdi-calendar-multiple" },
+  { value: "date", text: "ວັນທີສະເພາະ", icon: "mdi-calendar" },
+  { value: "range", text: "ວັນທີ", icon: "mdi-calendar-range" },
+  { value: "month", text: "ເດືອນ", icon: "mdi-calendar-month" },
+  { value: "year", text: "ປີ", icon: "mdi-calendar-year" },
+]);
+
+const months = ref<MonthItem[]>([
+  { value: 1, text: "ມັງກອນ" },
+  { value: 2, text: "ກຸມພາ" },
+  { value: 3, text: "ມີນາ" },
+  { value: 4, text: "ເມສາ" },
+  { value: 5, text: "ພຶດສະພາ" },
+  { value: 6, text: "ມິຖຸນາ" },
+  { value: 7, text: "ກໍລະກົດ" },
+  { value: 8, text: "ສິງຫາ" },
+  { value: 9, text: "ກັນຍາ" },
+  { value: 10, text: "ຕຸລາ" },
+  { value: 11, text: "ພະຈິກ" },
+  { value: 12, text: "ທັນວາ" },
+]);
+
+const years = ref<YearItem[]>(
+  Array.from({ length: 8 }, (_, i) => currentYear - 5 + i).map((year) => ({
+    value: year,
+    text: year.toString(),
+  }))
+);
+
+
+const filters = reactive<Filters>({
+  search: "",
+  module_id: null,
+  Ccy_cd: null,
+  Auth_Status: "U",
+  dateFilterType: "all",
+  specificDate: "",
+  dateFrom: "",
+  dateTo: "",
+  selectedMonth: currentMonth,
+  selectedYear: currentYear,
+});
+
+
+const summary = reactive<Summary>({
+  total: 0,
+  pending: 0,
+  approved: 0,
+  rejected: 0,
+  correction: 0,
+});
+
+const getMatchedAldmId = (
+  item: JournalItem | null | undefined
+): string | number | null => {
+  try {
+    if (!item || !item.jrnl_log_ac?.Ac_relatives || !item.Maker_DT_Stamp) {
+      return null;
+    }
+
+    const itemDate = item.Maker_DT_Stamp.split("T")[0];
+
+    const matched = datadevcription.value.find((dep: DepreciationItem) => {
+      if (!dep || !dep.Maker_DT_Stamp) return false;
+
+      try {
+        const depDate = dep.Maker_DT_Stamp.split("T")[0];
+        return (
+          dep.asset_list_id === item.jrnl_log_ac!.Ac_relatives &&
+          depDate === itemDate &&
+          dep.Auth_Status === "U" &&
+          item.Auth_Status === "U"
+        );
+      } catch (err) {
+        console.warn("Error comparing dates:", err);
+        return false;
+      }
+    });
+
+    return matched ? matched.aldm_id : null;
+  } catch (error) {
+    console.error("Error in getMatchedAldmId:", error);
+    return null;
+  }
+};
+
+const selectableItems = computed((): JournalItem[] => {
+  try {
+    return items.value.filter((item: JournalItem) => {
+      return (
+        item && item.Auth_Status !== "A" && getMatchedAldmId(item) !== null
+      );
+    });
+  } catch (error) {
+    console.error("Error in selectableItems computed:", error);
+    return [];
+  }
+});
+
+const isItemSelected = (item: JournalItem | null | undefined): boolean => {
+  try {
+    if (!item) return false;
+    const aldmId = getMatchedAldmId(item);
+    return aldmId ? selectedItems.value.includes(aldmId) : false;
+  } catch (error) {
+    console.error("Error in isItemSelected:", error);
+    return false;
+  }
+};
+
+const isItemSelectable = (item: JournalItem | null | undefined): boolean => {
+  try {
+    if (!item) return false;
+    return item.Auth_Status !== "A" && getMatchedAldmId(item) !== null;
+  } catch (error) {
+    console.error("Error in isItemSelectable:", error);
+    return false;
+  }
+};
+
+const toggleItemSelection = (item: JournalItem | null | undefined): void => {
+  try {
+    if (!item || !isItemSelectable(item)) return;
+
+    const aldmId = getMatchedAldmId(item);
+    if (!aldmId) return;
+
+    const index = selectedItems.value.indexOf(aldmId);
+    if (index > -1) {
+      selectedItems.value.splice(index, 1);
+    } else {
+      selectedItems.value.push(aldmId);
+    }
+    updateSelectAllState();
+  } catch (error) {
+    console.error("Error in toggleItemSelection:", error);
+  }
+};
+
+const toggleSelectAll = (): void => {
+  try {
+    if (selectAll.value) {
+      selectedItems.value = selectableItems.value
+        .map((item: JournalItem) => getMatchedAldmId(item))
+        .filter((aldmId): aldmId is string | number => aldmId !== null);
+    } else {
+      selectedItems.value = [];
+    }
+  } catch (error) {
+    console.error("Error in toggleSelectAll:", error);
+  }
+};
+
+const updateSelectAllState = (): void => {
+  try {
+    const selectableAldmIds = selectableItems.value
+      .map((item: JournalItem) => getMatchedAldmId(item))
+      .filter((aldmId): aldmId is string | number => aldmId !== null);
+
+    if (selectableAldmIds.length === 0) {
+      selectAll.value = false;
+    } else {
+      selectAll.value = selectableAldmIds.every((aldmId: string | number) =>
+        selectedItems.value.includes(aldmId)
+      );
+    }
+  } catch (error) {
+    console.error("Error in updateSelectAllState:", error);
+  }
+};
+
+const clearSelection = (): void => {
+  try {
+    selectedItems.value = [];
+    selectAll.value = false;
+  } catch (error) {
+    console.error("Error in clearSelection:", error);
+  }
+};
+
+// ===== WATCHERS WITH ERROR HANDLING =====
+watch(
+  [items, selectedItems],
+  () => {
+    try {
+      if (isComponentMounted.value) {
+        updateSelectAllState();
+      }
+    } catch (error) {
+      console.error("Error in items/selectedItems watch:", error);
+    }
+  },
+  { deep: true }
+);
+
+
+const hasActiveFilters = computed((): boolean => {
+  try {
+    return !!(
+      filters.search ||
+      filters.module_id ||
+      filters.Ccy_cd ||
+      filters.Auth_Status ||
+      filters.dateFilterType !== "all"
+    );
+  } catch (error) {
+    console.error("Error in hasActiveFilters computed:", error);
+    return false;
+  }
+});
+
+const activeFilterChips = computed((): FilterChip[] => {
+  try {
+    const chips: FilterChip[] = [];
+
+    if (filters.search) {
+      chips.push({
+        key: "search",
+        label: `ຄົ້ນຫາ: ${filters.search}`,
+        icon: "mdi-magnify",
+      });
+    }
+
+    if (filters.module_id) {
+      const module = modules.value.find(
+        (m: ModuleItem) => m.module_Id === filters.module_id
+      );
+      chips.push({
+        key: "module_id",
+        label: `ໂມດູນ: ${module?.module_name_la || filters.module_id}`,
+        icon: "mdi-view-module",
+      });
+    }
+
+    if (filters.Ccy_cd) {
+      chips.push({
+        key: "Ccy_cd",
+        label: `ສະກຸນເງິນ: ${filters.Ccy_cd}`,
+        icon: "mdi-currency-usd",
+      });
+    }
+
+    if (filters.Auth_Status) {
+      const statusItem = authStatusOptions.value.find(
+        (s: StatusItem) => s.MC_code === filters.Auth_Status
+      );
+      chips.push({
+        key: "Auth_Status",
+        label: `ສະຖານະ: ${statusItem?.MC_name_la || filters.Auth_Status}`,
+        icon: "mdi-check-circle",
+      });
+    }
+
+    if (filters.dateFilterType !== "all") {
+      const dateType = dateFilterTypes.value.find(
+        (d: DateFilterType) => d.value === filters.dateFilterType
+      );
+      let dateLabel = dateType?.text || "";
+
+      if (filters.dateFilterType === "date" && filters.specificDate) {
+        dateLabel += `: ${formatDate(filters.specificDate)}`;
+      } else if (
+        filters.dateFilterType === "range" &&
+        (filters.dateFrom || filters.dateTo)
+      ) {
+        const from = filters.dateFrom ? formatDate(filters.dateFrom) : "...";
+        const to = filters.dateTo ? formatDate(filters.dateTo) : "...";
+        dateLabel += `: ${from} - ${to}`;
+      } else if (
+        filters.dateFilterType === "month" &&
+        filters.selectedMonth &&
+        filters.selectedYear
+      ) {
+        const month = months.value.find(
+          (m: MonthItem) => m.value === filters.selectedMonth
+        );
+        dateLabel += `: ${month?.text} ${filters.selectedYear}`;
+      } else if (filters.dateFilterType === "year" && filters.selectedYear) {
+        dateLabel += `: ${filters.selectedYear}`;
+      }
+
+      chips.push({
+        key: "dateFilter",
+        label: dateLabel,
+        icon: "mdi-calendar",
+      });
+    }
+
+    return chips;
+  } catch (error) {
+    console.error("Error in activeFilterChips computed:", error);
+    return [];
+  }
+});
+
+
+const approveSelected = async (): Promise<void> => {
+  try {
+    if (!isComponentMounted.value) return;
+
+    const aldmIds = selectedItems.value;
+    if (aldmIds.length === 0) {
+      console.warn("No items selected for approval");
+      return;
+    }
+
+    mainStore.confirm_form_mark.aldm_ids = aldmIds as number[];
+    await mainStore.postConfirm();
+
+    if (isComponentMounted.value) {
+      selectedItems.value = [];
+      await loadData(false);
+    }
+  } catch (error) {
+    console.error("Error approving selected items:", error);
+    if (isComponentMounted.value) {
+      Swal.fire({
+        icon: "error",
+        title: "ຂໍ້ຜິດພາດ",
+        text: "ບໍ່ສາມາດອະນຸມັດລາຍການໄດ້",
+        confirmButtonText: "ຕົກລົງ",
+      });
+    }
+  }
+};
+
+const rejectSelected = async (): Promise<void> => {
+  try {
+    if (!isComponentMounted.value) return;
+
+    const aldmIds = selectedItems.value;
+    if (aldmIds.length === 0) {
+      console.warn("No items selected for rejection");
+      return;
+    }
+
+    mainStore.reject_form_mark.aldm_ids = aldmIds as number[];
+    await mainStore.postReject();
+
+    if (isComponentMounted.value) {
+      selectedItems.value = [];
+      await loadData(false);
+    }
+  } catch (error) {
+    console.error("Error rejecting selected items:", error);
+    if (isComponentMounted.value) {
+      Swal.fire({
+        icon: "error",
+        title: "ຂໍ້ຜິດພາດ",
+        text: "ບໍ່ສາມາດປະຕິເສດລາຍການໄດ້",
+        confirmButtonText: "ຕົກລົງ",
+      });
+    }
+  }
+};
+
+
+const headers = [
+  {
+    title: "",
+    key: "checkbox",
+    sortable: false,
+    width: "50px",
+    align: "center" as const,
+  },
+  { title: "ໂມດູນ", key: "module_id", sortable: false },
+  { title: "ລະຫັດ", key: "Txn_code", sortable: false },
+  { title: "ເລກອ້າງອີງ", key: "Reference_No", sortable: false },
+  { title: "ເນື້ອໃນ", key: "Addl_text", sortable: false },
+  {
+    title: "ຈຳນວນເງິນ",
+    key: "Fcy_Amount",
+    align: "end" as const,
+    sortable: false,
+  },
+  { title: "ຜູ້ສ້າງ", key: "maker_name", sortable: false },
+  { title: "ວັນທີ", key: "Value_date", sortable: false },
+  { title: "ສະຖານະ", key: "Auth_Status", sortable: false },
+  {
+    title: "ການກະທຳ",
+    key: "actions",
+    sortable: false,
+    align: "center" as const,
+  },
+];
+
+
+const getAuthHeaders = () => ({
+  headers: {
+    Authorization: `Bearer ${localStorage.getItem("token")}`,
+  },
+});
+
+const getCachedData = (key: string): any => {
+  try {
+    const cached = referenceDataCache.get(key);
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+      return cached.data;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error getting cached data:", error);
+    return null;
+  }
+};
+
+const setCachedData = (key: string, data: any): void => {
+  try {
+    referenceDataCache.set(key, { data, timestamp: Date.now() });
+  } catch (error) {
+    console.error("Error setting cached data:", error);
+  }
+};
+
+// ===== DATE & FILTER FUNCTIONS =====
+const getDateFilterLabel = (): string => {
+  try {
+    const type = dateFilterTypes.value.find(
+      (d: DateFilterType) => d.value === filters.dateFilterType
+    );
+    return type?.text || "ເລືອກວັນທີ";
+  } catch (error) {
+    console.error("Error in getDateFilterLabel:", error);
+    return "ເລືອກວັນທີ";
+  }
+};
+
+const onDateFilterTypeChange = (): void => {
+  try {
+    clearDateFilterValues();
+    handleFilterChange();
+  } catch (error) {
+    console.error("Error in onDateFilterTypeChange:", error);
+  }
+};
+
+const clearDateFilterValues = (): void => {
+  try {
+    filters.specificDate = "";
+    filters.dateFrom = "";
+    filters.dateTo = "";
+    filters.selectedMonth = currentMonth;
+    filters.selectedYear = currentYear;
+  } catch (error) {
+    console.error("Error in clearDateFilterValues:", error);
+  }
+};
+
+const clearDateFilter = (): void => {
+  try {
+    filters.dateFilterType = "all";
+    clearDateFilterValues();
+    handleFilterChange();
+  } catch (error) {
+    console.error("Error in clearDateFilter:", error);
+  }
+};
+
+const removeFilter = (filterKey: string): void => {
+  try {
+    switch (filterKey) {
+      case "search":
+        filters.search = "";
+        break;
+      case "module_id":
+        filters.module_id = null;
+        break;
+      case "Ccy_cd":
+        filters.Ccy_cd = null;
+        break;
+      case "Auth_Status":
+        filters.Auth_Status = null;
+        break;
+      case "dateFilter":
+        clearDateFilter();
+        return;
+    }
+    handleFilterChange();
+  } catch (error) {
+    console.error("Error in removeFilter:", error);
+  }
+};
+
+const clearAllFilters = (): void => {
+  try {
+    filters.search = "";
+    filters.module_id = null;
+    filters.Ccy_cd = null;
+    filters.Auth_Status = null;
+    clearDateFilter();
+  } catch (error) {
+    console.error("Error in clearAllFilters:", error);
+  }
+};
+
+const viewDetails = (item: JournalItem | null | undefined): void => {
+  try {
+    if (!item || !item.Reference_No) {
+      console.warn("Invalid item for viewing details");
+      return;
+    }
+
+    const detailUrl = `/property/autoriz/oneaddprove?Reference_No=${item.Reference_No}&sub_menu_id=${submenu_id}`;
+    router.push(detailUrl);
+  } catch (error) {
+    console.error("Error in viewDetails:", error);
+  }
+};
+
+const buildDateParams = (): Record<string, string> => {
+  try {
+    const params: Record<string, string> = {};
+
+    switch (filters.dateFilterType) {
+      case "date":
+        if (filters.specificDate) {
+          params.Value_date = filters.specificDate;
+        }
+        break;
+
+      case "range":
+        if (filters.dateFrom) {
+          params.Value_date__gte = filters.dateFrom;
+        }
+        if (filters.dateTo) {
+          params.Value_date__lte = filters.dateTo;
+        }
+        break;
+
+      case "month":
+        if (filters.selectedMonth && filters.selectedYear) {
+          const firstDay = new Date(
+            filters.selectedYear,
+            filters.selectedMonth - 1,
+            1
+          );
+          const lastDay = new Date(
+            filters.selectedYear,
+            filters.selectedMonth,
+            0
+          );
+
+          params.Value_date__gte = firstDay.toISOString().slice(0, 10);
+          params.Value_date__lte = lastDay.toISOString().slice(0, 10);
+        }
+        break;
+
+      case "year":
+        if (filters.selectedYear) {
+          params.Value_date__gte = `${filters.selectedYear}-01-01`;
+          params.Value_date__lte = `${filters.selectedYear}-12-31`;
+        }
+        break;
+
+      case "all":
+      default:
+        break;
+    }
+
+    return params;
+  } catch (error) {
+    console.error("Error in buildDateParams:", error);
+    return {};
+  }
+};
+// -----------------------------------------------------------------------------------------------
+const loadData = async (resetPage: boolean = true): Promise<void> => {
+  if (!isComponentMounted.value) {
+    console.log("Component unmounted, skipping loadData");
+    return;
+  }
+
+  try {
+    performanceTracker.start();
+    loading.value = true;
+
+    if (resetPage) {
+      pagination.currentPage = 1;
+      clearSelection();
+    }
+
+    const params: Record<string, any> = {
+      show_all: canAuthorize.value ? "true" : "false",
+      page: pagination.currentPage,
+      page_size: pagination.pageSize,
+    };
+
+    if (filters.search?.trim()) params.search = filters.search.trim();
+    if (filters.module_id) params.module_id = filters.module_id;
+    if (filters.Ccy_cd) params.Ccy_cd = filters.Ccy_cd;
+    if (filters.Auth_Status) params.Auth_Status = filters.Auth_Status;
+
+    const dateParams = buildDateParams();
+    Object.assign(params, dateParams);
+
+    params.delete_stat__ne = "D";
+    params.ordering = "-Maker_DT_Stamp";
+
+    if (!isComponentMounted.value) return;
+  // -------------------------------------------------------------------------------------------------------
+    const response = await axios.get("/api/journal-log-ard/init-data/", {
+      params,
+      ...getAuthHeaders(),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
+
+    if (!isComponentMounted.value) return;
+
+    const data: ApiResponse = response.data;
+
+    if (data && isComponentMounted.value) {
+      items.value = Array.isArray(data.results)
+        ? data.results.filter((item) => item != null)
+        : [];
+
+      if (data.summary && typeof data.summary === "object") {
+        Object.assign(summary, data.summary);
+      }
+
+      pagination.totalItems = Number(data.count) || 0;
+      pagination.totalPages = Number(data.page_info?.total_pages) || 1;
+
+      if (data.reference_data && typeof data.reference_data === "object") {
+        modules.value = Array.isArray(data.reference_data.modules)
+          ? data.reference_data.modules.filter((item) => item != null)
+          : [];
+        currencies.value = Array.isArray(data.reference_data.currencies)
+          ? data.reference_data.currencies.filter((item) => item != null)
+          : [];
+        authStatusOptions.value = Array.isArray(
+          data.reference_data.auth_status_options
+        )
+          ? data.reference_data.auth_status_options.filter(
+              (item) => item != null
+            )
+          : [];
+
+        setCachedData("reference_data", data.reference_data);
+      }
+    }
+
+    console.log(
+      `✅ Loaded ${items.value.length} items (Page ${pagination.currentPage}/${pagination.totalPages})`
+    );
+
+    console.log("🔍 Mapping check:");
+    items.value.forEach((item: JournalItem) => {
+      const aldmId = getMatchedAldmId(item);
+      if (aldmId) {
+        console.log(
+          `✅ Mapped: JRNLLog_id ${item.JRNLLog_id} → aldm_id ${aldmId}`
+        );
+      } else {
+        console.log(`❌ No match: JRNLLog_id ${item.JRNLLog_id}`);
+      }
+    });
+
+    performanceTracker.end("Data Loading");
+  } catch (error) {
+    console.error("❌ Error loading data:", error);
+
+    if (isComponentMounted.value) {
+      Swal.fire({
+        icon: "error",
+        title: "ຂໍ້ຜິດພາດ",
+        text: "ບໍ່ສາມາດໂຫຼດຂໍ້ມູນໄດ້",
+        confirmButtonText: "ຕົກລົງ",
+      });
+    }
+  } finally {
+    if (isComponentMounted.value) {
+      loading.value = false;
+    }
+  }
+};
+
+const loadReferenceData = async (): Promise<void> => {
+  try {
+    const cached = getCachedData("reference_data");
+    if (cached) {
+      modules.value = cached.modules || [];
+      currencies.value = cached.currencies || [];
+      authStatusOptions.value = cached.auth_status_options || [];
+      console.log("📦 Using cached reference data");
+      return;
+    }
+
+    console.log("🔄 Reference data will be loaded with main data");
+  } catch (error) {
+    console.error("Error in loadReferenceData:", error);
+  }
+};
+
+const getStatusColor = (status: string): string => {
+  switch (status) {
+    case "A":
+      return "success";
+    case "R":
+      return "error";
+    case "U":
+      return "warning";
+    case "P":
+      return "info";
+    default:
+      return "grey";
+  }
+};
+
+const getStatusIcon = (status: string): string => {
+  switch (status) {
+    case "A":
+      return "mdi-check-circle";
+    case "R":
+      return "mdi-close-circle";
+    case "U":
+      return "mdi-clock-outline";
+    case "P":
+      return "mdi-pencil-circle";
+    default:
+      return "mdi-help-circle";
+  }
+};
+
+const getStatusText = (status: string): string => {
+  switch (status) {
+    case "A":
+      return "ອະນຸມັດແລ້ວ";
+    case "R":
+      return "ປະຕິເສດ";
+    case "U":
+      return "ລໍຖ້າອະນຸມັດ";
+    case "P":
+      return "ຖ້າເແກ້ໄຂ";
+    default:
+      return "ບໍ່ຮູ້";
+  }
+};
+
+const formatNumber = (
+  num: number | string | null | undefined,
+  decimals: number = 2
+): string => {
+  try {
+    if (!num) return "0.00";
+    const numValue = typeof num === "string" ? parseFloat(num) : num;
+    if (isNaN(numValue)) return "0.00";
+
+    return new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }).format(numValue);
+  } catch (error) {
+    console.error("Error in formatNumber:", error);
+    return "0.00";
+  }
+};
+
+const formatDate = (date: string | Date | null | undefined): string => {
+  try {
+    if (!date) return "-";
+    const dateObj = new Date(date);
+    if (isNaN(dateObj.getTime())) return "-";
+
+    return dateObj.toLocaleDateString("lo-LA");
+  } catch (error) {
+    console.error("Error in formatDate:", error);
+    return "-";
+  }
+};
+
+const setAuthStatusFilter = (status: string | null): void => {
+  try {
+    filters.Auth_Status = status;
+    loadData();
+  } catch (error) {
+    console.error("Error in setAuthStatusFilter:", error);
+  }
+};
+
+const handleFilterChange = (): void => {
+  try {
+    if (isComponentMounted.value) {
+      loadData();
+    }
+  } catch (error) {
+    console.error("Error in handleFilterChange:", error);
+  }
+};
+
+const onPageChange = (page: number): void => {
+  try {
+    pagination.currentPage = page;
+    loadData(false);
+  } catch (error) {
+    console.error("Error in onPageChange:", error);
+  }
+};
+
+const onPageSizeChange = (newSize: number): void => {
+  try {
+    pagination.pageSize = newSize;
+    pagination.currentPage = 1;
+    loadData(false);
+  } catch (error) {
+    console.error("Error in onPageSizeChange:", error);
+  }
+};
+
+const deleteItem = async (
+  item: JournalItem | null | undefined
+): Promise<void> => {
+  try {
+    if (!item || !isComponentMounted.value) {
+      console.warn("Invalid item or component unmounted");
+      return;
+    }
+
+    const canDeleteItem =
+      canDelete.value &&
+      (canAuthorize.value || item.Maker_Id === currentUser.value?.user_id);
+
+    if (!canDeleteItem) {
+      Swal.fire({
+        icon: "warning",
+        title: "ບໍ່ມີສິດ",
+        text: "ທ່ານບໍ່ມີສິດລຶບລາຍການນີ້",
+        confirmButtonText: "ຕົກລົງ",
+      });
+      return;
+    }
+
+    const result = await Swal.fire({
+      icon: "warning",
+      title: "ຢືນຢັນການລຶບ",
+      text: `ທ່ານຕ້ອງການລຶບລາຍການ ${item.Reference_No} ແທ້ບໍ?`,
+      showCancelButton: true,
+      confirmButtonText: "ລຶບ",
+      cancelButtonText: "ຍົກເລີກ",
+      confirmButtonColor: "#f44336",
+      cancelButtonColor: "#9e9e9e",
+    });
+
+    if (result.isConfirmed && isComponentMounted.value) {
+      try {
+        await axios.delete(
+          `/api/journal-log-master/${item.JRNLLog_id}/`,
+          getAuthHeaders()
+        );
+
+        if (isComponentMounted.value) {
+          Swal.fire({
+            icon: "success",
+            title: "ສຳເລັດ",
+            text: "ລຶບລາຍການສຳເລັດແລ້ວ",
+            timer: 2000,
+            showConfirmButton: false,
+          });
+
+          loadData(false);
+        }
+      } catch (deleteError) {
+        console.error("Error deleting item:", deleteError);
+        if (isComponentMounted.value) {
+          Swal.fire({
+            icon: "error",
+            title: "ຂໍ້ຜິດພາດ",
+            text: "ບໍ່ສາມາດລຶບລາຍການໄດ້",
+            confirmButtonText: "ຕົກລົງ",
+          });
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error in deleteItem:", error);
+  }
+};
+
+const exportData = (): void => {
+  try {
+    if (!isComponentMounted.value) return;
+
+    Swal.fire({
+      icon: "info",
+      title: "ກຳລັງພັດທະນາ",
+      text: "ຟັງຊັນສົ່ງອອກຂໍ້ມູນກຳລັງພັດທະນາ",
+      confirmButtonText: "ຕົກລົງ",
+    });
+  } catch (error) {
+    console.error("Error in exportData:", error);
+  }
+};
+
+const searchDebounced = debounce((): void => {
+  try {
+    handleFilterChange();
+  } catch (error) {
+    console.error("Error in searchDebounced:", error);
+  }
+}, 500);
+
+onMounted(async (): Promise<void> => {
+  try {
+    console.log("Component mounting...");
+    isComponentMounted.value = true;
+
+    try {
+      if (jurnalStore?.getJurnallist) {
+        await jurnalStore.getJurnallist();
+      }
+    } catch (error) {
+      console.error("Error calling jurnalStore.getJurnallist:", error);
+    }
+
+    try {
+      if (cerrency?.getDataCerrency) {
+        await cerrency.getDataCerrency();
+      }
+    } catch (error) {
+      console.error("Error calling cerrency.getDataCerrency:", error);
+    }
+
+    try {
+      if (masterStore?.getStatus) {
+        await masterStore.getStatus();
+      }
+    } catch (error) {
+      console.error("Error calling masterStore.getStatus:", error);
+    }
+
+    try {
+      if (derpicationStore?.getDataTotal) {
+        await derpicationStore.getDataTotal();
+      }
+    } catch (error) {
+      console.error("Error calling derpicationStore.getDataTotal:", error);
+    }
+
+    try {
+      await initializeRole();
+    } catch (error) {
+      console.error("Error initializing role:", error);
+    }
+
+    try {
+      await loadReferenceData();
+    } catch (error) {
+      console.error("Error loading reference data:", error);
+    }
+
+    if (canView.value && isComponentMounted.value) {
+      try {
+        await loadData();
+      } catch (error) {
+        console.error("Error in initial loadData:", error);
+      }
+    }
+
+    console.log("Component mounted successfully");
+  } catch (error) {
+    console.error("Error during component mount:", error);
+  }
+});
+
+onBeforeUnmount(() => {
+  try {
+    console.log("Component unmounting...");
+    isComponentMounted.value = false;
+
+    // Clean up any pending operations
+    clearSelection();
+
+    console.log("Component unmounted successfully");
+  } catch (error) {
+    console.error("Error during component unmount:", error);
+  }
+});
+const nameDisplay = (item: any) => {
+  if (!item || !item.MC_name_la || !item.MC_code) {
+    return "ທັງໝົດ";
+  }
+  return `${item.MC_name_la}(${item.MC_code})`;
+};
+</script>
 <template>
-  <div class="scanner-container">
-    <div class="scanner-header">
-      <h2>QR & Barcode Scanner</h2>
-      <div class="scanner-status">
-        <span :class="['status-indicator', { 'active': isScanning }]"></span>
-        {{ isScanning ? 'ກຳລັງສະແກນ...' : 'ພ້ອມສະແກນ' }}
+  <div class="gl-approved-master">
+    <div class="page-header-compact">
+      <div class="d-flex justify-space-between align-center">
+        <h1 class="page-title-compact">
+          <v-icon color="primary" size="20" class="mr-2">mdi-book-check</v-icon>
+          ອະນຸມັດບັນທຶກບັນຊີຊັບສິນ
+        </h1>
+        <!-- <pre>{{ items  }}</pre> -->
+        <div class="permission-indicators" v-if="permissions">
+          <v-tooltip text="ສິດເຂົ້າເຖິງຂອງທ່ານ" location="bottom">
+            <template #activator="{ props }">
+              <div v-bind="props" class="d-flex gap-1">
+                <v-chip
+                  v-if="canView"
+                  color="info"
+                  size="x-small"
+                  variant="flat"
+                >
+                  <v-icon size="12">mdi-eye</v-icon>
+                  ເບິ່ງ
+                </v-chip>
+                <v-chip
+                  v-if="canEdit"
+                  color="warning"
+                  size="x-small"
+                  variant="flat"
+                >
+                  <v-icon size="12">mdi-pencil</v-icon>
+                  ແກ້
+                </v-chip>
+                <v-chip
+                  v-if="canDelete"
+                  color="error"
+                  size="x-small"
+                  variant="flat"
+                >
+                  <v-icon size="12">mdi-delete</v-icon>
+                  ລຶບ
+                </v-chip>
+                <v-chip
+                  v-if="canAuthorize"
+                  color="success"
+                  size="x-small"
+                  variant="flat"
+                >
+                  <v-icon size="12">mdi-check-circle</v-icon>
+                  ອະນຸມັດ
+                </v-chip>
+              </div>
+            </template>
+          </v-tooltip>
+        </div>
       </div>
     </div>
-    
-    <!-- Camera Video Element -->
-    <div class="camera-wrapper">
-      <video 
-        ref="videoRef" 
-        autoplay 
-        playsinline 
-        muted
-        :class="{ 'camera-active': isScanning }"
-      ></video>
-      
-      <!-- Overlay for scanning area -->
-      <div v-if="isScanning" class="scan-overlay">
-        <div class="scan-box">
-          <div class="scan-corners">
-            <div class="corner top-left"></div>
-            <div class="corner top-right"></div>
-            <div class="corner bottom-left"></div>
-            <div class="corner bottom-right"></div>
+
+    <div v-if="!canView" class="permission-denied-state">
+      <v-card class="text-center py-12" elevation="1">
+        <v-icon size="80" color="error" class="mb-6">mdi-shield-lock</v-icon>
+        <div class="text-h5 mb-3 text-error">ບໍ່ມີສິດເຂົ້າເຖິງ</div>
+        <div class="text-body-1 mb-4 text-grey">
+          ທ່ານບໍ່ມີສິດເຂົ້າເຖິງໜ້ານີ້
+        </div>
+        <div class="text-caption text-grey mb-6 px-4">
+          <v-icon size="16" class="mr-1">mdi-information-outline</v-icon>
+          ກະລຸນາຕິດຕໍ່ຜູ້ດູແລລະບົບເພື່ອຂໍສິດເຂົ້າເຖິງ
+        </div>
+        <v-btn
+          variant="outlined"
+          @click="$router.go(-1)"
+          prepend-icon="mdi-arrow-left"
+          size="large"
+        >
+          ກັບໄປໜ້າກ່ອນ
+        </v-btn>
+      </v-card>
+    </div>
+
+    <div v-else>
+      <v-alert
+        v-if="canAuthorize"
+        type="success"
+        variant="tonal"
+        density="compact"
+        class="mb-3"
+      >
+        <template #prepend>
+          <v-icon>mdi-check-circle</v-icon>
+        </template>
+        <strong>ສິດເຂົ້າເຖິງ:</strong> ທ່ານສາມາດເບິ່ງລາຍການທັງໝົດໄດ້
+      </v-alert>
+
+      <v-alert
+        v-else
+        type="info"
+        variant="tonal"
+        density="compact"
+        class="mb-3"
+      >
+        <template #prepend>
+          <v-icon>mdi-information</v-icon>
+        </template>
+        <strong>ສິດເຂົ້າເຖິງ:</strong> ທ່ານສາມາດເບິ່ງລາຍການທີ່ທ່ານສ້າງເທົ່ານັ້ນ
+      </v-alert>
+
+      <v-card class="filter-card-thin mb-2" elevation="1">
+        <v-card-text class="pa-2">
+          <v-row dense>
+            <v-col cols="12" md="3">
+              <v-text-field
+                v-model="filters.search"
+                label="ຄົ້ນຫາ"
+                prepend-inner-icon="mdi-magnify"
+                variant="outlined"
+                density="compact"
+                clearable
+                placeholder="ເລກອ້າງອີງ, ຂໍ້ຄວາມ..."
+                @update:model-value="searchDebounced"
+                hide-details
+              ></v-text-field>
+            </v-col>
+            <!-- <pre>{{ responscerrency }}</pre> -->
+            <v-col cols="12" md="2">
+              <v-autocomplete
+                v-model="filters.Ccy_cd"
+                :items="responscerrency"
+                item-title="ccy_code"
+                item-value="ccy_code"
+                label="ສະກຸນເງິນ"
+                variant="outlined"
+                density="compact"
+                clearable
+                @update:model-value="handleFilterChange"
+                hide-details
+                :loading="loadingReferences"
+              >
+              </v-autocomplete>
+            </v-col>
+
+            <v-col cols="12" md="3">
+              <v-autocomplete
+                v-model="filters.Auth_Status"
+                prepend-inner-icon="mdi-format-list-bulleted-type"
+                :items="status"
+                :item-title="nameDisplay"
+                item-value="MC_code"
+                label="ສະຖານະອະນຸມັດ"
+                variant="outlined"
+                density="compact"
+                clearable
+                @update:model-value="setAuthStatusFilter"
+                hide-details
+                :loading="loadingReferences"
+              >
+                <template v-slot:item="{ props, item }">
+                  <v-list-item
+                    v-bind="props"
+                    :title="`${item.raw.MC_name_la}(${item.raw.MC_code})`"
+                  >
+                    <template v-slot:prepend>
+                      <v-avatar size="small" color="primary">
+                        <v-icon>mdi-format-list-bulleted-type</v-icon>
+                      </v-avatar>
+                    </template>
+                  </v-list-item>
+                </template>
+              </v-autocomplete>
+            </v-col>
+
+            <v-col cols="12" md="2">
+              <v-select
+                v-model="filters.dateFilterType"
+                :items="dateFilterTypes"
+                item-title="text"
+                item-value="value"
+                label="ປະເພດກັ່ນຕອງວັນທີ"
+                variant="outlined"
+                density="compact"
+                @update:model-value="onDateFilterTypeChange"
+                hide-details
+              >
+                <template #selection="{ item }">
+                  <v-icon size="14" class="mr-1">{{ item.raw.icon }}</v-icon>
+                  {{ item.raw.text }}
+                </template>
+                <template #item="{ props, item }">
+                  <v-list-item v-bind="props">
+                    <template #prepend>
+                      <v-icon size="16">{{ item.raw.icon }}</v-icon>
+                    </template>
+                  </v-list-item>
+                </template>
+              </v-select>
+            </v-col>
+
+            <v-col cols="12" md="1">
+              <v-btn
+                color="primary"
+                variant="flat"
+                @click="loadData"
+                :loading="loading"
+                block
+                size="small"
+              >
+                <v-icon size="16">mdi-filter</v-icon>
+                ຄົ້ນຫາ
+              </v-btn>
+            </v-col>
+          </v-row>
+
+          <v-row dense class="mt-2" v-if="selectedItems.length > 0">
+            <v-col cols="12">
+              <v-alert
+                type="info"
+                variant="tonal"
+                density="compact"
+                class="mb-0"
+              >
+                <div class="d-flex justify-space-between align-center">
+                  <div class="d-flex align-center">
+                    <v-icon size="16" class="mr-2"
+                      >mdi-check-circle-outline</v-icon
+                    >
+                    <span>ເລືອກແລ້ວ {{ selectedItems.length }} ລາຍການ</span>
+                  </div>
+
+                  <div class="d-flex align-center gap-2">
+                    <v-btn
+                      v-if="canAuthorize"
+                      color="success"
+                      variant="flat"
+                      size="small"
+                      @click="approveSelected"
+                      :disabled="selectedItems.length === 0"
+                    >
+                      <v-icon size="16" class="mr-1">mdi-check-circle</v-icon>
+                      ອະນຸມັດ ({{ selectedItems.length }})
+                    </v-btn>
+
+                    <v-btn
+                      v-if="canAuthorize"
+                      color="error"
+                      variant="flat"
+                      size="small"
+                      @click="rejectSelected"
+                      :disabled="selectedItems.length === 0"
+                    >
+                      <v-icon size="16" class="mr-1">mdi-close-circle</v-icon>
+                      ປະຕິເສດ ({{ selectedItems.length }})
+                    </v-btn>
+
+                    <v-btn
+                      variant="text"
+                      size="small"
+                      color="grey"
+                      @click="clearSelection"
+                    >
+                      <v-icon size="16" class="mr-1">mdi-close</v-icon>
+                      ລ້າງ
+                    </v-btn>
+                  </div>
+                </div>
+              </v-alert>
+            </v-col>
+          </v-row>
+
+          <v-row dense class="mt-2" v-if="filters.dateFilterType !== 'all'">
+            <v-col cols="12">
+              <div class="date-filter-section">
+                <v-icon size="16" color="primary" class="mr-2"
+                  >mdi-calendar</v-icon
+                >
+                <span class="date-filter-label"
+                  >{{ getDateFilterLabel() }}:</span
+                >
+
+                <template v-if="filters.dateFilterType === 'date'">
+                  <v-text-field
+                    v-model="filters.specificDate"
+                    type="date"
+                    variant="outlined"
+                    density="compact"
+                    @update:model-value="handleFilterChange"
+                    hide-details
+                    class="date-input"
+                    placeholder="ເລືອກວັນທີ"
+                  ></v-text-field>
+                </template>
+
+                <template v-if="filters.dateFilterType === 'range'">
+                  <div class="date-range-inputs">
+                    <v-text-field
+                      v-model="filters.dateFrom"
+                      type="date"
+                      variant="outlined"
+                      density="compact"
+                      @update:model-value="handleFilterChange"
+                      hide-details
+                      class="date-input"
+                      placeholder="ຈາກວັນທີ"
+                    ></v-text-field>
+                    <span class="date-separator">ຫາ</span>
+                    <v-text-field
+                      v-model="filters.dateTo"
+                      type="date"
+                      variant="outlined"
+                      density="compact"
+                      @update:model-value="handleFilterChange"
+                      hide-details
+                      class="date-input"
+                      placeholder="ເຖິງວັນທີ"
+                    ></v-text-field>
+                  </div>
+                </template>
+
+                <template v-if="filters.dateFilterType === 'month'">
+                  <div class="month-year-inputs">
+                    <v-select
+                      v-model="filters.selectedMonth"
+                      :items="months"
+                      item-title="text"
+                      item-value="value"
+                      variant="outlined"
+                      density="compact"
+                      @update:model-value="handleFilterChange"
+                      hide-details
+                      class="month-input"
+                      placeholder="ເລືອກເດືອນ"
+                    ></v-select>
+                    <v-select
+                      v-model="filters.selectedYear"
+                      :items="years"
+                      variant="outlined"
+                      density="compact"
+                      item-title="text"
+                      item-value="value"
+                      @update:model-value="handleFilterChange"
+                      hide-details
+                      class="year-input"
+                      placeholder="ເລືອກປີ"
+                    ></v-select>
+                  </div>
+                </template>
+
+                <template v-if="filters.dateFilterType === 'year'">
+                  <v-select
+                    v-model="filters.selectedYear"
+                    :items="years"
+                    variant="outlined"
+                    density="compact"
+                    @update:model-value="handleFilterChange"
+                    hide-details
+                    class="year-input"
+                    placeholder="ເລືອກປີ"
+                  ></v-select>
+                </template>
+
+                <v-btn
+                  icon
+                  size="small"
+                  variant="text"
+                  color="grey"
+                  @click="clearDateFilter"
+                  class="ml-2"
+                >
+                  <v-icon size="16">mdi-close</v-icon>
+                </v-btn>
+              </div>
+            </v-col>
+          </v-row>
+
+          <v-row dense class="mt-1" v-if="hasActiveFilters">
+            <v-col cols="12">
+              <div class="active-filters">
+                <span class="active-filters-label">
+                  <v-icon size="14" class="mr-1">mdi-filter</v-icon>
+                  ກັ່ນຕອງທີ່ເລືອກ:
+                </span>
+                <v-chip
+                  v-for="filter in activeFilterChips"
+                  :key="filter.key"
+                  size="x-small"
+                  variant="outlined"
+                  color="primary"
+                  closable
+                  @click:close="removeFilter(filter.key)"
+                  class="ma-1"
+                >
+                  <v-icon size="12" class="mr-1">{{ filter.icon }}</v-icon>
+                  {{ filter.label }}
+                </v-chip>
+                <v-btn
+                  size="x-small"
+                  variant="text"
+                  color="error"
+                  @click="clearAllFilters"
+                  class="ml-2"
+                >
+                  <v-icon size="12">mdi-filter-remove</v-icon>
+                  ລ້າງທັງໝົດ
+                </v-btn>
+              </div>
+            </v-col>
+          </v-row>
+        </v-card-text>
+      </v-card>
+
+      <v-row dense class="mb-3">
+        <v-col cols="6" sm="3" md="2">
+          <v-card
+            class="summary-card-thin"
+            :class="{ 'active-filter': filters.Auth_Status === null }"
+            elevation="1"
+            @click="setAuthStatusFilter(null)"
+            style="cursor: pointer"
+          >
+            <v-card-text class="pa-2">
+              <div class="d-flex align-center">
+                <v-icon size="20" color="primary" class="mr-2"
+                  >mdi-file-document-multiple</v-icon
+                >
+                <div>
+                  <div class="summary-value-thin">
+                    <v-skeleton-loader
+                      v-if="loading"
+                      type="text"
+                      width="40"
+                    ></v-skeleton-loader>
+
+                    <span v-else>{{
+                      datajurnal.filter((item) => item).length / 2
+                    }}</span>
+                  </div>
+                  <div class="summary-label-thin">ລາຍການທັງໝົດ</div>
+                </div>
+              </div>
+            </v-card-text>
+          </v-card>
+        </v-col>
+
+        <v-col cols="6" sm="3" md="2">
+          <v-card
+            class="summary-card-thin"
+            :class="{ 'active-filter': filters.Auth_Status === 'U' }"
+            elevation="1"
+            @click="setAuthStatusFilter('U')"
+            style="cursor: pointer"
+          >
+            <v-card-text class="pa-2">
+              <div class="dashboard-summary">
+                <div class="d-flex align-center">
+                  <v-icon size="20" color="warning" class="mr-2"
+                    >mdi-clock-outline</v-icon
+                  >
+                  <div>
+                    <div class="summary-value-thin">
+                      <v-skeleton-loader
+                        v-if="loading"
+                        type="text"
+                        width="40"
+                      ></v-skeleton-loader>
+                      <span v-else>{{
+                        datajurnal.filter(
+                          (item) => item.Auth_Status.toString().trim() === "U"
+                        ).length / 2
+                      }}</span>
+                    </div>
+                    <div class="summary-label-thin">ລໍຖ້າອະນຸມັດ</div>
+                  </div>
+                </div>
+              </div>
+            </v-card-text>
+          </v-card>
+        </v-col>
+        <v-col cols="6" sm="3" md="2">
+          <v-card
+            class="summary-card-thin"
+            :class="{ 'active-filter': filters.Auth_Status === 'A' }"
+            elevation="1"
+            @click="setAuthStatusFilter('A')"
+            style="cursor: pointer"
+          >
+            <v-card-text class="pa-2">
+              <div class="d-flex align-center">
+                <v-icon size="20" color="success" class="mr-2"
+                  >mdi-check-circle</v-icon
+                >
+                <div>
+                  <div class="summary-value-thin">
+                    <v-skeleton-loader
+                      v-if="loading"
+                      type="text"
+                      width="40"
+                    ></v-skeleton-loader>
+                    <span v-else>{{
+                      datajurnal.filter(
+                        (item) => item.Auth_Status.toString().trim() === "A"
+                      ).length / 2
+                    }}</span>
+                  </div>
+                  <div class="summary-label-thin">ອະນຸມັດແລ້ວ</div>
+                </div>
+              </div>
+            </v-card-text>
+          </v-card>
+        </v-col>
+        <v-col cols="6" sm="3" md="2">
+          <v-card
+            class="summary-card-thin"
+            :class="{ 'active-filter': filters.Auth_Status === 'R' }"
+            elevation="1"
+            @click="setAuthStatusFilter('R')"
+            style="cursor: pointer"
+          >
+            <v-card-text class="pa-2">
+              <div class="d-flex align-center">
+                <v-icon size="20" color="error" class="mr-2"
+                  >mdi-close-circle</v-icon
+                >
+                <div>
+                  <div class="summary-value-thin">
+                    <v-skeleton-loader
+                      v-if="loading"
+                      type="text"
+                      width="40"
+                    ></v-skeleton-loader>
+                    <span v-else>{{
+                      datajurnal.filter(
+                        (item) => item.Auth_Status.toString().trim() === "R"
+                      ).length / 2
+                    }}</span>
+                  </div>
+                  <div class="summary-label-thin">ປະຕິເສດ</div>
+                </div>
+              </div>
+            </v-card-text>
+          </v-card>
+        </v-col>
+        <v-col cols="6" sm="3" md="2">
+          <v-card
+            class="summary-card-thin"
+            :class="{ 'active-filter': filters.Auth_Status === 'P' }"
+            elevation="1"
+            @click="setAuthStatusFilter('P')"
+            style="cursor: pointer"
+          >
+            <v-card-text class="pa-2">
+              <div class="d-flex align-center">
+                <v-icon size="20" color="info" class="mr-2"
+                  >mdi-pencil-circle</v-icon
+                >
+                <div>
+                  <div class="summary-value-thin">
+                    <v-skeleton-loader
+                      v-if="loading"
+                      type="text"
+                      width="40"
+                    ></v-skeleton-loader>
+                    <span v-else>{{
+                      datajurnal.filter(
+                        (item) => item.Auth_Status.toString().trim() === "P"
+                      ).length / 2
+                    }}</span>
+                  </div>
+                  <div class="summary-label-thin">ຖ້າເແກ້ໄຂ</div>
+                </div>
+              </div>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
+
+      <v-card elevation="1" class="data-table-card-thin">
+        <v-card-title class="d-flex justify-space-between align-center pa-3">
+          <span class="text-h6">
+            ລາຍການບັນທຶກບັນຊີຊັບສິນ
+            <v-chip
+              size="small"
+              color="primary"
+              variant="outlined"
+              class="ml-2"
+            >
+              {{ canAuthorize ? "ທັງໝົດ" : "ຂອງຂ້ອຍ" }}
+            </v-chip>
+
+            <v-chip
+              v-if="filters.Auth_Status"
+              size="small"
+              :color="getStatusColor(filters.Auth_Status)"
+              variant="flat"
+              class="ml-2"
+            >
+              <v-icon left size="12">{{
+                getStatusIcon(filters.Auth_Status)
+              }}</v-icon>
+              {{ getStatusText(filters.Auth_Status) }}
+            </v-chip>
+            <v-chip
+              v-else
+              size="small"
+              color="grey"
+              variant="flat"
+              class="ml-2"
+            >
+              <v-icon left size="12">mdi-filter-off</v-icon>
+              ທັງໝົດ
+            </v-chip>
+
+            <v-chip
+              v-if="pagination.totalItems > 0"
+              size="small"
+              color="info"
+              variant="outlined"
+              class="ml-2"
+            >
+              {{ pagination.currentPage }} / {{ pagination.totalPages }} ໜ້າ ({{
+                pagination.totalItems
+              }}
+              ລາຍການ)
+            </v-chip>
+          </span>
+          <div>
+            <v-btn
+              color="success"
+              variant="text"
+              @click="exportData"
+              :disabled="items.length === 0"
+              class="mr-2"
+              size="small"
+            >
+              <v-icon left size="16">mdi-download</v-icon>
+              ສົ່ງອອກ
+            </v-btn>
+            <v-btn
+              color="primary"
+              variant="text"
+              @click="loadData"
+              size="small"
+              :loading="loading"
+            >
+              <v-icon left size="16">mdi-refresh</v-icon>
+              ໂຫຼດໃໝ່
+            </v-btn>
           </div>
-          <div class="scan-line"></div>
-        </div>
-        <p class="scan-instruction">ວາງ QR/Barcode ໃສ່ໃນກອບ</p>
-      </div>
-      
-      <!-- Placeholder when not scanning -->
-      <div v-if="!isScanning" class="camera-placeholder">
-        <div class="placeholder-icon">📱</div>
-        <p>ກົດປຸ່ມເພື່ອເລີ່ມສະແກນ</p>
-      </div>
-    </div>
-    
-    <!-- Controls -->
-    <div class="controls">
-      <button 
-        @click="startScanning" 
-        :disabled="isScanning || !isReady"
-        class="btn btn-primary"
-      >
-        <span class="btn-icon">📷</span>
-        {{ isScanning ? 'ກຳລັງສະແກນ...' : 'ເລີ່ມສະແກນ' }}
-      </button>
-      
-      <button 
-        @click="stopScanning" 
-        :disabled="!isScanning"
-        class="btn btn-secondary"
-      >
-        <span class="btn-icon">⏹️</span>
-        ຢຸດສະແກນ
-      </button>
-      
-      <button 
-        @click="switchCamera" 
-        :disabled="isScanning || availableCameras.length <= 1"
-        class="btn btn-tertiary"
-        v-if="availableCameras.length > 1"
-      >
-        <span class="btn-icon">🔄</span>
-        ສະຫຼັບກ້ອງ
-      </button>
-    </div>
-    
-    <!-- Results -->
-    <div v-if="scanResult" class="result-container">
-      <h3>ຜົນການສະແກນ:</h3>
-      <div class="result-content">
-        <div class="result-item">
-          <strong>ປະເພດ:</strong> 
-          <span class="result-format">{{ formatBarcodeType(scanResult.format) }}</span>
-        </div>
-        <div class="result-item">
-          <strong>ຂໍ້ມູນ:</strong>
-          <div class="result-text">{{ scanResult.text }}</div>
-        </div>
-        <div class="result-item">
-          <strong>ເວລາ:</strong> 
-          <span class="result-time">{{ formatTime(scanResult.timestamp) }}</span>
-        </div>
-      </div>
-      <div class="result-actions">
-        <button @click="copyToClipboard" class="action-btn copy-btn">
-          📋 ສຳເນົາ
-        </button>
-        <button @click="clearResult" class="action-btn clear-btn">
-          🗑️ ລົບ
-        </button>
-        <button v-if="isUrl(scanResult.text)" @click="openUrl" class="action-btn url-btn">
-          🌐 ເປີດ Link
-        </button>
-      </div>
-    </div>
-    
-    <!-- Error Display -->
-    <div v-if="error" class="error-container">
-      <div class="error-icon">⚠️</div>
-      <div class="error-content">
-        <strong>ເກີດຂໍ້ຜິດພາດ:</strong>
-        <p>{{ error }}</p>
-      </div>
-      <button @click="clearError" class="error-close">✕</button>
-    </div>
-    
-    <!-- Loading State -->
-    <div v-if="isLoading" class="loading-container">
-      <div class="loading-spinner"></div>
-      <p>ກຳລັງເລີ່ມຕົ້ນ scanner...</p>
+        </v-card-title>
+        <pre>{{ items }}</pre>
+        <!-- <pre>{{ datadevcription }}</pre> -->
+        <v-data-table
+          :headers="headers"
+          :items="items"
+          :loading="loading"
+          loading-text="ກຳລັງໂຫຼດຂໍ້ມູນ..."
+          :search="filters.search"
+          :items-per-page="-1"
+          density="compact"
+          class="elevation-0 full-width-table-thin"
+          item-value="JRNLLog_id"
+          hide-default-footer
+        >
+          <template v-slot:loading>
+            <v-skeleton-loader
+              v-for="n in pagination.pageSize"
+              :key="n"
+              type="table-row"
+              class="mx-auto"
+            ></v-skeleton-loader>
+          </template>
+
+          <template v-slot:header.checkbox="{ column }">
+            <v-checkbox
+              v-model="selectAll"
+              @update:model-value="toggleSelectAll"
+              :indeterminate="
+                selectedItems.length > 0 &&
+                selectedItems.length < selectableItems.length
+              "
+              :disabled="selectableItems.length === 0"
+              density="compact"
+              hide-details
+              color="primary"
+            ></v-checkbox>
+          </template>
+
+          <template v-slot:item.checkbox="{ item }">
+            <v-checkbox
+              v-if="isItemSelectable(item)"
+              :model-value="isItemSelected(item)"
+              @update:model-value="toggleItemSelection(item)"
+              density="compact"
+              hide-details
+              color="primary"
+            ></v-checkbox>
+            <div v-else class="text-center">
+              <v-icon
+                size="16"
+                color="grey"
+                title="ອະນຸມັດແລ້ວ - ບໍ່ສາມາດເລືອກໄດ້"
+              >
+                mdi-lock
+              </v-icon>
+            </div>
+          </template>
+
+          <template v-slot:item.Reference_No="{ item }">
+            <v-chip
+              v-if="canView"
+              size="x-small"
+              color="primary"
+              variant="outlined"
+              @click="viewDetails(item)"
+              class="cursor-pointer"
+            >
+              {{ item.Reference_No }}
+            </v-chip>
+          </template>
+
+          <template v-slot:item.module_id="{ item }">
+            <span v-if="item.module_name_la" class="text-compact">
+              {{ item.module_name_la }}
+            </span>
+            <span v-else class="text-grey">-</span>
+          </template>
+
+          <template v-slot:item.Fcy_Amount="{ item }">
+            <div class="text-right text-compact">
+              <strong>{{ formatNumber(item.Fcy_Amount) }}</strong>
+              <span class="text-grey ml-1">{{
+                item.ccy_code || item.Ccy_cd
+              }}</span>
+            </div>
+          </template>
+
+          <template v-slot:item.Lcy_Amount="{ item }">
+            <div class="text-right text-compact">
+              {{ formatNumber(item.Lcy_Amount) }} LAK
+            </div>
+          </template>
+
+          <template v-slot:item.Txn_code="{ item }">
+            <v-chip size="x-small" variant="flat" color="info">
+              {{ item.Txn_code || "-" }}
+            </v-chip>
+          </template>
+
+          <template v-slot:item.Addl_text="{ item }">
+            <div class="text-truncate text-compact">
+              <v-tooltip v-if="item.Addl_text" location="top">
+                <template v-slot:activator="{ props }">
+                  <span v-bind="props">{{ item.Addl_text || "-" }}</span>
+                </template>
+                <span>{{ item.Addl_text }}</span>
+              </v-tooltip>
+              <span v-else>-</span>
+            </div>
+          </template>
+
+          <template v-slot:item.Value_date="{ item }">
+            <span class="text-compact text-grey">{{
+              formatDate(item.Value_date)
+            }}</span>
+          </template>
+
+          <template v-slot:item.Auth_Status="{ item }">
+            <v-chip
+              :color="getStatusColor(item.Auth_Status)"
+              size="x-small"
+              variant="flat"
+            >
+              <v-icon left size="x-small">{{
+                getStatusIcon(item.Auth_Status)
+              }}</v-icon>
+              {{ getStatusText(item.Auth_Status) }}
+            </v-chip>
+          </template>
+
+          <template v-slot:item.maker_name="{ item }">
+            <div class="text-caption-thin">
+              <div v-if="item.Maker_Id" class="text-compact">
+                {{ item.maker_name || item.Maker_Id }}
+              </div>
+            </div>
+          </template>
+
+          <template v-slot:item.actions="{ item }">
+            <div class="d-flex gap-1">
+              <v-btn
+                v-if="canView"
+                icon
+                size="x-small"
+                variant="text"
+                color="info"
+                @click="viewDetails(item)"
+                title="ເບິ່ງລາຍລະອຽດ"
+              >
+                <v-icon size="14">mdi-eye</v-icon>
+              </v-btn>
+
+              <v-btn
+                v-if="
+                  canDelete &&
+                  (canAuthorize || item.Maker_Id === currentUser?.user_id) &&
+                  item.Auth_Status !== 'A' &&
+                  item.Auth_Status !== 'R'
+                "
+                icon
+                size="x-small"
+                variant="text"
+                color="error"
+                @click="deleteItem(item)"
+                title="ລຶບ"
+              >
+                <v-icon size="14">mdi-delete</v-icon>
+              </v-btn>
+            </div>
+          </template>
+        </v-data-table>
+
+        <!-- Custom Pagination -->
+        <v-card-actions class="justify-space-between pa-3">
+          <div class="d-flex align-center gap-2">
+            <span class="text-caption"
+              >ສະແດງ {{ pagination.pageSize }} ລາຍການຕໍ່ໜ້າ</span
+            >
+            <v-select
+              v-model="pagination.pageSize"
+              :items="[10, 25, 50, 100]"
+              density="compact"
+              variant="outlined"
+              hide-details
+              @update:model-value="onPageSizeChange"
+              style="width: 80px"
+            ></v-select>
+          </div>
+
+          <v-pagination
+            v-model="pagination.currentPage"
+            :length="pagination.totalPages"
+            :total-visible="7"
+            @update:model-value="onPageChange"
+            density="compact"
+            size="small"
+            :disabled="loading"
+          ></v-pagination>
+        </v-card-actions>
+      </v-card>
     </div>
   </div>
 </template>
 
-<script setup lang="ts">
-// TypeScript declaration for ZXing
-declare module '@zxing/library' {
-  export class BrowserMultiFormatReader {
-    constructor()
-    listVideoInputDevices(): Promise<MediaDeviceInfo[]>
-    decodeOnceFromVideoDevice(deviceId: string, videoElement: HTMLVideoElement): Promise<any>
-    decodeFromVideoDevice(deviceId: string, videoElement: HTMLVideoElement, callback: (result: any, error?: any) => void): Promise<void>
-    reset(): void
-    stopContinuousDecode(): void
-  }
-  export enum BarcodeFormat {
-    QR_CODE = 'QR_CODE',
-    CODE_128 = 'CODE_128',
-    CODE_39 = 'CODE_39',
-    EAN_13 = 'EAN_13',
-    UPC_A = 'UPC_A'
-  }
-}
-
-// Interfaces
-interface ScanResult {
-  text: string
-  format: string
-  timestamp: Date
-}
-
-interface CameraDevice {
-  deviceId: string
-  label: string
-}
-
-// Reactive data
-const videoRef = ref<HTMLVideoElement | null>(null)
-const isScanning = ref(false)
-const isLoading = ref(false)
-const isReady = ref(false)
-const scanResult = ref<ScanResult | null>(null)
-const error = ref('')
-const availableCameras = ref<CameraDevice[]>([])
-const currentCameraIndex = ref(0)
-
-// ZXing related
-let BrowserMultiFormatReader: any = null
-let codeReader: any = null
-let stream: MediaStream | null = null
-
-// Initialize ZXing library on client side
-onMounted(async () => {
-  if (process.client) {
-    await initializeScanner()
-  }
-})
-
-// Cleanup on component unmount
-onUnmounted(() => {
-  stopScanning()
-})
-
-// Methods
-const initializeScanner = async () => {
-  try {
-    isLoading.value = true
-    error.value = ''
-    
-    // Import ZXing library
-    const { BrowserMultiFormatReader: Reader } = await import('@zxing/library')
-    BrowserMultiFormatReader = Reader
-    codeReader = new BrowserMultiFormatReader()
-    
-    // Get available cameras
-    await loadAvailableCameras()
-    
-    isReady.value = true
-    console.log('Scanner initialized successfully')
-  } catch (err) {
-    error.value = 'ບໍ່ສາມາດເລີ່ມຕົ້ນ scanner ໄດ້. ກະລຸນາກວດສອບ browser ແລະ camera.'
-    console.error('ZXing initialization error:', err)
-  } finally {
-    isLoading.value = false
-  }
-}
-
-const loadAvailableCameras = async () => {
-  try {
-    if (!codeReader) return
-    
-    const devices = await codeReader.listVideoInputDevices()
-    availableCameras.value = devices.map((device: MediaDeviceInfo) => ({
-      deviceId: device.deviceId,
-      label: device.label || `Camera ${devices.indexOf(device) + 1}`
-    }))
-    
-    console.log('Available cameras:', availableCameras.value.length)
-  } catch (err) {
-    console.error('Error loading cameras:', err)
-  }
-}
-
-const startScanning = async () => {
-  if (!codeReader || !videoRef.value) {
-    error.value = 'Scanner ຍັງບໍ່ພ້ອມ'
-    return
-  }
-
-  try {
-    error.value = ''
-    isScanning.value = true
-    
-    if (availableCameras.value.length === 0) {
-      throw new Error('ບໍ່ພົບກ້ອງຖ່າຍຮູບ')
-    }
-    
-    // Use selected camera device
-    const selectedCamera = availableCameras.value[currentCameraIndex.value]
-    console.log('Using camera:', selectedCamera.label)
-    
-    // Start continuous decoding
-    await codeReader.decodeFromVideoDevice(
-      selectedCamera.deviceId,
-      videoRef.value,
-      (result: any, error: any) => {
-        if (result) {
-          handleScanSuccess(result)
-        }
-        if (error && error.name !== 'NotFoundException') {
-          console.error('Scanning error:', error)
-        }
-      }
-    )
-    
-  } catch (err: any) {
-    error.value = `ເກີດຂໍ້ຜິດພາດໃນການສະແກນ: ${err.message}`
-    isScanning.value = false
-    console.error('Scanning error:', err)
-  }
-}
-
-const stopScanning = () => {
-  if (codeReader) {
-    codeReader.reset()
-  }
-  
-  if (stream) {
-    stream.getTracks().forEach(track => track.stop())
-    stream = null
-  }
-  
-  isScanning.value = false
-  console.log('Scanning stopped')
-}
-
-const switchCamera = async () => {
-  if (availableCameras.value.length <= 1) return
-  
-  stopScanning()
-  currentCameraIndex.value = (currentCameraIndex.value + 1) % availableCameras.value.length
-  
-  // Wait a bit before starting with new camera
-  setTimeout(() => {
-    if (!isScanning.value) {
-      startScanning()
-    }
-  }, 500)
-}
-
-const handleScanSuccess = (result: any) => {
-  const scannedText = result.getText()
-  const scannedFormat = result.getBarcodeFormat()
-  
-  console.log('Scan successful:', scannedText, scannedFormat)
-  
-  scanResult.value = {
-    text: scannedText,
-    format: scannedFormat,
-    timestamp: new Date()
-  }
-  
-  // Stop scanning after successful scan (optional)
-  if (props.autoStop) {
-    stopScanning()
-  }
-  
-  // Emit event
-  emit('scan-success', {
-    text: scannedText,
-    format: scannedFormat
-  })
-}
-
-const formatBarcodeType = (format: string): string => {
-  const formats: Record<string, string> = {
-    'QR_CODE': 'QR Code',
-    'CODE_128': 'Code 128',
-    'CODE_39': 'Code 39',
-    'EAN_13': 'EAN-13',
-    'EAN_8': 'EAN-8',
-    'UPC_A': 'UPC-A',
-    'UPC_E': 'UPC-E',
-    'DATA_MATRIX': 'Data Matrix',
-    'PDF_417': 'PDF417',
-    'AZTEC': 'Aztec'
-  }
-  return formats[format] || format
-}
-
-const formatTime = (date: Date): string => {
-  return date.toLocaleString('lo-LA', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  })
-}
-
-const isUrl = (text: string): boolean => {
-  try {
-    new URL(text)
-    return true
-  } catch {
-    return text.startsWith('http://') || text.startsWith('https://')
-  }
-}
-
-const copyToClipboard = async () => {
-  if (!scanResult.value) return
-  
-  try {
-    await navigator.clipboard.writeText(scanResult.value.text)
-    console.log('ສຳເນົາສຳເລັດ!')
-    // You might want to show a toast notification here
-  } catch (err) {
-    console.error('ສຳເນົາລົ້ມເຫຼວ:', err)
-  }
-}
-
-const openUrl = () => {
-  if (scanResult.value && isUrl(scanResult.value.text)) {
-    window.open(scanResult.value.text, '_blank')
-  }
-}
-
-const clearResult = () => {
-  scanResult.value = null
-}
-
-const clearError = () => {
-  error.value = ''
-}
-
-// Props
-interface Props {
-  autoStop?: boolean
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  autoStop: true
-})
-
-// Emits
-const emit = defineEmits<{
-  'scan-success': [data: { text: string; format: string }]
-}>()
-</script>
-
 <style scoped>
-.scanner-container {
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 20px;
-  font-family: 'Noto Sans Lao', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+/* All existing styles from the original component... */
+.gl-approved-master {
+  padding: 16px;
 }
 
-.scanner-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 25px;
-  padding: 15px 0;
-  border-bottom: 2px solid rgba(255, 255, 255, 0.3);
-}
-
-.scanner-header h2 {
-  margin: 0;
-  color: #2c3e50;
-  font-size: 24px;
-  font-weight: 600;
-}
-
-.scanner-status {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  color: #7f8c8d;
-  font-weight: 500;
-}
-
-.status-indicator {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background-color: #95a5a6;
-  transition: background-color 0.3s ease;
-}
-
-.status-indicator.active {
-  background-color: #27ae60;
-  animation: pulse 1.5s infinite;
-}
-
-.camera-wrapper {
-  position: relative;
-  width: 100%;
-  height: 350px;
-  margin: 20px auto;
-  border-radius: 15px;
-  overflow: hidden;
-  background: #000;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
-}
-
-video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.camera-active {
-  border: 3px solid #27ae60;
-  box-shadow: 0 0 20px rgba(39, 174, 96, 0.4);
-}
-
-.camera-placeholder {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-}
-
-.placeholder-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
-  opacity: 0.8;
-}
-
-.scan-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-}
-
-.scan-box {
-  position: relative;
-  width: 250px;
-  height: 250px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.scan-corners {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-}
-
-.corner {
-  position: absolute;
-  width: 30px;
-  height: 30px;
-  border: 3px solid #27ae60;
-}
-
-.corner.top-left {
-  top: 0;
-  left: 0;
-  border-right: none;
-  border-bottom: none;
-}
-
-.corner.top-right {
-  top: 0;
-  right: 0;
-  border-left: none;
-  border-bottom: none;
-}
-
-.corner.bottom-left {
-  bottom: 0;
-  left: 0;
-  border-right: none;
-  border-top: none;
-}
-
-.corner.bottom-right {
-  bottom: 0;
-  right: 0;
-  border-left: none;
-  border-top: none;
-}
-
-.scan-line {
-  width: 200px;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, #27ae60, transparent);
-  animation: scan 2s linear infinite;
-}
-
-.scan-instruction {
-  margin-top: 30px;
-  color: white;
-  font-size: 16px;
-  text-align: center;
-  background: rgba(0, 0, 0, 0.6);
-  padding: 10px 20px;
-  border-radius: 20px;
-  backdrop-filter: blur(10px);
-}
-
-@keyframes scan {
-  0% { transform: translateY(-100px); }
-  100% { transform: translateY(100px); }
-}
-
-@keyframes pulse {
-  0% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.1); opacity: 0.7; }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-.controls {
-  display: flex;
-  justify-content: center;
-  gap: 15px;
-  margin: 25px 0;
-  flex-wrap: wrap;
-}
-
-.btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 24px;
-  border: none;
-  border-radius: 25px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-}
-
-.btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none !important;
-}
-
-.btn:not(:disabled):hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-}
-
-.btn-secondary {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  color: white;
-}
-
-.btn-tertiary {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-  color: white;
-}
-
-.btn-icon {
-  font-size: 18px;
-}
-
-.result-container {
-  margin-top: 25px;
-  padding: 20px;
-  background: white;
-  border-radius: 15px;
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
-  border-left: 5px solid #27ae60;
-}
-
-.result-container h3 {
-  margin: 0 0 15px 0;
-  color: #27ae60;
-  font-size: 20px;
-  font-weight: 600;
-}
-
-.result-item {
-  margin-bottom: 12px;
-  font-size: 14px;
-}
-
-.result-format {
-  display: inline-block;
-  background: #27ae60;
-  color: white;
-  padding: 3px 8px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.result-text {
-  background: #f8f9fa;
-  padding: 12px;
+/* Permission indicators */
+.permission-indicators {
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 8px;
-  border-left: 4px solid #27ae60;
-  word-break: break-all;
-  font-family: 'Courier New', monospace;
-  margin: 8px 0;
-  font-size: 14px;
+  padding: 4px 8px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.result-time {
-  color: #7f8c8d;
-  font-size: 13px;
+.permission-indicators .v-chip {
+  font-weight: 600;
+  font-size: 0.7rem;
 }
 
-.result-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 15px;
-  flex-wrap: wrap;
+/* Permission denied state */
+.permission-denied-state {
+  max-width: 600px;
+  margin: 40px auto;
 }
 
-.action-btn {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 8px 16px;
-  border: none;
-  border-radius: 20px;
-  cursor: pointer;
-  font-size: 14px;
+/* Compact header */
+.page-header-compact {
+  padding: 8px 0;
+  margin-bottom: 16px;
+}
+
+.page-title-compact {
+  font-size: 1.4rem;
   font-weight: 500;
-  transition: all 0.3s ease;
-}
-
-.copy-btn {
-  background: #3498db;
-  color: white;
-}
-
-.copy-btn:hover {
-  background: #2980b9;
-}
-
-.clear-btn {
-  background: #95a5a6;
-  color: white;
-}
-
-.clear-btn:hover {
-  background: #7f8c8d;
-}
-
-.url-btn {
-  background: #e67e22;
-  color: white;
-}
-
-.url-btn:hover {
-  background: #d35400;
-}
-
-.error-container {
+  color: #1976d2;
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  margin-top: 20px;
-  padding: 15px;
-  background: #fff5f5;
-  border: 1px solid #fed7d7;
-  border-radius: 10px;
-  color: #c53030;
+  align-items: center;
+  margin: 0;
+  line-height: 1.2;
 }
 
-.error-icon {
-  font-size: 20px;
-  flex-shrink: 0;
+/* Enhanced Filter Styles */
+.filter-card-thin {
+  background: #f9f9f9;
+  border: 1px solid #e0e0e0;
 }
 
-.error-content {
-  flex: 1;
+.date-filter-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(25, 118, 210, 0.05);
+  border-radius: 6px;
+  border: 1px solid rgba(25, 118, 210, 0.2);
 }
 
-.error-content strong {
-  display: block;
-  margin-bottom: 5px;
+.date-filter-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #1976d2;
+  min-width: fit-content;
 }
 
-.error-close {
-  background: none;
-  border: none;
-  color: #c53030;
+.date-input {
+  max-width: 200px;
+  min-width: 140px;
+}
+
+.date-range-inputs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.date-separator {
+  font-size: 0.85rem;
+  color: #666;
+  padding: 0 4px;
+  min-width: fit-content;
+}
+
+.month-year-inputs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.month-input {
+  max-width: 120px;
+  min-width: 100px;
+}
+
+.year-input {
+  max-width: 100px;
+  min-width: 80px;
+}
+
+/* Active Filters */
+.active-filters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 4px 8px;
+  background: rgba(76, 175, 80, 0.05);
+  border-radius: 6px;
+  border: 1px solid rgba(76, 175, 80, 0.2);
+}
+
+.active-filters-label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #4caf50;
+  margin-right: 8px;
+  display: flex;
+  align-items: center;
+  min-width: fit-content;
+}
+
+/* Thinner summary cards */
+.summary-card-thin {
+  height: auto;
+  min-height: 60px;
+  transition: transform 0.2s;
+  border: 1px solid #e0e0e0;
+}
+
+.summary-card-thin:hover {
+  transform: translateY(-1px);
+}
+
+/* Active filter state for summary cards */
+.summary-card-thin.active-filter {
+  border: 2px solid #1976d2 !important;
+  background: linear-gradient(
+    135deg,
+    rgba(25, 118, 210, 0.05) 0%,
+    rgba(25, 118, 210, 0.1) 100%
+  );
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.2) !important;
+}
+
+.summary-card-thin.active-filter .summary-value-thin {
+  color: #1976d2;
+  font-weight: 700;
+}
+
+.summary-card-thin.active-filter .summary-label-thin {
+  color: #1976d2;
+  font-weight: 600;
+}
+
+.summary-value-thin {
+  font-size: 1.2rem;
+  font-weight: 600;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.summary-label-thin {
+  font-size: 0.7rem;
+  color: #666;
+  line-height: 1;
+}
+
+/* Thinner data table card */
+.data-table-card-thin {
+  border: 1px solid #e0e0e0;
+}
+
+/* Compact text */
+.text-compact {
+  font-size: 0.8rem;
+  line-height: 1.1;
+}
+
+.text-caption-thin {
+  font-size: 0.7rem;
+  line-height: 1.1;
+}
+
+.text-xs {
+  font-size: 0.65rem;
+  line-height: 1;
+}
+
+/* Full width table - thinner */
+.full-width-table-thin {
+  width: 100%;
+}
+
+.cursor-pointer {
   cursor: pointer;
-  font-size: 18px;
-  padding: 0;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: background-color 0.3s ease;
 }
 
-.error-close:hover {
-  background-color: rgba(197, 48, 48, 0.1);
+/* Vuetify overrides for compact design */
+:deep(.v-data-table) {
+  font-size: 0.8rem;
+  width: 100% !important;
 }
 
-.loading-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 15px;
-  padding: 30px;
-  text-align: center;
-  color: #7f8c8d;
+:deep(.v-data-table th) {
+  font-weight: 600;
+  background-color: #f7f7f7;
+  font-size: 0.75rem;
+  padding: 8px 12px !important;
+  height: 36px !important;
 }
 
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #3498db;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
+:deep(.v-data-table td) {
+  padding: 6px 12px !important;
+  height: 40px !important;
+  font-size: 0.8rem;
 }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+:deep(.v-data-table-wrapper) {
+  width: 100% !important;
+  overflow-x: auto;
 }
 
-/* Responsive design */
+:deep(.v-table__wrapper) {
+  width: 100% !important;
+}
+
+:deep(.v-field__input) {
+  min-height: 32px !important;
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+}
+
+:deep(.v-field__field) {
+  height: 32px !important;
+}
+
+:deep(
+    .v-input--density-compact
+      .v-field--variant-outlined
+      .v-field__outline__start
+  ) {
+  border-radius: 4px 0 0 4px;
+}
+
+:deep(
+    .v-input--density-compact .v-field--variant-outlined .v-field__outline__end
+  ) {
+  border-radius: 0 4px 4px 0;
+}
+
+:deep(.v-btn--size-small) {
+  min-height: 28px;
+  padding: 0 12px;
+  font-size: 0.75rem;
+}
+
+:deep(.v-btn--size-x-small) {
+  min-height: 24px;
+  padding: 0 8px;
+  font-size: 0.7rem;
+}
+
+:deep(.v-chip--size-x-small) {
+  height: 20px;
+  font-size: 0.65rem;
+  padding: 0 6px;
+}
+
+:deep(.v-card-title) {
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 12px 16px;
+}
+
+:deep(.v-card-text) {
+  font-size: 0.8rem;
+}
+
+:deep(.v-card-actions) {
+  min-height: 40px;
+}
+
+:deep(.v-dialog .v-card) {
+  max-height: 90vh;
+}
+
+/* Responsive adjustments */
 @media (max-width: 768px) {
-  .scanner-container {
-    padding: 15px;
-    margin: 10px;
+  .page-title-compact {
+    font-size: 1.2rem;
   }
-  
-  .scanner-header {
+
+  .summary-value-thin {
+    font-size: 1rem;
+  }
+
+  .summary-label-thin {
+    font-size: 0.65rem;
+  }
+
+  .permission-indicators {
+    margin-top: 8px;
+  }
+
+  .date-filter-section {
     flex-direction: column;
-    gap: 10px;
-    text-align: center;
+    align-items: stretch;
+    gap: 4px;
   }
-  
-  .camera-wrapper {
-    height: 280px;
-  }
-  
-  .scan-box {
-    width: 200px;
-    height: 200px;
-  }
-  
-  .controls {
+
+  .date-range-inputs,
+  .month-year-inputs {
     flex-direction: column;
-    align-items: center;
+    gap: 4px;
   }
-  
-  .btn {
-    width: 100%;
-    max-width: 250px;
-    justify-content: center;
+
+  .date-input,
+  .month-input,
+  .year-input {
+    max-width: 100%;
   }
-  
-  .result-actions {
+
+  .active-filters {
     flex-direction: column;
+    align-items: stretch;
   }
-  
-  .action-btn {
-    justify-content: center;
+
+  .active-filters-label {
+    margin-bottom: 4px;
+  }
+
+  :deep(.v-data-table th) {
+    padding: 4px 8px !important;
+    font-size: 0.7rem;
+  }
+
+  :deep(.v-data-table td) {
+    padding: 4px 8px !important;
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .gl-approved-master {
+    padding: 8px;
+  }
+
+  .text-compact {
+    font-size: 0.75rem;
+  }
+
+  .date-separator {
+    display: none;
   }
 }
 </style>

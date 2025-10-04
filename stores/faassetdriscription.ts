@@ -56,6 +56,7 @@ export const useFassetLidtDescription = defineStore("fassetlistdecription", {
       },
       postdata: {
         action: "bulk_process_all",
+        mapping_ids: [] as any,
         create_journal: true,
       },
       filter_data_assetlist: {

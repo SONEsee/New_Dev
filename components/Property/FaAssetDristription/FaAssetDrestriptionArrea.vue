@@ -4,7 +4,7 @@ const mainStore = useFassetLidtDescription();
 const assetStores = faAssetStore();
 
 const eodStore = useDateStore();
-const selectedItems = ref([]);
+const selectedItems = ref<any>([]);
 const journalStore = usejournalStore();
 
 const selectedAssetType = ref(null);
@@ -21,7 +21,6 @@ const mainType = computed(() => {
   }
   return [];
 });
-
 
 const journalStatusOptions = [
   { value: "pending", title: "ລໍຖ້າອະນຸມັດ" },
@@ -385,6 +384,7 @@ onMounted(() => {
 <template>
   <v-row>
     <v-col cols="12" md="3">
+     
       <v-autocomplete
         v-model="selectedAssetType"
         :items="mainType"
@@ -450,20 +450,6 @@ onMounted(() => {
         </template>
       </v-select>
     </v-col>
-
-    <!-- ເພີ່ມປຸ່ມລົບ filter -->
-    <!-- <v-col cols="12" md="2">
-      <v-btn
-        @click="clearFilter"
-        variant="outlined"
-        color="secondary"
-        prepend-icon="mdi-filter-remove"
-        :disabled="!selectedAssetType && !selectedJournalStatus"
-        style="height: 40px;"
-      >
-        ລົບ Filter
-      </v-btn>
-    </v-col> -->
   </v-row>
 
   <div
