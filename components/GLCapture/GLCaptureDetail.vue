@@ -625,7 +625,7 @@ const {
   hasAllPermissions,
   hasAnyPermission,
   permissions,
-  debugPermissions,
+  // debugPermissions,
   waitForReady
 } = useRolePermissions()
 
@@ -1625,7 +1625,7 @@ onMounted(async () => {
     permissionCheckComplete.value = true
     
     // Step 4: Debug permissions
-    debugPermissions()
+    // debugPermissions()
 
     // Step 5: Load reference data
     await Promise.all([
