@@ -520,7 +520,7 @@ const {
   canAuthorize,
   canAdd,
   permissions,
-  debugPermissions,
+  // debugPermissions,
   waitForReady
 } = useRolePermissions()
 
@@ -1003,7 +1003,7 @@ onMounted(async () => {
     permissionCheckComplete.value = true
     
     // Step 4: Debug permissions
-    debugPermissions()
+    // debugPermissions()
 
     // Step 5: Initialize journal permission
     await journalPermission.checkPermission()

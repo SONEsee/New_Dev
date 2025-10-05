@@ -172,9 +172,7 @@ onMounted(() => {
           </template>
         </v-autocomplete>
       </v-col>
-      <v-col cols="12" md="3">
-         <v-autocomplete :items="assetList" item-title="asset_list_id"></v-autocomplete>
-      </v-col>
+      
       <v-col cols="12" md="3">
         <v-autocomplete
           :items="materData"

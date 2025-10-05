@@ -99,7 +99,7 @@ const editForm = ref({
  
   debit_account_code: "",
   credit_account_code: "",
-  currency_code: "",
+  currency_code: null,
 });
 interface AccountRespons {
     glsub_id:         number;
@@ -169,19 +169,19 @@ function handleEdit(entry:any) {
   }
 }
 
-const getCurrencyInfo = (ccyCode) => {
+const getCurrencyInfo = (ccyCode:any) => {
   if (!ccyCode) return null;
-  return currencies.value.find((c) => c.ccy_code === ccyCode);
+  return currencies.value.find((c:any) => c.ccy_code === ccyCode);
 };
 
 
-const buildAccountNo = (accountId, currencyCode = null) => {
+const buildAccountNo = (accountId:any, currencyCode = null) => {
   let code = getAccountCode(accountId);
   if (!code) return "";
 
   
-  const currency = getCurrencyInfo(currencyCode || selectedItem.value?.Ccy_cd);
-  const altCcyCode = currency?.ALT_Ccy_Code || "";
+  const currency = getCurrencyInfo(currencyCode  || selectedItem.value?.Ccy_cd) ;
+  const altCcyCode = currency?.ALT_Ccy_Code || "" ;
 
   if (altCcyCode && altCcyCode.trim() !== "") {
     code = `${altCcyCode}.${code}`;
