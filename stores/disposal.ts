@@ -141,25 +141,7 @@ export const useDispoalStore = defineStore("disposal", {
           }, 1000);;
         }
         }
-        // const req = await axios.post(
-        //   `/api/asset_list_diposal/bulk-approve-journals/`,
-        //   this.approve_disposal,
-        //   {
-        //     headers: {
-        //       "Content-Type": "application/json",
-        //       Authorization: `Bearer ${localStorage.getItem("token")}`,
-        //     },
-        //   }
-        // );if(req.status === 200 || req.status === 201){
-        //   CallSwal({
-        //     icon: "success",
-        //     title: "ສຳເລັດ",
-        //     text: "ອະນຸມັດຊັບສົມບັດສໍາເລັດແລ້ວ",
-        //     timer: 1500,
-        //     showCancelButton: false,
-        //     showConfirmButton: false,
-        //   });
-        // }
+        
       } catch (error) {
         CallSwal({
           icon: "error",
@@ -202,26 +184,6 @@ export const useDispoalStore = defineStore("disposal", {
         this.isLoading = false;
       }
     },
-    // async getDispalso(){
-    //   this.isLoading = true;
-    //   try {
-    //     const res = await axios.get<ReportDispalso.DisposalRespons>(`/api/asset_list_diposal/`,{
-    //        headers: {
-    //           "Content-Type": "application/json",
-    //           Authorization: `Bearer ${localStorage.getItem("token")}`,
-    //         },
-    //     });if(res.status===200){
-    //       this.respons_data_dispalso = res.data
-    //     }
-    //   } catch (error) {
-    //     CallSwal({
-    //       icon:"error",
-    //       title:"ເກີດຂໍ້ຜິດພາດ",
-    //       text:`ບໍ່ສາມາດດືງຂໍ້ມູນໄດ້ ${error}`
-    //     })
-    //   }finally{
-    //     this.isLoading = false;
-    //   }
-    // }
+   
   },
 });

@@ -6,6 +6,7 @@ const AssetListStore = assetStore();
 const selectAssetList = ref("");
 const selectUseLife = ref("");
 const selectType = ref("");
+
 const rout = useRoute();
 const headers = computed(() => [
   {
@@ -81,6 +82,21 @@ const headers = computed(() => [
     class: "text-center",
   },
 ]) as any;
+watch(selectType, async (newValue) => {
+  faasetStore.isLoading = true;
+  try {
+    faasetStore.filter_data_assetlist_id1.filter.asset_list_id = newValue;
+    await faasetStore.GetFaAssetList2();
+  } catch (error) {
+    CallSwal({
+      icon: "error",
+      title: "ຂໍ້ຜິດພາດ",
+      text: "ບໍ່ສາມາດດືງຂໍ້ມູນໄດ້",
+    });
+  } finally {
+    faasetStore.isLoading = false;
+  }
+});
 watch(selectAssetList, async (newValue) => {
   faasetStore.isLoading = true;
   try {
@@ -220,6 +236,12 @@ const getName = (nameType: any) => {
   const data = assetType.value.find((item: any) => item.coa_id === nameType);
   return data ? data.asset_name_la : "-";
 };
+const displayNameAssetList = (item:any)=>{
+  if(!item || !item.asset_list_id || !item.asset_spec){
+    return "ທັງໝົດ";
+  }
+  return `${item.asset_spec} (${item.asset_list_id})`;
+}
 
 onMounted(() => {
   masterType.getEP();
@@ -262,6 +284,33 @@ onMounted(() => {
       </v-col>
       <v-col cols="12" md="3">
         <v-autocomplete
+        prepend-inner-icon="mdi-format-list-text"
+          label="ເລືອກຕາມລະຫັດຊັບສິນ"
+          variant="outlined"
+          density="compact"
+          :items="faasetData"
+          v-model="selectType"
+          clearable
+          item-value="asset_list_id"
+          :item-title="displayNameAssetList"
+        >
+          <template v-slot:item="{ item, props }">
+            <v-list-item
+              v-bind="props"
+              :title="`${item.raw.asset_list_id} - ${item.raw.asset_spec}`"
+            >
+            <template v-slot:prepend>
+              <v-avatar size="small" color="primary">
+                <v-icon>mdi-format-list-text</v-icon>
+              </v-avatar>
+            </template>
+          
+          </v-list-item>
+          </template>
+        </v-autocomplete>
+      </v-col>
+      <v-col cols="12" md="3">
+        <v-autocomplete
           v-model="selectAssetList"
           :loading="faasetStore.isLoading"
           prepend-inner-icon="mdi-format-list-bulleted-type"
@@ -287,7 +336,7 @@ onMounted(() => {
           </template>
         </v-autocomplete>
       </v-col>
-      <v-col cols="12" md="6" class="d-flex justify-end">
+      <v-col cols="12" md="3" class="d-flex justify-end">
         <v-btn
           :disabled="!selectUseLife"
           color="primary"
@@ -357,7 +406,7 @@ onMounted(() => {
       </template>
       <template v-slot:item.expense_status="{ item }">
         <v-btn
-        color="blue-lighten-4"
+          color="blue-lighten-4"
           flat
           class="text-primary"
           @click="
