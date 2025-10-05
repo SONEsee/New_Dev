@@ -7,7 +7,7 @@
       <v-card-title class="px-6 py-4 d-flex align-center" style="background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%); color: white;">
         <v-icon start size="24">mdi-book-open-page-variant</v-icon>
         <span class="text-h6 font-weight-medium text-styles">
-          ລາຍງານການເຄື່ອນໄຫວບັນຊີກ່ອນປິດບັນຊີ (Journal Report)
+          ລາຍງານການເຄື່ອນໄຫວບັນຊີຫຼັງປິດບັນຊີ (Journal Report)
         </span>
         <v-spacer />
         <v-chip 
@@ -703,7 +703,7 @@ const printData = () => {
       '</head>' +
       '<body>' +
       '<div class="header">' +
-      '<h2>ລາຍງານການເຄື່ອນໄຫວບັນຊີກ່ອນປິດບັນຊີ (Journal Report ACTB)</h2>' +
+      '<h2>ລາຍງານການເຄື່ອນໄຫວບັນຊີຫຼັງປິດບັນຊີ (Journal Report ACTB)</h2>' +
       '</div>' +
       '<div class="info-section">' +
       '<div class="info-row">' +
