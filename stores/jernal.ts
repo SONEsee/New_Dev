@@ -17,7 +17,8 @@ export const useJournalStor = defineStore("journal", {
           delete_stat__ne: "D",
           ordering: "-Maker_DT_Stamp",
           module_id: "",
-          Ccy_cd: "",
+          Ccy_cd: null,
+          
 
           fin_cycle: "",
         },

@@ -5,19 +5,10 @@ import Swal from "sweetalert2";
 import { debounce } from "lodash";
 import { useRolePermissions } from "@/composables/useRolePermissions";
 const newSelectYear = ref("");
-watch(newSelectYear,async (newValue)=>{
-  jurnalStore.isLoading = true;
-  try {
-    jurnalStore.filter_data_journal.querys.fin_cycle = newValue;
-    jurnalStore.getDataJurnal();
-  } catch (error) {
-    CallSwal({
-      icon: "error",
-      text: "ບໍ່ສາມາດເຂົ້າສູ່ລະບົບນີ້ໄດ້",
-      title: "ບໍ່ສາມາດເຂົ້າສູ່ລະບົບນີ້ໄດ້",
-    })
-  }
-})
+// const newSelecCC = ref("");
+const newSelecCC = ref<string | null>(null);
+const moduleStore = ModulesStore();
+
 interface JournalItem {
   JRNLLog_id: string | number;
   Reference_No: string;
@@ -510,7 +501,44 @@ watch(
   },
   { deep: true }
 );
+watch(newSelecCC, async (newValue)=>{
+  jurnalStore.isLoading = true;
+  try {
+    jurnalStore.filter_data_journal.querys.Ccy_cd = newValue;
+   await jurnalStore.getDataJurnal();
+  } catch (error) {
+    CallSwal({
+      icon: "error",
+      text: "ບໍ່ສາມາດເຂົ້າສູ່ລະບົບນີ້ໄດ້",
+    });
+  }finally {
+    jurnalStore.isLoading = false;
+  }
+})
 
+const moduleData = computed(()=>{
+  const data = moduleStore.response_data_module;
+  if(Array.isArray(data)){
+    return data;
+  }
+  if(data && typeof data === "object"){
+    return [data]
+  }
+  return [];
+})
+watch(newSelectYear, async (newValue) => {
+  jurnalStore.isLoading = true;
+  try {
+    jurnalStore.filter_data_journal.querys.fin_cycle = newValue;
+    jurnalStore.getDataJurnal();
+  } catch (error) {
+    CallSwal({
+      icon: "error",
+      text: "ບໍ່ສາມາດເຂົ້າສູ່ລະບົບນີ້ໄດ້",
+      title: "ບໍ່ສາມາດເຂົ້າສູ່ລະບົບນີ້ໄດ້",
+    });
+  }
+});
 const hasActiveFilters = computed((): boolean => {
   try {
     return !!(
@@ -1214,6 +1242,11 @@ const searchDebounced = debounce((): void => {
     console.error("Error in searchDebounced:", error);
   }
 }, 500);
+const mapModuleName = (dataName:any)=>{
+if(!dataName || !Array.isArray(moduleData.value))return "-";
+const dataItem = moduleData.value.find((item)=>item.module_Id === dataName);
+return dataItem ? dataItem.module_name_la : "-";
+}
 
 onMounted(async () => {
   try {
@@ -1222,6 +1255,7 @@ onMounted(async () => {
     const subMenuId = (route.query.sub_menu_id as string) || submenu_id;
 
     await Promise.all([
+      moduleStore.getModule(),
       jurnalStore.getJurnallist(),
       jurnalStore.getDataJurnal(),
       jurnalStore.getDataCount(),
@@ -1292,7 +1326,7 @@ const nameDisplay = (item: any) => {
           <v-icon color="primary" size="20" class="mr-2">mdi-book-check</v-icon>
           ອະນຸມັດບັນທຶກບັນຊີຊັບສິນ
         </h1>
-        <!-- <pre>{{ DataCount}}</pre> -->
+        <!-- <pre>{{ moduleData}}</pre> -->
         <div class="permission-indicators" v-if="permissions">
           <v-tooltip text="ສິດເຂົ້າເຖິງຂອງທ່ານ" location="bottom">
             <template #activator="{ props }">
@@ -1392,7 +1426,7 @@ const nameDisplay = (item: any) => {
       <v-card class="filter-card-thin mb-2" elevation="1">
         <v-card-text class="pa-2">
           <v-row dense>
-            <v-col cols="12" md="3">
+            <v-col cols="12" md="4">
               <v-text-field
                 v-model="filters.search"
                 label="ຄົ້ນຫາ"
@@ -1406,9 +1440,9 @@ const nameDisplay = (item: any) => {
               ></v-text-field>
             </v-col>
             <!-- <pre>{{ responscerrency }}</pre> -->
-            <v-col cols="12" md="2">
+            <v-col cols="12" md="3">
               <v-autocomplete
-                v-model="filters.Ccy_cd"
+                v-model="newSelecCC"
                 :items="responscerrency"
                 item-title="ccy_code"
                 item-value="ccy_code"
@@ -1416,14 +1450,14 @@ const nameDisplay = (item: any) => {
                 variant="outlined"
                 density="compact"
                 clearable
-                @update:model-value="handleFilterChange"
+                
                 hide-details
                 :loading="loadingReferences"
               >
               </v-autocomplete>
             </v-col>
 
-            <v-col cols="12" md="3">
+            <v-col cols="12" md="4">
               <v-autocomplete
                 v-model="filters.Auth_Status"
                 prepend-inner-icon="mdi-format-list-bulleted-type"
@@ -1453,7 +1487,7 @@ const nameDisplay = (item: any) => {
               </v-autocomplete>
             </v-col>
 
-            <v-col cols="12" md="2">
+            <!-- <v-col cols="12" md="2">
               <v-select
                 v-model="filters.dateFilterType"
                 :items="dateFilterTypes"
@@ -1477,7 +1511,7 @@ const nameDisplay = (item: any) => {
                   </v-list-item>
                 </template>
               </v-select>
-            </v-col>
+            </v-col> -->
 
             <v-col cols="12" md="1">
               <v-btn
@@ -1956,7 +1990,7 @@ const nameDisplay = (item: any) => {
           :search="filters.search"
           :items-per-page="-1"
           density="compact"
-          class="elevation-0 full-width-table-thin"
+          class="elevation-0 full-width-table-thin text-no-wrap"
           item-value="JRNLLog_id"
           hide-default-footer
         >
@@ -2018,8 +2052,8 @@ const nameDisplay = (item: any) => {
           </template>
 
           <template v-slot:item.module_id="{ item }">
-            <span v-if="item.module_name_la" class="text-compact">
-              {{ item.module_name_la }}
+            <span v-if="item.module_id" class="text-compact">
+              {{ mapModuleName(item.module_id) }}
             </span>
             <span v-else class="text-grey">-</span>
           </template>
