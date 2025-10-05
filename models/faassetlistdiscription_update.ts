@@ -18,7 +18,7 @@ export interface Data {
 }
 
 export interface DepreciationItem {  
-    mapping_id:             number;
+    mapping_id:             number|any;
     asset_id:               string;
     asset_name:             string;
     asset_value:            number;

@@ -138,9 +138,8 @@ const handleNotificationClick = () => {
 
 <template>
   <v-container fluid class="modern-container">
-    <!-- Header Section -->
     <div class="">
-      <v-row align="center" class="mb-4">
+      <!-- <v-row align="center" class="mb-4">
         <v-col>
           <h1 class="main-title">
             <v-icon class="mr-3" color="primary" size="large"
@@ -171,10 +170,10 @@ const handleNotificationClick = () => {
             </v-btn>
           </div>
         </v-col>
-      </v-row>
+      </v-row> -->
     </div>
 
-    <!-- Loading State -->
+    
     <v-row v-if="isLoading" justify="center" class="loading-section">
       <v-col cols="12" class="text-center">
         <div class="loading-card">
@@ -190,9 +189,10 @@ const handleNotificationClick = () => {
       </v-col>
     </v-row>
 
-    <!-- Main Content -->
+   
     <div v-else-if="responseData && responseData.data" class="main-content">
-      <!-- Tabs Section -->
+    
+       
       <v-card class="modern-card tabs-card mb-6" elevation="0">
         <v-tabs
           v-model="tab"
@@ -218,11 +218,11 @@ const handleNotificationClick = () => {
         <v-divider class="my-0" />
 
         <v-tabs-window v-model="tab" class="tabs-content">
-          <!-- Monthly Depreciation Tab -->
+          
           <v-tabs-window-item value="one" class="pa-0">
             <div class="monthly-section">
               <!-- Summary Cards -->
-              <v-row class="summary-cards mb-6">
+              <!-- <v-row class="summary-cards mb-6">
                 <v-col cols="12" md="3">
                   <v-card class="summary-card blue-card" elevation="0">
                     <v-card-text class="pa-6">
@@ -283,11 +283,14 @@ const handleNotificationClick = () => {
                     </v-card-text>
                   </v-card>
                 </v-col>
-              </v-row>
+              </v-row> -->
               <v-card class="modern-card table-card" elevation="0">
                 <v-card-title class="table-title">
                   <v-icon class="mr-2">mdi-table</v-icon>
-                  ລາຍລະອຽດການຫັກຄ່າຫຼູ້ຍຫຽ້ນ
+                  ລາຍລະອຽດການຫັກຄ່າຫຼູ້ຍຫ້ຽນປະຈຳເດືອນ:  <v-chip class="ml-2" size="small" color="success">
+              {{ responseData.data.target_period.month_name_la }}
+              {{ responseData.data.target_period.year }}
+            </v-chip>
                 </v-card-title>
                 <v-divider />
                 <v-data-table
@@ -295,7 +298,7 @@ const handleNotificationClick = () => {
                   :headers="header1"
                   class="modern-table"
                   :items-per-page="10"
-                  :search="null"
+                  
                 >
                   <template v-slot:item.index="{ index }">
                     <v-chip size="small" color="primary" variant="tonal">
@@ -346,6 +349,8 @@ const handleNotificationClick = () => {
           </v-tabs-window-item>
         </v-tabs-window>
       </v-card>
+
+
       <v-card class="modern-card history-card" elevation="0">
         <v-card-title class="history-title">
           <div class="d-flex align-center">
@@ -372,7 +377,7 @@ const handleNotificationClick = () => {
           :headers="header"
           class="modern-table history-table"
           :items-per-page="15"
-          :search="null"
+          
         >
           <template v-slot:header="{ props }">
             <tr class="table-header">

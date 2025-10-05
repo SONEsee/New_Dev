@@ -18,6 +18,7 @@ export interface AssetTypeDetail {
   type_code: string;
   type_name_en: string;
   type_name_la: string;
+  is_tangible: string;
 }
 export interface AssetTypeModel {
   coa_id: number;

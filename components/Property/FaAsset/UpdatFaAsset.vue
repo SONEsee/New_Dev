@@ -2,11 +2,21 @@
 import { CallSwal } from "#build/imports";
 import { useRouter, useRoute } from "vue-router";
 import { nextTick } from "vue";
-
+const noaccStore = useMasterStore();
 const rout = useRoute();
 const faAssetStoreInstance = faAssetStore();
 const router = useRouter();
 const id = rout.query.id_faasset as string;
+const masterDataAccount = computed(() => {
+  const data = noaccStore.resposne_status_setting_update;
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (data && typeof data === "object") {
+    return [data];
+  }
+  return [];
+});
 
 const currencyStore = useCerrencyStore();
 const currency = computed(() => {
@@ -20,7 +30,6 @@ const currency = computed(() => {
   return [];
 });
 
-const noaccStore = useMasterStore();
 const noacc = computed(() => {
   return noaccStore.respone_data_master?.MasterCodes || [];
 });
@@ -362,7 +371,6 @@ const submitForm = async () => {
   }
 
   const requiredFields = [
-   
     {
       field: faAssetStoreInstance.form_update_fa_asset.asset_value,
       name: "ມູນຄ່າເລີ່ມຕົ້ນ",
@@ -568,13 +576,11 @@ watch(
     if (req) {
       faAssetStoreInstance.form_update_fa_asset.asset_spec =
         req.asset_spec || "";
-      faAssetStoreInstance.form_update_fa_asset.dpca_type =
-        req.dpca_type || "";
+      faAssetStoreInstance.form_update_fa_asset.dpca_type = req.dpca_type || "";
       faAssetStoreInstance.form_update_fa_asset.type_of_pay =
         req.type_of_pay || "";
-      faAssetStoreInstance.form_update_fa_asset.asset_date = 
-  req.asset_date || new Date().toISOString();
-    
+      faAssetStoreInstance.form_update_fa_asset.asset_date =
+        req.asset_date || new Date().toISOString();
 
       faAssetStoreInstance.form_update_fa_asset.asset_currency =
         req.asset_currency || "LAK";
@@ -590,8 +596,6 @@ watch(
         req.asset_useful_life || 0;
       faAssetStoreInstance.form_update_fa_asset.asset_value =
         req.asset_value || 0;
-
-      
     }
   }
 );
@@ -681,10 +685,31 @@ const rules = {
     return pattern.test(value) || "ໃຊ້ໄດ້ແຕ່ຕົວອັກສອນພິມໃຫຍ່, ຕົວເລກ, - ແລະ _";
   },
 };
+const AccountDR = computed(() => {
+  const assetTypeId =
+    faAssetStoreInstance.response_fa_asset_detail?.asset_type_id;
+  if (!assetTypeId || !mockData.value || !Array.isArray(mockData.value)) {
+    return "";
+  }
+  const selectedAsset = mockData.value.find(
+    (asset) => asset && asset.coa_id === assetTypeId
+  );
+  if (!selectedAsset?.asset_type_detail.is_tangible) {
+    return "";
+  }
+  const isTangible = selectedAsset.asset_type_detail.is_tangible;
+  if (Array.isArray(masterDataAccount.value)) {
+    const mactAccount = masterDataAccount.value.find(
+      (item) => item.MC_code === isTangible
+    );
+    return mactAccount.MC_detail || "";
+  }
+});
 
 onMounted(async () => {
   try {
     loading.value = true;
+    noaccStore.getSetASP();
 
     currencyStore.getDataCerrency();
 
@@ -704,11 +729,6 @@ onMounted(async () => {
     await noaccStore.getSubData();
 
     await nextTick();
-
-    console.log("Location data:", location.value?.length);
-    console.log("Supplier data:", supplier.value?.length);
-    console.log("NoAcc data:", noacc.value?.length);
-    console.log("SubGL data:", subgl.value?.length);
   } catch (error) {
     console.error("Error loading reference data:", error);
     CallSwal({
@@ -725,6 +745,7 @@ onMounted(async () => {
 
 <template>
   <section class="pa-6">
+    <!-- <pre>{{ AccountDR }}</pre> -->
     <v-form ref="form" @submit.prevent="submitForm">
       <v-row>
         <v-col cols="12">
@@ -769,9 +790,13 @@ onMounted(async () => {
                         :title="'ເລກຊີຣີ (Serial Number)'"
                         :text="detaildata?.asset_serial_no"
                       />
+                      <!-- <pre>{{ masterDataAccount }}</pre> -->
                       <GlobalCardTitle
                         :title="'ເລກບັນຊີ/DR'"
-                        :text="'ບໍ່ສາມາດດືງຂໍ້ມູນໄດ້'"
+                        :text="
+                          `${AccountDR}.${detaildata?.asset_list_code}` ||
+                          'ບໍ່ສາມາດດືງຂໍ້ມູນໄດ້'
+                        "
                       />
                     </v-col>
                     <v-col cols="12" md="4">
@@ -795,7 +820,7 @@ onMounted(async () => {
                       ></v-textarea>
 
                       <GlobalCardTitle
-                        :title="'ເລກບັນຊີ/DR'"
+                        :title="'ເລກບັນຊີ/CR'"
                         :text="detaildata?.acc_no"
                       />
                     </v-col>
@@ -1005,7 +1030,6 @@ onMounted(async () => {
                         ></label
                       >
                       <v-text-field
-                      
                         :value="computedAssetDisplayName"
                         placeholder="ຊັບສົມບັດພວມຊື້ພວມກໍ່ສ້າງ - ປະເພດຊັບສິນ"
                         density="compact"
@@ -1022,7 +1046,7 @@ onMounted(async () => {
                         >ປະເພດການຊຳລະ<span class="text-error">*</span></label
                       >
                       <v-autocomplete
-                      readonly
+                        readonly
                         v-model="
                           faAssetStoreInstance.form_update_fa_asset.type_of_pay
                         "
@@ -1098,7 +1122,6 @@ onMounted(async () => {
                         >ສະຖານທີ່ຕັ້ງ<span class="text-error">*</span></label
                       >
                       <v-select
-
                         v-model="
                           faAssetStoreInstance.form_update_fa_asset
                             .asset_location_id
@@ -1202,7 +1225,6 @@ onMounted(async () => {
                       <label>ວັນທີ່ເລີ່ມຄິດລາຄາຫຼູ້ຍຫຽ້ນ</label>
                       <v-text-field
                         :disabled="true"
-                         
                         type="date"
                         density="compact"
                         variant="outlined"
