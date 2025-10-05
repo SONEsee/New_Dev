@@ -1170,70 +1170,92 @@ const searchDebounced = debounce((): void => {
   }
 }, 500);
 
+onMounted( async()=>{
+  const subMenuId = (route.query.sub_menu_id as string) || submenu_id;
+  const roleInitialized = await initializeRole(subMenuId);
+  if (!roleInitialized) {
+      console.error("Failed to initialize permissions");
+      Swal.fire({
+        icon: "error",
+        title: "ຂໍ້ຜິດພາດ",
+        text: "ບໍ່ສາມາດໂຫຼດສິດການເຂົ້າເຖິງໄດ້",
+        confirmButtonText: "ຕົກລົງ",
+      });
+      return;
+    }
+  await handleFilterChange();
+  await jurnalStore.getJurnallDispal();
+  await cerrency.getDataCerrency();
+  await masterStore.getStatus();
+  await derpicationStore.getDispalso();
+   await loadReferenceData();
+ 
+  await loadData();
 
-onMounted(async (): Promise<void> => {
-  try {
-    console.log("Component mounting...");
-    isComponentMounted.value = true;
+})
+// onMounted(async (): Promise<void> => {
+//   try {
+//     console.log("Component mounting...");
+//     isComponentMounted.value = true;
     
  
-    try {
-      if (jurnalStore?.getJurnallDispal) {
-        await jurnalStore.getJurnallDispal();
-      }
-    } catch (error) {
-      console.error("Error calling jurnalStore.getJurnallist:", error);
-    }
+//     try {
+//       if (jurnalStore?.getJurnallDispal) {
+//         await jurnalStore.getJurnallDispal();
+//       }
+//     } catch (error) {
+//       console.error("Error calling jurnalStore.getJurnallist:", error);
+//     }
 
-    try {
-      if (cerrency?.getDataCerrency) {
-        await cerrency.getDataCerrency();
-      }
-    } catch (error) {
-      console.error("Error calling cerrency.getDataCerrency:", error);
-    }
+//     try {
+//       if (cerrency?.getDataCerrency) {
+//         await cerrency.getDataCerrency();
+//       }
+//     } catch (error) {
+//       console.error("Error calling cerrency.getDataCerrency:", error);
+//     }
 
-    try {
-      if (masterStore?.getStatus) {
-        await masterStore.getStatus();
-      }
-    } catch (error) {
-      console.error("Error calling masterStore.getStatus:", error);
-    }
+//     try {
+//       if (masterStore?.getStatus) {
+//         await masterStore.getStatus();
+//       }
+//     } catch (error) {
+//       console.error("Error calling masterStore.getStatus:", error);
+//     }
 
-    try {
-      if (derpicationStore?.getDispalso) {
-        await derpicationStore.getDispalso();
-      }
-    } catch (error) {
-      console.error("Error calling derpicationStore.getDataTotal:", error);
-    }
+//     try {
+//       if (derpicationStore?.getDispalso) {
+//         await derpicationStore.getDispalso();
+//       }
+//     } catch (error) {
+//       console.error("Error calling derpicationStore.getDataTotal:", error);
+//     }
 
-    try {
-      await initializeRole();
-    } catch (error) {
-      console.error("Error initializing role:", error);
-    }
+//     try {
+//       await initializeRole();
+//     } catch (error) {
+//       console.error("Error initializing role:", error);
+//     }
 
-    try {
-      await loadReferenceData();
-    } catch (error) {
-      console.error("Error loading reference data:", error);
-    }
+//     try {
+//       await loadReferenceData();
+//     } catch (error) {
+//       console.error("Error loading reference data:", error);
+//     }
 
-    if (canView.value && isComponentMounted.value) {
-      try {
-        await loadData();
-      } catch (error) {
-        console.error("Error in initial loadData:", error);
-      }
-    }
+//     if (canView.value && isComponentMounted.value) {
+//       try {
+//         await loadData();
+//       } catch (error) {
+//         console.error("Error in initial loadData:", error);
+//       }
+//     }
     
-    console.log("Component mounted successfully");
-  } catch (error) {
-    console.error("Error during component mount:", error);
-  }
-});
+//     console.log("Component mounted successfully");
+//   } catch (error) {
+//     console.error("Error during component mount:", error);
+//   }
+// });
 
 onBeforeUnmount(() => {
   try {
