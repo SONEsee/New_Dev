@@ -9,6 +9,7 @@ const typeAssetStore = propertyStore();
 const selecAssetType = ref("");
 const selecStatus = ref("");
 const selecAuth = ref("");
+const route = useRoute();
 watch(selecAuth, async (newValue) => {
   faAssetStoreInstance.isLoading = true;
   try {
@@ -508,17 +509,18 @@ const formatNumber = (value:any) => {
 onMounted(async () => {
   loading.value = true;
   try {
+    const subMenu = route.query.sub_menu_id as string | undefined;
+    console.log("subMenu:", subMenu);
     loadFiltersFromStorage();
     assetStores.GetAssetList();
     masterStore.getStatus();
     typeAssetStore.GetPropertyCategoryById();
-    // faAssetStoreInstance.GetFaAssetList();
-    // assetStores.GetAssetList();
+    
     typeAssetStore.GetPropertyCategoryById();
     faAssetStoreInstance.GetFaAssetList1();
     masterStore.getPuamsue();
 
-    initializeRole();
+    initializeRole(subMenu);
     roleStore.GetRoleDetail();
 
     await new Promise((resolve) => setTimeout(resolve, 500));

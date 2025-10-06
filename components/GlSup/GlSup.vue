@@ -2,9 +2,20 @@
 import { ref, computed, onMounted, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import Swal from "sweetalert2";
+import { useRolePermissions } from "@/composables/useRolePermissions";
 import axios from "@/helpers/axios";
+const {
+  canEdit,
+  canDelete,
+  canView,
+  canAdd,
+  canRecordStatus,
+  canAuthStatus,
+  canAuthorize,
+  hasPermission,
+  initializeRole,
+} = useRolePermissions();
 const roleStore = RoleStore();
-
 const router = useRoute();
 const glStore = useGlStore();
 
@@ -67,31 +78,30 @@ const updateAdproveStatus = async (id: string) => {
           showConfirmButton: false,
         });
 
-        // *** ແກ້ໄຂຫຼັກ: ຕ້ອງ refresh ຂໍ້ມູນທັງ main data ແລະ sub data ***
-        
-        // 1. Refresh main GL data
         await glStore.getGlsup();
-        
-        // 2. ຫາ parent GL code ຂອງ item ທີ່ຖືກອະນຸມັດ
-        const approvedItem = flatTableData.value.find(item => 
-          item.type === 'sub' && 
-          (item.rawData.glsub_id === id || item.rawData.id === id)
+
+        const approvedItem = flatTableData.value.find(
+          (item) =>
+            item.type === "sub" &&
+            (item.rawData.glsub_id === id || item.rawData.id === id)
         );
-        
+
         if (approvedItem && approvedItem.parent_gl_code) {
-          // 3. Reload sub data ສໍາລັບ parent GL
-          const parentGL = rawData.value.find(gl => gl.gl_code === approvedItem.parent_gl_code);
+          const parentGL = rawData.value.find(
+            (gl) => gl.gl_code === approvedItem.parent_gl_code
+          );
           if (parentGL) {
-            console.log('Reloading sub data for GL:', approvedItem.parent_gl_code);
+            console.log(
+              "Reloading sub data for GL:",
+              approvedItem.parent_gl_code
+            );
             await loadSubData(parentGL.glid, approvedItem.parent_gl_code);
           }
         }
-        
-        // 4. Refresh role permissions
+
         await roleStore.GetRoleDetail();
-        
-        console.log('All data refreshed after approval');
-        
+
+        console.log("All data refreshed after approval");
       } else if (res.status === 406) {
         await CallSwal({
           icon: "warning",
@@ -102,8 +112,9 @@ const updateAdproveStatus = async (id: string) => {
     }
   } catch (error: any) {
     console.error("Error updating approve status:", error);
-    
-    const errorMessage = error.response?.data?.message || "ບໍ່ສາມາດອະນຸມັດຜູ້ໃຊ້ງານໄດ້";
+
+    const errorMessage =
+      error.response?.data?.message || "ບໍ່ສາມາດອະນຸມັດຜູ້ໃຊ້ງານໄດ້";
     await CallSwal({
       icon: "error",
       title: "ເກີດຂໍ້ຜິດພາດ",
@@ -113,7 +124,6 @@ const updateAdproveStatus = async (id: string) => {
     isUpdatingStatus.value = false;
   }
 };
-
 
 const unupdateAdproveStatus = async (id: string) => {
   try {
@@ -289,23 +299,6 @@ const flatTableData = computed(() => {
   return result;
 });
 const deleteSubItem = async (subItem: any, glCode: string) => {
-  // const result = await Swal.fire({
-  //   title: 'ຢືນຢັນການລຶບ',
-  //   html: `
-  //     <div>ທ່ານຕ້ອງການລຶບຂໍ້ມູນນີ້ບໍ?</div>
-  //     <div class="mt-2">
-  //       <strong>ລະຫັດ:</strong> ${subItem.glsub_code || subItem.code}<br>
-  //       <strong>ຊື່:</strong> ${subItem.glsub_Desc_la || subItem.name_la}
-  //     </div>
-  //   `,
-  //   icon: 'warning',
-  //   showCancelButton: true,
-  //   confirmButtonColor: '#d33',
-  //   cancelButtonColor: '#3085d6',
-  //   confirmButtonText: 'ລຶບ',
-  //   cancelButtonText: 'ຍົກເລີກ'
-  // });
-
   try {
     await glStore.deleteGlsub(subItem.glsub_id || subItem.id);
     if (!subItem) {
@@ -329,8 +322,11 @@ const deleteSubItem = async (subItem: any, glCode: string) => {
   }
 };
 onMounted(() => {
+  const supMenuID = router.query.sub_menu_id as string;
+
   glStore.getGlsup();
-  roleStore.GetRoleDetail();
+  roleStore.GetRoleDetail()
+  initializeRole(supMenuID)
 });
 
 const header = [
@@ -574,7 +570,7 @@ const user = localStorage.getItem("user");
 
         <template v-slot:item.action="{ item }">
           <v-btn
-            v-if="item.type === 'master' &&  (role as any)?.[0]?.New_Detail === 1"
+            v-if="item.type === 'master' && canAdd"
             color="primary"
             variant="elevated"
             size="small"
@@ -590,7 +586,7 @@ const user = localStorage.getItem("user");
 
           <div v-else-if="item.status === 'U'" class="d-flex gap-1">
             <v-btn
-              v-if="(role as any)?.[0]?.Auth_Detail === 1"
+              v-if="canView"
               @click="
                 updateAdproveStatus(item.rawData.glsub_id || item.rawData.id)
               "
@@ -603,7 +599,7 @@ const user = localStorage.getItem("user");
             <!-- <v-icon icon="mdi-toggle-switch-off-outline"  color="info"></v-icon> -->
 
             <v-btn
-              v-if="(role as any)?.[0]?.Edit_Detail === 1"
+              v-if="canEdit"
               icon="mdi-pencil"
               size="small"
               variant="text"
@@ -619,7 +615,7 @@ const user = localStorage.getItem("user");
             >
             </v-btn>
             <v-btn
-              v-if="(role as any)?.[0]?.Del_Detail === 1"
+              v-if="canAdd"
               icon="mdi-delete"
               size="small"
               variant="text"

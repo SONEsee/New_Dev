@@ -1,3 +1,4 @@
+import { useRouter } from 'vue-router';
 import { ref } from "vue";
 export interface GlResponse {
   gl_code: string;
@@ -32,8 +33,10 @@ import axios from "@/helpers/axios";
 import { GlModel } from "~/models";
 
 export const useGlStore = defineStore("gl", {
+  
   state() {
     return {
+       router:useRouter(),
       create_form_glsup: {
         glcode: "",
         glsub_code: "",
@@ -259,6 +262,7 @@ export const useGlStore = defineStore("gl", {
       }
     },
     async creatGlSup() {
+   
       this.isloading = true;
       const res = await axios.post(`api/gl-sub/`, this.create_form_glsup, {
         headers: {
@@ -272,8 +276,9 @@ export const useGlStore = defineStore("gl", {
           text: "ສ້າງບັນທຶກ GL ສຳເລັດ",
           icon: "success",
         });
+       
         setTimeout(() => {
-          goPath("/gl/glsub/");
+          this.router.go(-1)
         }, 1500);
 
         return res.data;

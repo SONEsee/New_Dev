@@ -350,7 +350,7 @@ const handleDisposalValueInput = (event: any) => {
 const handleDisposalProceedsInput = (event: any) => {
   const value = event.target.value;
   const rawValue = parseNumber(value);
-  request.disposal_value = rawValue;
+  request.disposal_proceeds = rawValue;
   event.target.value = formatNumber(rawValue);
 };
 
@@ -599,12 +599,13 @@ onMounted(() => {
             v-model="request.buyer_name"
           >
           </v-text-field>
-          <v-label for="disposal_proceeds">ລາຍຮັບຈາກການສະສາງ</v-label>
+           <v-label for="disposal_proceeds">ລາຍຮັບຈາກການສະສາງ</v-label>
           <v-text-field
             :disabled="request.disposal_type !== 'SALE'"
             variant="outlined"
             density="compact"
             :model-value="formatNumber(request.disposal_proceeds)"
+            @input="handleDisposalProceedsInput"
             type="text"
           ></v-text-field>
           <v-label for="disposal_proceeds">ລາຍຈ່າຍໃນການສະສາງ</v-label>
