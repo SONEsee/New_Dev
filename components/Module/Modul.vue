@@ -3,7 +3,7 @@ import dayjs from "#build/dayjs.imports.mjs";
 import { ref, computed, onMounted, watch } from "vue";
 import { useRolePermissions } from "@/composables/useRolePermissions";
 import axios from "@/helpers/axios";
-
+const moduleStore = ModulesStore();
 const isUpdatingStatus = ref(false);
 
 
@@ -127,7 +127,7 @@ const role = computed(() => {
   return roleStore.responst_data_detail;
 });
 
-const moduleStore = ModulesStore();
+
 
 
 const updatRecodeStatus = async (module_id: string) => {

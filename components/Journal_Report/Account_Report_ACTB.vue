@@ -35,22 +35,22 @@
           <v-card-text class="pa-6">
             <v-form ref="searchFormACTB" v-model="formValidACTB">
               <v-row>
-                <!-- Account Number - Optional -->
+                <!-- ACTB Tab - Account Number Field -->
                 <v-col cols="12" md="6">
-                  <v-text-field
+                    <v-text-field
                     v-model="searchParamsACTB.gl_code"
                     label="ເລກບັນຊີ (Account Number)"
-                    placeholder="1234567 (ທາງເລືອກ - Optional)"
+                    placeholder="1131130 ຫຼື 1131130.0000001 (ທາງເລືອກ)"
                     :rules="accountRules"
                     prepend-inner-icon="mdi-card-account-details"
                     variant="outlined"
                     density="comfortable"
-                    maxlength="25"
+                    maxlength="50"
                     counter
                     clearable
-                    hint="ປ່ອຍວ່າງເພື່ອຄົ້ນຫາທຸກບັນຊີ (7+ ຫຼັກ)"
+                    hint="ປ່ອຍວ່າງເພື່ອຄົ້ນຫາທຸກບັນຊີ (ຮອງຮັບ: 1131130 ຫຼື 1131130.0000001)"
                     persistent-hint
-                  />
+                    />
                 </v-col>
                 
                 <!-- Currency Code -->
@@ -134,22 +134,22 @@
               <v-row>
                 <!-- Account Number - Optional -->
                 <v-col cols="12" md="6">
-                  <v-text-field
+                    <v-text-field
                     v-model="searchParamsEOC.gl_code"
                     label="ເລກບັນຊີ (Account Number)"
-                    placeholder="1234567 (ທາງເລືອກ - Optional)"
+                    placeholder="1131130 ຫຼື 1131130.0000001 (ທາງເລືອກ)"
                     :rules="accountRules"
                     prepend-inner-icon="mdi-card-account-details"
                     variant="outlined"
                     density="comfortable"
-                    maxlength="25"
+                    maxlength="50"
                     counter
                     clearable
-                    hint="ປ່ອຍວ່າງເພື່ອຄົ້ນຫາທຸກບັນຊີ (7+ ຫຼັກ)"
+                    hint="ປ່ອຍວ່າງເພື່ອຄົ້ນຫາທຸກບັນຊີ (ຮອງຮັບ: 1131130 ຫຼື 1131130.0000001)"
                     persistent-hint
-                  />
+                    />
                 </v-col>
-                
+                                
                 <!-- Currency Code -->
                 <v-col cols="12" md="6">
                   <v-select
@@ -466,11 +466,42 @@ const tableHeaders = [
 // =============================================
 const accountRules = [
   v => {
-    if (!v || v.trim() === '') return true // Allow empty
+    // Allow empty (optional field)
+    if (!v || v.trim() === '') return true
+    
     const cleaned = String(v).trim()
-    return (/^\d+$/.test(cleaned) && cleaned.length >= 7) || 'ເລກບັນຊີຕ້ອງເປັນຕົວເລກຢ່າງໜ້ອຍ 7 ຫຼັກ'
+    
+    // Check if it contains a decimal point
+    if (cleaned.includes('.')) {
+      const parts = cleaned.split('.')
+      
+      // Must have exactly 2 parts (main account + sub account)
+      if (parts.length !== 2) {
+        return 'ຮູບແບບບໍ່ຖືກຕ້ອງ. ຕົວຢ່າງ: 1131130.0000001'
+      }
+      
+      // Both parts must be numeric
+      if (!(/^\d+$/.test(parts[0]) && /^\d+$/.test(parts[1]))) {
+        return 'ເລກບັນຊີຕ້ອງເປັນຕົວເລກເທົ່ານັ້ນ'
+      }
+      
+      // Main account must be at least 7 digits
+      if (parts[0].length < 7) {
+        return 'ເລກບັນຊີຫຼັກຕ້ອງມີຢ່າງໜ້ອຍ 7 ຫຼັກ'
+      }
+      
+      return true
+    } else {
+      // Pure numeric format: must be 7+ digits
+      if (!(/^\d+$/.test(cleaned) && cleaned.length >= 7)) {
+        return 'ເລກບັນຊີຕ້ອງເປັນຕົວເລກຢ່າງໜ້ອຍ 7 ຫຼັກ'
+      }
+      
+      return true
+    }
   }
 ]
+
 
 const requiredRules = [
   v => !!v || 'ກະລຸນາປ້ອນຂໍ້ມູນ'
@@ -581,14 +612,24 @@ const searchAccount = async (reportType) => {
     
     // Different endpoints for ACTB and EOC
     const endpoint = reportType === 'ACTB' 
-      ? 'api/account/statement/search/actb/'
-      : 'api/account/statement/search/eoc/'
-    
+    ? 'api/account/statement/search/actb/'
+    : 'api/account/statement/search/eoc/'
+
+    console.log(`[${reportType}] Calling endpoint: ${endpoint}`)
+    console.log(`[${reportType}] Payload:`, JSON.stringify(requestData, null, 2))
+  
+    // ------------------------------------------------------
+
     const response = await axios.post(
       endpoint,
       requestData,
       getAuthHeaders()
     )
+    
+    // --- ADDED: log response for debugging ---
+    console.log('[searchAccount] Response status:', response.status)
+    console.log('[searchAccount] Response data:', response.data)
+    // ------------------------------------------------
     
     if (response.data.status === 'success') {
       searchResult.value = response.data.data
@@ -597,6 +638,9 @@ const searchAccount = async (reportType) => {
       showNotification(response.data.message, 'error', 'mdi-alert-circle')
     }
   } catch (error) {
+    // --- ADDED: log endpoint on error for easier tracing ---
+    console.error('[searchAccount] Error calling endpoint:', error)
+    // --------------------------------------------------------
     console.error('Search error:', error)
     showNotification(handleAPIError(error), 'error', 'mdi-alert-circle')
   } finally {

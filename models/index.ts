@@ -48,6 +48,7 @@ import * as  MantananceModel from "./mantanance"
 import * as DateEODModel from "./eoddate"
 import * as JournalModels from "./juornal"
 import * as DrepecitionUpdateModel from "./faassetlistdiscription_update"
+import * as JurnarlResponsModel from "./junrldataapprove"
 export {
   UserModel,
   UsermeModel,
@@ -95,6 +96,7 @@ export {
   DateEODModel,
   JournalModels,
   DrepecitionUpdateModel,
+  JurnarlResponsModel
   
   // RoleMasterModel
 };

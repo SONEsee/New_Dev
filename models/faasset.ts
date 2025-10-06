@@ -18,7 +18,7 @@ export interface FaAsset{
     has_depreciation:        string;
     dpca_type:               string;
     dpca_percentage:         string;
-    asset_useful_life:       number;
+    asset_useful_life:       number | any;
     asset_salvage_value:     number;
     dpca_start_date:         null;
     dpca_end_date:           null;
@@ -41,7 +41,7 @@ export interface FaAsset{
     Auth_Status:             string;
     asset_type_id:           number;
     asset_location_id:       number;
-    C_dpac:                  number;
+    C_dpac:                  number |null |string |any;
     supplier_id:             number;
     asset_ac_by:             string;
     Maker_Id:                string;

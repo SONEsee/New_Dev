@@ -1,17 +1,13 @@
 <script setup lang="ts">
-import {
-  ref,
-  reactive,
-  computed,
-  onMounted,
-  onBeforeUnmount,
-  watch,
-} from "vue";
 import { useRoute, useRouter } from "vue-router";
 import axios from "@/helpers/axios";
 import Swal from "sweetalert2";
 import { debounce } from "lodash";
 import { useRolePermissions } from "@/composables/useRolePermissions";
+const newSelectYear = ref("");
+// const newSelecCC = ref("");
+const newSelecCC = ref<string | null>(null);
+const moduleStore = ModulesStore();
 
 interface JournalItem {
   JRNLLog_id: string | number;
@@ -132,6 +128,26 @@ const derpicationStore = useFassetLidtDescription();
 const cerrency = useCerrencyStore();
 const masterStore = useMasterStore();
 const jurnalStore = useJournalStor();
+const DataJounarl = computed(() => {
+  const data = jurnalStore.response_journal_approve_depreciation;
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (data && typeof data === "object") {
+    return [data];
+  }
+  return [];
+});
+const DataCount = computed(() => {
+  const data = jurnalStore.response_journal_approve_count?.total;
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (data && typeof data === "object") {
+    return [data];
+  }
+  return [];
+});
 
 const datadevcription = computed((): DepreciationItem[] => {
   try {
@@ -144,14 +160,12 @@ const datadevcription = computed((): DepreciationItem[] => {
       processedData = [data];
     }
 
-    // Transform data to match interface with type assertion
     return processedData
       .filter(
         (item: any) =>
           item && (item.Auth_Status === "U" || item.Auth_Status === "P")
       )
       .map((item: any): DepreciationItem => {
-        // Ensure Maker_DT_Stamp is properly handled
         let makerDate = item.Maker_DT_Stamp;
         if (makerDate instanceof Date) {
           makerDate = makerDate.toISOString();
@@ -274,7 +288,6 @@ const selectAll = ref<boolean>(false);
 const referenceDataCache = new Map<string, { data: any; timestamp: number }>();
 const CACHE_DURATION = 5 * 60 * 1000;
 
-// ===== CURRENT USER =====
 const currentUser = computed((): User | null => {
   try {
     const userData = localStorage.getItem("user");
@@ -326,7 +339,6 @@ const years = ref<YearItem[]>(
   }))
 );
 
-// ===== FILTERS =====
 const filters = reactive<Filters>({
   search: "",
   module_id: null,
@@ -340,7 +352,6 @@ const filters = reactive<Filters>({
   selectedYear: currentYear,
 });
 
-// ===== SUMMARY =====
 const summary = reactive<Summary>({
   total: 0,
   pending: 0,
@@ -385,7 +396,7 @@ const getMatchedAldmId = (
 
 const selectableItems = computed((): JournalItem[] => {
   try {
-    return items.value.filter((item: JournalItem) => {
+    return DataJounarl.value.filter((item: JournalItem) => {
       return (
         item && item.Auth_Status !== "A" && getMatchedAldmId(item) !== null
       );
@@ -477,7 +488,6 @@ const clearSelection = (): void => {
   }
 };
 
-// ===== WATCHERS WITH ERROR HANDLING =====
 watch(
   [items, selectedItems],
   () => {
@@ -491,8 +501,44 @@ watch(
   },
   { deep: true }
 );
+watch(newSelecCC, async (newValue)=>{
+  jurnalStore.isLoading = true;
+  try {
+    jurnalStore.filter_data_journal.querys.Ccy_cd = newValue;
+   await jurnalStore.getDataJurnal();
+  } catch (error) {
+    CallSwal({
+      icon: "error",
+      text: "ບໍ່ສາມາດເຂົ້າສູ່ລະບົບນີ້ໄດ້",
+    });
+  }finally {
+    jurnalStore.isLoading = false;
+  }
+})
 
-// ===== COMPUTED PROPERTIES FOR FILTERS =====
+const moduleData = computed(()=>{
+  const data = moduleStore.response_data_module;
+  if(Array.isArray(data)){
+    return data;
+  }
+  if(data && typeof data === "object"){
+    return [data]
+  }
+  return [];
+})
+watch(newSelectYear, async (newValue) => {
+  jurnalStore.isLoading = true;
+  try {
+    jurnalStore.filter_data_journal.querys.fin_cycle = newValue;
+    jurnalStore.getDataJurnal();
+  } catch (error) {
+    CallSwal({
+      icon: "error",
+      text: "ບໍ່ສາມາດເຂົ້າສູ່ລະບົບນີ້ໄດ້",
+      title: "ບໍ່ສາມາດເຂົ້າສູ່ລະບົບນີ້ໄດ້",
+    });
+  }
+});
 const hasActiveFilters = computed((): boolean => {
   try {
     return !!(
@@ -592,7 +638,6 @@ const activeFilterChips = computed((): FilterChip[] => {
   }
 });
 
-// ===== API FUNCTIONS WITH ERROR HANDLING =====
 const approveSelected = async (): Promise<void> => {
   try {
     if (!isComponentMounted.value) return;
@@ -653,7 +698,6 @@ const rejectSelected = async (): Promise<void> => {
   }
 };
 
-// ===== TABLE HEADERS =====
 const headers = [
   {
     title: "",
@@ -683,7 +727,6 @@ const headers = [
   },
 ];
 
-// ===== UTILITY FUNCTIONS =====
 const getAuthHeaders = () => ({
   headers: {
     Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -862,7 +905,7 @@ const buildDateParams = (): Record<string, string> => {
     return {};
   }
 };
-
+// -----------------------------------------------------------------------------------------------
 const loadData = async (resetPage: boolean = true): Promise<void> => {
   if (!isComponentMounted.value) {
     console.log("Component unmounted, skipping loadData");
@@ -896,7 +939,7 @@ const loadData = async (resetPage: boolean = true): Promise<void> => {
     params.ordering = "-Maker_DT_Stamp";
 
     if (!isComponentMounted.value) return;
-
+    // -------------------------------------------------------------------------------------------------------
     const response = await axios.get("/api/journal-log-ard/init-data/", {
       params,
       ...getAuthHeaders(),
@@ -911,7 +954,7 @@ const loadData = async (resetPage: boolean = true): Promise<void> => {
     const data: ApiResponse = response.data;
 
     if (data && isComponentMounted.value) {
-      items.value = Array.isArray(data.results)
+      DataJounarl.value = Array.isArray(data.results)
         ? data.results.filter((item) => item != null)
         : [];
 
@@ -942,11 +985,11 @@ const loadData = async (resetPage: boolean = true): Promise<void> => {
     }
 
     console.log(
-      `✅ Loaded ${items.value.length} items (Page ${pagination.currentPage}/${pagination.totalPages})`
+      `✅ Loaded ${DataJounarl.value.length} items (Page ${pagination.currentPage}/${pagination.totalPages})`
     );
 
     console.log("🔍 Mapping check:");
-    items.value.forEach((item: JournalItem) => {
+    DataJounarl.value.forEach((item: JournalItem) => {
       const aldmId = getMatchedAldmId(item);
       if (aldmId) {
         console.log(
@@ -1070,10 +1113,10 @@ const formatDate = (date: string | Date | null | undefined): string => {
   }
 };
 
-const setAuthStatusFilter = (status: string | null): void => {
+const setAuthStatusFilter = (status: any): void => {
   try {
-    filters.Auth_Status = status;
-    loadData();
+    jurnalStore.filter_data_journal.querys.Auth_Status = status;
+    jurnalStore.getDataJurnal();
   } catch (error) {
     console.error("Error in setAuthStatusFilter:", error);
   }
@@ -1082,7 +1125,7 @@ const setAuthStatusFilter = (status: string | null): void => {
 const handleFilterChange = (): void => {
   try {
     if (isComponentMounted.value) {
-      loadData();
+      jurnalStore.getDataJurnal();
     }
   } catch (error) {
     console.error("Error in handleFilterChange:", error);
@@ -1199,76 +1242,68 @@ const searchDebounced = debounce((): void => {
     console.error("Error in searchDebounced:", error);
   }
 }, 500);
+const mapModuleName = (dataName:any)=>{
+if(!dataName || !Array.isArray(moduleData.value))return "-";
+const dataItem = moduleData.value.find((item)=>item.module_Id === dataName);
+return dataItem ? dataItem.module_name_la : "-";
+}
 
-onMounted(async (): Promise<void> => {
+onMounted(async () => {
   try {
-    console.log("Component mounting...");
     isComponentMounted.value = true;
 
-    try {
-      if (jurnalStore?.getJurnallist) {
-        await jurnalStore.getJurnallist();
-      }
-    } catch (error) {
-      console.error("Error calling jurnalStore.getJurnallist:", error);
+    const subMenuId = (route.query.sub_menu_id as string) || submenu_id;
+
+    await Promise.all([
+      moduleStore.getModule(),
+      jurnalStore.getJurnallist(),
+      jurnalStore.getDataJurnal(),
+      jurnalStore.getDataCount(),
+      cerrency.getDataCerrency(),
+      masterStore.getStatus(),
+      derpicationStore.getDataTotal(),
+    ]);
+
+    const roleInitialized = await initializeRole(subMenuId);
+
+    if (!roleInitialized) {
+      console.error("Failed to initialize permissions");
+      Swal.fire({
+        icon: "error",
+        title: "ຂໍ້ຜິດພາດ",
+        text: "ບໍ່ສາມາດໂຫຼດສິດການເຂົ້າເຖິງໄດ້",
+        confirmButtonText: "ຕົກລົງ",
+      });
+      return;
     }
 
-    try {
-      if (cerrency?.getDataCerrency) {
-        await cerrency.getDataCerrency();
-      }
-    } catch (error) {
-      console.error("Error calling cerrency.getDataCerrency:", error);
-    }
-
-    try {
-      if (masterStore?.getStatus) {
-        await masterStore.getStatus();
-      }
-    } catch (error) {
-      console.error("Error calling masterStore.getStatus:", error);
-    }
-
-    try {
-      if (derpicationStore?.getDataTotal) {
-        await derpicationStore.getDataTotal();
-      }
-    } catch (error) {
-      console.error("Error calling derpicationStore.getDataTotal:", error);
-    }
-
-    try {
-      await initializeRole();
-    } catch (error) {
-      console.error("Error initializing role:", error);
-    }
-
-    try {
-      await loadReferenceData();
-    } catch (error) {
-      console.error("Error loading reference data:", error);
-    }
+    await loadReferenceData();
 
     if (canView.value && isComponentMounted.value) {
-      try {
-        await loadData();
-      } catch (error) {
-        console.error("Error in initial loadData:", error);
-      }
+      await jurnalStore.getDataJurnal();
+    } else if (!canView.value) {
+      console.warn("User does not have view permission");
     }
 
     console.log("Component mounted successfully");
   } catch (error) {
     console.error("Error during component mount:", error);
+
+    if (isComponentMounted.value) {
+      Swal.fire({
+        icon: "error",
+        title: "ຂໍ້ຜິດພາດ",
+        text: "ເກີດຂໍ້ຜິດພາດໃນການໂຫຼດຂໍ້ມູນ",
+        confirmButtonText: "ຕົກລົງ",
+      });
+    }
   }
 });
-
 onBeforeUnmount(() => {
   try {
     console.log("Component unmounting...");
     isComponentMounted.value = false;
 
-    // Clean up any pending operations
     clearSelection();
 
     console.log("Component unmounted successfully");
@@ -1291,7 +1326,7 @@ const nameDisplay = (item: any) => {
           <v-icon color="primary" size="20" class="mr-2">mdi-book-check</v-icon>
           ອະນຸມັດບັນທຶກບັນຊີຊັບສິນ
         </h1>
-        <!-- <pre>{{ items  }}</pre> -->
+        <!-- <pre>{{ moduleData}}</pre> -->
         <div class="permission-indicators" v-if="permissions">
           <v-tooltip text="ສິດເຂົ້າເຖິງຂອງທ່ານ" location="bottom">
             <template #activator="{ props }">
@@ -1338,7 +1373,7 @@ const nameDisplay = (item: any) => {
         </div>
       </div>
     </div>
-
+    <!-- 
     <div v-if="!canView" class="permission-denied-state">
       <v-card class="text-center py-12" elevation="1">
         <v-icon size="80" color="error" class="mb-6">mdi-shield-lock</v-icon>
@@ -1359,9 +1394,9 @@ const nameDisplay = (item: any) => {
           ກັບໄປໜ້າກ່ອນ
         </v-btn>
       </v-card>
-    </div>
+    </div> -->
 
-    <div v-else>
+    <div>
       <v-alert
         v-if="canAuthorize"
         type="success"
@@ -1391,7 +1426,7 @@ const nameDisplay = (item: any) => {
       <v-card class="filter-card-thin mb-2" elevation="1">
         <v-card-text class="pa-2">
           <v-row dense>
-            <v-col cols="12" md="3">
+            <v-col cols="12" md="4">
               <v-text-field
                 v-model="filters.search"
                 label="ຄົ້ນຫາ"
@@ -1405,9 +1440,9 @@ const nameDisplay = (item: any) => {
               ></v-text-field>
             </v-col>
             <!-- <pre>{{ responscerrency }}</pre> -->
-            <v-col cols="12" md="2">
+            <v-col cols="12" md="3">
               <v-autocomplete
-                v-model="filters.Ccy_cd"
+                v-model="newSelecCC"
                 :items="responscerrency"
                 item-title="ccy_code"
                 item-value="ccy_code"
@@ -1415,14 +1450,14 @@ const nameDisplay = (item: any) => {
                 variant="outlined"
                 density="compact"
                 clearable
-                @update:model-value="handleFilterChange"
+                
                 hide-details
                 :loading="loadingReferences"
               >
               </v-autocomplete>
             </v-col>
 
-            <v-col cols="12" md="3">
+            <v-col cols="12" md="4">
               <v-autocomplete
                 v-model="filters.Auth_Status"
                 prepend-inner-icon="mdi-format-list-bulleted-type"
@@ -1452,7 +1487,7 @@ const nameDisplay = (item: any) => {
               </v-autocomplete>
             </v-col>
 
-            <v-col cols="12" md="2">
+            <!-- <v-col cols="12" md="2">
               <v-select
                 v-model="filters.dateFilterType"
                 :items="dateFilterTypes"
@@ -1476,7 +1511,7 @@ const nameDisplay = (item: any) => {
                   </v-list-item>
                 </template>
               </v-select>
-            </v-col>
+            </v-col> -->
 
             <v-col cols="12" md="1">
               <v-btn
@@ -1613,7 +1648,7 @@ const nameDisplay = (item: any) => {
                       placeholder="ເລືອກເດືອນ"
                     ></v-select>
                     <v-select
-                      v-model="filters.selectedYear"
+                      v-model="newSelectYear"
                       :items="years"
                       variant="outlined"
                       density="compact"
@@ -1629,8 +1664,10 @@ const nameDisplay = (item: any) => {
 
                 <template v-if="filters.dateFilterType === 'year'">
                   <v-select
-                    v-model="filters.selectedYear"
+                    v-model="newSelectYear"
                     :items="years"
+                    item-title="text"
+                    item-value="value"
                     variant="outlined"
                     density="compact"
                     @update:model-value="handleFilterChange"
@@ -1694,7 +1731,10 @@ const nameDisplay = (item: any) => {
         <v-col cols="6" sm="3" md="2">
           <v-card
             class="summary-card-thin"
-            :class="{ 'active-filter': filters.Auth_Status === null }"
+            :class="{
+              'active-filter':
+                jurnalStore.filter_data_journal.querys.Auth_Status === null,
+            }"
             elevation="1"
             @click="setAuthStatusFilter(null)"
             style="cursor: pointer"
@@ -1726,7 +1766,10 @@ const nameDisplay = (item: any) => {
         <v-col cols="6" sm="3" md="2">
           <v-card
             class="summary-card-thin"
-            :class="{ 'active-filter': filters.Auth_Status === 'U' }"
+            :class="{
+              'active-filter':
+                jurnalStore.filter_data_journal.querys.Auth_Status === 'U',
+            }"
             elevation="1"
             @click="setAuthStatusFilter('U')"
             style="cursor: pointer"
@@ -1760,7 +1803,10 @@ const nameDisplay = (item: any) => {
         <v-col cols="6" sm="3" md="2">
           <v-card
             class="summary-card-thin"
-            :class="{ 'active-filter': filters.Auth_Status === 'A' }"
+            :class="{
+              'active-filter':
+                jurnalStore.filter_data_journal.querys.Auth_Status === 'A',
+            }"
             elevation="1"
             @click="setAuthStatusFilter('A')"
             style="cursor: pointer"
@@ -1792,7 +1838,10 @@ const nameDisplay = (item: any) => {
         <v-col cols="6" sm="3" md="2">
           <v-card
             class="summary-card-thin"
-            :class="{ 'active-filter': filters.Auth_Status === 'R' }"
+            :class="{
+              'active-filter':
+                jurnalStore.filter_data_journal.querys.Auth_Status === 'R',
+            }"
             elevation="1"
             @click="setAuthStatusFilter('R')"
             style="cursor: pointer"
@@ -1824,7 +1873,10 @@ const nameDisplay = (item: any) => {
         <v-col cols="6" sm="3" md="2">
           <v-card
             class="summary-card-thin"
-            :class="{ 'active-filter': filters.Auth_Status === 'P' }"
+            :class="{
+              'active-filter':
+                jurnalStore.filter_data_journal.querys.Auth_Status === 'P',
+            }"
             elevation="1"
             @click="setAuthStatusFilter('P')"
             style="cursor: pointer"
@@ -1928,16 +1980,17 @@ const nameDisplay = (item: any) => {
             </v-btn>
           </div>
         </v-card-title>
+        <!-- <pre>{{ items }}</pre> -->
         <!-- <pre>{{ datadevcription }}</pre> -->
         <v-data-table
           :headers="headers"
-          :items="items"
+          :items="DataJounarl"
           :loading="loading"
           loading-text="ກຳລັງໂຫຼດຂໍ້ມູນ..."
           :search="filters.search"
           :items-per-page="-1"
           density="compact"
-          class="elevation-0 full-width-table-thin"
+          class="elevation-0 full-width-table-thin text-no-wrap"
           item-value="JRNLLog_id"
           hide-default-footer
         >
@@ -1999,8 +2052,8 @@ const nameDisplay = (item: any) => {
           </template>
 
           <template v-slot:item.module_id="{ item }">
-            <span v-if="item.module_name_la" class="text-compact">
-              {{ item.module_name_la }}
+            <span v-if="item.module_id" class="text-compact">
+              {{ mapModuleName(item.module_id) }}
             </span>
             <span v-else class="text-grey">-</span>
           </template>
@@ -2328,7 +2381,6 @@ const nameDisplay = (item: any) => {
   cursor: pointer;
 }
 
-/* Vuetify overrides for compact design */
 :deep(.v-data-table) {
   font-size: 0.8rem;
   width: 100% !important;
