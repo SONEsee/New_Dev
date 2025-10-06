@@ -293,6 +293,7 @@ const handleNotificationClick = () => {
             </v-chip>
                 </v-card-title>
                 <v-divider />
+                <!-- <pre>{{ dataShow }}</pre> -->
                 <v-data-table
                   :items="dataShow"
                   :headers="header1"
@@ -318,7 +319,7 @@ const handleNotificationClick = () => {
                   >
                     <v-chip color="info" variant="tonal" size="small">
                       <v-icon start>mdi-counter</v-icon>
-                      {{ item.total_items_need_depreciation }}
+                      {{ item.total_due }}
                     </v-chip>
                   </template>
 

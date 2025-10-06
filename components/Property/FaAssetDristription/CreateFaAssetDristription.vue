@@ -18,10 +18,10 @@ const eodData = computed(() => {
   return [];
 });
 
-// ປ່ຽນເປັນ selectedIds ແທນ selectedItems
+
 const selectedIds = ref<any[]>([]);
 
-// ສ້າງ computed ສຳລັບດຶງຂໍ້ມູນເຕັມຂອງລາຍການທີ່ເລືອກ
+
 const selectedItems = computed(() => {
   return dataUpdate.value.filter(item => 
     selectedIds.value.includes(item.mapping_id)
@@ -121,7 +121,7 @@ const hasJournal = (assetId: string) => {
   return journalAssetIds.value.has(assetId);
 };
 
-// ຟັງຊັນ toggle ລາຍການດຽວ
+
 const toggleItem = (mappingId: string) => {
   const index = selectedIds.value.indexOf(mappingId);
   if (index > -1) {
@@ -131,7 +131,7 @@ const toggleItem = (mappingId: string) => {
   }
 };
 
-// ຟັງຊັນເລືອກທັງໝົດ (ສະເພາະລາຍການທີ່ເລືອກໄດ້)
+
 const selectAllSelectable = () => {
   selectedIds.value = [...selectableItems.value.map(item => item.mapping_id)];
 };
