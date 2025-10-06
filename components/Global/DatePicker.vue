@@ -1,4 +1,3 @@
-<!-- components/DatePickerDMY.vue -->
 <template>
   <v-menu
     v-model="menu"
@@ -7,50 +6,33 @@
     offset-y
     min-width="auto"
   >
-    <template v-slot:activator="{ props }">
+    <template v-slot:activator="{ props: menuProps }">
       <v-text-field
-        :model-value="displayValue"
+        :model-value="formattedDate"
         :label="label"
         :placeholder="placeholder"
         :rules="rules"
+        :disabled="disabled"
         prepend-inner-icon="mdi-calendar"
         readonly
         density="compact"
         variant="outlined"
         hide-details="auto"
-        v-bind="props"
+        v-bind="menuProps"
         clearable
-        @click:clear="clear"
-      >
-        <template v-slot:append-inner>
-          <v-icon>mdi-calendar</v-icon>
-        </template>
-      </v-text-field>
+        @click:clear="clearDate"
+      ></v-text-field>
     </template>
     
-    <v-card>
-      <v-date-picker
-        v-model="internalDate"
-        :max="max"
-        :min="min"
-        scrollable
-        color="primary"
-      ></v-date-picker>
-      
-      <v-card-actions>
-        <v-spacer></v-spacer>
-        <v-btn variant="text" @click="menu = false">
-          Cancel
-        </v-btn>
-        <v-btn 
-          color="primary" 
-          variant="flat"
-          @click="confirm"
-        >
-          Select
-        </v-btn>
-      </v-card-actions>
-    </v-card>
+    <v-date-picker
+      v-model="pickerDate"
+      @update:model-value="selectDate"
+      :min="min"
+      :max="max"
+      :title="pickerTitle"
+      scrollable
+      color="primary"
+    ></v-date-picker>
   </v-menu>
 </template>
 
@@ -58,19 +40,23 @@
 import { ref, computed, watch } from 'vue';
 
 interface Props {
-  modelValue: string;  // YYYY-MM-DD
+  modelValue: string;  
   label?: string;
   placeholder?: string;
   rules?: any[];
+  disabled?: boolean;
   min?: string;
   max?: string;
+  pickerTitle?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   label: 'ເລືອກວັນທີ',
-  placeholder: 'DD/MM/YYYY',
+  placeholder: 'DD-MM-YYYY',
   rules: () => [],
-  max: () => new Date().toISOString().split('T')[0]
+  disabled: false,
+  max: () => new Date().toISOString().split('T')[0],
+  pickerTitle: 'ເລືອກວັນທີ'
 });
 
 const emit = defineEmits<{
@@ -78,35 +64,36 @@ const emit = defineEmits<{
 }>();
 
 const menu = ref(false);
-const internalDate = ref<Date | null>(null);
+const pickerDate = ref<Date | null>(null);
 
-// Display as DD/MM/YYYY
-const displayValue = computed(() => {
+
+const formattedDate = computed(() => {
   if (!props.modelValue) return '';
   const [year, month, day] = props.modelValue.split('-');
-  return `${day}/${month}/${year}`;
+  return `${day}-${month}-${year}`;
 });
 
-// Confirm selection
-const confirm = () => {
-  if (internalDate.value) {
-    emit('update:modelValue', internalDate.value);
+
+const selectDate = (date: any) => {
+  if (date) {
+    emit('update:modelValue', date);
+    pickerDate.value = new Date(date);
   }
   menu.value = false;
 };
 
-// Clear
-const clear = () => {
+
+const clearDate = () => {
   emit('update:modelValue', '');
-  internalDate.value = null;
+  pickerDate.value = null;
 };
 
-// Sync with modelValue
+
 watch(
   () => props.modelValue,
   (newVal) => {
     if (newVal) {
-      internalDate.value = new Date(newVal);
+      pickerDate.value = new Date(newVal);
     }
   },
   { immediate: true }

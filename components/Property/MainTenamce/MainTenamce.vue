@@ -130,6 +130,54 @@ const showBarcode = (asset: Asset) => {
   });
 };
 
+// const printBarcode = () => {
+//   if (!selectedAsset.value) return;
+
+//   const barcodeHTML = generateBarcodeSVG(selectedAsset.value.asset_tag, {
+//     height: 100,
+//     width: 2,
+//     margin: 10,
+//   });
+
+//   const printWindow = window.open("", "_blank");
+//   printWindow?.document.write(`
+//     <html>
+//       <head>
+//         <title>ພິມບາໂຄດ - ${selectedAsset.value?.asset_tag}</title>
+//         <style>
+//           body { 
+//             text-align: center; 
+//             font-family: Arial, sans-serif; 
+//             margin: 20px;
+//           }
+//           .print-barcode { 
+//             margin: 20px auto; 
+//             max-width: 400px;
+//             border: 1px solid #ccc;
+//             padding: 20px;
+//           }
+//           h3 { margin-bottom: 15px; }
+//           p { margin-top: 10px; font-weight: bold; }
+//         </style>
+//       </head>
+//       <body>
+//         <div class="print-barcode">
+//           <h3>${selectedAsset.value?.asset_spec}</h3>
+//           ${barcodeHTML}
+//           <p>Asset Tag: ${selectedAsset.value?.asset_tag}</p>
+//           <p>Location: ${
+//             selectedAsset.value?.location_detail?.location_name_la || "-"
+//           }</p>
+//         </div>
+//       </body>
+//     </html>
+//   `);
+
+//   printWindow?.document.close();
+//   setTimeout(() => {
+//     printWindow?.print();
+//   }, 100);
+// };
 const printBarcode = () => {
   if (!selectedAsset.value) return;
 
@@ -150,25 +198,21 @@ const printBarcode = () => {
             font-family: Arial, sans-serif; 
             margin: 20px;
           }
-          .print-barcode { 
-            margin: 20px auto; 
-            max-width: 400px;
-            border: 1px solid #ccc;
-            padding: 20px;
+          h3 { 
+            margin-bottom: 20px;
+            font-size: 16px;
           }
-          h3 { margin-bottom: 15px; }
-          p { margin-top: 10px; font-weight: bold; }
+          p { 
+            margin: 8px 0;
+            font-size: 13px;
+          }
         </style>
       </head>
       <body>
-        <div class="print-barcode">
-          <h3>${selectedAsset.value?.asset_spec}</h3>
-          ${barcodeHTML}
-          <p>Asset Tag: ${selectedAsset.value?.asset_tag}</p>
-          <p>Location: ${
-            selectedAsset.value?.location_detail?.location_name_la || "-"
-          }</p>
-        </div>
+        <h3>${selectedAsset.value?.asset_spec || '-'}</h3>
+        ${barcodeHTML}
+        <p><strong>Asset Tag:</strong> ${selectedAsset.value?.asset_tag || '-'}</p>
+        <p><strong>Location:</strong> ${selectedAsset.value?.location_detail?.location_name_la || '-'}</p>
       </body>
     </html>
   `);
@@ -178,6 +222,7 @@ const printBarcode = () => {
     printWindow?.print();
   }, 100);
 };
+
 const nameTypeDisplay = (item: any) => {
   if (!item || !item.asset_name_la || !item.coa_id) {
     return "ທັງໝົດ";
