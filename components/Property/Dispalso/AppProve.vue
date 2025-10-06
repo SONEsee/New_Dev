@@ -1333,7 +1333,7 @@ const nameDisplay = (item:any)=>{
       </div>
     </div>
 
-    <div v-if="!canView" class="permission-denied-state">
+    <!-- <div v-if="!canView" class="permission-denied-state">
       <v-card class="text-center py-12" elevation="1">
         <v-icon size="80" color="error" class="mb-6">mdi-shield-lock</v-icon>
         <div class="text-h5 mb-3 text-error">ບໍ່ມີສິດເຂົ້າເຖິງ</div>
@@ -1353,9 +1353,9 @@ const nameDisplay = (item:any)=>{
           ກັບໄປໜ້າກ່ອນ
         </v-btn>
       </v-card>
-    </div>
+    </div> -->
 
-    <div v-else>
+    <div >
       <v-alert
         v-if="canAuthorize"
         type="success"

@@ -36,7 +36,7 @@ export const useMentenance = defineStore("mantanance", {
         disposal_recommended: "",
         audit_findings: "",
         recommendations: "",
-        // photos_attached:"",
+        photos_attached:"",
         documents_verified: "",
         follow_up_required: "",
         follow_up_date: "",

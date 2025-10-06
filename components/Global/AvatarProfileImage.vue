@@ -4,7 +4,7 @@ import { UseGlobalStore } from "~/stores/global";
 import notFoundImage from "@/assets/img/404.png";
 
 const notFoundUrl = ref(notFoundImage);
-const imageUrl = ref<string | null>(null); // ກຳນົດ type ໃຫ້ຊັດເຈນ
+const imageUrl = ref<string | null>(null); 
 const globalStore = UseGlobalStore();
 
 const props = defineProps({

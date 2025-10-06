@@ -1,3 +1,4 @@
+import { useRouter } from 'vue-router';
 import axios from "@/helpers/axios";
 import { FaAssetModel } from "~/models";
 import { CallSwal, goPath } from "#build/imports";
@@ -5,6 +6,7 @@ import { CallSwal, goPath } from "#build/imports";
 export const faAssetStore = defineStore("faAsset", {
   state() {
     return {
+      router: useRouter(),
       filter_data_assetlist_id:{
         filter:{
           asset_type_id:"",
@@ -240,7 +242,7 @@ export const faAssetStore = defineStore("faAsset", {
             showConfirmButton: false,
           });
           setTimeout(() => {
-            goPath("/property/realizetheproperty");
+            this.router.go(-1)
           }, 1500);
         }
       } catch (error: any) {
@@ -804,7 +806,7 @@ export const faAssetStore = defineStore("faAsset", {
             showConfirmButton: false,
           });
           setTimeout(() => {
-            goPath("/property/faasset/");
+            this.router.go(-1)
           }, 1500);
         }
       } catch (error: any) {
