@@ -575,7 +575,7 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
 <template>
   <div class="pa-4">
     <GlobalTextTitleLine :title="title" />
-
+<!-- <pre>{{ tmn }}</pre> -->
     
     <v-row class="mb-4">
       <v-col cols="12" md="4">

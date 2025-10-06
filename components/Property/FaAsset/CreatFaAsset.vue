@@ -386,39 +386,7 @@ const submitForm = async () => {
         .toString()
         .padStart(2, "0")}`;
 
-      // faAssetStoreInstance.creat_form_jornal = {
-      //   Reference_No: computedReferenceNo.value,
-      //   Ccy_cd:
-      //     faAssetStoreInstance.form_create_fa_asset.currency_type || "LAK",
-      //   Txn_code: "UNC",
-      //   Value_date: new Date(),
-      //   Addl_text:
-      //     `ພວມຊື້ພວມກໍ່ສ້າງ${faAssetStoreInstance.form_create_fa_asset.MC_name_la}` ||
-      //     "",
-      //   fin_cycle: currentYear,
-      //   module_id: "AS",
-      //   Period_code: currentYearMonth,
-      //   entries: [
-      //     {
-      //       Account: faAssetStoreInstance.form_create_fa_asset.asset_type_id,
-      //       Account_no: faAssetStoreInstance.form_create_fa_asset.MC_detail,
-      //       Amount: parseFormattedNumber(formattedAssetValue.value),
-      //       Dr_cr: "D",
-      //       Addl_sub_text: `${faAssetStoreInstance.form_create_fa_asset.asset_spec}`,
-      //       Ac_relatives:
-      //         faAssetStoreInstance.form_create_fa_asset.asset_list_id,
-      //     },
-      //     {
-      //       Account: null,
-      //       Account_no: faAssetStoreInstance.form_create_fa_asset.acc_no,
-      //       Amount: parseFormattedNumber(formattedAssetValue.value),
-      //       Dr_cr: "C",
-      //       Addl_sub_text: `${faAssetStoreInstance.form_create_fa_asset.asset_spec}`,
-      //       Ac_relatives:
-      //         faAssetStoreInstance.form_create_fa_asset.asset_list_id,
-      //     },
-      //   ],
-      // };
+     
 faAssetStoreInstance.creat_form_jornal = {
         Reference_No: computedReferenceNo.value,
         Ccy_cd: faAssetStoreInstance.form_create_fa_asset.currency_type || "LAK",
@@ -434,7 +402,7 @@ faAssetStoreInstance.creat_form_jornal = {
             Account_no: faAssetStoreInstance.form_create_fa_asset.MC_detail,
             Amount: parseFormattedNumber(formattedAssetValue.value),
             Dr_cr: "D",
-            Addl_sub_text: `${faAssetStoreInstance.form_create_fa_asset.asset_spec}`,
+            Addl_sub_text: `ພວມຊື້ພວມກໍ່ສ້າງ - ${faAssetStoreInstance.form_create_fa_asset.asset_spec}`,
             Ac_relatives: faAssetStoreInstance.form_create_fa_asset.asset_list_id,
           },
           {
@@ -442,7 +410,7 @@ faAssetStoreInstance.creat_form_jornal = {
             Account_no: faAssetStoreInstance.form_create_fa_asset.acc_no,
             Amount: parseFormattedNumber(formattedAssetValue.value),
             Dr_cr: "C",
-            Addl_sub_text: `${faAssetStoreInstance.form_create_fa_asset.asset_spec}`,
+            Addl_sub_text: `ພວມຊື້ພວມກໍ່ສ້າງ - ${faAssetStoreInstance.form_create_fa_asset.asset_spec}`,
             Ac_relatives: faAssetStoreInstance.form_create_fa_asset.asset_list_id,
           },
         ],
@@ -459,8 +427,8 @@ faAssetStoreInstance.creat_form_jornal = {
       });
 
       setTimeout(() => {
-        goPath("/property/faasset");
-      }, 2000);
+        router.go(-1)
+      }, 1500);
     } catch (error) {
       console.error("Error in submit process:", error);
       CallSwal({
@@ -544,38 +512,7 @@ const generateNextAssetCode = async () => {
   }
 };
 
-// const generateSerialNumber = () => {
-//   const selectedAssetTypeId =
-//     faAssetStoreInstance.form_create_fa_asset.asset_type_id;
-//   const assetListCode =
-//     faAssetStoreInstance.form_create_fa_asset.asset_list_code;
 
-//   if (!selectedAssetTypeId || !assetListCode) {
-//     return "";
-//   }
-
-//   if (!mockData.value || !Array.isArray(mockData.value)) {
-//     return "";
-//   }
-
-//   const selectedAsset = mockData.value.find(
-//     (asset) => asset && asset.coa_id === selectedAssetTypeId
-//   );
-
-//   if (!selectedAsset || !selectedAsset.asset_code) {
-//     return "";
-//   }
-
-//   const assetCode = selectedAsset.asset_code;
-
-//   const now = new Date();
-//   const year = now.getFullYear();
-//   const month = (now.getMonth() + 1).toString().padStart(2, "0");
-//   const day = now.getDate().toString().padStart(2, "0");
-//   const dateString = `${year}${month}${day}`;
-
-//   return `SN-${assetCode}-${dateString}-${assetListCode}`;
-// };
 const generateSerialNumber = () => {
   const selectedAssetTypeId = faAssetStoreInstance.form_create_fa_asset.asset_type_id;
   const assetListCode = faAssetStoreInstance.form_create_fa_asset.asset_list_code;
@@ -602,38 +539,7 @@ const generateSerialNumber = () => {
   return `SN-${assetCode}-${dateString}-${assetListCode}`;
 };
 
-// const generateSerialtag = () => {
-//   const selectedAssetTypeId =
-//     faAssetStoreInstance.form_create_fa_asset.asset_type_id;
-//   const assetListCode =
-//     faAssetStoreInstance.form_create_fa_asset.asset_list_code;
 
-//   if (!selectedAssetTypeId || !assetListCode) {
-//     return "";
-//   }
-
-//   if (!mockData.value || !Array.isArray(mockData.value)) {
-//     return "";
-//   }
-
-//   const selectedAsset = mockData.value.find(
-//     (asset) => asset && asset.coa_id === selectedAssetTypeId
-//   );
-
-//   if (!selectedAsset || !selectedAsset.asset_code) {
-//     return "";
-//   }
-
-//   const assetCode = selectedAsset.asset_code;
-
-//   const now = new Date();
-//   const year = now.getFullYear();
-//   const month = (now.getMonth() + 1).toString().padStart(2, "0");
-//   const day = now.getDate().toString().padStart(2, "0");
-//   const dateString = `${year}${month}${day}`;
-
-//   return `BA-${assetCode}-${dateString}-${assetListCode}`;
-// };
 const generateSerialtag = () => {
   const selectedAssetTypeId = faAssetStoreInstance.form_create_fa_asset.asset_type_id;
   const assetListCode = faAssetStoreInstance.form_create_fa_asset.asset_list_code;
@@ -660,37 +566,7 @@ const generateSerialtag = () => {
   return `BA-${assetCode}-${dateString}-${assetListCode}`;
 };
 
-// const generateAssetListId = () => {
-//   const selectedAssetTypeId =
-//     faAssetStoreInstance.form_create_fa_asset.asset_type_id;
-//   const assetListCode =
-//     faAssetStoreInstance.form_create_fa_asset.asset_list_code;
 
-//   if (!selectedAssetTypeId || !assetListCode) {
-//     return "";
-//   }
-
-//   if (!mockData.value || !Array.isArray(mockData.value)) {
-//     return "";
-//   }
-
-//   const selectedAsset = mockData.value.find(
-//     (asset) => asset && asset.coa_id === selectedAssetTypeId
-//   );
-
-//   if (!selectedAsset || !selectedAsset.asset_code) {
-//     return "";
-//   }
-
-//   const assetCode = selectedAsset.asset_code;
-
-//   const now = new Date();
-//   const year = now.getFullYear();
-//   const month = (now.getMonth() + 1).toString().padStart(2, "0");
-//   const yearMonth = `${year}${month}`;
-
-//   return `${assetCode}-${yearMonth}-${assetListCode}`;
-// };
 const generateAssetListId = () => {
   const selectedAssetTypeId = faAssetStoreInstance.form_create_fa_asset.asset_type_id;
   const assetListCode = faAssetStoreInstance.form_create_fa_asset.asset_list_code;

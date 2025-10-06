@@ -23,6 +23,15 @@ export const goPath = (path: string | null) => {
     window.location.href = path;
   }
 };
+export const useNavigation = () => {
+  const router = useRouter()
+  
+  const goBack = () => {
+    router.go(-1)
+  }
+  
+  return { goBack }
+}
 
 export const DefaultSwalError = (err: any) => {
   const errors = err as AxiosError;

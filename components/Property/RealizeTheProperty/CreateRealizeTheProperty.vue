@@ -685,7 +685,7 @@ const generateCompleteJournalEntry = () => {
     response.value.asset_id_detail?.asset_name_la ||
     response.value.asset_tag ||
     "";
-  const addlText = `${mastercodeName}-${assetName}`;
+  const addlText = `ຈົດຮັບຮູ້ຊັບສົມບັດ  - ${mastercodeName}-${assetName}`;
 
   const accountNumbers = getAccountNumbers.value;
 
@@ -703,16 +703,16 @@ const generateCompleteJournalEntry = () => {
         Account_no: accountNumbers.dr || "",
         Amount: parseFloat(response.value.asset_value || "0"),
         Dr_cr: "D",
-        Addl_sub_text:
-          response.value.asset_spec || response.value.asset_tag || "",
+        Addl_sub_text:`ຈົດຮັບຮູ້ຊັບສົມບັບ - ${response.value.asset_spec} || ${response.value.asset_tag} `|| "",
+          
         Ac_relatives: response.value.asset_list_id || "",
       },
       {
         Account_no: accountNumbers.cr || "",
         Amount: parseFloat(response.value.asset_value || "0"),
         Dr_cr: "C",
-        Addl_sub_text:
-          response.value.asset_spec || response.value.asset_tag || "",
+        Addl_sub_text:`ຈົດຮັບຮູ້ຊັບສົມບັບ - ${response.value.asset_spec} || ${response.value.asset_tag} `||
+           "",
         Ac_relatives: response.value.asset_list_id || "",
       },
     ],
@@ -868,6 +868,9 @@ const saveCalculation = async () => {
           text: "ບັນທືກຂໍ້ມູນ Journal Entry ສຳເລັດແລ້ວ",
           timer: 2000,
         });
+        setTimeout(() => {
+          goBack()
+        }, 1500);
       } else {
         CallSwal({
           icon: "warning",
@@ -887,10 +890,7 @@ const saveCalculation = async () => {
     editableValues.value.isEditing = false;
     editableValues.value.salvageValue = 0;
 
-    setTimeout(() => {
-      isSaving = false;
-      console.log("🔓 isSaving reset to false");
-    }, 2000);
+    
   }
 };
 watch(
