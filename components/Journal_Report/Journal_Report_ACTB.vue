@@ -1,4 +1,4 @@
-<!-- JournalReport.vue ACTB - Complete with User Name Mapping -->
+<!-- JournalReport.vue ACTB - Complete with Fullscreen Table -->
 <template>
   <v-container fluid class="pa-6">
     <v-card elevation="0" style="border: 1px solid #e0e0e0; width: 100%;">
@@ -207,39 +207,30 @@
 
         <!-- Table Info Bar -->
         <div class="d-flex justify-space-between align-center mb-3 pa-3 bg-grey-lighten-5 rounded">
-            <div class="text-h6 font-weight-medium text-styles">
+          <div class="text-h6 font-weight-medium text-styles">
             ຜົນການຄົ້ນຫາ: {{ filteredData.length }} ລາຍ
             <v-chip size="small" color="success" variant="tonal" class="ml-2">
-                Journal Entries
+              Journal Entries
             </v-chip>
-            </div>
-            <div class="d-flex align-center gap-2">
+          </div>
+          <div class="d-flex align-center gap-2">
             <div class="text-caption text-grey-darken-1 mr-2">
-                API: journal-report | {{ selectedFinancialCycle }}-{{ selectedPeriodCode }}
+              API: journal-report | {{ selectedFinancialCycle }}-{{ selectedPeriodCode }}
             </div>
             <v-tooltip :text="isTableFullscreen ? 'ປິດໜ້າຈໍເຕັມ (ESC)' : 'ເປີດໜ້າຈໍເຕັມ'" location="top">
-                <template #activator="{ props }">
+              <template #activator="{ props }">
                 <v-btn
-                    v-bind="props"
-                    :icon="isTableFullscreen ? 'mdi-fullscreen-exit' : 'mdi-fullscreen'"
-                    :color="isTableFullscreen ? 'primary' : 'grey-darken-1'"
-                    variant="tonal"
-                    size="small"
-                    @click="toggleTableFullscreen"
+                  v-bind="props"
+                  :icon="isTableFullscreen ? 'mdi-fullscreen-exit' : 'mdi-fullscreen'"
+                  :color="isTableFullscreen ? 'primary' : 'grey-darken-1'"
+                  variant="tonal"
+                  size="small"
+                  @click="toggleTableFullscreen"
                 />
-                </template>
+              </template>
             </v-tooltip>
-            </div>
+          </div>
         </div>
-          <!-- Table Container - UPDATE THIS SECTION -->
-            <div 
-                class="custom-table-container" 
-                :class="{ 'fullscreen-table': isTableFullscreen }"
-            >
-                <table class="custom-journal-table">
-                <!-- Your existing table code remains the same -->
-                </table>
-            </div>
 
         <!-- Parameter Summary -->
         <div v-if="lastUsedParams" class="mb-3 pa-2 bg-green-lighten-5 rounded">
@@ -253,7 +244,10 @@
         </div>
 
         <!-- Custom Table Implementation -->
-        <div class="custom-table-container">
+        <div 
+          class="custom-table-container" 
+          :class="{ 'fullscreen-table': isTableFullscreen }"
+        >
           <table class="custom-journal-table">
             <thead>
               <tr class="main-header-row">
@@ -402,7 +396,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import axios from '@/helpers/axios'
 import * as XLSX from 'xlsx'
 
@@ -907,7 +901,6 @@ const showSnackbar = (message: string, color: string = 'success', icon: string =
 }
 
 onMounted(async () => {
-    
   try {
     const token = localStorage.getItem("token")
     if (token) {
@@ -924,9 +917,8 @@ onMounted(async () => {
   } catch (error) {
     console.error('Initialization error:', error)
   }
-})
 
-  // Add ESC key listener
+  // ESC key listener
   const handleEscKey = (e: KeyboardEvent) => {
     if (e.key === 'Escape' && isTableFullscreen.value) {
       toggleTableFullscreen()
@@ -939,9 +931,19 @@ onMounted(async () => {
     window.removeEventListener('keydown', handleEscKey)
     document.body.style.overflow = 'auto'
   })
+})
 </script>
 
 <style scoped>
+.custom-table-container {
+  width: 100%;
+  max-height: 70vh;
+  overflow: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: #fff;
+  position: relative;
+}
 
 /* Fullscreen Table Styles */
 .fullscreen-table {
@@ -970,19 +972,8 @@ onMounted(async () => {
   z-index: -1;
 }
 
-/* Adjust table in fullscreen mode */
 .fullscreen-table .custom-journal-table {
   height: calc(100vh - 32px);
-}
-
-.custom-table-container {
-  width: 100%;
-  max-height: 70vh;
-  overflow: auto;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  background: #fff;
-  position: relative;
 }
 
 .custom-journal-table {

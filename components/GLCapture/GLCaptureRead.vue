@@ -79,12 +79,8 @@
       <div v-if="!canView" class="permission-denied-state">
         <v-card class="text-center py-12" elevation="1">
           <v-icon size="80" color="error" class="mb-6">mdi-shield-lock</v-icon>
-          <div class="text-h5 mb-3 text-error">ບໍ່ມີສິດເຂົ້າເຖິງ</div>
-          <div class="text-body-1 mb-4 text-grey">ທ່ານບໍ່ມີສິດເຂົ້າເຖິງໜ້ານີ້</div>
-          <div class="text-caption text-grey mb-6 px-4">
-            <v-icon size="16" class="mr-1">mdi-information-outline</v-icon>
-            ກະລຸນາຕິດຕໍ່ຜູ້ດູແລລະບົບເພື່ອຂໍສິດເຂົ້າເຖິງ
-          </div>
+          <div class="text-h5 mb-3 text-error">ກໍາລັັງກວດສອບຂໍ້ມູນ</div>
+          <div class="text-body-1 mb-4 text-grey">ກໍາລັັງກວດສອບສິດເຂົ້າເຖິງໜ້ານີ້</div>
           <v-btn variant="outlined" @click="$router.go(-1)" prepend-icon="mdi-arrow-left" size="large">
             ກັບໄປໜ້າກ່ອນ
           </v-btn>
