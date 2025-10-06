@@ -739,9 +739,9 @@ onMounted(async () => {
 
 /* GL Code Header - Optimized Width */
 .account-code-header {
-  width: 150px;
-  min-width: 150px;
-  max-width: 150px;
+  width: 110px;
+  min-width: 110px;
+  max-width: 110px;
 }
 
 .header-content-center {
@@ -833,20 +833,21 @@ onMounted(async () => {
 
 /* GL Code Cell - Optimized */
 .account-code-cell {
-  width: 150px;
-  min-width: 150px;
-  max-width: 150px;
+  width: 110px;
+  min-width: 110px;
+  max-width: 110px;
   text-align: left;
   font-weight: 500;
   background: white;
 }
 
+/* Reduce left padding for GL code content to better fit smaller width */
 .gl-code-content {
   display: flex;
   align-items: left;
   justify-content: left;
   width: 100%;
-  padding: 0 8px;
+  padding: 0 6px;
 }
 
 .data-row:hover .account-code-cell {

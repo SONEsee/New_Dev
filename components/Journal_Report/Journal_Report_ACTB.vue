@@ -207,16 +207,39 @@
 
         <!-- Table Info Bar -->
         <div class="d-flex justify-space-between align-center mb-3 pa-3 bg-grey-lighten-5 rounded">
-          <div class="text-h6 font-weight-medium text-styles">
+            <div class="text-h6 font-weight-medium text-styles">
             ຜົນການຄົ້ນຫາ: {{ filteredData.length }} ລາຍ
             <v-chip size="small" color="success" variant="tonal" class="ml-2">
-              Journal Entries
+                Journal Entries
             </v-chip>
-          </div>
-          <div class="text-caption text-grey-darken-1">
-            API: journal-report | {{ selectedFinancialCycle }}-{{ selectedPeriodCode }}
-          </div>
+            </div>
+            <div class="d-flex align-center gap-2">
+            <div class="text-caption text-grey-darken-1 mr-2">
+                API: journal-report | {{ selectedFinancialCycle }}-{{ selectedPeriodCode }}
+            </div>
+            <v-tooltip :text="isTableFullscreen ? 'ປິດໜ້າຈໍເຕັມ (ESC)' : 'ເປີດໜ້າຈໍເຕັມ'" location="top">
+                <template #activator="{ props }">
+                <v-btn
+                    v-bind="props"
+                    :icon="isTableFullscreen ? 'mdi-fullscreen-exit' : 'mdi-fullscreen'"
+                    :color="isTableFullscreen ? 'primary' : 'grey-darken-1'"
+                    variant="tonal"
+                    size="small"
+                    @click="toggleTableFullscreen"
+                />
+                </template>
+            </v-tooltip>
+            </div>
         </div>
+          <!-- Table Container - UPDATE THIS SECTION -->
+            <div 
+                class="custom-table-container" 
+                :class="{ 'fullscreen-table': isTableFullscreen }"
+            >
+                <table class="custom-journal-table">
+                <!-- Your existing table code remains the same -->
+                </table>
+            </div>
 
         <!-- Parameter Summary -->
         <div v-if="lastUsedParams" class="mb-3 pa-2 bg-green-lighten-5 rounded">
@@ -461,6 +484,7 @@ const selectedEndDate = ref('')
 const selectedMakerId = ref('')
 const journalData = ref<JournalItem[]>([])
 const lastUsedParams = ref<any>(null)
+const isTableFullscreen = ref(false)
 
 const snackbar = ref({
   show: false,
@@ -514,6 +538,16 @@ const filteredData = computed(() => {
     )
   )
 })
+
+const toggleTableFullscreen = () => {
+  isTableFullscreen.value = !isTableFullscreen.value
+  
+  if (isTableFullscreen.value) {
+    document.body.style.overflow = 'hidden'
+  } else {
+    document.body.style.overflow = 'auto'
+  }
+}
 
 const fetchModules = async () => {
   try {
@@ -639,7 +673,7 @@ const printData = () => {
       'th:nth-child(1), td:nth-child(1) { width: 3%; }' +
       'th:nth-child(2), td:nth-child(2) { width: 6%; }' +
       'th:nth-child(3), td:nth-child(3) { width: 7%; }' +
-      'th:nth-child(4), td:nth-child(4) { width: 12%; }' +
+      'th:nth-child(4), td:nth-child(4) { width: 10%; }' +
       'th:nth-child(5), td:nth-child(5) { width: 18%; }' +
       'th:nth-child(6), td:nth-child(6) { width: 10%; }' +
       'th:nth-child(7), td:nth-child(7) { width: 8%; }' +
@@ -722,7 +756,7 @@ const exportToExcel = () => {
     const ws = XLSX.utils.json_to_sheet(exportData)
     
     const colWidths = [
-      { wch: 8 }, { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 20 },
+      { wch: 8 }, { wch: 10 }, { wch: 12 }, { wch: 10 }, { wch: 20 },
       { wch: 12 }, { wch: 12 }, { wch: 15 }, { wch: 30 }, { wch: 20 },
       { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 12 }, { wch: 10 },
       { wch: 8 }, { wch: 12 }, { wch: 18 }, { wch: 12 }, { wch: 20 }, { wch: 20 }
@@ -873,6 +907,7 @@ const showSnackbar = (message: string, color: string = 'success', icon: string =
 }
 
 onMounted(async () => {
+    
   try {
     const token = localStorage.getItem("token")
     if (token) {
@@ -890,9 +925,56 @@ onMounted(async () => {
     console.error('Initialization error:', error)
   }
 })
+
+  // Add ESC key listener
+  const handleEscKey = (e: KeyboardEvent) => {
+    if (e.key === 'Escape' && isTableFullscreen.value) {
+      toggleTableFullscreen()
+    }
+  }
+  window.addEventListener('keydown', handleEscKey)
+  
+  // Cleanup on unmount
+  onUnmounted(() => {
+    window.removeEventListener('keydown', handleEscKey)
+    document.body.style.overflow = 'auto'
+  })
 </script>
 
 <style scoped>
+
+/* Fullscreen Table Styles */
+.fullscreen-table {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  max-height: 100vh !important;
+  z-index: 9999 !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+  padding: 16px !important;
+  background: white !important;
+  box-shadow: none !important;
+}
+
+.fullscreen-table::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: white;
+  z-index: -1;
+}
+
+/* Adjust table in fullscreen mode */
+.fullscreen-table .custom-journal-table {
+  height: calc(100vh - 32px);
+}
+
 .custom-table-container {
   width: 100%;
   max-height: 70vh;
@@ -1035,8 +1117,8 @@ onMounted(async () => {
 }
 
 .ref-cell {
-  width: 200px;
-  min-width: 200px;
+  width: 120px;
+  min-width: 120px;
 }
 
 .ref-content {
