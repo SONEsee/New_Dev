@@ -456,31 +456,47 @@
 
             <!-- Actions -->
             <template v-slot:item.actions="{ item }">
-              <div class="d-flex gap-1">
-                <v-btn 
-                  v-if="canView" 
-                  icon 
-                  size="x-small" 
-                  variant="text" 
-                  color="info" 
-                  @click="viewDetails(item)"
-                  title="ເບິ່ງລາຍລະອຽດ"
-                >
-                  <v-icon size="14">mdi-eye</v-icon>
-                </v-btn>
+       
+                <div class="d-flex gap-1">
+                  <v-btn 
+                    v-if="canView" 
+                    icon 
+                    size="x-small" 
+                    variant="text" 
+                    color="info" 
+                    @click="viewDetails(item)"
+                    title="ເບິ່ງລາຍລະອຽດ"
+                  >
+                    <v-icon size="14">mdi-eye</v-icon>
+                  </v-btn>
 
-                <v-btn
-                  v-if="canDelete && (canAuthorize || item.Maker_Id === currentUser?.user_id) && item.Auth_Status !== 'A' && item.Auth_Status !== 'R'"
-                  icon 
-                  size="x-small" 
-                  variant="text" 
-                  color="error" 
-                  @click="deleteItem(item)" 
-                  title="ລຶບ"
-                >
-                  <v-icon size="14">mdi-delete</v-icon>
-                </v-btn>
-              </div>
+                  <!-- Print Button -->
+                  <v-btn
+                    v-if="canView"
+                    icon 
+                    size="x-small" 
+                    variant="text" 
+                    color="primary" 
+                    @click="printJournal(item)"
+                    :loading="printingRefNo === item.Reference_No"
+                    :disabled="isPrinting"
+                    title="ພິມເອກະສານ"
+                  >
+                    <v-icon size="14">mdi-printer</v-icon>
+                  </v-btn>
+
+                  <v-btn
+                    v-if="canDelete && (canAuthorize || item.Maker_Id === currentUser?.user_id) && item.Auth_Status !== 'A' && item.Auth_Status !== 'R'"
+                    icon 
+                    size="x-small" 
+                    variant="text" 
+                    color="error" 
+                    @click="deleteItem(item)" 
+                    title="ລຶບ"
+                  >
+                    <v-icon size="14">mdi-delete</v-icon>
+                  </v-btn>
+                </div>
             </template>
           </v-data-table>
         </v-card>
@@ -501,6 +517,8 @@ import { useJournalPermission, formatEodDate } from '@/composables/useJournalPer
 // Router
 const route = useRoute()
 const router = useRouter()
+const isPrinting = ref(false)
+const printingRefNo = ref<string | null>(null)
 
 // Get sub_menu_id from route
 const submenu_id = route.query.sub_menu_id as string || 'GL_NOTE_CAP'
@@ -530,7 +548,7 @@ const permissionCheckComplete = ref(false)
 // Journal Permission - Initialize composable
 const journalPermission = useJournalPermission({
   autoRedirect: false,
-  redirectPath: '/glcapture/permission-denied'
+  redirectPath: '/glcapture/',
 })
 
 // State
@@ -961,6 +979,219 @@ const retryPermissionLoad = async () => {
     }
   } else {
     permissionCheckComplete.value = true
+  }
+}
+ // Print function - Corrected data mapping
+const printJournal = async (item: any) => {
+  try {
+    isPrinting.value = true
+    printingRefNo.value = item.Reference_No
+
+    // Fetch journal details using correct endpoint
+    const [masterResponse, detailsResponse] = await Promise.all([
+      axios.get(`/api/journal-log-master/?Reference_No=${item.Reference_No}`, getAuthHeaders()),
+      axios.get(`/api/journal-entries/?Reference_No=${item.Reference_No}`, getAuthHeaders())
+    ])
+
+    const masterData = masterResponse.data.results?.[0] || masterResponse.data?.[0] || {}
+    const detailsData = detailsResponse.data || []
+
+    if (!masterData || !masterData.Reference_No) {
+      throw new Error('Journal data not found')
+    }
+
+    // Calculate totals from detail entries
+    const totalFcyDebit = detailsData.reduce((sum, d) => sum + (parseFloat(d.fcy_dr) || 0), 0)
+    const totalFcyCredit = detailsData.reduce((sum, d) => sum + (parseFloat(d.fcy_cr) || 0), 0)
+    const isBalanced = Math.abs(totalFcyDebit - totalFcyCredit) < 0.01
+
+    // Helper function to get maker display name
+    const getMakerDisplay = () => {
+      return masterData.maker_name || masterData.Maker_Id || '-'
+    }
+
+    // Helper function to get module display name
+    const getModuleDisplay = () => {
+      const moduleName = getModuleName(masterData.module_id)
+      return moduleName !== '-' ? moduleName : masterData.module_id || '-'
+    }
+
+    // Generate table rows
+    const tableRows = detailsData
+      .map((detail, index) => {
+        const debitAmount = detail.Dr_cr === 'D' ? formatNumber(detail.Fcy_Amount) : ''
+        const creditAmount = detail.Dr_cr === 'C' ? formatNumber(detail.Fcy_Amount) : ''
+        
+        return `<tr>
+          <td class="text-center">${index + 1}</td>
+          <td class="text-left">${detail.Reference_sub_No || '-'}</td>
+          <td class="text-left">${detail.Addl_sub_text || detail.Addl_text || '-'}</td>
+          <td class="text-left">
+            <div style="font-weight: 600;">${detail.Account_no || '-'}</div>
+            <div style="font-size: 0.75rem; color: #666;">${detail.account_name || ''}</div>
+          </td>
+          <td class="text-right">${debitAmount}</td>
+          <td class="text-right">${creditAmount}</td>
+          <td class="text-center">
+            <span class="status-${detail.Auth_Status}">${getStatusText(detail.Auth_Status)}</span>
+          </td>
+        </tr>`
+      })
+      .join('')
+
+    // Generate print content with correct field mapping
+    const printContent = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>ບົດລາຍງານບັນທຶກບັນຊີ - ${masterData.Reference_No}</title>
+  <style>
+    body { font-family: "Noto Sans Lao", "Phetsarath OT", sans-serif; padding: 20px; margin: 0; }
+    .header { text-align: center; margin-bottom: 25px; border-bottom: 3px solid #000; padding-bottom: 15px; }
+    .header h1 { margin: 0 0 5px 0; font-size: 1.5rem; font-weight: bold; }
+    .header h2 { margin: 5px 0; font-size: 1.2rem; }
+    .header p { margin: 3px 0; font-size: 0.9rem; font-style: italic; }
+    .info-section { margin-bottom: 20px; padding: 15px; background: #f9f9f9; border: 1px solid #000; }
+    .info-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 0.9rem; }
+    .info-label { font-weight: bold; min-width: 150px; }
+    .info-value { flex: 1; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.85rem; }
+    th, td { border: 1px solid #000; padding: 8px 6px; }
+    th { background-color: #e0e0e0; font-weight: bold; text-align: center; }
+    .text-right { text-align: right; }
+    .text-center { text-align: center; }
+    .text-left { text-align: left; }
+    .totals-row { font-weight: bold; background: #f0f0f0; border-top: 2px solid #000; }
+    .balance-row { font-weight: bold; background: #e8e8e8; }
+    .status-A { color: #22c55e; font-weight: bold; }
+    .status-U { color: #f59e0b; font-weight: bold; }
+    .status-R { color: #ef4444; font-weight: bold; }
+    .status-P { color: #3b82f6; font-weight: bold; }
+    .summary-box { margin-top: 20px; width: 50%; margin-left: auto; border: 1px solid #000; }
+    .summary-row { display: flex; padding: 6px 10px; border-bottom: 1px solid #ccc; }
+    .summary-row:last-child { border-bottom: none; }
+    .summary-label { font-weight: bold; width: 50%; background: #f0f0f0; padding: 4px 8px; }
+    .summary-value { width: 50%; text-align: right; padding: 4px 8px; font-family: "Courier New", monospace; }
+    .signatures { margin-top: 60px; display: flex; justify-content: space-between; padding: 0 40px; }
+    .signature-box { text-align: center; width: 40%; }
+    .signature-title { font-size: 1rem; font-weight: bold; margin-bottom: 60px; }
+    .signature-line { border-bottom: 2px solid #000; margin: 0 20px 10px 20px; }
+    .footer { margin-top: 30px; text-align: center; font-size: 0.85rem; color: #666; border-top: 1px solid #000; padding-top: 10px; }
+    @media print {
+      body { padding: 10px; }
+      @page { size: A4; margin: 15mm; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>ບໍລິສັດລັດ ບໍລິຫານໜີ້ ແລະ ຊັບສິນ ຈຳກັດຜູ່ດຽວ</h1>
+    <h2>ບົດລາຍງານບັນທຶກບັນຊີ</h2>
+    <p>Journal Entry Report</p>
+  </div>
+  
+  <div class="info-section">
+    <div class="info-row">
+      <span><span class="info-label">ເລກອ້າງອີງ / Reference No:</span> <span class="info-value">${masterData.Reference_No}</span></span>
+      <span><span class="info-label">ວັນທີ່ພິມ / Print Date:</span> <span class="info-value">${new Date().toLocaleDateString('lo-LA')}</span></span>
+    </div>
+    <div class="info-row">
+      <span><span class="info-label">ໂມດູນ / Module:</span> <span class="info-value">${getModuleDisplay()} - ${masterData.Txn_code || ''}</span></span>
+      <span><span class="info-label">ວັນທີ່ / Date:</span> <span class="info-value">${formatDate(masterData.Value_date)}</span></span>
+    </div>
+    <div class="info-row">
+      <span><span class="info-label">ຜູ້ສ້າງ / Created By:</span> <span class="info-value">${getMakerDisplay()}</span></span>
+      <span><span class="info-label">ສະກຸນເງິນ / Currency:</span> <span class="info-value">${masterData.Ccy_cd || ''}</span></span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">ເນື້ອໃນ / Description:</span>
+      <span class="info-value">${masterData.Addl_text || '-'}</span>
+    </div>
+  </div>
+  
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 5%;">ລຳດັບ<br>No.</th>
+        <th style="width: 12%;">ເລກອ້າງອີງຄູ່<br>Ref. Sub No</th>
+        <th style="width: 25%;">ເນື້ອໃນ<br>Description</th>
+        <th style="width: 20%;">ບັນຊີ<br>Account</th>
+        <th style="width: 14%;">Debit (FCY)</th>
+        <th style="width: 14%;">Credit (FCY)</th>
+        <th style="width: 10%;">ສະຖານະ<br>Status</th>
+      </tr>
+    </thead>
+    <tbody>${tableRows}</tbody>
+    <tfoot>
+      <tr class="totals-row">
+        <td colspan="4" class="text-right"><strong>ລວມທັງໝົດ / Total:</strong></td>
+        <td class="text-right"><strong>${formatNumber(totalFcyDebit)}</strong></td>
+        <td class="text-right"><strong>${formatNumber(totalFcyCredit)}</strong></td>
+        <td class="text-center"></td>
+      </tr>
+      <tr class="balance-row">
+        <td colspan="4" class="text-right"><strong>ສະຖານະຍອດ / Balance Status:</strong></td>
+        <td colspan="3" class="text-center" style="color: ${isBalanced ? '#22c55e' : '#ef4444'};">
+          <strong>${isBalanced ? '✓ ສົມດຸນ / Balanced' : '✗ ບໍ່ສົມດຸນ / Unbalanced'}</strong>
+        </td>
+      </tr>
+    </tfoot>
+  </table>
+  
+  <div class="summary-box">
+    <div class="summary-row">
+      <div class="summary-label">FCY Amount:</div>
+      <div class="summary-value">${formatNumber(masterData.Fcy_Amount)} ${masterData.Ccy_cd}</div>
+    </div>
+    <div class="summary-row">
+      <div class="summary-label">LCY Amount:</div>
+      <div class="summary-value">${formatNumber(masterData.Lcy_Amount)} LAK</div>
+    </div>
+    <div class="summary-row">
+      <div class="summary-label">Exchange Rate:</div>
+      <div class="summary-value">${formatNumber(masterData.Exch_rate, 6)}</div>
+    </div>
+  </div>
+  
+  <div class="signatures">
+    <div class="signature-box">
+      <div class="signature-title">ຜູ້ກວດສອບ</div>
+      <div class="signature-line"></div>
+    </div>
+    <div class="signature-box">
+      <div class="signature-title">ນັກບັນທຶກ</div>
+      <div class="signature-line"></div>
+    </div>
+  </div>
+  
+  <div class="footer">
+    <p>ລະບົບບັນຊີ ບໍລິສັດລັດ ບໍລິຫານໜີ້ ແລະ ຊັບສິນ ຈຳກັດຜູ່ດຽວ</p>
+  </div>
+  
+  <script>window.onload = function() { window.print(); }<\/script>
+</body>
+</html>`
+
+    // Open print window
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) {
+      throw new Error('Could not open print window')
+    }
+
+    printWindow.document.write(printContent)
+    printWindow.document.close()
+
+  } catch (error) {
+    console.error('Print error:', error)
+    Swal.fire({
+      icon: 'error',
+      title: 'ຜິດພາດ',
+      text: 'ມີຂໍ້ຜິດພາດໃນການພິມ: ' + (error.message || 'Unknown error'),
+      confirmButtonText: 'ຕົກລົງ'
+    })
+  } finally {
+    isPrinting.value = false
+    printingRefNo.value = null
   }
 }
 

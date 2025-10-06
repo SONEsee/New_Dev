@@ -1,25 +1,12 @@
 <script setup lang="ts">
 import dayjs from "#build/dayjs.imports.mjs";
-import { ref, computed, onMounted, watch, nextTick } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useRolePermissions } from "@/composables/useRolePermissions";
 import { debounce } from "lodash-es";
 import axios from "@/helpers/axios";
 
 // Types
-interface UserFilter {
-  div_id?: string | null;
-  role_id?: string | null;
-  user_status?: string | null;
-  auth_status?: string | null;
-  search?: string | null;
-  created_after?: string | null;
-  created_before?: string | null;
-  page?: number;
-  page_size?: number;
-  ordering?: string | null;
-}
-
 interface User {
   user_id: string;
   user_name: string;
@@ -46,54 +33,25 @@ interface User {
 const isUpdatingStatus = ref(false);
 const isLoadingUsers = ref(false);
 const searchQuery = ref<string>("");
-const filters = ref<UserFilter>({
-  div_id: null,
-  role_id: null,
-  user_status: null,
-  auth_status: null,
-  search: null,
+
+// Filters
+const filters = ref({
+  search: null as string | null,
+  auth_status: null as string | null,
+  div_id: null as string | null,
+  role_id: null as string | null,
   page: 1,
   page_size: 20,
-  ordering: "user_id",
 });
 
 // Pagination
 const totalUsers = ref(0);
 const currentPage = ref(1);
 const itemsPerPage = ref(20);
-
-// Advanced filters
-const showAdvancedFilters = ref(false);
-const dateRangeStart = ref<string>("");
-const dateRangeEnd = ref<string>("");
+const totalPages = ref(1);
 
 // Constants
-const FILTERS_STORAGE_KEY = "user_filters_v2";
 const title = "ຂໍ້ມູນຜູ້ໃຊ້ງານ";
-
-// Status options
-const userStatusOptions = [
-  { value: "", text: "ທັງໝົດ" },
-  { value: "E", text: "ເປີດໃຊ້ງານ" },
-  { value: "D", text: "ປິດໃຊ້ງານ" },
-];
-
-const authStatusOptions = [
-  { value: "", text: "ທັງໝົດ" },
-  { value: "A", text: "ອະນຸມັດແລ້ວ" },
-  { value: "U", text: "ຍັງບໍ່ອະນຸມັດ" },
-];
-
-const sortOptions = [
-  { value: "user_id", text: "ລະຫັດຜູ້ໃຊ້" },
-  { value: "-user_id", text: "ລະຫັດຜູ້ໃຊ້ (ກົງກັນຂ້າມ)" },
-  { value: "user_name", text: "ຊື່ຜູ້ໃຊ້" },
-  { value: "-user_name", text: "ຊື່ຜູ້ໃຊ້ (ກົງກັນຂ້າມ)" },
-  { value: "InsertDate", text: "ມື້ສ້າງ (ເກົ່າສຸດກ່ອນ)" },
-  { value: "-InsertDate", text: "ມື້ສ້າງ (ໃໝ່ສຸດກ່ອນ)" },
-  { value: "UpdateDate", text: "ມື້ແກ້ໄຂ (ເກົ່າສຸດກ່ອນ)" },
-  { value: "-UpdateDate", text: "ມື້ແກ້ໄຂ (ໃໝ່ສຸດກ່ອນ)" },
-];
 
 // Stores and composables
 const route = useRoute();
@@ -106,7 +64,6 @@ const {
   canDelete,
   canView,
   canAdd,
-  canRecordStatus,
   canAuthorize,
   initializeRole,
 } = useRolePermissions();
@@ -116,28 +73,13 @@ const usersList = ref<User[]>([]);
 const roleData = computed(() => roleStore.respons_data_role || []);
 const divisionData = computed(() => devision.categories || []);
 
-const selectedDivision = computed({
-  get: () => divisionData.value.find(d => d.div_id === filters.value.div_id) || null,
-  set: (value) => {
-    filters.value.div_id = value?.div_id || null;
-  }
-});
-
-const selectedRole = computed({
-  get: () => roleData.value.find(r => r.role_id === filters.value.role_id) || null,
-  set: (value) => {
-    filters.value.role_id = value?.role_id || null;
-  }
-});
-
-// Enhanced API Functions
+// API Functions
 const fetchUsers = async (showLoading = true) => {
   try {
     if (showLoading) isLoadingUsers.value = true;
     
     const params = new URLSearchParams();
     
-    // Add filters to params
     Object.entries(filters.value).forEach(([key, value]) => {
       if (value !== null && value !== undefined && value !== "") {
         params.append(key, String(value));
@@ -151,41 +93,40 @@ const fetchUsers = async (showLoading = true) => {
     });
 
     if (response.data) {
-      usersList.value = response.data.results || response.data;
-      totalUsers.value = response.data.count || usersList.value.length;
-      
-      // Update pagination if using DRF pagination
-      if (response.data.next || response.data.previous) {
-        currentPage.value = filters.value.page || 1;
+      // Handle paginated response (DRF)
+      if (response.data.results) {
+        usersList.value = response.data.results;
+        totalUsers.value = response.data.count || 0;
+        totalPages.value = Math.ceil(totalUsers.value / itemsPerPage.value);
+      } 
+      // Handle direct array response
+      else if (Array.isArray(response.data)) {
+        usersList.value = response.data;
+        totalUsers.value = response.data.length;
+        totalPages.value = Math.ceil(totalUsers.value / itemsPerPage.value);
       }
+      // Handle other formats
+      else {
+        usersList.value = response.data.items || response.data.Item || [];
+        totalUsers.value = usersList.value.length;
+        totalPages.value = Math.ceil(totalUsers.value / itemsPerPage.value);
+      }
+      
+      currentPage.value = filters.value.page || 1;
     }
   } catch (error) {
     console.error("Error fetching users:", error);
     await CallSwal({
       icon: "error",
       title: "ເກີດຂໍ້ຜິດພາດ",
-      text: "ບໍ່ສາມາດໂຫຼດຂໍ້ມູນຜູໃຊ້ໄດ້",
+      text: "ບໍ່ສາມາດໂຫຼດຂໍ້ມູນຜູ້ໃຊ້ໄດ້",
     });
   } finally {
     if (showLoading) isLoadingUsers.value = false;
   }
 };
 
-const fetchUserStats = async () => {
-  try {
-    const response = await axios.get("/api/users/stats/", {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    });
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching user stats:", error);
-    return null;
-  }
-};
-
-// Enhanced user status update
+// Update user status
 const updateUserStatus = async (id: string, action: 'authorize' | 'unauthorize') => {
   try {
     isUpdatingStatus.value = true;
@@ -194,7 +135,7 @@ const updateUserStatus = async (id: string, action: 'authorize' | 'unauthorize')
     const notification = await CallSwal({
       icon: "warning",
       title: "ຄຳເຕືອນ",
-      text: `ທ່ານກຳລັງ${isAuthorize ? 'ອະນຸມັດ' : 'ຍົກເລີກອະນຸມັດ'}ຜູໃຊ້ງານ ທ່ານແນ່ໃຈແລ້ວບໍ?`,
+      text: `ທ່ານກຳລັງ${isAuthorize ? 'ອະນຸມັດ' : 'ຍົກເລີກອະນຸມັດ'}ຜູ້ໃຊ້ງານ ທ່ານແນ່ໃຈແລ້ວບໍ?`,
       showCancelButton: true,
       confirmButtonText: "ຕົກລົງ",
       cancelButtonText: "ຍົກເລີກ",
@@ -213,7 +154,6 @@ const updateUserStatus = async (id: string, action: 'authorize' | 'unauthorize')
       );
 
       if (res.status === 200) {
-        // Update local data instead of refetching all
         const userIndex = usersList.value.findIndex(u => u.user_id === id);
         if (userIndex !== -1) {
           usersList.value[userIndex].Auth_Status = isAuthorize ? 'A' : 'U';
@@ -222,17 +162,9 @@ const updateUserStatus = async (id: string, action: 'authorize' | 'unauthorize')
         await CallSwal({
           icon: "success",
           title: "ສຳເລັດ",
-          text: `${isAuthorize ? 'ອະນຸມັດ' : 'ຍົກເລີກອະນຸມັດ'}ຜູໃຊ້ງານແລ້ວ`,
+          text: `${isAuthorize ? 'ອະນຸມັດ' : 'ຍົກເລີກອະນຸມັດ'}ຜູ້ໃຊ້ງານແລ້ວ`,
           timer: 2000,
           showConfirmButton: false,
-        });
-      }
-      
-      if (res.status === 406) {
-        await CallSwal({
-          icon: "warning",
-          title: "ບໍ່ສາມາດດຳເນີນການໄດ້",
-          text: res.data?.detail || "ເກີດຂໍ້ຜິດພາດໃນການດຳເນີນການ",
         });
       }
     }
@@ -241,34 +173,10 @@ const updateUserStatus = async (id: string, action: 'authorize' | 'unauthorize')
     await CallSwal({
       icon: "error",
       title: "ເກີດຂໍ້ຜິດພາດ",
-      text: error.response?.data?.detail || `ບໍ່ສາມາດ${action === 'authorize' ? 'ອະນຸມັດ' : 'ຍົກເລີກອະນຸມັດ'}ຜູໃຊ້ງານໄດ້`,
+      text: error.response?.data?.detail || `ບໍ່ສາມາດ${action === 'authorize' ? 'ອະນຸມັດ' : 'ຍົກເລີກອະນຸມັດ'}ຜູ້ໃຊ້ງານໄດ້`,
     });
   } finally {
     isUpdatingStatus.value = false;
-  }
-};
-
-const updateRecordStatus = async (userId: string, status: 'on' | 'off') => {
-  try {
-    // Update via your existing store method
-    if (status === 'on') {
-      await agencyStore.updateRecordStatus(userId);
-    } else {
-      await agencyStore.updateRecordStatusOff(userId);
-    }
-    
-    // Update local data
-    const userIndex = usersList.value.findIndex(u => u.user_id === userId);
-    if (userIndex !== -1) {
-      usersList.value[userIndex].Record_Status = status === 'on' ? 'O' : 'C';
-    }
-  } catch (error) {
-    console.error("Error updating record status:", error);
-    await CallSwal({
-      icon: "error",
-      title: "ເກີດຂໍ້ຜິດພາດ",
-      text: "ບໍ່ສາມາດແກ້ໄຂສະຖານະໄດ້",
-    });
   }
 };
 
@@ -276,7 +184,7 @@ const onDeleteUser = async (user_id: string) => {
   const confirmation = await CallSwal({
     icon: "warning",
     title: "ຄຳເຕືອນ",
-    text: "ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການລຶບຂໍ້ມູນຜູໃຊ້ນີ້?",
+    text: "ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການລຶບຂໍ້ມູນຜູ້ໃຊ້ນີ້?",
     showCancelButton: true,
     confirmButtonText: "ຕົກລົງ",
     cancelButtonText: "ຍົກເລີກ",
@@ -285,10 +193,10 @@ const onDeleteUser = async (user_id: string) => {
   if (confirmation.isConfirmed) {
     try {
       const result = await agencyStore.DeleteUser(user_id);
-      if (result) {
-        // Remove from local list
+      if (result || result === undefined) {
         usersList.value = usersList.value.filter(u => u.user_id !== user_id);
         totalUsers.value--;
+        await fetchUsers();
       }
     } catch (error) {
       console.error("Error deleting user:", error);
@@ -296,70 +204,19 @@ const onDeleteUser = async (user_id: string) => {
   }
 };
 
-// Filter management
-const saveFilters = () => {
-  try {
-    const filtersToSave = {
-      ...filters.value,
-      searchQuery: searchQuery.value,
-      dateRangeStart: dateRangeStart.value,
-      dateRangeEnd: dateRangeEnd.value,
-      showAdvancedFilters: showAdvancedFilters.value,
-    };
-    localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(filtersToSave));
-  } catch (error) {
-    console.error("Failed to save filters:", error);
-  }
-};
-
-const loadFilters = () => {
-  try {
-    const saved = localStorage.getItem(FILTERS_STORAGE_KEY);
-    if (saved) {
-      const parsedFilters = JSON.parse(saved);
-      filters.value = { ...filters.value, ...parsedFilters };
-      searchQuery.value = parsedFilters.searchQuery || "";
-      dateRangeStart.value = parsedFilters.dateRangeStart || "";
-      dateRangeEnd.value = parsedFilters.dateRangeEnd || "";
-      showAdvancedFilters.value = parsedFilters.showAdvancedFilters || false;
-    }
-  } catch (error) {
-    console.error("Failed to load filters:", error);
-  }
-};
-
-const clearAllFilters = async () => {
+// Clear filters
+const clearFilters = async () => {
   filters.value = {
+    search: null,
+    auth_status: null,
     div_id: null,
     role_id: null,
-    user_status: null,
-    auth_status: null,
-    search: null,
     page: 1,
     page_size: 20,
-    ordering: "user_id",
   };
   searchQuery.value = "";
-  dateRangeStart.value = "";
-  dateRangeEnd.value = "";
   currentPage.value = 1;
-  
-  localStorage.removeItem(FILTERS_STORAGE_KEY);
   await fetchUsers();
-};
-
-const applyDateRange = () => {
-  if (dateRangeStart.value) {
-    filters.value.created_after = dayjs(dateRangeStart.value).format("YYYY-MM-DD");
-  } else {
-    filters.value.created_after = null;
-  }
-  
-  if (dateRangeEnd.value) {
-    filters.value.created_before = dayjs(dateRangeEnd.value).format("YYYY-MM-DD");
-  } else {
-    filters.value.created_before = null;
-  }
 };
 
 // Debounced search
@@ -385,152 +242,78 @@ const changeItemsPerPage = async (items: number) => {
   await fetchUsers();
 };
 
-// Quick filter buttons
-const quickFilterActive = async () => {
-  filters.value.user_status = "E";
-  filters.value.page = 1;
-  await fetchUsers();
-};
-
-const quickFilterUnauthorized = async () => {
-  filters.value.auth_status = "U";
-  filters.value.page = 1;
-  await fetchUsers();
-};
-
 // Watchers
 watch(searchQuery, (newValue) => {
   debouncedSearch(newValue);
 });
 
-watch([() => filters.value.div_id, () => filters.value.role_id], async () => {
+watch([() => filters.value.auth_status, () => filters.value.div_id, () => filters.value.role_id], async () => {
   filters.value.page = 1;
   currentPage.value = 1;
   await fetchUsers();
-  saveFilters();
 });
 
-watch([() => filters.value.user_status, () => filters.value.auth_status, () => filters.value.ordering], async () => {
-  filters.value.page = 1;
-  currentPage.value = 1;
-  await fetchUsers();
-  saveFilters();
-});
-
-watch([dateRangeStart, dateRangeEnd], () => {
-  applyDateRange();
-  saveFilters();
-});
-
-// Table headers configuration
+// Table headers
 const header = computed(() => {
   const baseHeaders = [
     {
-      title: "ຮູບພາບ",
+      title: "ຮູບ",
       value: "profile_picture",
       align: "center",
       sortable: false,
-      filterable: false,
-      width: "80px",
-      class: "text-center",
+      width: "70px",
     },
     {
-      title: "ລະຫັດ",
+      title: "ລະຫັດຜູ້ໃຊ້",
       value: "user_id",
       align: "start",
-      sortable: true,
-      filterable: true,
-      class: "text-primary font-weight-bold",
+      sortable: false,
     },
     {
       title: "ຊື່ຜູ້ໃຊ້ງານ",
       value: "user_name",
       align: "start",
-      sortable: true,
-      filterable: true,
-      class: "text-h6",
+      sortable: false,
     },
     {
       title: "ພະແນກ",
       value: "division",
       align: "center",
-      sortable: true,
-      filterable: true,
+      sortable: false,
     },
     {
-      title: "ສິດເຂົ້ານຳໃຊ້ລະບົບ",
+      title: "ສິດການນຳໃຊ້",
       value: "role",
       align: "center",
-      sortable: true,
-      filterable: true,
+      sortable: false,
     },
-    // {
-    //   title: "ສະຖານະ",
-    //   value: "User_Status",
-    //   align: "center",
-    //   sortable: true,
-    //   filterable: true,
-    //   width: "100px",
-    // },
     {
-      title: "ອະນຸມັດ",
+      title: "ສະຖານະອະນຸມັດ",
       value: "Auth_Status",
       align: "center",
-      sortable: true,
-      filterable: true,
-      width: "100px",
+      sortable: false,
+      width: "130px",
     },
     {
-      title: "ມື້ສ້າງຂໍ້ມູນ",
+      title: "ວັນທີ່ສ້າງ",
       value: "created_date",
       align: "center",
-      sortable: true,
-      filterable: false,
+      sortable: false,
+      width: "120px",
     },
   ];
 
-  const actionHeaders = [
-    // ...(canRecordStatus.value ? [{
-    //   title: "ເປິດ/ປິດ",
-    //   value: "Record_Status",
-    //   align: "center",
-    //   sortable: false,
-    //   filterable: false,
-    //   width: "100px",
-    // }] : []),
-    ...(canView.value ? [{
-      title: "ເບິ່ງ",
-      value: "view",
+  const actionHeaders = [];
+  
+  if (canView.value || canEdit.value || canDelete.value || canAuthorize.value) {
+    actionHeaders.push({
+      title: "ຈັດການ",
+      value: "actions",
       align: "center",
       sortable: false,
-      filterable: false,
-      width: "70px",
-    }] : []),
-    ...(canEdit.value ? [{
-      title: "ແກ້ໄຂ",
-      value: "edit",
-      align: "center",
-      sortable: false,
-      filterable: false,
-      width: "70px",
-    }] : []),
-    ...(canDelete.value ? [{
-      title: "ລົບ",
-      value: "delete",
-      align: "center",
-      sortable: false,
-      filterable: false,
-      width: "70px",
-    }] : []),
-    ...(canAuthorize.value ? [{
-      title: "ອະນຸມັດ/ຍົກເລີກ",
-      value: "confirm",
-      align: "center",
-      sortable: false,
-      filterable: false,
-      width: "120px",
-    }] : []),
-  ];
+      width: "150px",
+    });
+  }
 
   return [...baseHeaders, ...actionHeaders];
 });
@@ -539,349 +322,182 @@ const header = computed(() => {
 onMounted(async () => {
   initializeRole();
   
-  try {
-    // Load saved filters first
-    loadFilters();
-    
-    // Load reference data
-    await Promise.all([
-      devision.GetListData(),
-      roleStore.GetRole(),
-      roleStore.GetRoleDetail(),
-    ]);
-
-    // Fetch users with current filters
-    await fetchUsers();
-
-    // Handle URL query params
-    const user_id = route.query.user_id as string;
-    if (user_id) {
-      // Handle any specific user_id logic if needed
-    }
-  } catch (error) {
-    console.error("Failed to load initial data:", error);
-  }
-});
-
-// Export functions for parent components
-defineExpose({
-  fetchUsers,
-  clearAllFilters,
-  fetchUserStats,
+  await Promise.all([
+    devision.GetListData(),
+    roleStore.GetRole(),
+  ]);
+  
+  await fetchUsers();
 });
 </script>
 
 <template>
-  <div class="user-management text-styles">
-    <!-- Page Title with Statistics -->
-    <v-row class="mb-4">
+  <div class="user-management">
+    <!-- Page Header -->
+    <v-row class="mb-6">
       <v-col cols="12">
-        <GlobalTextTitleLine :title="`${title} (${formatnumber(totalUsers)})`" class="text-styles" />
+        <div class="page-header">
+          <h1 class="text-styles page-title">{{ title }}</h1>
+          <p class="text-styles page-subtitle">ທັງໝົດ {{ formatnumber(totalUsers) }} ຜູ້ໃຊ້ງານ</p>
+        </div>
       </v-col>
     </v-row>
 
-    <v-card flat class="pa-4 text-styles">
-      <!-- Quick Action Bar -->
-      <v-row class="mb-4" align="center">
-        <v-col cols="12" md="6" class="text-styles">
-          <v-btn-toggle 
-            v-model="filters.user_status" 
-            color="primary" 
-            group 
-            variant="outlined" 
-            density="compact"
-            @update:model-value="fetchUsers"
-            class="text-styles"
-          >
-            <v-btn value="" size="small" class="text-styles">ທັງໝົດ</v-btn>
-            <v-btn value="E" size="small" class="text-styles">ເປີດໃຊ້ງານ</v-btn>
-            <v-btn value="D" size="small" class="text-styles">ປິດໃຊ້ງານ</v-btn>
-          </v-btn-toggle>
+    <!-- Main Content Card -->
+    <v-card class="main-card" elevation="0">
+      <!-- Filter Bar -->
+      <div class="filter-bar">
+        <v-row align="center">
+          <!-- Search -->
+          <v-col cols="12" md="4">
+            <v-text-field
+              v-model="searchQuery"
+              density="comfortable"
+              label="ຄົ້ນຫາ"
+              placeholder="ຄົ້ນຫາຊື່ ຫຼື ລະຫັດຜູ້ໃຊ້"
+              variant="outlined"
+              prepend-inner-icon="mdi-magnify"
+              clearable
+              hide-details
+              :loading="isLoadingUsers"
+              class="text-styles search-field"
+            />
+          </v-col>
 
-          <v-btn-toggle 
-            v-model="filters.auth_status" 
-            color="secondary" 
-            group 
-            variant="outlined" 
-            density="compact"
-            class="ml-4 text-styles"
-            @update:model-value="fetchUsers"
-          >
-            <v-btn value="" size="small" class="text-styles">ທັງໝົດ</v-btn>
-            <v-btn value="A" size="small" class="text-styles">ອະນຸມັດແລ້ວ</v-btn>
-            <v-btn value="U" size="small" class="text-styles">ຍັງບໍ່ອະນຸມັດ</v-btn>
-          </v-btn-toggle>
-        </v-col>
-        
-        <v-col cols="12" md="6" class="text-right text-styles">
-          <v-btn
-            v-if="canAdd"
-            color="primary"
-            @click="goPath('/user/create')"
-            prepend-icon="mdi-plus"
-            class="text-none mr-2 text-styles"
-          >
-            ເພີ່ມຜູ້ໃຊ້ງານ
-          </v-btn>
-          
-          <v-btn
-            color="info"
-            variant="outlined"
-            @click="showAdvancedFilters = !showAdvancedFilters"
-            :prepend-icon="showAdvancedFilters ? 'mdi-chevron-up' : 'mdi-chevron-down'"
-            class="text-none text-styles"
-          >
-            ຕົວກັ່ນຕອງເພີ່ມເຕີມ
-          </v-btn>
-        </v-col>
-      </v-row>
+          <!-- Division Filter -->
+          <v-col cols="12" md="3">
+            <v-autocomplete
+              v-model="filters.div_id"
+              density="comfortable"
+              label="ພະແນກ"
+              :items="divisionData"
+              item-value="div_id"
+              item-title="division_name_la"
+              variant="outlined"
+              hide-details
+              clearable
+              prepend-inner-icon="mdi-office-building"
+              :disabled="isLoadingUsers"
+              class="text-styles"
+            />
+          </v-col>
 
-      <!-- Main Filters Row -->
-      <v-row class="mb-4 text-styles">
-        <v-col cols="12" md="4" class="text-styles">
-          <v-text-field
-            v-model="searchQuery"
-            density="compact"
-            label="ຄົ້ນຫາ..."
-            placeholder="ຄົ້ນຫາຊື່, ອີເມວ, ລະຫັດ"
-            variant="outlined"
-            prepend-inner-icon="mdi-magnify"
-            clearable
-            hide-details
-            :loading="isLoadingUsers"
-            class="text-styles"
-          />
-        </v-col>
+          <!-- Role Filter -->
+          <v-col cols="12" md="2">
+            <v-autocomplete
+              v-model="filters.role_id"
+              density="comfortable"
+              label="ສິດການນຳໃຊ້"
+              :items="roleData"
+              item-value="role_id"
+              item-title="role_name_la"
+              variant="outlined"
+              hide-details
+              clearable
+              prepend-inner-icon="mdi-shield-account"
+              :disabled="isLoadingUsers"
+              class="text-styles"
+            />
+          </v-col>
 
-        <v-col cols="12" md="3" class="text-styles">
-          <v-autocomplete
-            v-model="selectedDivision"
-            density="compact"
-            label="ເລືອກພະແນກ"
-            :items="divisionData"
-            item-value="div_id"
-            item-title="division_name_la"
-            variant="outlined"
-            clearable
-            return-object
-            :loading="isLoadingUsers"
-            hide-details
-            prepend-inner-icon="mdi-office-building"
-            class="text-styles"
-          >
-            <template v-slot:selection="{ item }">
-              <span class="text-styles">{{ item.raw.division_name_la }}</span>
-            </template>
-            <template v-slot:item="{ props, item }">
-              <v-list-item
-                v-bind="props"
-                :subtitle="`ID: ${item.raw.div_id}`"
-                :title="item.raw.division_name_la"
-                class="text-styles"
-              />
-            </template>
-          </v-autocomplete>
-        </v-col>
+          <!-- Auth Status Filter -->
+          <v-col cols="12" md="2">
+            <v-select
+              v-model="filters.auth_status"
+              density="comfortable"
+              label="ສະຖານະອະນຸມັດ"
+              :items="[
+                { value: null, title: 'ທັງໝົດ' },
+                { value: 'A', title: 'ອະນຸມັດແລ້ວ' },
+                { value: 'U', title: 'ລໍຖ້າອະນຸມັດ' },
+              ]"
+              variant="outlined"
+              hide-details
+              clearable
+              prepend-inner-icon="mdi-check-circle"
+              :disabled="isLoadingUsers"
+              class="text-styles"
+            />
+          </v-col>
 
-        <v-col cols="12" md="3" class="text-styles">
-          <v-autocomplete
-            v-model="selectedRole"
-            density="compact"
-            label="ເລືອກສິດການນຳໃຊ້"
-            :items="roleData"
-            item-value="role_id"
-            item-title="role_name_la"
-            variant="outlined"
-            clearable
-            return-object
-            :loading="isLoadingUsers"
-            hide-details
-            prepend-inner-icon="mdi-shield-account"
-            class="text-styles"
-          >
-            <template v-slot:selection="{ item }">
-              <span class="text-styles">{{ item.raw.role_name_la }}</span>
-            </template>
-            <template v-slot:item="{ props, item }">
-              <v-list-item
-                v-bind="props"
-                :subtitle="`ID: ${item.raw.role_id}`"
-                :title="item.raw.role_name_la"
-                class="text-styles"
-              />
-            </template>
-          </v-autocomplete>
-        </v-col>
+          <!-- Action Buttons -->
+          <v-col cols="12" md="1" class="text-right">
+            <v-btn
+              v-if="canAdd"
+              color="primary"
+              size="large"
+              @click="goPath('/user/create')"
+              icon="mdi-plus"
+              class="text-styles"
+            />
+          </v-col>
+        </v-row>
 
-        <v-col cols="12" md="2" class="text-styles">
-          <v-btn
-            color="secondary"
-            variant="outlined"
-            @click="clearAllFilters"
-            :loading="isLoadingUsers"
-            block
-            prepend-icon="mdi-filter-remove"
-            class="text-none text-styles"
-          >
-            ລ້າງຕົວກັ່ນ
-          </v-btn>
-        </v-col>
-      </v-row>
+        <!-- Clear Filter Button -->
+        <v-row v-if="filters.search || filters.auth_status || filters.div_id || filters.role_id" class="mt-2">
+          <v-col cols="12">
+            <v-btn
+              variant="text"
+              color="secondary"
+              size="small"
+              @click="clearFilters"
+              prepend-icon="mdi-filter-remove"
+              class="text-styles"
+            >
+              ລ້າງຕົວກັ່ນທັງໝົດ
+            </v-btn>
+          </v-col>
+        </v-row>
+      </div>
 
-      <!-- Advanced Filters -->
-      <v-expand-transition>
-        <v-card v-show="showAdvancedFilters" variant="tonal" class="mb-4 text-styles">
-          <v-card-title class="text-h6 py-3 text-styles">
-            <v-icon class="mr-2 text-styles">mdi-filter-variant</v-icon>
-            <span class="text-styles">ຕົວກັ່ນຕອງເພີ່ມເຕີມ</span>
-          </v-card-title>
-          <v-card-text class="text-styles">
-            <v-row class="text-styles">
-              <v-col cols="12" md="3" class="text-styles">
-                <v-select
-                  v-model="filters.ordering"
-                  density="compact"
-                  label="ຈັດຮຽງຕາມ"
-                  :items="sortOptions"
-                  item-value="value"
-                  item-title="text"
-                  variant="outlined"
-                  hide-details
-                  prepend-inner-icon="mdi-sort"
-                  class="text-styles"
-                />
-              </v-col>
-              
-              <v-col cols="12" md="3" class="text-styles">
-                <v-text-field
-                  v-model="dateRangeStart"
-                  density="compact"
-                  label="ຈາກມື້"
-                  type="date"
-                  variant="outlined"
-                  hide-details
-                  prepend-inner-icon="mdi-calendar"
-                  class="text-styles"
-                />
-              </v-col>
-              
-              <v-col cols="12" md="3" class="text-styles">
-                <v-text-field
-                  v-model="dateRangeEnd"
-                  density="compact"
-                  label="ຫາມື້"
-                  type="date"
-                  variant="outlined"
-                  hide-details
-                  prepend-inner-icon="mdi-calendar"
-                  class="text-styles"
-                />
-              </v-col>
-
-              <v-col cols="12" md="3" class="text-styles">
-                <v-select
-                  v-model="filters.page_size"
-                  density="compact"
-                  label="ສະແດງຕໍ່ໜ້າ"
-                  :items="[10, 20, 50, 100]"
-                  variant="outlined"
-                  hide-details
-                  prepend-inner-icon="mdi-view-list"
-                  @update:model-value="changeItemsPerPage"
-                  class="text-styles"
-                />
-              </v-col>
-            </v-row>
-          </v-card-text>
-        </v-card>
-      </v-expand-transition>
-
-      <!-- Data Table with Enhanced Features -->
+      <!-- Data Table -->
       <v-data-table
         :headers="header"
         :items="usersList"
         :loading="isLoadingUsers"
         loading-text="ກຳລັງໂຫຼດຂໍ້ມູນ..."
         no-data-text="ບໍ່ມີຂໍ້ມູນ"
-        class="elevation-2 user-table text-styles"
+        class="user-table"
         :items-per-page="itemsPerPage"
-        :server-items-length="totalUsers"
         hide-default-footer
       >
         <!-- Profile Picture -->
         <template v-slot:item.profile_picture="{ item }">
-          <v-avatar size="40" class="ma-2 text-styles">
+          <v-avatar size="45" class="user-avatar">
             <v-img
               v-if="item.profile_picture"
               :src="item.profile_picture"
               :alt="item.user_name"
               cover
-              class="rounded-circle text-styles"
             />
-            <v-icon v-else icon="mdi-account" size="24" class="text-styles" />
+            <v-icon v-else icon="mdi-account-circle" size="45" color="grey-lighten-1" />
           </v-avatar>
         </template>
 
-        <!-- User ID with status indicator -->
+        <!-- User ID -->
         <template v-slot:item.user_id="{ item }">
-          <div class="d-flex align-center text-styles">
-            <span class="text-primary font-weight-bold text-styles">{{ item.user_id }}</span>
-            <v-chip
-              v-if="item.User_Status === 'D'"
-              color="error"
-              size="x-small"
-              class="ml-2 text-styles"
-            >
-              ປິດ
-            </v-chip>
-          </div>
+          <span class="text-styles user-id">{{ item.user_id }}</span>
         </template>
 
-        <!-- User name with email -->
+        <!-- User Name -->
         <template v-slot:item.user_name="{ item }">
-          <div class="text-styles">
-            <div class="font-weight-medium text-styles">{{ item.user_name }}</div>
-            <!-- <div class="text-caption text-medium-emphasis text-styles">{{ item.user_email || "ບໍ່ມີອີເມວ" }}</div> -->
+          <div class="text-styles user-info">
+            <div class="user-name">{{ item.user_name }}</div>
+            <div v-if="item.user_email" class="user-email">{{ item.user_email }}</div>
           </div>
         </template>
 
-        <!-- Date formatting -->
-        <template v-slot:item.created_date="{ item }">
-          <div class="text-center text-styles">
-            <div class="text-body-2 text-styles">{{ dayjs(item.InsertDate).format("DD/MM/YYYY") }}</div>
-            <div class="text-caption text-medium-emphasis text-styles">{{ dayjs(item.InsertDate).format("HH:mm") }}</div>
-          </div>
-        </template>
-
-        <!-- Division info with enhanced styling -->
+        <!-- Division -->
         <template v-slot:item.division="{ item }">
-          <div class="text-center text-styles">
-            <v-chip
-              v-if="item.division"
-              color="primary"
-              variant="tonal"
-              size="small"
-              class="mb-1 text-styles"
-            >
-              {{ item.division.div_id }}
-            </v-chip>
-            <div class="text-caption text-styles">{{ item.division?.division_name_la || "ບໍ່ມີຂໍ້ມູນ" }}</div>
+          <div class="text-styles text-center">
+            {{ item.division?.division_name_la || "-" }}
           </div>
         </template>
 
-        <!-- Role info with enhanced styling -->
+        <!-- Role -->
         <template v-slot:item.role="{ item }">
-          <div class="text-center text-styles">
-            <v-chip
-              v-if="item.role"
-              color="secondary"
-              variant="tonal"
-              size="small"
-              class="mb-1 text-styles"
-            >
-              {{ item.role.role_id }}
-            </v-chip>
-            <div class="text-caption text-styles">{{ item.role?.role_name_la || "ບໍ່ມີຂໍ້ມູນ" }}</div>
+          <div class="text-styles text-center">
+            {{ item.role?.role_name_la || "-" }}
           </div>
         </template>
 
@@ -889,233 +505,355 @@ defineExpose({
         <template v-slot:item.Auth_Status="{ item }">
           <v-chip
             :color="item.Auth_Status === 'A' ? 'success' : 'warning'"
-            :text="item.Auth_Status === 'A' ? 'ອະນຸມັດ' : 'ລໍຖ້າ'"
             size="small"
-            variant="tonal"
-            class="text-styles"
-          />
+            class="text-styles status-chip"
+          >
+            {{ item.Auth_Status === 'A' ? 'ອະນຸມັດແລ້ວ' : 'ລໍຖ້າອະນຸມັດ' }}
+          </v-chip>
         </template>
 
-        <!-- Authorization Status -->
-        <template v-slot:item.confirm="{ item }">
-          <v-btn
-            @click="updateUserStatus(item.user_id, item.Auth_Status === 'A' ? 'unauthorize' : 'authorize')"
-            :color="item.Auth_Status === 'A' ? 'success' : 'warning'"
-            variant="text"
-            :icon="item.Auth_Status === 'A' ? 'mdi-check-circle' : 'mdi-clock-outline'"
-            size="small"
-            :loading="isUpdatingStatus"
-            class="text-styles"
-          />
+        <!-- Created Date -->
+        <template v-slot:item.created_date="{ item }">
+          <div class="text-styles text-center date-cell">
+            {{ dayjs(item.InsertDate).format("DD/MM/YYYY") }}
+          </div>
         </template>
 
-        <!-- Action buttons -->
-        <template v-slot:item.view="{ item }">
-          <v-btn
-            :to="`/user/detail?user_id=${item.user_id}`"
-            color="primary"
-            variant="text"
-            icon="mdi-eye-outline"
-            size="small"
-            class="text-styles"
-          />
+        <!-- Actions -->
+        <template v-slot:item.actions="{ item }">
+          <div class="action-buttons">
+            <v-tooltip text="ເບິ່ງລາຍລະອຽດ" location="top">
+              <template v-slot:activator="{ props }">
+                <v-btn
+                  v-if="canView"
+                  v-bind="props"
+                  :to="`/user/detail?user_id=${item.user_id}`"
+                  icon="mdi-eye-outline"
+                  size="small"
+                  variant="text"
+                  color="primary"
+                  class="text-styles"
+                />
+              </template>
+            </v-tooltip>
+
+            <v-tooltip text="ແກ້ໄຂ" location="top">
+              <template v-slot:activator="{ props }">
+                <v-btn
+                  v-if="canEdit"
+                  v-bind="props"
+                  :to="`/user/edit?user_id=${item.user_id}`"
+                  icon="mdi-pencil-outline"
+                  size="small"
+                  variant="text"
+                  color="info"
+                  class="text-styles"
+                />
+              </template>
+            </v-tooltip>
+
+            <v-tooltip 
+              :text="item.Auth_Status === 'A' ? 'ຍົກເລີກອະນຸມັດ' : 'ອະນຸມັດ'" 
+              location="top"
+            >
+              <template v-slot:activator="{ props }">
+                <v-btn
+                  v-if="canAuthorize"
+                  v-bind="props"
+                  @click="updateUserStatus(item.user_id, item.Auth_Status === 'A' ? 'unauthorize' : 'authorize')"
+                  :icon="item.Auth_Status === 'A' ? 'mdi-check-circle' : 'mdi-clock-alert-outline'"
+                  size="small"
+                  variant="text"
+                  :color="item.Auth_Status === 'A' ? 'success' : 'orange'"
+                  :loading="isUpdatingStatus"
+                  class="text-styles"
+                />
+              </template>
+            </v-tooltip>
+
+            <v-tooltip text="ລົບ" location="top">
+              <template v-slot:activator="{ props }">
+                <v-btn
+                  v-if="canDelete"
+                  v-bind="props"
+                  @click="onDeleteUser(item.user_id)"
+                  icon="mdi-delete-outline"
+                  size="small"
+                  variant="text"
+                  color="error"
+                  class="text-styles"
+                />
+              </template>
+            </v-tooltip>
+          </div>
         </template>
 
-        <template v-slot:item.edit="{ item }">
-          <v-btn
-            :to="`/user/edit?user_id=${item.user_id}`"
-            color="info"
-            variant="text"
-            icon="mdi-pencil-outline"
-            size="small"
-            class="text-styles"
-          />
-        </template>
-
-        <template v-slot:item.delete="{ item }">
-          <v-btn
-            @click="onDeleteUser(item.user_id)"
-            color="error"
-            variant="text"
-            icon="mdi-delete-outline"
-            size="small"
-            class="text-styles"
-          />
-        </template>
-
-        <!-- Custom loading slot -->
+        <!-- Loading -->
         <template v-slot:loading>
-          <v-skeleton-loader type="table-row@5 text-styles"></v-skeleton-loader>
+          <v-skeleton-loader type="table-row@5" />
         </template>
       </v-data-table>
 
-      <!-- Custom Pagination -->
-      <v-row class="mt-4" align="center" justify="center text-styles">
-        <v-col cols="12" md="4" class="text-styles">
-          <div class="text-body-2 text-medium-emphasis text-styles">
-            ສະແດງ {{ ((currentPage - 1) * itemsPerPage) + 1 }}-{{ Math.min(currentPage * itemsPerPage, totalUsers) }}
-            ຈາກທັງໝົດ {{ formatnumber(totalUsers) }} ລາຍການ
-          </div>
-        </v-col>
-        <v-col cols="12" md="8" class="text-center text-styles">
-          <v-pagination
-            v-model="currentPage"
-            :length="Math.ceil(totalUsers / itemsPerPage)"
-            :total-visible="7"
-            @update:model-value="changePage"
-            :disabled="isLoadingUsers"
-            color="primary"
-            class="text-styles"
-          />
-        </v-col>
-      </v-row>
+      <!-- Pagination -->
+      <div class="pagination-wrapper">
+        <div class="pagination-info text-styles">
+          ສະແດງ {{ ((currentPage - 1) * itemsPerPage) + 1 }}-{{ Math.min(currentPage * itemsPerPage, totalUsers) }}
+          ຈາກ {{ formatnumber(totalUsers) }} ລາຍການ
+        </div>
+        <v-pagination
+          v-model="currentPage"
+          :length="totalPages"
+          :total-visible="7"
+          @update:model-value="changePage"
+          :disabled="isLoadingUsers"
+          color="primary"
+          class="my-pagination"
+        />
+      </div>
     </v-card>
 
-    <!-- Floating Action Button for Mobile -->
-    <v-fab
+    <!-- Floating Action Button (Mobile) -->
+    <v-btn
       v-if="canAdd"
       icon="mdi-plus"
-      location="bottom end"
-      app
       color="primary"
+      size="large"
+      elevation="8"
+      class="fab-button d-md-none"
       @click="goPath('/user/create')"
-      class="d-md-none text-styles"
     />
   </div>
 </template>
 
 <style scoped>
-.user-management {
-  background: #f9fafb;
-  min-height: 100vh;
-  padding-bottom: 32px;
-}
-
-.user-table {
-  border-radius: 12px;
-  overflow: hidden;
-  background: #fff;
-}
-
-.v-data-table .v-data-table__th {
-  background: #f1f5f9;
-  font-weight: 600;
-  font-size: 1rem;
-  color: #374151;
-}
-
-.v-data-table .v-data-table__td {
-  font-size: 0.98rem;
-  vertical-align: middle;
-}
-
-.v-data-table .v-avatar {
-  border: 2px solid #e0e7ef;
-  background: #f3f6fa;
-}
-
-.v-chip {
-  font-size: 0.85rem;
+/* Text Styles */
+.text-styles {
+  font-family: 'Noto Sans Lao', 'Noto Sans', sans-serif;
+  font-size: 0.95rem;
+  color: #2c3e50;
   letter-spacing: 0.01em;
 }
 
-.v-btn-toggle .v-btn {
-  min-width: 90px;
+/* Page Layout */
+.user-management {
+  padding: 24px;
+  background: #f8f9fa;
+  min-height: 100vh;
 }
 
-.v-btn-toggle .v-btn.v-btn--active {
-  background: #e3f2fd !important;
-  color: #1976d2 !important;
+/* Page Header */
+.page-header {
+  margin-bottom: 8px;
 }
 
-.v-card[flat] {
-  box-shadow: 0 2px 8px rgba(60,60,60,0.04);
+.page-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #1a202c;
+  margin-bottom: 4px;
 }
 
-.v-card-title {
-  background: #f1f5f9;
-  border-bottom: 1px solid #e5e7eb;
+.page-subtitle {
+  font-size: 0.9rem;
+  color: #718096;
+  margin: 0;
 }
 
-.v-card-text {
-  background: #f9fafb;
+/* Main Card */
+.main-card {
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  overflow: hidden;
 }
 
-.v-autocomplete, .v-select, .v-text-field {
-  margin-bottom: 0 !important;
+/* Filter Bar */
+.filter-bar {
+  padding: 24px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #ffffff;
 }
 
-.v-pagination {
-  margin-top: 8px;
-}
-
-@media (max-width: 960px) {
-  .user-management {
-    padding: 0 4px;
-  }
-  .v-card[flat] {
-    padding: 8px !important;
-  }
-  .v-row, .v-col {
-    margin-bottom: 0 !important;
-  }
-}
-
-.v-btn.text-none {
-  text-transform: none !important;
-}
-
-.v-btn[variant="outlined"] {
+.search-field {
   border-radius: 8px;
 }
 
-.v-fab {
-  position: fixed !important;
-  right: 24px;
-  bottom: 24px;
-  z-index: 10;
-  box-shadow: 0 4px 16px rgba(60,60,60,0.18);
+/* Data Table */
+.user-table {
+  background: transparent;
 }
 
-.text-h6 {
-  font-size: 1.1rem;
+.user-table :deep(.v-data-table__th) {
+  background: #f8f9fa;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #4a5568;
+  border-bottom: 2px solid #e2e8f0;
+  padding: 16px;
+}
+
+.user-table :deep(.v-data-table__td) {
+  padding: 16px;
+  border-bottom: 1px solid #f1f3f5;
+}
+
+.user-table :deep(tr:hover) {
+  background: #f8f9fa !important;
+}
+
+/* Avatar */
+.user-avatar {
+  border: 2px solid #e2e8f0;
+}
+
+/* User Info */
+.user-id {
+  font-weight: 600;
+  color: #2563eb;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.user-name {
   font-weight: 500;
+  color: #1a202c;
+  font-size: 0.95rem;
 }
 
-.text-primary {
-  color: #1976d2 !important;
+.user-email {
+  font-size: 0.85rem;
+  color: #718096;
 }
 
-.font-weight-bold {
-  font-weight: 700 !important;
+/* Status Chip */
+.status-chip {
+  font-weight: 500;
+  border-radius: 6px;
 }
 
-.font-weight-medium {
-  font-weight: 500 !important;
+/* Date Cell */
+.date-cell {
+  font-size: 0.9rem;
+  color: #4a5568;
 }
 
-.text-medium-emphasis {
-  color: #6b7280 !important;
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  align-items: center;
 }
 
-.text-caption {
-  font-size: 0.85rem !important;
+/* Pagination */
+.pagination-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-top: 1px solid #e2e8f0;
+  background: #ffffff;
 }
 
-.v-switch {
-  margin-top: -8px;
+.pagination-info {
+  font-size: 0.9rem;
+  color: #718096;
 }
 
-.v-skeleton-loader[type="table-row@5"] {
-  min-height: 180px;
+.my-pagination :deep(.v-pagination__item) {
+  border-radius: 6px;
 }
 
-.text-styles {
-  font-family: 'Noto Sans Lao', 'Noto Sans', Arial, sans-serif;
-  font-size: 1rem;
-  color: #222831;
-  letter-spacing: 0.01em;
+/* FAB Button */
+.fab-button {
+  position: fixed !important;
+  bottom: 24px;
+  right: 24px;
+  z-index: 100;
+}
+
+/* Responsive Design */
+@media (max-width: 960px) {
+  .user-management {
+    padding: 16px;
+  }
+
+  .filter-bar {
+    padding: 16px;
+  }
+
+  .page-title {
+    font-size: 1.5rem;
+  }
+
+  .pagination-wrapper {
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+  }
+
+  .user-table :deep(.v-data-table__th),
+  .user-table :deep(.v-data-table__td) {
+    padding: 12px 8px;
+    font-size: 0.85rem;
+  }
+
+  .action-buttons {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 600px) {
+  .user-management {
+    padding: 12px;
+  }
+
+  .page-title {
+    font-size: 1.25rem;
+  }
+
+  .filter-bar {
+    padding: 12px;
+  }
+}
+
+/* Loading State */
+.v-skeleton-loader {
+  background: transparent;
+}
+
+/* Smooth Transitions */
+.v-btn,
+.v-chip,
+.v-avatar {
+  transition: all 0.2s ease;
+}
+
+.v-btn:hover {
+  transform: translateY(-1px);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f3f5;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
 }
 </style>
-
-

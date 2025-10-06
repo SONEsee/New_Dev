@@ -1,7 +1,7 @@
 <template>
   <div class="gl-detail-page">
     <!-- Page Header -->
-    <div class="page-header-improved">
+        <div class="page-header-improved">
       <div class="d-flex align-center justify-space-between flex-wrap gap-3">
         <div class="header-left">
           <h1 class="page-title-improved">
@@ -43,8 +43,16 @@
           <v-btn variant="outlined" @click="$router.go(-1)" prepend-icon="mdi-arrow-left" size="default" class="action-btn">
             ກັບ
           </v-btn>
-          <v-btn v-if="referenceNo && isReady" variant="text" @click="loadData" prepend-icon="mdi-refresh" size="default" :loading="loading" class="action-btn">
-            ໂຫຼດໃໝ່
+          <v-btn 
+            v-if="referenceNo && isReady && selectedItem" 
+            variant="flat" 
+            color="primary" 
+            @click="printJournalReport" 
+            prepend-icon="mdi-printer" 
+            size="default" 
+            class="action-btn"
+          >
+            ພິມ
           </v-btn>
         </div>
       </div>
@@ -874,7 +882,181 @@ const loadAccounts = async () => {
     loadingAccounts.value = false
   }
 }
+const printJournalReport = () => {
+  if (!selectedItem.value || !journalEntries.value.length) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'ແຈ້ງເຕືອນ',
+      text: 'ບໍ່ມີຂໍ້ມູນເພື່ອພິມ',
+      confirmButtonText: 'ຕົກລົງ'
+    })
+    return
+  }
 
+  try {
+    const printWindow = window.open('', '', 'width=1200,height=800')
+    
+    const tableRows = journalEntries.value.map((entry, index) => {
+      return '<tr>' +
+        '<td class="text-center">' + (index + 1) + '</td>' +
+        '<td class="text-center">' + (entry.Reference_sub_No || '') + '</td>' +
+        '<td class="text-left">' + (entry.Addl_sub_text || '-') + '</td>' +
+        '<td class="text-left">' + getFormattedAccountCode(entry) + '<br><small>' + (entry.account_name || '') + '</small></td>' +
+        '<td class="text-right">' + (parseFloat(entry.fcy_dr) > 0 ? formatNumber(entry.fcy_dr) : '-') + '</td>' +
+        '<td class="text-right">' + (parseFloat(entry.fcy_cr) > 0 ? formatNumber(entry.fcy_cr) : '-') + '</td>' +
+        '<td class="text-center"><span class="status-' + entry.Auth_Status + '">' + getStatusText(entry.Auth_Status) + '</span></td>' +
+        '</tr>'
+    }).join('')
+
+    const printContent = '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
+      '<title>ບົດລາຍງານບັນທຶກບັນຊີ - ' + referenceNo.value + '</title>' +
+      '<style>' +
+      'body { font-family: "Noto Sans Lao", "Phetsarath OT", sans-serif; padding: 20px; margin: 0; }' +
+      '.header { text-align: center; margin-bottom: 25px; border-bottom: 3px solid #000; padding-bottom: 15px; }' +
+      '.header h1 { margin: 0 0 5px 0; font-size: 1.5rem; font-weight: bold; }' +
+      '.header h2 { margin: 5px 0; font-size: 1.2rem; }' +
+      '.header p { margin: 3px 0; font-size: 0.9rem; font-style: italic; }' +
+      '.info-section { margin-bottom: 20px; padding: 15px; background: #f9f9f9; border: 1px solid #000; }' +
+      '.info-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 0.9rem; }' +
+      '.info-label { font-weight: bold; min-width: 150px; }' +
+      '.info-value { flex: 1; }' +
+      'table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.85rem; }' +
+      'th, td { border: 1px solid #000; padding: 8px 6px; }' +
+      'th { background-color: #e0e0e0; font-weight: bold; text-align: center; }' +
+      '.text-right { text-align: right; }' +
+      '.text-center { text-align: center; }' +
+      '.text-left { text-align: left; }' +
+      '.totals-row { font-weight: bold; background: #f0f0f0; border-top: 2px solid #000; }' +
+      '.balance-row { font-weight: bold; background: #e8e8e8; }' +
+      '.status-A { color: #22c55e; font-weight: bold; }' +
+      '.status-U { color: #f59e0b; font-weight: bold; }' +
+      '.status-R { color: #ef4444; font-weight: bold; }' +
+      '.status-P { color: #3b82f6; font-weight: bold; }' +
+      '.summary-box { margin-top: 20px; width: 50%; margin-left: auto; border: 1px solid #000; }' +
+      '.summary-row { display: flex; padding: 6px 10px; border-bottom: 1px solid #ccc; }' +
+      '.summary-row:last-child { border-bottom: none; }' +
+      '.summary-label { font-weight: bold; width: 50%; background: #f0f0f0; padding: 4px 8px; }' +
+      '.summary-value { width: 50%; text-align: right; padding: 4px 8px; font-family: "Courier New", monospace; }' +
+      '.signatures { margin-top: 60px; display: flex; justify-content: space-between; padding: 0 40px; }' +
+      '.signature-box { text-align: center; width: 40%; }' +
+      '.signature-title { font-size: 1rem; font-weight: bold; margin-bottom: 60px; }' +
+      '.signature-line { border-bottom: 2px solid #000; margin: 0 20px 10px 20px; }' +
+      '.signature-info { font-size: 0.9rem; text-align: left; }' +
+      '.footer { margin-top: 30px; text-align: center; font-size: 0.85rem; color: #666; border-top: 1px solid #000; padding-top: 10px; }' +
+      '@media print { ' +
+      '  body { padding: 10px; }' +
+      '  @page { size: A4; margin: 15mm; }' +
+      '}' +
+      '</style></head><body>' +
+      
+      '<div class="header">' +
+      '<h1>ບໍລິສັດລັດ ບໍລິຫານໜີ້ ແລະ ຊັບສິນ ຈຳກັດຜູ່ດຽວ </h1>' +
+      '<h2>ບົດລາຍງານບັນທຶກບັນຊີ</h2>' +
+      '<p>Journal Entry Report</p>' +
+      '</div>' +
+      
+      '<div class="info-section">' +
+      '<div class="info-row">' +
+      '<span><span class="info-label">ເລກອ້າງອີງ / Reference No:</span> <span class="info-value">' + (selectedItem.value.Reference_No || '') + '</span></span>' +
+      '<span><span class="info-label">ວັນທີ່ພິມ / Print Date:</span> <span class="info-value">' + new Date().toLocaleDateString('lo-LA') + '</span></span>' +
+      '</div>' +
+      '<div class="info-row">' +
+      '<span><span class="info-label">ໂມດູນ / Module:</span> <span class="info-value">' + getModuleName(selectedItem.value.module_id) + ' - ' + (selectedItem.value.Txn_code || '') + '</span></span>' +
+      '<span><span class="info-label">ວັນທີ່ / Date:</span> <span class="info-value">' + formatDate(selectedItem.value.Value_date) + '</span></span>' +
+      '</div>' +
+      '<div class="info-row">' +
+      '<span><span class="info-label">ຜູ້ສ້າງ / Created By:</span> <span class="info-value">' + getMakerName() + '</span></span>' +
+      '<span><span class="info-label">ສະກຸນເງິນ / Currency:</span> <span class="info-value">' + (selectedItem.value.Ccy_cd || '') + '</span></span>' +
+      '</div>' +
+      '<div class="info-row">' +
+      '<span class="info-label">ເນື້ອໃນ / Description:</span>' +
+      '<span class="info-value">' + (selectedItem.value.Addl_text || '-') + '</span>' +
+      '</div>' +
+      '</div>' +
+      
+      '<table>' +
+      '<thead>' +
+      '<tr>' +
+      '<th style="width: 5%;">ລຳດັບ<br>No.</th>' +
+      '<th style="width: 12%;">ເລກອ້າງອີງຄູ່<br>Ref. Sub No</th>' +
+      '<th style="width: 25%;">ເນື້ອໃນ<br>Description</th>' +
+      '<th style="width: 20%;">ບັນຊີ<br>Account</th>' +
+      '<th style="width: 14%;">Debit (FCY)</th>' +
+      '<th style="width: 14%;">Credit (FCY)</th>' +
+      '<th style="width: 10%;">ສະຖານະ<br>Status</th>' +
+      '</tr>' +
+      '</thead>' +
+      '<tbody>' +
+      tableRows +
+      '</tbody>' +
+      '<tfoot>' +
+      '<tr class="totals-row">' +
+      '<td colspan="4" class="text-right"><strong>ລວມທັງໝົດ / Total:</strong></td>' +
+      '<td class="text-right"><strong>' + formatNumber(totalFcyDebit.value) + '</strong></td>' +
+      '<td class="text-right"><strong>' + formatNumber(totalFcyCredit.value) + '</strong></td>' +
+      '<td class="text-center"></td>' +
+      '</tr>' +
+      '<tr class="balance-row">' +
+      '<td colspan="4" class="text-right"><strong>ສະຖານະຍອດ / Balance Status:</strong></td>' +
+      '<td colspan="3" class="text-center" style="color: ' + (isBalanced.value ? '#22c55e' : '#ef4444') + ';">' +
+      '<strong>' + (isBalanced.value ? '✓ ສົມດຸນ / Balanced' : '✗ ບໍ່ສົມດຸນ / Unbalanced') + '</strong>' +
+      '</td>' +
+      '</tr>' +
+      '</tfoot>' +
+      '</table>' +
+      
+      '<div class="summary-box">' +
+      '<div class="summary-row">' +
+      '<div class="summary-label">FCY Amount:</div>' +
+      '<div class="summary-value">' + formatNumber(selectedItem.value.Fcy_Amount) + ' ' + (selectedItem.value.Ccy_cd || '') + '</div>' +
+      '</div>' +
+      '<div class="summary-row">' +
+      '<div class="summary-label">LCY Amount:</div>' +
+      '<div class="summary-value">' + formatNumber(selectedItem.value.Lcy_Amount) + ' LAK</div>' +
+      '</div>' +
+      '<div class="summary-row">' +
+      '<div class="summary-label">Exchange Rate:</div>' +
+      '<div class="summary-value">' + formatNumber(selectedItem.value.Exch_rate, 6) + '</div>' +
+      '</div>' +
+      '</div>' +
+      
+      '<div class="signatures">' +
+      '<div class="signature-box">' +
+      '<div class="signature-title">ຜູ້ກວດສອບ</div>' +
+      '<div class="signature-line"></div>' +
+      '<div class="signature-info">' +
+
+      '</div>' +
+      '</div>' +
+      '<div class="signature-box">' +
+      '<div class="signature-title">ນັກບັນທຶກ</div>' +
+      '<div class="signature-line"></div>' +
+      '<div class="signature-info">' +
+
+      '</div>' +
+      '</div>' +
+      '</div>' +
+      
+      '<div class="footer">' +
+      '<p>ລະບົບບັນຊີ ບໍລິສັດລັດ ບໍລິຫານໜີ້ ແລະ ຊັບສິນ ຈຳກັດຜູ່ດຽວ</p>' +
+      '</div>' +
+      
+      '<script>window.onload = function() { window.print(); };<\/script>' +
+      '</body></html>'
+
+    printWindow.document.write(printContent)
+    printWindow.document.close()
+    
+  } catch (error) {
+    console.error('Print error:', error)
+    Swal.fire({
+      icon: 'error',
+      title: 'ຜິດພາດ',
+      text: 'ມີຂໍ້ຜິດພາດໃນການພິມ',
+      confirmButtonText: 'ຕົກລົງ'
+    })
+  }
+}
 const loadModules = async () => {
   try {
     const response = await axios.get('/api/modules/', getAuthHeaders())
@@ -1665,6 +1847,7 @@ watch(() => route.query.Reference_No, (newVal, oldVal) => {
 </script>
 
 <style scoped>
+
 .gl-detail-page {
   padding: 20px;
   max-width: 1800px;
