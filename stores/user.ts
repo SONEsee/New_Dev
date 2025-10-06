@@ -22,6 +22,10 @@ interface UserFormData {
 interface UserQueryParams {
   div_id?: string | null
   role_id?: string | null
+  auth_status?: string | null
+  search?: string | null
+  page?: number
+  page_size?: number
 }
 
 export const UserStore = defineStore("user", {
@@ -40,7 +44,7 @@ export const UserStore = defineStore("user", {
         muth_status: "",
         profile_picture: null,
         Role_ID: "",
-        Auth_Status: "A", // Default to Active
+        Auth_Status: "U", // Default to Unapproved
         pwd_changed_on: "",
       } as UserFormData,
 
@@ -70,6 +74,10 @@ export const UserStore = defineStore("user", {
         query: {
           div_id: null,
           role_id: null,
+          auth_status: null,
+          search: null,
+          page: 1,
+          page_size: 20,
         } as UserQueryParams,
         loading: false,
       },
@@ -87,7 +95,7 @@ export const UserStore = defineStore("user", {
       return state.userList.map(user => ({
         ...user,
         display_name: `${user.user_name} (${user.user_id})`,
-        status_display: user.Auth_Status === 'A' ? 'ເປີດໃຊ້ງານ' : 'ປິດໃຊ້ງານ',
+        status_display: user.Auth_Status === 'A' ? 'ອະນຸມັດແລ້ວ' : 'ລໍຖ້າອະນຸມັດ',
         division_name: user.division?.division_name_la || 'ບໍ່ລະບຸ',
         role_name: user.role?.role_name_la || 'ບໍ່ລະບຸ'
       }))
@@ -114,7 +122,17 @@ export const UserStore = defineStore("user", {
         return detail.profile_picture
       }
       
-      return '/assets/img/404.png' // Default fallback
+      return '/assets/img/404.png'
+    },
+
+    /**
+     * Get create form profile image URL
+     */
+    createProfileImageUrl: (state) => {
+      if (state.create_user_form.profile_picture instanceof File) {
+        return URL.createObjectURL(state.create_user_form.profile_picture)
+      }
+      return '/assets/img/404.png'
     }
   },
 
@@ -136,21 +154,23 @@ export const UserStore = defineStore("user", {
         })
 
         if (response.status === 200) {
-          // Handle different response structures
-          if (response.data?.Item && Array.isArray(response.data.Item)) {
-            this.userList = response.data.Item
-          } else if (Array.isArray(response.data)) {
+          // Handle paginated response (DRF format)
+          if (response.data?.results && Array.isArray(response.data.results)) {
+            this.userList = response.data.results
+          } 
+          // Handle direct array response
+          else if (Array.isArray(response.data)) {
             this.userList = response.data
-          } else if (response.data?.items && Array.isArray(response.data.items)) {
+          }
+          // Handle custom response format
+          else if (response.data?.Item && Array.isArray(response.data.Item)) {
+            this.userList = response.data.Item
+          } 
+          else if (response.data?.items && Array.isArray(response.data.items)) {
             this.userList = response.data.items
-          } else {
-            // Fallback: find first array property
-            for (const key in response.data) {
-              if (Array.isArray(response.data[key])) {
-                this.userList = response.data[key]
-                break
-              }
-            }
+          } 
+          else {
+            this.userList = []
           }
         }
       } catch (error) {
@@ -190,6 +210,23 @@ export const UserStore = defineStore("user", {
 
         if (response.status === 200) {
           this.respone_data_detail = response.data
+          
+          // Populate update form with fetched data
+          this.update_user_form = {
+            user_id: response.data.user_id || "",
+            user_name: response.data.user_name || "",
+            user_email: response.data.user_email || "",
+            user_mobile: response.data.user_mobile || "",
+            user_password: "", // Never populate password
+            div_id: response.data.division?.div_id || response.data.div_id || "",
+            user_status: response.data.User_Status === 'E',
+            Maker_Id: response.data.Maker_Id || "",
+            muth_status: "",
+            profile_picture: response.data.profile_picture || null,
+            Role_ID: response.data.role?.role_id || response.data.Role_ID || "",
+            Auth_Status: response.data.Auth_Status || "U",
+            pwd_changed_on: response.data.pwd_changed_on || "",
+          }
         }
       } catch (error: any) {
         console.error('Error fetching user details:', error)
@@ -235,7 +272,7 @@ export const UserStore = defineStore("user", {
         }
 
         // Prepare form data
-        const formData = this._prepareFormData(this.create_user_form)
+        const formData = this._prepareFormData(this.create_user_form, false)
 
         const response = await axios.post('/api/users/', formData, {
           headers: {
@@ -243,10 +280,19 @@ export const UserStore = defineStore("user", {
           },
         })
 
+        // Handle both response formats:
+        // 1. Wrapped: { success: true, message: '...', data: {...} }
+        // 2. Direct: { user_id: '...', user_name: '...', ... }
         if ([200, 201].includes(response.status)) {
+          // Check if success is explicitly false (error case)
+          if (response.data.success === false) {
+            throw new Error(response.data.message || 'ເກີດຂໍ້ຜິດພາດ')
+          }
+          
+          // Otherwise, treat as success
           await CallSwal({
             title: "ສຳເລັດ",
-            text: "ເພີ່ມຂໍ້ມູນຜູ້ໃຊ້ສຳເລັດ",
+            text: response.data.message || "ສ້າງຜູ້ໃຊ້ງານສຳເລັດແລ້ວ",
             icon: "success",
             timer: 1500,
           })
@@ -255,11 +301,11 @@ export const UserStore = defineStore("user", {
           await this.GetUser()
           navigateTo('/user')
           
-          return response.data
+          return response.data.data || response.data
         }
       } catch (error: any) {
         console.error('Error creating user:', error)
-        await this._handleError(error, 'ເພີ່ມຂໍ້ມູນຜູ້ໃຊ້')
+        await this._handleError(error, 'ສ້າງຜູ້ໃຊ້ງານ')
         return null
       } finally {
         this.loading = false
@@ -278,27 +324,30 @@ export const UserStore = defineStore("user", {
       this.loading = true
       
       try {
-        // Prepare form data
         const formData = this._prepareFormData(this.update_user_form, true)
 
-        const response = await axios.put(`/api/users/${user_id}/`, formData, {
+        const response = await axios.patch(`/api/users/${user_id}/`, formData, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`,
           },
         })
 
         if ([200, 204].includes(response.status)) {
-          await CallSwal({
-            title: "ສຳເລັດ",
-            text: "ແກ້ໄຂຂໍ້ມູນຜູ້ໃຊ້ສຳເລັດ",
-            icon: "success",
-            timer: 1500,
-          })
-          
-          await this.GetUser()
-          navigateTo('/user')
-          
-          return response.data
+          if (response.data?.success !== false || response.status === 204) {
+            await CallSwal({
+              title: "ສຳເລັດ",
+              text: response.data?.message || "ແກ້ໄຂຂໍ້ມູນຜູ້ໃຊ້ງານສຳເລັດແລ້ວ",
+              icon: "success",
+              timer: 1500,
+            })
+            
+            await this.GetUser()
+            navigateTo('/user')
+            
+            return response.data?.data || response.data
+          } else {
+            throw new Error(response.data.message || 'ເກີດຂໍ້ຜິດພາດ')
+          }
         }
       } catch (error: any) {
         console.error('Error updating user:', error)
@@ -321,18 +370,9 @@ export const UserStore = defineStore("user", {
       this.loading = true
       
       try {
-        // For self-update, we might have different status mapping
         const formData = this._prepareFormData(this.update_user_form, true)
-        
-        // Override status mapping for self-update if needed
-        const authStatus = this.update_user_form.Auth_Status
-        if (authStatus === "ເປີດ") {
-          formData.set("Auth_Status", "A")
-        } else if (authStatus === "ປິດ") {
-          formData.set("Auth_Status", "I") // Inactive instead of U for self-update
-        }
 
-        const response = await axios.put(`/api/users/${user_id}/`, formData, {
+        const response = await axios.patch(`/api/users/${user_id}/`, formData, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`,
           },
@@ -348,7 +388,7 @@ export const UserStore = defineStore("user", {
           
           navigateTo('/myuser')
           
-          return response.data
+          return response.data?.data || response.data
         }
       } catch (error: any) {
         console.error('Error updating profile:', error)
@@ -360,7 +400,7 @@ export const UserStore = defineStore("user", {
     },
 
     /**
-     * Delete user
+     * Delete user (soft delete)
      */
     async DeleteUser(user_id: string): Promise<any> {
       if (!user_id) {
@@ -378,17 +418,18 @@ export const UserStore = defineStore("user", {
           },
         })
 
-        if ([200, 204, 301].includes(response.status)) {
-          await CallSwal({
-            title: "ສຳເລັດ",
-            text: "ລຶບຂໍ້ມູນຜູ້ໃຊ້ສຳເລັດ",
-            icon: "success",
-            timer: 1500,
-          })
-          
-          await this.GetUser()
-          
-          return response.data
+        if ([200, 204].includes(response.status)) {
+          if (response.data?.success !== false || response.status === 204) {
+            await CallSwal({
+              title: "ສຳເລັດ",
+              text: response.data?.message || "ລຶບຂໍ້ມູນຜູ້ໃຊ້ສຳເລັດ",
+              icon: "success",
+              timer: 1500,
+            })
+            
+            await this.GetUser()
+            return response.data
+          }
         }
       } catch (error: any) {
         console.error('Error deleting user:', error)
@@ -417,6 +458,72 @@ export const UserStore = defineStore("user", {
     },
 
     /**
+     * Update record status (enable user)
+     */
+    async updateRecordStatus(user_id: string): Promise<boolean> {
+      try {
+        const response = await axios.patch(
+          `/api/users/${user_id}/`,
+          { User_Status: 'E' },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            },
+          }
+        )
+
+        if (response.data.success !== false) {
+          await CallSwal({
+            icon: 'success',
+            title: 'ສຳເລັດ',
+            text: 'ເປີດໃຊ້ງານຜູ້ໃຊ້ສຳເລັດແລ້ວ',
+            timer: 1500,
+            showConfirmButton: false,
+          })
+          return true
+        }
+        return false
+      } catch (error) {
+        console.error('Error updating status:', error)
+        return false
+      }
+    },
+
+    /**
+     * Update record status (disable user)
+     */
+    async updateRecordStatusOff(user_id: string): Promise<boolean> {
+      try {
+        const response = await axios.patch(
+          `/api/users/${user_id}/`,
+          { User_Status: 'D' },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            },
+          }
+        )
+
+        if (response.data.success !== false) {
+          await CallSwal({
+            icon: 'success',
+            title: 'ສຳເລັດ',
+            text: 'ປິດໃຊ້ງານຜູ້ໃຊ້ສຳເລັດແລ້ວ',
+            timer: 1500,
+            showConfirmButton: false,
+          })
+          return true
+        }
+        return false
+      } catch (error) {
+        console.error('Error updating status:', error)
+        return false
+      }
+    },
+
+    /**
      * Reset create form to initial state
      */
     resetCreateForm(): void {
@@ -429,7 +536,7 @@ export const UserStore = defineStore("user", {
         div_id: "",
         user_status: true,
         Maker_Id: "",
-        Auth_Status: "A",
+        Auth_Status: "U",
         Role_ID: "",
         profile_picture: null,
         muth_status: "",
@@ -475,6 +582,10 @@ export const UserStore = defineStore("user", {
       this.request_get_user.query = {
         div_id: null,
         role_id: null,
+        auth_status: null,
+        search: null,
+        page: 1,
+        page_size: 20,
       }
     },
 
@@ -487,29 +598,32 @@ export const UserStore = defineStore("user", {
       // Basic fields
       data.append('user_id', formData.user_id)
       data.append('user_name', formData.user_name)
-      data.append('user_email', formData.user_email || '')
       data.append('user_mobile', formData.user_mobile)
       data.append('div_id', formData.div_id)
       data.append('Role_ID', formData.Role_ID)
 
-      // Password handling - only include if provided
+      // Email - optional
+      if (formData.user_email && formData.user_email.trim() !== '') {
+        data.append('user_email', formData.user_email)
+      }
+
+      // Password - only include if provided (required for create, optional for update)
       if (formData.user_password && formData.user_password.trim() !== '') {
         data.append('user_password', formData.user_password)
       }
 
-      // Status mapping
+      // Status mapping - handle Lao text or status codes
       let authStatus = formData.Auth_Status
-      if (authStatus === "ເປີດ" || authStatus === "ເປີດໃຊ້ງານ") {
+      if (authStatus === "ເປີດ" || authStatus === "ເປີດໃຊ້ງານ" || authStatus === "ອະນຸມັດແລ້ວ") {
         authStatus = "A"
-      } else if (authStatus === "ປິດ" || authStatus === "ປິດໃຊ້ງານ") {
+      } else if (authStatus === "ປິດ" || authStatus === "ປິດໃຊ້ງານ" || authStatus === "ລໍຖ້າອະນຸມັດ" || authStatus === "ຍັງບໍ່ອະນຸມັດ") {
         authStatus = "U"
       }
       data.append('Auth_Status', authStatus)
-      data.append('user_status', authStatus === "A" ? 'true' : 'false')
 
-      // Profile image handling
+      // Profile picture - only append if it's a new file
       if (formData.profile_picture instanceof File) {
-        data.append('profile_picture', formData.profile_picture) // Use backend field name
+        data.append('profile_picture', formData.profile_picture)
       }
 
       return data
@@ -521,13 +635,37 @@ export const UserStore = defineStore("user", {
     async _handleError(error: any, operation: string): Promise<void> {
       let errorMessage = `ເກີດຂໍ້ຜິດພາດໃນການ${operation}`
       
+      // Handle new backend error format
       if (error.response?.data) {
         if (error.response.data.message) {
           errorMessage = error.response.data.message
-        } else if (error.response.data.user_id) {
-          errorMessage = `ຂໍ້ຜິດພາດທີ່ລະຫັດຜູ້ໃຊ້: ${error.response.data.user_id}`
+        } else if (error.response.data.errors) {
+          // Extract first error from errors object
+          const errors = error.response.data.errors
+          const firstErrorKey = Object.keys(errors)[0]
+          if (firstErrorKey && errors[firstErrorKey]) {
+            const errorValue = Array.isArray(errors[firstErrorKey]) 
+              ? errors[firstErrorKey][0]
+              : errors[firstErrorKey]
+            
+            // Map field names to Lao
+            const fieldMap: Record<string, string> = {
+              'user_id': 'ລະຫັດຜູ້ໃຊ້',
+              'user_name': 'ຊື່ຜູ້ໃຊ້',
+              'user_email': 'ອີເມວ',
+              'user_mobile': 'ເບີໂທລະສັບ',
+              'user_password': 'ລະຫັດຜ່ານ',
+              'div_id': 'ພະແນກ',
+              'Role_ID': 'ສິດການນຳໃຊ້',
+            }
+            
+            const fieldName = fieldMap[firstErrorKey] || firstErrorKey
+            errorMessage = `${fieldName}: ${errorValue}`
+          }
+        } else if (error.response.data.detail) {
+          errorMessage = error.response.data.detail
         } else if (typeof error.response.data === 'object') {
-          // Get first error from response
+          // Fallback for other error formats
           const firstErrorKey = Object.keys(error.response.data)[0]
           if (firstErrorKey && error.response.data[firstErrorKey]) {
             const errorValue = Array.isArray(error.response.data[firstErrorKey]) 

@@ -1,499 +1,589 @@
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import axios from '@/helpers/axios'
+
+// Router
+const router = useRouter()
+const route = useRoute()
+
+// Stores
+const userStore = UserStore()
+const categoryStore = UseCategoryStore()
+const roleStore = RoleStore()
+
+// Refs
+const form = ref()
+const fileInput = ref<HTMLInputElement>()
+const isFormValid = ref(false)
+const showPassword = ref(false)
+const isLoading = ref(false)
+
+// User ID from route
+const userId = computed(() => route.query.user_id as string)
+
+// Form data
+const formData = ref({
+  user_id: '',
+  user_name: '',
+  user_email: '',
+  user_mobile: '',
+  user_password: '',
+  div_id: null as string | null,
+  Role_ID: null as string | null,
+  Auth_Status: 'U',
+  profile_picture: null as File | null,
+  current_profile_picture: '' as string,
+})
+
+// Image preview
+const imagePreview = ref<string>('')
+
+// Computed
+const departments = computed(() => categoryStore.categories || [])
+const roles = computed(() => roleStore.respons_data_role || [])
+
+// Validation Rules
+const rules = {
+  required: [(v: any) => !!v || 'ກະລຸນາປ້ອນຂໍ້ມູນ'],
+  email: [
+    (v: string) => !v || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) || 'ຮູບແບບອີເມວບໍ່ຖືກຕ້ອງ'
+  ],
+  password: [
+    // Password is optional for update
+    (v: string) => !v || v.length >= 6 || 'ລະຫັດຜ່ານຕ້ອງມີຢ່າງໜ້ອຍ 6 ຕົວອັກສອນ',
+  ],
+}
+
+// Methods
+const onFileSelect = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  
+  if (file) {
+    if (file.size > 5 * 1024 * 1024) {
+      CallSwal({
+        icon: 'error',
+        title: 'ຜິດພາດ',
+        text: 'ຂະໜາດໄຟລ້ເກີນ 5MB',
+      })
+      return
+    }
+    
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png']
+    if (!allowedTypes.includes(file.type)) {
+      CallSwal({
+        icon: 'error',
+        title: 'ຜິດພາດ',
+        text: 'ກະລຸນາເລືອກໄຟລ້ JPG, PNG ຫຼື JPEG',
+      })
+      return
+    }
+    
+    formData.value.profile_picture = file
+    imagePreview.value = URL.createObjectURL(file)
+  }
+}
+
+const openFileDialog = () => {
+  fileInput.value?.click()
+}
+
+const getImageUrl = () => {
+  if (imagePreview.value) {
+    return imagePreview.value
+  }
+  if (formData.value.current_profile_picture) {
+    return formData.value.current_profile_picture
+  }
+  return '/assets/img/404.png'
+}
+
+const goBack = () => {
+  router.push('/user')
+}
+
+const loadUserData = async () => {
+  if (!userId.value) {
+    CallSwal({
+      icon: 'error',
+      title: 'ຜິດພາດ',
+      text: 'ບໍ່ພົບລະຫັດຜູ້ໃຊ້',
+    })
+    goBack()
+    return
+  }
+
+  isLoading.value = true
+
+  try {
+    const response = await axios.get(`/api/users/${userId.value}/`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    })
+
+    if (response.data) {
+      const user = response.data
+      
+      formData.value = {
+        user_id: user.user_id || '',
+        user_name: user.user_name || '',
+        user_email: user.user_email || '',
+        user_mobile: user.user_mobile || '',
+        user_password: '', // Never populate password
+        div_id: user.division?.div_id || user.div_id || null,
+        Role_ID: user.role?.role_id || user.Role_ID || null,
+        Auth_Status: user.Auth_Status || 'U',
+        profile_picture: null,
+        current_profile_picture: user.profile_picture || '',
+      }
+    }
+  } catch (error) {
+    console.error('Error loading user:', error)
+    CallSwal({
+      icon: 'error',
+      title: 'ຜິດພາດ',
+      text: 'ບໍ່ສາມາດໂຫຼດຂໍ້ມູນຜູ້ໃຊ້ໄດ້',
+    })
+    goBack()
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const submitForm = async () => {
+  if (!form.value) return
+  
+  const { valid } = await form.value.validate()
+  
+  if (!valid) {
+    CallSwal({
+      icon: 'warning',
+      title: 'ຂໍ້ມູນບໍ່ຖືກຕ້ອງ',
+      text: 'ກະລຸນາກວດສອບແລະປ້ອນຂໍ້ມູນໃຫ້ຖືກຕ້ອງ',
+    })
+    return
+  }
+  
+  const confirmation = await CallSwal({
+    icon: 'question',
+    title: 'ຢືນຢັນການແກ້ໄຂ',
+    text: 'ທ່ານຕ້ອງການແກ້ໄຂຂໍ້ມູນຜູ້ໃຊ້ນີ້ແມ່ນບໍ່?',
+    showCancelButton: true,
+    confirmButtonText: 'ແກ້ໄຂ',
+    cancelButtonText: 'ຍົກເລີກ',
+  })
+  
+  if (confirmation.isConfirmed) {
+    await updateUser()
+  }
+}
+
+const updateUser = async () => {
+  try {
+    isLoading.value = true
+    
+    const data = new FormData()
+    
+    // Append all fields
+    data.append('user_id', formData.value.user_id)
+    data.append('user_name', formData.value.user_name)
+    data.append('user_mobile', formData.value.user_mobile)
+    data.append('Auth_Status', formData.value.Auth_Status)
+    
+    if (formData.value.user_email) {
+      data.append('user_email', formData.value.user_email)
+    }
+    
+    if (formData.value.div_id) {
+      data.append('div_id', formData.value.div_id)
+    }
+    
+    if (formData.value.Role_ID) {
+      data.append('Role_ID', formData.value.Role_ID)
+    }
+    
+    // Only append password if provided
+    if (formData.value.user_password && formData.value.user_password.trim() !== '') {
+      data.append('user_password', formData.value.user_password)
+    }
+    
+    // Only append new profile picture if selected
+    if (formData.value.profile_picture) {
+      data.append('profile_picture', formData.value.profile_picture)
+    }
+    
+    const response = await axios.patch(`/api/users/${userId.value}/`, data, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+    })
+    
+    // Handle both wrapped and direct response formats
+    const isSuccess = response.data.success !== false
+    
+    if (isSuccess) {
+      await CallSwal({
+        icon: 'success',
+        title: 'ສຳເລັດ',
+        text: response.data.message || 'ແກ້ໄຂຂໍ້ມູນຜູ້ໃຊ້ງານສຳເລັດແລ້ວ',
+        timer: 2000,
+        showConfirmButton: false,
+      })
+      
+      router.push('/user')
+    } else {
+      throw new Error(response.data.message || 'ເກີດຂໍ້ຜິດພາດ')
+    }
+  } catch (error: any) {
+    console.error('Error updating user:', error)
+    
+    let errorMessage = 'ເກີດຂໍ້ຜິດພາດໃນການແກ້ໄຂຜູ້ໃຊ້ງານ'
+    
+    if (error.response?.data?.message) {
+      errorMessage = error.response.data.message
+    } else if (error.response?.data?.errors) {
+      const errors = error.response.data.errors
+      const firstError = Object.values(errors)[0]
+      errorMessage = Array.isArray(firstError) ? firstError[0] : firstError
+    }
+    
+    await CallSwal({
+      icon: 'error',
+      title: 'ຜິດພາດ',
+      text: errorMessage,
+    })
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// Lifecycle
+onMounted(async () => {
+  await categoryStore.GetListData()
+  await roleStore.GetRole()
+  await loadUserData()
+})
+</script>
+
 <template>
-  <section class="pa-6">
-    <v-container fluid class="pa-0">
-      <!-- Header Section -->
-      <v-row no-gutters>
-        <v-col cols="12">
-          <div class="d-flex align-center justify-space-between mb-6">
-            <div>
-              <h2 class="text-h5 font-weight-medium text-primary">
-                {{ title }}
-              </h2>
-              <p class="text-body-2 text-medium-emphasis mt-1 text-styles">
-                ແກ້ໄຂຂໍ້ມູນສ່ວນຕົວ ແລະ ການຕັ້ງຄ່າບັນຊີຜູ້ໃຊ້
-              </p>
-            </div>
-            <v-btn
-              color="primary"
-              variant="elevated"
-              :loading="userStore.loading"
-              :disabled="!isFormValid"
-              @click="submitForm"
-              class="px-8 text-styles"
-            >
-              <v-icon start>mdi-content-save</v-icon>
-              ບັນທຶກການປ່ຽນແປງ
-            </v-btn>
-          </div>
-          <v-divider class="mb-8" />
-        </v-col>
-      </v-row>
+  <div class="update-user-page text-styles">
+    <!-- Page Header -->
+    <v-row class="mb-6">
+      <v-col cols="12">
+        <div class="page-header">
+          <h1 class="text-styles page-title">ແກ້ໄຂຂໍ້ມູນຜູ້ໃຊ້ງານ</h1>
+          <p class="text-styles page-subtitle">ແກ້ໄຂຂໍ້ມູນຜູ້ໃຊ້ງານ: {{ formData.user_id }}</p>
+        </div>
+      </v-col>
+    </v-row>
 
-      <!-- Main Content -->
-      <v-form ref="form" v-model="isFormValid" @submit.prevent="submitForm">
-        <v-row>
-          <!-- Profile Image Section -->
-          <v-col cols="12" md="4">
-            <v-card variant="outlined" class="pa-6 text-center h-100">
-              <div class="profile-section">
-                <h3 class="text-h6 mb-4 text-styles">ຮູບໂປຣໄຟລ້</h3>
-                
-                <div class="profile-avatar-container mb-4">
-                  <v-avatar
-                    size="160"
-                    class="profile-avatar"
-                    :class="{ 'avatar-hover': !userStore.loading }"
-                    @click="!userStore.loading && openFile()"
-                  >
-                    <v-img
-                      :src="getProfileImageUrl()"
-                      :alt="`ຮູບໂປຣໄຟລ້ຂອງ ${userForm.user_name || 'ຜູ້ໃຊ້'}`"
-                      cover
-                    >
-                      <template v-slot:placeholder>
-                        <div class="d-flex align-center justify-center fill-height">
-                          <v-icon size="80" color="grey-lighten-2">
-                            mdi-account-circle
-                          </v-icon>
-                        </div>
-                      </template>
-                    </v-img>
-                    
-                    <!-- Upload overlay -->
-                    <div class="avatar-overlay">
-                      <v-icon color="white" size="24">mdi-camera-plus</v-icon>
-                    </div>
-                  </v-avatar>
-                </div>
+    <!-- Loading State -->
+    <v-overlay v-if="isLoading && !formData.user_id" contained class="d-flex align-center justify-center">
+      <v-card class="pa-8 text-center" width="300">
+        <v-progress-circular color="primary" indeterminate size="64" class="mb-4" />
+        <h4 class="text-h6 mb-2">ກຳລັງໂຫຼດຂໍ້ມູນ</h4>
+      </v-card>
+    </v-overlay>
 
-                <v-btn
-                  variant="outlined"
-                  color="primary"
-                  :disabled="userStore.loading"
-                  @click="openFile"
-                  class="mb-3"
-                >
-                  <v-icon start>mdi-cloud-upload</v-icon>
-                  ປ່ຽນຮູບພາບ
-                </v-btn>
-
-                <p class="text-caption text-medium-emphasis">
-                  ສະໜັບສະໜູນໄຟລ້: JPG, PNG, JPEG<br>
-                  ຂະໜາດສູງສຸດ: 5MB
-                </p>
-
-                <input
-                  ref="fileInput"
-                  type="file"
-                  style="display: none"
-                  accept="image/jpeg,image/jpg,image/png"
-                  @change="onFileChange"
-                />
-              </div>
-            </v-card>
-          </v-col>
-
-          <!-- Form Fields Section -->
-          <v-col cols="12" md="8">
-            <v-card variant="outlined" class="pa-6">
-              <h3 class="text-h6 mb-6 text-styles">ຂໍ້ມູນຜູ້ໃຊ້</h3>
+    <!-- Main Form -->
+    <v-form ref="form" v-model="isFormValid" @submit.prevent="submitForm" v-else>
+      <v-row>
+        <!-- Profile Picture Section -->
+        <v-col cols="12" md="4">
+          <v-card class="profile-card" elevation="0">
+            <v-card-text class="text-center pa-6">
+              <h3 class="text-styles card-title">ຮູບໂປຣໄຟລ້</h3>
               
-              <v-row>
-                <!-- User ID -->
-                <v-col cols="12" sm="6">
+              <div class="avatar-container" @click="openFileDialog">
+                <v-avatar size="160" class="profile-avatar">
+                  <v-img
+                    :src="getImageUrl()"
+                    alt="ຮູບໂປຣໄຟລ້"
+                    cover
+                  />
+                </v-avatar>
+                <div class="avatar-overlay">
+                  <v-icon color="white" size="32">mdi-camera</v-icon>
+                </div>
+              </div>
+
+              <input
+                ref="fileInput"
+                type="file"
+                hidden
+                accept="image/jpeg,image/jpg,image/png"
+                @change="onFileSelect"
+              />
+
+              <v-btn
+                color="primary"
+                variant="outlined"
+                class="text-styles mt-4"
+                @click="openFileDialog"
+                :disabled="isLoading"
+              >
+                <v-icon start>mdi-upload</v-icon>
+                ປ່ຽນຮູບພາບ
+              </v-btn>
+
+              <p class="text-styles upload-info">
+                JPG, PNG, JPEG<br>
+                ສູງສຸດ 5MB
+              </p>
+
+              <v-chip
+                v-if="formData.profile_picture"
+                color="success"
+                size="small"
+                class="text-styles mt-2"
+              >
+                <v-icon start size="small">mdi-check</v-icon>
+                {{ formData.profile_picture.name }}
+              </v-chip>
+            </v-card-text>
+          </v-card>
+        </v-col>
+
+        <!-- Form Fields Section -->
+        <v-col cols="12" md="8">
+          <v-card class="form-card" elevation="0">
+            <v-card-text class="pa-6">
+              <h3 class="text-styles card-title">ຂໍ້ມູນຜູ້ໃຊ້</h3>
+              
+              <v-row class="mt-4">
+                <!-- User ID (Readonly) -->
+                <v-col cols="12" md="6">
                   <v-text-field
-                    v-model="userForm.user_id"
-                    label="ລະຫັດຜູ້ໃຊ້ / User ID"
+                    v-model="formData.user_id"
+                    label="ລະຫັດຜູ້ໃຊ້"
                     variant="outlined"
                     density="comfortable"
-                    readonly
                     prepend-inner-icon="mdi-identifier"
-                    class="mb-2"
+                    readonly
+                    disabled
+                    class="text-styles"
                   />
                 </v-col>
 
-                <!-- Username -->
-                <v-col cols="12" sm="6">
+                <!-- User Name -->
+                <v-col cols="12" md="6">
                   <v-text-field
-                    v-model="userForm.user_name"
-                    label="ຊື່ຜູ້ໃຊ້ງານ / Username"
+                    v-model="formData.user_name"
+                    label="ຊື່ຜູ້ໃຊ້ງານ *"
                     variant="outlined"
                     density="comfortable"
-                    :rules="validationRules.required"
+                    :rules="rules.required"
                     prepend-inner-icon="mdi-account"
-                    class="mb-2"
-                    required
+                    :disabled="isLoading"
+                    class="text-styles"
                   />
                 </v-col>
 
                 <!-- Email -->
-                <v-col cols="12" sm="6">
+                <v-col cols="12" md="6">
                   <v-text-field
-                    v-model="userForm.user_email"
-                    label="ອີເມວ / Email"
+                    v-model="formData.user_email"
+                    label="ອີເມວ"
                     variant="outlined"
                     density="comfortable"
-                    :rules="validationRules.email"
+                    :rules="rules.email"
                     prepend-inner-icon="mdi-email"
                     type="email"
-                    class="mb-2"
+                    :disabled="isLoading"
+                    class="text-styles"
                   />
                 </v-col>
 
                 <!-- Mobile -->
-                <v-col cols="12" sm="6">
+                <v-col cols="12" md="6">
                   <v-text-field
-                    v-model="userForm.user_mobile"
-                    label="ເບີໂທລະສັບ / Phone"
+                    v-model="formData.user_mobile"
+                    label="ເບີໂທລະສັບ *"
                     variant="outlined"
                     density="comfortable"
-                    :rules="validationRules.required"
+                    :rules="rules.required"
                     prepend-inner-icon="mdi-phone"
-                    class="mb-2"
-                    required
+                    :disabled="isLoading"
+                    class="text-styles"
                   />
                 </v-col>
 
                 <!-- Department -->
-                <v-col cols="12" sm="6">
+                <v-col cols="12" md="6">
                   <v-autocomplete
-                    v-model="userForm.div_id"
-                    label="ພະແນກ / Department"
+                    v-model="formData.div_id"
+                    label="ພະແນກ *"
                     variant="outlined"
                     density="comfortable"
-                    :items="departmentItems"
+                    :items="departments"
                     item-value="div_id"
                     item-title="division_name_la"
-                    :rules="validationRules.required"
+                    :rules="rules.required"
                     prepend-inner-icon="mdi-office-building"
-                    no-filter
                     clearable
-                    class="mb-2"
-                    required
+                    :disabled="isLoading"
+                    class="text-styles"
                   />
                 </v-col>
 
                 <!-- Role -->
-                <v-col cols="12" sm="6">
+                <v-col cols="12" md="6">
                   <v-autocomplete
-                    v-model="userForm.Role_ID"
-                    label="ສິດການເຂົ້ານຳໃຊ້ / Role"
+                    v-model="formData.Role_ID"
+                    label="ສິດການນຳໃຊ້ *"
                     variant="outlined"
                     density="comfortable"
-                    :items="roleItems"
+                    :items="roles"
                     item-value="role_id"
                     item-title="role_name_la"
-                    :rules="validationRules.required"
+                    :rules="rules.required"
                     prepend-inner-icon="mdi-shield-account"
-                    no-filter
                     clearable
-                    class="mb-2"
-                    required
+                    :disabled="isLoading"
+                    class="text-styles"
                   />
                 </v-col>
 
-                <!-- Status -->
-                <v-col cols="12" sm="6">
+                <!-- Auth Status -->
+                <v-col cols="12" md="6">
                   <v-select
-                    v-model="userForm.Auth_Status"
-                    label="ສະຖານະການໃຊ້ງານ / Status"
+                    v-model="formData.Auth_Status"
+                    label="ສະຖານະອະນຸມັດ *"
                     variant="outlined"
                     density="comfortable"
-                    :items="statusItems"
-                    item-title="title"
-                    item-value="value"
-                    :rules="validationRules.required"
-                    prepend-inner-icon="mdi-account-check"
-                    class="mb-2"
-                    required
+                    :items="[
+                      { value: 'A', title: 'ອະນຸມັດແລ້ວ' },
+                      { value: 'U', title: 'ຍັງບໍ່ອະນຸມັດ' },
+                    ]"
+                    :rules="rules.required"
+                    prepend-inner-icon="mdi-check-circle"
+                    :disabled="isLoading"
+                    class="text-styles"
                   />
                 </v-col>
 
-                <!-- Password -->
-                <v-col cols="12" sm="6">
+                <!-- Password (Optional) -->
+                <v-col cols="12" md="6">
                   <v-text-field
-                    v-model="userForm.user_password"
-                    label="ລະຫັດຜ່ານໃໝ່ / New Password"
+                    v-model="formData.user_password"
+                    label="ລະຫັດຜ່ານໃໝ່ (ຖ້າຕ້ອງການປ່ຽນ)"
                     variant="outlined"
                     density="comfortable"
                     :type="showPassword ? 'text' : 'password'"
-                    :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
+                    :rules="rules.password"
                     prepend-inner-icon="mdi-lock"
-                    placeholder="ປ່ອຍວ່າງຖ້າບໍ່ຕ້ອງການປ່ຽນ"
-                    class="mb-2"
-                    :rules="passwordRules"
+                    :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
                     @click:append-inner="showPassword = !showPassword"
+                    :disabled="isLoading"
+                    class="text-styles"
+                    hint="ປ່ອຍໃຫ້ຫວ່າງຖ້າບໍ່ຕ້ອງການປ່ຽນລະຫັດຜ່ານ"
+                    persistent-hint
                   />
                 </v-col>
               </v-row>
-            </v-card>
-          </v-col>
-        </v-row>
-      </v-form>
+            </v-card-text>
 
-      <!-- Loading Overlay -->
-      <v-overlay
-        :model-value="userStore.loading"
-        contained
-        class="d-flex align-center justify-center"
-      >
-        <v-progress-circular
-          color="primary"
-          indeterminate
-          size="64"
-        />
-      </v-overlay>
-    </v-container>
-  </section>
+            <!-- Actions -->
+            <v-divider />
+            <v-card-actions class="pa-6">
+              <div class="text-styles required-note">
+                * ຊ່ອງທີ່ຈຳເປັນຕ້ອງຕື້ມ
+              </div>
+              <v-spacer />
+              <v-btn
+                variant="text"
+                @click="goBack"
+                :disabled="isLoading"
+                class="text-styles"
+              >
+                <v-icon start>mdi-arrow-left</v-icon>
+                ກັບຄືນ
+              </v-btn>
+              <v-btn
+                color="primary"
+                :loading="isLoading"
+                :disabled="!isFormValid"
+                @click="submitForm"
+                class="text-styles"
+              >
+                <v-icon start>mdi-content-save</v-icon>
+                ບັນທຶກການແກ້ໄຂ
+              </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-col>
+      </v-row>
+    </v-form>
+  </div>
 </template>
 
-<script lang="ts" setup>
-import { ref, computed, watch, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
-import type { VForm } from 'vuetify/components'
-import axios from '@/helpers/axios'
-
-// Stores
-const userStore = UserStore()
-const roleStore = RoleStore()
-const categoryStore = UseCategoryStore()
-
-// Route
-const route = useRoute()
-const user_id = route.query.user_id as string
-
-// Refs
-const form = ref<VForm>()
-const fileInput = ref<HTMLInputElement>()
-const isFormValid = ref(false)
-const showPassword = ref(false)
-
-// Constants
-const title = ref("ແກ້ໄຂຂໍ້ມູນຜູ້ໃຊ້ງານ")
-const defaultImage = "/assets/img/404.png" // fallback image
-
-// Computed
-const departmentItems = computed(() => categoryStore.categories || [])
-const roleItems = computed(() => roleStore.respons_data_role || [])
-
-const statusItems = [
-  { title: 'ເປີດໃຊ້ງານ', value: 'A' },
-  { title: 'ປິດໃຊ້ງານ', value: 'U' }
-]
-
-const userForm = computed({
-  get() {
-    return userStore.update_user_form
-  },
-  set(value) {
-    userStore.update_user_form = value
-  }
-})
-
-// Validation Rules
-const validationRules = {
-  required: [
-    (v: string) => !!v || 'ກະລຸນາປ້ອນຂໍ້ມູນ'
-  ],
-  email: [
-    (v: string) => {
-      if (!v) return true // Email is optional
-      const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-      return pattern.test(v) || 'ຮູບແບບອີເມວບໍ່ຖືກຕ້ອງ'
-    }
-  ]
-}
-
-const passwordRules = computed(() => {
-  if (!userForm.value.user_password) return [] // Password is optional for updates
-  
-  return [
-    (v: string) => v.length >= 6 || 'ລະຫັດຜ່ານຕ້ອງມີຢ່າງໜ້ອຍ 6 ຕົວອັກສອນ'
-  ]
-})
-
-// Methods
-const getProfileImageUrl = (): string => {
-  const profileImage = userForm.value.profile_picture
-  
-  if (profileImage instanceof File) {
-    return URL.createObjectURL(profileImage)
-  }
-  
-  // Handle API response format (profile_picture vs profile_picture)
-  const userDetail = userStore.respone_data_detail
-  if (userDetail?.profile_picture) {
-    return userDetail.profile_picture
-  }
-  
-  if (typeof profileImage === 'string' && profileImage) {
-    return profileImage
-  }
-  
-  return defaultImage
-}
-
-const openFile = (): void => {
-  if (fileInput.value) {
-    fileInput.value.click()
-  }
-}
-
-const onFileChange = (event: Event): void => {
-  const target = event.target as HTMLInputElement
-  const files = target.files
-  
-  if (files && files[0]) {
-    const file = files[0]
-    
-    // Validate file size (5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      CallSwal({
-        title: "ຜິດພາດ",
-        text: "ຂະໜາດໄຟລ້ເກີນ 5MB",
-        icon: "error"
-      })
-      return
-    }
-    
-    // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png']
-    if (!allowedTypes.includes(file.type)) {
-      CallSwal({
-        title: "ຌິດພາດ",
-        text: "ປະເພດໄຟລ້ບໍ່ຖືກຕ້ອງ ກະລຸນາເລືອກໄຟລ້ JPG, PNG ຫຼື JPEG",
-        icon: "error"
-      })
-      return
-    }
-    
-    userForm.value.profile_picture = file
-  }
-}
-
-// const submitForm = async (): Promise<void> => {
-//   if (!form.value) return
-  
-//   const { valid } = await form.value.validate()
-  
-//   if (valid) {
-//     const confirmation = await CallSwal({
-//       icon: "warning",
-//       title: "ຢືນຢັນການແກ້ໄຂ",
-//       text: "ທ່ານຕ້ອງການບັນທຶກການປ່ຽນແປງນີ້ແມ່ນບໍ່?",
-//       showCancelButton: true,
-//       confirmButtonText: "ບັນທຶກ",
-//       cancelButtonText: "ຍົກເລີກ"
-//     })
-    
-//     if (confirmation.isConfirmed) {
-//       await userStore.UpdateUser(user_id)
-//     }
-//   }
-// }
-
-const submitForm = async (): Promise<void> => {
-  if (!form.value) return
-
-  const { valid } = await form.value.validate()
-  let refreshToken =
-      localStorage.getItem("refresh") ||
-      localStorage.getItem("refreshToken") ||
-      localStorage.getItem("refresh_token")
-
-    if (!refreshToken) {
-      const userStr = localStorage.getItem("user")
-      if (userStr) {
-        const user = JSON.parse(userStr)
-        refreshToken = user.refresh || user.refreshToken || user.refresh_token
-      }
-    }
-
-  if (valid) {
-    const confirmation = await CallSwal({
-      icon: "warning",
-      title: "ຢືນຢັນການແກ້ໄຂ",
-      text: "ທ່ານຕ້ອງການບັນທຶກການປ່ຽນແປງນີ້ແມ່ນບໍ່?",
-      showCancelButton: true,
-      confirmButtonText: "ບັນທຶກ",
-      cancelButtonText: "ຍົກເລີກ"
-    })
-
-    if (confirmation.isConfirmed) {
-      await userStore.UpdateUser(user_id)
-      // Logout and delete session after successful update
-      await axios.post('/api/logout/', {
-        refresh: refreshToken,
-      }, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      })
-      localStorage.removeItem("token")
-      localStorage.removeItem("user")
-      // Redirect to login page
-      window.location.href = "/login"
-    }
-  }
-}
-
-// Watch for user detail changes
-watch(
-  () => userStore.respone_data_detail,
-  (newVal) => {
-    if (newVal) {
-      // Map API response to form fields
-      userForm.value.user_id = newVal.user_id || ""
-      userForm.value.user_name = newVal.user_name || ""
-      userForm.value.user_email = newVal.user_email || ""
-      userForm.value.user_mobile = newVal.user_mobile || ""
-      
-      // Handle division mapping
-      userForm.value.div_id = typeof newVal.division === "object" 
-        ? newVal.division?.div_id || ""
-        : newVal.division || ""
-      
-      // Handle role mapping  
-      userForm.value.Role_ID = newVal.role?.role_id || ""
-      
-      // Handle auth status mapping
-      userForm.value.Auth_Status = newVal.Auth_Status || ""
-      
-      // Don't populate password field for security
-      userForm.value.user_password = ""
-    }
-  },
-  { immediate: true }
-)
-
-// Lifecycle
-onMounted(() => {
-  if (user_id) {
-    userStore.GetdatadetailUser(user_id)
-  }
-  categoryStore.GetListData()
-  roleStore.GetRole()
-})
-</script>
-
 <style scoped>
-.profile-section {
-  position: relative;
+/* Text Styles */
+.text-styles {
+  font-family: 'Noto Sans Lao', 'Noto Sans', sans-serif;
+  font-size: 0.95rem;
+  color: #2c3e50;
+  letter-spacing: 0.01em;
 }
 
-.profile-avatar-container {
+/* Page Layout */
+.update-user-page {
+  padding: 24px;
+  background: #f8f9fa;
+  min-height: 100vh;
+}
+
+/* Page Header */
+.page-header {
+  margin-bottom: 8px;
+}
+
+.page-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #1a202c;
+  margin-bottom: 4px;
+}
+
+.page-subtitle {
+  font-size: 0.9rem;
+  color: #718096;
+  margin: 0;
+}
+
+/* Cards */
+.profile-card,
+.form-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.card-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1a202c;
+  margin-bottom: 16px;
+}
+
+/* Profile Section */
+.avatar-container {
   position: relative;
   display: inline-block;
+  cursor: pointer;
+  margin: 24px 0;
 }
 
 .profile-avatar {
+  border: 3px solid #e2e8f0;
+  background: #f8f9fa;
   transition: all 0.3s ease;
-  cursor: pointer;
-  border: 3px solid transparent;
 }
 
-.avatar-hover:hover {
+.avatar-container:hover .profile-avatar {
   border-color: rgb(var(--v-theme-primary));
   transform: scale(1.02);
 }
@@ -513,29 +603,79 @@ onMounted(() => {
   transition: opacity 0.3s ease;
 }
 
-.profile-avatar:hover .avatar-overlay {
+.avatar-container:hover .avatar-overlay {
   opacity: 1;
 }
 
+.upload-info {
+  font-size: 0.85rem;
+  color: #718096;
+  margin-top: 12px;
+  line-height: 1.6;
+}
+
+/* Form Elements */
+.v-text-field,
+.v-autocomplete,
+.v-select {
+  margin-bottom: 0;
+}
+
+.required-note {
+  font-size: 0.85rem;
+  color: #718096;
+}
+
+/* Buttons */
+.v-btn {
+  text-transform: none;
+  border-radius: 8px;
+}
+
+/* Responsive */
+@media (max-width: 960px) {
+  .update-user-page {
+    padding: 16px;
+  }
+
+  .page-title {
+    font-size: 1.5rem;
+  }
+
+  .profile-avatar {
+    size: 140px;
+  }
+}
+
+@media (max-width: 600px) {
+  .update-user-page {
+    padding: 12px;
+  }
+
+  .page-title {
+    font-size: 1.25rem;
+  }
+
+  .v-card-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .v-card-actions .v-btn {
+    width: 100%;
+  }
+
+  .v-spacer {
+    display: none;
+  }
+}
+
+/* Smooth Transitions */
 .v-card {
   transition: all 0.3s ease;
 }
 
 .v-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.v-text-field,
-.v-autocomplete,
-.v-select {
-  transition: all 0.2s ease;
-}
-
-.text-primary {
-  color: rgb(var(--v-theme-primary)) !important;
-}
-
-.text-medium-emphasis {
-  opacity: 0.7;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 </style>
