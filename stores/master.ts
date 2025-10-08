@@ -13,6 +13,8 @@ export const useMasterStore = defineStore("master", {
       respons_data_type_of_play: null as MasterModel.MasterCode | null,
       respons_data_status_dps :null as MasterModel.MasterCode | null,
       respons_data_status_nuw1 :null as MasterModel.MasterCode | null,
+      respons_data_status_taimast :null as MasterModel.MasterCode | null,
+      respons_data_status_monthly :null as MasterModel.MasterCode | null,
       resposne_status_setting:null as MasterModel.MasterCode | null,
       resposne_status_setting_update:null as MasterModel.MasterCode | null,
       isloading: false,
@@ -178,6 +180,48 @@ export const useMasterStore = defineStore("master", {
           }
         });if(res.status === 200){
           this.respons_data_lda = res.data.MasterCodes;
+        }
+      } catch (error) {
+        CallSwal({
+          title: "Error",
+          text: "ການດຶງຂໍ້ມູນຜິດພາດ.",
+          icon: "error",
+        })
+      }finally{
+        this.isloading = false;
+      }
+    },
+   async getTaimast(){
+      this.isloading = true;
+      try {
+        const res = await axios.get<MasterModel.MasterRespons>(`api/master-types/tree/QUARTERLY/`,{
+          headers:{
+            "Content-Type":"application/json",
+            Authorization: `Bearer ${localStorage.getItem("access_token")}`
+          }
+        });if(res.status === 200){
+          this.respons_data_status_taimast = res.data.MasterCodes;
+        }
+      } catch (error) {
+        CallSwal({
+          title: "Error",
+          text: "ການດຶງຂໍ້ມູນຜິດພາດ.",
+          icon: "error",
+        })
+      }finally{
+        this.isloading = false;
+      }
+    },
+   async getMonthly(){
+      this.isloading = true;
+      try {
+        const res = await axios.get<MasterModel.MasterRespons>(`api/master-types/tree/MONTHLY/`,{
+          headers:{
+            "Content-Type":"application/json",
+            Authorization: `Bearer ${localStorage.getItem("access_token")}`
+          }
+        });if(res.status === 200){
+          this.respons_data_status_monthly = res.data.MasterCodes;
         }
       } catch (error) {
         CallSwal({

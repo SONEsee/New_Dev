@@ -15,6 +15,7 @@ export const useMentenance = defineStore("mantanance", {
       form_creat_mantenance: {
         audit_year: Date(),
         audit_period: "",
+        quarter:"",
         asset_list_id: "",
         audit_date: "",
         auditor_name: "",

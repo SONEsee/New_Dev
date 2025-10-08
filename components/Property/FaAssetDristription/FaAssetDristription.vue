@@ -352,7 +352,7 @@ const handleNotificationClick = () => {
       </v-card>
 
 
-      <v-card class="modern-card history-card" elevation="0">
+      <!-- <v-card class="modern-card history-card" elevation="0">
         <v-card-title class="history-title">
           <div class="d-flex align-center">
             <v-icon class="mr-3" color="primary">mdi-history</v-icon>
@@ -458,7 +458,7 @@ const handleNotificationClick = () => {
             </v-btn>
           </template>
         </v-data-table>
-      </v-card>
+      </v-card> -->
     </div>
   </v-container>
 </template>
