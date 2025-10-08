@@ -3,6 +3,7 @@ const title = "ຈັດການຂໍ້ມູນການເຄື່ອນ�
 const assetTypeStore = assetStore();
 const selecassetType = ref("");
 const fassetStore = faAssetStore();
+const routes = useRoute();
 const res = computed(() => {
   const data = fassetStore.response_fa_asset_list || [];
   if (!data || !Array.isArray(data)) return [];
@@ -183,6 +184,7 @@ const nameTypeDisplay = (item:any)=>{
   return `${item.asset_name_la}-${item.coa_id}`
 }
 onMounted(() => {
+
   assetTypeStore.GetAssetList();
   fassetStore.GetFaAssetList2();
   initializeRole();
