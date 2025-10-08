@@ -92,7 +92,7 @@
             </v-col>
 
             <!-- Search Field -->
-            <v-col cols="12" md="3" class="px-md-1 mb-3 mb-md-0">
+            <v-col cols="12" md="2" class="px-md-1 mb-3 mb-md-0">
               <v-text-field
                 v-model="searchText"
                 label="ຄົ້ນຫາໃນຕາຕະລາງ"
@@ -105,7 +105,7 @@
             </v-col>
 
             <!-- Action Buttons -->
-            <v-col cols="12" md="3" class="ps-md-2 d-flex gap-2">
+            <v-col cols="12" md="4" class="ps-md-2 d-flex gap-2">
               <v-btn
                 type="submit"
                 color="primary"
@@ -124,9 +124,19 @@
                 :disabled="!balanceSheetData.length || loading"
                 @click="exportToExcel"
                 density="compact"
-                style="height: 40px; min-width: 100px;"
+                style="height: 40px; min-width: 90px;"
               >
                 Excel
+              </v-btn>
+              <v-btn
+                color="info"
+                prepend-icon="mdi-printer"
+                :disabled="!balanceSheetData.length || loading"
+                @click="printReport"
+                density="compact"
+                style="height: 40px; min-width: 90px;"
+              >
+                Print
               </v-btn>
             </v-col>
           </v-row>
@@ -291,19 +301,16 @@ const getCurrentPeriodCodeId = async (): Promise<string> => {
   try {
     const axios = (await import('@/helpers/axios')).default
     const res = await axios.get('/api/end-of-day-journal/check/')
-    const targetDate = res.data?.target_date // e.g. "2024-12-31"
+    const targetDate = res.data?.target_date
     if (targetDate && /^\d{4}-\d{2}-\d{2}$/.test(targetDate)) {
-      // Format to YYYYMM
       return targetDate.slice(0, 4) + targetDate.slice(5, 7)
     }
   } catch (e) {
-    // fallback to local date if API fails
     const now = new Date()
     const year = now.getFullYear()
     const month = String(now.getMonth() + 1).padStart(2, '0')
     return `${year}${month}`
   }
-  // fallback if no target_date
   const now = new Date()
   const year = now.getFullYear()
   const month = String(now.getMonth() + 1).padStart(2, '0')
@@ -323,6 +330,124 @@ const formatPeriodDisplay = (periodCode: string): string => {
   return monthIndex >= 0 && monthIndex < 12 ? `${monthNames[monthIndex]} ${year}` : `${month}/${year}`
 }
 
+// Get current date for print
+const getCurrentDate = (): string => {
+  const now = new Date()
+  const day = String(now.getDate()).padStart(2, '0')
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const year = now.getFullYear()
+  return `${day}/${month}/${year}`
+}
+
+// Print function
+const printReport = () => {
+  if (!filteredData.value.length) {
+    showSnackbar('ບໍ່ມີຂໍ້ມູນເພື່ອພິມ', 'warning', 'mdi-alert')
+    return
+  }
+
+  try {
+    const printWindow = window.open('', '', 'width=1400,height=900')
+    
+    // Build table rows
+    const tableRows = filteredData.value.map((row, index) => {
+      const rowClass = getRowClass(row.description)
+      const descClass = getDescriptionClass(row.description)
+      
+      return '<tr class="' + rowClass + '">' +
+        '<td class="text-left ' + descClass + '">' + (row.description || '') + '</td>' +
+        '<td class="text-right">' + formatCurrency(row.total_Amount_Opening) + '</td>' +
+        '<td class="text-right">' + formatCurrency(row.total_Amount_Current) + '</td>' +
+        '<td class="text-center">' + (row.currency_display || selectedCurrency.value) + '</td>' +
+        '<td class="text-center">' + (row.segment_type || selectedSegment.value) + '</td>' +
+        '</tr>'
+    }).join('')
+
+    const printContent = '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
+      '<title>ລາຍງານຖານະການເງິນ - ' + selectedTab.value.toUpperCase() + ' ' + selectedSegment.value + ' ' + selectedCurrency.value + '</title>' +
+      '<style>' +
+      'body { font-family: Phetsarath OT, sans-serif; padding: 20px; margin: 0; }' +
+      '.header { text-align: center; margin-bottom: 25px; border-bottom: 2px solid #333; padding-bottom: 15px; }' +
+      '.header h1 { margin: 0 0 5px 0; font-size: 1.4rem; font-weight: bold; }' +
+      '.header h2 { margin: 0 0 10px 0; font-size: 1.1rem; font-weight: 600; color: #333; }' +
+      '.header .report-title { font-size: 1.2rem; font-weight: bold; margin: 10px 0; }' +
+      '.header .report-info { font-size: 0.9rem; color: #555; margin: 5px 0; }' +
+      '.header .print-date { font-size: 0.85rem; color: #666; margin-top: 5px; }' +
+      'table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.85rem; }' +
+      'th, td { border: 1px solid #333; padding: 8px 10px; }' +
+      'th { background-color: #e0e0e0; font-weight: bold; text-align: center; }' +
+      'td { vertical-align: middle; }' +
+      '.text-right { text-align: right; }' +
+      '.text-center { text-align: center; }' +
+      '.text-left { text-align: left; }' +
+      '.font-weight-bold { font-weight: bold; }' +
+      '.highlight-blue-row { background-color: #e3f2fd; font-weight: bold; }' +
+      '.highlight-grey-row { background-color: #f5f5f5; font-weight: bold; }' +
+      '.signatures { display: flex; justify-content: space-between; margin-top: 60px; padding: 0 20px; }' +
+      '.signature-box { text-align: center; flex: 1; }' +
+      '.signature-title { font-size: 0.9rem; font-weight: 600; margin-bottom: 60px; }' +
+      '.signature-line { border-top: 1px solid #000; margin: 0 auto 5px auto; width: 200px; }' +
+      '.signature-label { font-size: 0.85rem; color: #555; font-style: italic; }' +
+      '.footer-note { text-align: center; font-size: 0.8rem; color: #888; margin-top: 20px; padding-top: 10px; border-top: 1px solid #ddd; }' +
+      '@media print { body { padding: 10px; } @page { size: A4 landscape; margin: 15mm; } }' +
+      '</style></head><body>' +
+      '<div class="header">' +
+      '<h1>ບໍລິສັດລັດ ບໍລິຫານໜີ້ ແລະ ຊັບສິນ ຈຳກັດຜູ່ດຽວ</h1>' +
+      '<h2>LAO MICROFINANCE COMPANY LIMITED</h2>' +
+      '<div class="report-title">ໃບລາຍງານຖານະການເງິນ (Balance Sheet)</div>' +
+      '<div class="report-info">' +
+      '<span>ປະເພດ: ' + selectedTab.value.toUpperCase() + '</span>' +
+      '<span> | </span>' +
+      '<span>' + selectedSegment.value + ' - ' + selectedCurrency.value + '</span>' +
+      (periodCodeId.value ? '<span> | </span><span>ເດືອນ: ' + formatPeriodDisplay(periodCodeId.value) + '</span>' : '') +
+      '</div>' +
+      '<div class="print-date">ວັນທີພິມ: ' + getCurrentDate() + '</div>' +
+      '</div>' +
+      '<table>' +
+      '<thead><tr>' +
+      '<th style="width: 50%;">ລາຍລະອຽດ</th>' +
+      '<th style="width: 15%;">ຍອດເດືອນກ່ອນ</th>' +
+      '<th style="width: 15%;">ຍອດເດືອນນີ້</th>' +
+      '<th style="width: 10%;">ສະກຸນເງິນ</th>' +
+      '<th style="width: 10%;">ປະເພດ</th>' +
+      '</tr></thead>' +
+      '<tbody>' + tableRows + '</tbody>' +
+      '</table>' +
+      '<div class="signatures">' +
+      '<div class="signature-box">' +
+      '<div class="signature-title">ຜູ້ອຳນວຍການໃຫຍ່</div>' +
+      '<div class="signature-line"></div>' +
+      '<div class="signature-label">CEO</div>' +
+      '</div>' +
+      '<div class="signature-box">' +
+      '<div class="signature-title">ຫົວໜ້າພະແນກຄຸ້ມຄອງຊັບພະຍາກອນມະນຸດ</div>' +
+      '<div class="signature-line"></div>' +
+      '<div class="signature-label">Human Resource Manager</div>' +
+      '</div>' +
+      '<div class="signature-box">' +
+      '<div class="signature-title">ຫົວໜ້າພະແນກບັນຊີ</div>' +
+      '<div class="signature-line"></div>' +
+      '<div class="signature-label">Chief Accountant</div>' +
+      '</div>' +
+      '</div>' +
+      '<div class="footer-note">' +
+      'ເອກະສານນີ້ຖືກສ້າງໂດຍລະບົບອັດຕະໂນມັດ - This document is system generated<br>' +
+      'ຈຳນວນລາຍການທັງໝົດ: ' + filteredData.value.length + ' ລາຍການ' +
+      '</div>' +
+      '<script>window.onload = function() { window.print(); };<\/script>' +
+      '</body></html>'
+
+    printWindow.document.write(printContent)
+    printWindow.document.close()
+    
+    showSnackbar('✅ ເປີດໜ້າຕ່າງພິມສຳເລັດ', 'success', 'mdi-printer')
+    
+  } catch (error) {
+    console.error('Print error:', error)
+    showSnackbar('❌ ມີຂໍ້ຜິດພາດໃນການພິມ', 'error', 'mdi-alert-circle')
+  }
+}
+
 // Reactive state
 const loading = ref(false)
 const searchText = ref('')
@@ -330,7 +455,7 @@ const selectedTab = ref('acc')
 const selectedSegment = ref('')
 const selectedCurrency = ref('')
 const balanceSheetData = ref<BalanceSheetItem[]>([])
-const periodCodeId = ref('') // <-- initialize as empty
+const periodCodeId = ref('')
 
 const snackbar = ref<SnackbarState>({
   show: false,
@@ -462,7 +587,6 @@ const fetchBalanceSheetData = async () => {
     let errorMessage = 'ເກີດຂໍ້ຜິດພາດໃນການດຶງຂໍ້ມູນງົບຖານະການເງິນ'
     let errorIcon = 'mdi-alert-circle'
     
-    // Handle specific errors
     if (error?.response?.status === 401) {
       errorMessage = '🔐 ໂທເຄນໝົດອາຍຸ ກະລຸນາເຂົ້າສູ່ລະບົບໃໝ່'
       errorIcon = 'mdi-account-alert'
@@ -498,7 +622,6 @@ const onSegmentChange = () => {
   selectedCurrency.value = ''
   balanceSheetData.value = []
   
-  // Auto-select LAK for LCY
   if (selectedSegment.value === 'LCY') {
     selectedCurrency.value = 'LAK'
   }
@@ -520,14 +643,12 @@ const getNetAmountClass = (amount: number) => {
 }
 
 const getRowClass = (description: string) => {
-  // Blue for special Lao descriptions
   if (description === 'ຄ. ລາຍຮັບ ແລະ ລາຍຈ່າຍພິເສດ(ບັງເອີນ)' ||
       description === 'ຂ. ລາຍຮັບ ແລະ ລາຍຈ່າຍປົກກະຕິ' ||
       description === 'ກ. ລາຍຮັບ ແລະ ລາຍຈ່າຍໃນການທຸລະກິດ') {
     return 'highlight-grey-row'
   }
   
-  // Grey for Roman numerals I-XX
   if (/\b(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\b/.test(description)) {
     return 'highlight-blue-row'
   }
@@ -557,7 +678,6 @@ const exportToExcel = () => {
       return
     }
 
-    // Prepare export data
     const exportData = balanceSheetData.value.map(item => ({
       'ລາຍລະອຽດ': item.description,
       'ຍອດເດືອນກ່ອນ': item.total_Amount_Opening,
@@ -566,23 +686,20 @@ const exportToExcel = () => {
       'ປະເພດ': item.segment_type || selectedSegment.value
     }))
 
-    // Create and save Excel file
     const wb = XLSX.utils.book_new()
     const ws = XLSX.utils.json_to_sheet(exportData)
     
-    // Set column widths
     const colWidths = [
-      { wch: 40 }, // ລາຍລະອຽດ
-      { wch: 15 }, // ຍອດເດືອນກ່ອນ
-      { wch: 15 }, // ຍອດເດືອນນີ້
-      { wch: 12 }, // ສະກຸນເງິນ
-      { wch: 12 }  // ປະເພດ
+      { wch: 40 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 12 },
+      { wch: 12 }
     ]
     ws['!cols'] = colWidths
 
     XLSX.utils.book_append_sheet(wb, ws, `Balance Sheet ${selectedTab.value.toUpperCase()}`)
 
-    // Generate secure filename
     const currentDate = new Date().toISOString().split('T')[0]
     const periodDisplay = formatPeriodDisplay(periodCodeId.value)
     const filename = `Balance_Sheet_${selectedTab.value.toUpperCase()}_${selectedSegment.value}_${selectedCurrency.value}_${periodDisplay}_${currentDate}.xlsx`
@@ -612,11 +729,9 @@ onMounted(async () => {
   try {
     const token = localStorage.getItem("token")
     if (token) {
-      // Fetch current period from API
       periodCodeId.value = await getCurrentPeriodCodeId()
       console.log('🚀 Balance Sheet component mounted')
       console.log(`📅 Current period: ${periodCodeId.value} (${formatPeriodDisplay(periodCodeId.value)})`)
-      // Set default values
       selectedSegment.value = 'LCY'
       selectedCurrency.value = 'LAK'
     } else {

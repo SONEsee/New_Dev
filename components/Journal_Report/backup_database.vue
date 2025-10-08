@@ -1,4 +1,4 @@
-<!-- components/BackupDatabase.vue - Nuxt3 Composition API -->
+<!-- pages/backup.vue - Nuxt3 Composition API -->
 <template>
   <div class="backup-wrapper">
     <div class="backup-card">
@@ -13,19 +13,33 @@
         <!-- Info Alert -->
         <div class="alert-info">
           <Icon name="mdi:information" size="20" />
-          <p>Create a backup of your database. The file will download automatically.</p>
+          <p>Create a secure backup of your database. File will be saved on the server.</p>
         </div>
 
-        <!-- Path Input -->
+        <!-- Database Name Input -->
         <div class="form-group">
-          <label for="path">Backup Path (Optional)</label>
+          <label for="database">Database Name</label>
           <input
-            id="path"
-            v-model="backupPath"
+            id="database"
+            v-model="databaseName"
             type="text"
-            placeholder="Leave empty for default (C:\Backup)"
+            placeholder="SAMCDB"
             :disabled="isLoading"
           />
+        </div>
+
+        <!-- Backup Type Selector -->
+        <div class="form-group">
+          <label for="backupType">Backup Type</label>
+          <select
+            id="backupType"
+            v-model="backupType"
+            :disabled="isLoading"
+          >
+            <option value="FULL">Full Backup</option>
+            <option value="DIFF">Differential Backup</option>
+            <option value="LOG">Transaction Log Backup</option>
+          </select>
         </div>
 
         <!-- Backup Button -->
@@ -56,7 +70,14 @@
             :class="['status', `status-${status.type}`]"
           >
             <Icon :name="status.type === 'success' ? 'mdi:check-circle' : 'mdi:alert-circle'" />
-            {{ status.message }}
+            <div class="status-content">
+              <strong>{{ status.message }}</strong>
+              <div v-if="backupResult && status.type === 'success'" class="backup-details">
+                <p><span>File:</span> {{ backupResult.file_name }}</p>
+                <p><span>Type:</span> {{ backupResult.backup_type }}</p>
+                <p><span>Time:</span> {{ formatDate(backupResult.backup_time) }}</p>
+              </div>
+            </div>
           </div>
         </Transition>
 
@@ -72,6 +93,9 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import axios from '@/helpers/axios'
+
+
 
 // Types
 interface BackupStatus {
@@ -79,10 +103,19 @@ interface BackupStatus {
   message: string
 }
 
+interface BackupResult {
+  file_name: string
+  backup_type: string
+  backup_time: string
+  full_path?: string
+}
+
 // State
 const isLoading = ref(false)
-const backupPath = ref('')
+const databaseName = ref('SAMCDB')
+const backupType = ref('FULL')
 const status = ref<BackupStatus>({ type: '', message: '' })
+const backupResult = ref<BackupResult | null>(null)
 const lastBackupTime = ref<string | null>(null)
 
 // Load last backup time on mount
@@ -93,53 +126,78 @@ onMounted(() => {
 
 // Format date helper
 const formatDate = (dateStr: string) => {
-  return new Date(dateStr).toLocaleString()
+  if (!dateStr) return 'N/A'
+  return new Date(dateStr).toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  })
 }
-
+const getAuthHeaders = () => {
+  const token = localStorage.getItem("token")
+  if (!token) {
+    throw new Error('Authentication token not found')
+  }
+  return {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  }
+}
 // Main backup handler
 const handleBackup = async () => {
   isLoading.value = true
   status.value = { type: '', message: '' }
+  backupResult.value = null
 
   try {
-    // Build URL with params
-    const params = new URLSearchParams()
-    if (backupPath.value) {
-      params.append('backup_path', backupPath.value)
+    // Validate input
+    if (!databaseName.value.trim()) {
+      throw new Error('Database name is required')
     }
 
-    // Make API request
-    const response = await $fetch('/api/backup/', {
-      method: 'GET',
-      params,
-      responseType: 'blob',
-      timeout: 900000,
-    })
+    // Call API using direct axios method
+    const apiResponse = await axios.post(
+      'api/backup/',
+      {
+        database_name: databaseName.value.trim(),
+        backup_type: backupType.value
+      },
+      getAuthHeaders()
+    )
 
-    // Handle file download
-    const blob = new Blob([response as BlobPart])
-    const url = window.URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `backup_${Date.now()}.bak`
-    link.click()
-    window.URL.revokeObjectURL(url)
+    const response = apiResponse.data
 
-    // Update success state
-    const now = new Date().toISOString()
-    lastBackupTime.value = now
-    localStorage.setItem('lastBackupTime', now)
-    
-    status.value = {
-      type: 'success',
-      message: 'Backup completed successfully!'
+    if (response.success) {
+      // Update success state
+      const now = new Date().toISOString()
+      lastBackupTime.value = now
+      localStorage.setItem('lastBackupTime', now)
+      
+      backupResult.value = {
+        file_name: response.file_name,
+        backup_type: response.backup_type,
+        backup_time: response.backup_time,
+        full_path: response.full_path
+      }
+      
+      status.value = {
+        type: 'success',
+        message: 'Backup completed successfully!'
+      }
+    } else {
+      throw new Error(response.error || 'Backup failed')
     }
 
   } catch (error: any) {
     console.error('Backup failed:', error)
     status.value = {
       type: 'error',
-      message: error.data?.error || 'Failed to create backup'
+      message: error.response?.data?.error || error.message || 'Failed to create backup'
     }
   } finally {
     isLoading.value = false
@@ -211,24 +269,32 @@ const handleBackup = async () => {
   font-size: 0.875rem;
 }
 
-.form-group input {
+.form-group input,
+.form-group select {
   width: 100%;
   padding: 0.75rem 1rem;
   border: 2px solid #e5e7eb;
   border-radius: 0.5rem;
   font-size: 0.875rem;
   transition: all 0.2s;
+  background: white;
 }
 
-.form-group input:focus {
+.form-group input:focus,
+.form-group select:focus {
   outline: none;
   border-color: #667eea;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
-.form-group input:disabled {
+.form-group input:disabled,
+.form-group select:disabled {
   background: #f9fafb;
   cursor: not-allowed;
+}
+
+.form-group select {
+  cursor: pointer;
 }
 
 .btn-backup {
@@ -305,7 +371,7 @@ const handleBackup = async () => {
   padding: 0.75rem;
   border-radius: 0.5rem;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.5rem;
   font-size: 0.875rem;
 }
@@ -318,6 +384,33 @@ const handleBackup = async () => {
 .status-error {
   background: #fee2e2;
   color: #991b1b;
+}
+
+.status-content {
+  flex: 1;
+}
+
+.status-content strong {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.backup-details {
+  font-size: 0.75rem;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(6, 95, 70, 0.2);
+}
+
+.backup-details p {
+  margin: 0.25rem 0;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.backup-details span {
+  font-weight: 600;
+  min-width: 45px;
 }
 
 .last-backup {
@@ -374,7 +467,8 @@ const handleBackup = async () => {
     color: #d1d5db;
   }
 
-  .form-group input {
+  .form-group input,
+  .form-group select {
     background: #111827;
     border-color: #374151;
     color: #f3f4f6;
@@ -388,6 +482,24 @@ const handleBackup = async () => {
   .last-backup {
     background: #111827;
     color: #9ca3af;
+  }
+
+  .progress {
+    background: #111827;
+  }
+
+  .status-success {
+    background: #064e3b;
+    color: #d1fae5;
+  }
+
+  .status-error {
+    background: #7f1d1d;
+    color: #fee2e2;
+  }
+
+  .backup-details {
+    border-top-color: rgba(209, 250, 229, 0.2);
   }
 }
 </style>
