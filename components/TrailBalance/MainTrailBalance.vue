@@ -1,4 +1,4 @@
-<!-- MainTrialBalance.vue -->
+<!-- MainTrialBalance.vue with Print Function -->
 <template>
   <v-container fluid class="pa-6">
     <v-card elevation="0" style="border: 1px solid #e0e0e0; width: 100%;">
@@ -137,9 +137,19 @@
                 :disabled="!trialBalanceData.length || loading"
                 @click="exportToExcel"
                 density="compact"
-                style="height: 40px;"
+                style="height: 40px; min-width: 80px;"
               >
                 Excel
+              </v-btn>
+              <v-btn
+                color="info"
+                prepend-icon="mdi-printer"
+                :disabled="!trialBalanceData.length || loading"
+                @click="printReport"
+                density="compact"
+                style="height: 40px; min-width: 80px;"
+              >
+                Print
               </v-btn>
             </v-col>
           </v-row>
@@ -380,13 +390,157 @@ const getAuthHeaders = () => {
   }
 }
 
+// Get current date for print
+const getCurrentDate = (): string => {
+  const now = new Date()
+  const day = String(now.getDate()).padStart(2, '0')
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const year = now.getFullYear()
+  return `${day}/${month}/${year}`
+}
+
+// Format period for display
+const formatPeriodDisplay = (periodCode: string): string => {
+  if (!periodCode || periodCode.length !== 6) return periodCode
+  const year = periodCode.substring(0, 4)
+  const month = periodCode.substring(4, 6)
+  const monthNames = [
+    'ມັງກອນ', 'ກຸມພາ', 'ມີນາ', 'ເມສາ', 'ພຶດສະພາ', 'ມິຖຸນາ',
+    'ກໍລະກົດ', 'ສິງຫາ', 'ກັນຍາ', 'ຕຸລາ', 'ພະຈິກ', 'ທັນວາ'
+  ]
+  const monthIndex = parseInt(month) - 1
+  return monthIndex >= 0 && monthIndex < 12 ? `${monthNames[monthIndex]} ${year}` : `${month}/${year}`
+}
+
+// Print function
+const printReport = () => {
+  if (!filteredData.value.length) {
+    showSnackbar('ບໍ່ມີຂໍ້ມູນເພື່ອພິມ', 'warning', 'mdi-alert')
+    return
+  }
+
+  try {
+    const printWindow = window.open('', '', 'width=1400,height=900')
+    
+    // Build table rows
+    const tableRows = filteredData.value.map((row) => {
+      return '<tr>' +
+        '<td class="text-left">' + (row.gl_code || '') + '</td>' +
+        '<td class="text-left">' + (row.Desc || '') + '</td>' +
+        '<td class="text-right">' + formatCurrency(row.OP_DR) + '</td>' +
+        '<td class="text-right">' + formatCurrency(row.OP_CR) + '</td>' +
+        '<td class="text-right">' + formatCurrency(row.Mo_DR) + '</td>' +
+        '<td class="text-right">' + formatCurrency(row.Mo_Cr) + '</td>' +
+        '<td class="text-right">' + formatCurrency(row.C1_DR) + '</td>' +
+        '<td class="text-right">' + formatCurrency(row.C1_CR) + '</td>' +
+        '<td class="text-center">' + (row.CCy_Code_id || '') + '</td>' +
+        '<td class="text-center">' + (row.MSegment || '') + '</td>' +
+        '</tr>'
+    }).join('')
+
+    const printContent = '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
+      '<title>ລາຍງານໃບດຸ່ນດຽງ - ' + selectedMSegment.value + ' ' + selectedCurrency.value + '</title>' +
+      '<style>' +
+      'body { font-family: Phetsarath OT, sans-serif; padding: 20px; margin: 0; }' +
+      '.header { text-align: center; margin-bottom: 25px; border-bottom: 2px solid #333; padding-bottom: 15px; }' +
+      '.header h1 { margin: 0 0 5px 0; font-size: 1.4rem; font-weight: bold; }' +
+      '.header h2 { margin: 0 0 10px 0; font-size: 1.1rem; font-weight: 600; color: #333; }' +
+      '.header .report-title { font-size: 1.2rem; font-weight: bold; margin: 10px 0; }' +
+      '.header .report-info { font-size: 0.9rem; color: #555; margin: 5px 0; }' +
+      '.header .print-date { font-size: 0.85rem; color: #666; margin-top: 5px; }' +
+      'table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.75rem; }' +
+      'th, td { border: 1px solid #333; padding: 6px 8px; }' +
+      'th { background-color: #e0e0e0; font-weight: bold; text-align: center; }' +
+      'td { vertical-align: middle; }' +
+      '.main-header { background-color: #f0f0f0; font-size: 0.8rem; font-weight: 600; }' +
+      '.sub-header { background-color: #fafafa; font-size: 0.7rem; font-weight: 500; }' +
+      '.text-right { text-align: right; }' +
+      '.text-center { text-align: center; }' +
+      '.text-left { text-align: left; }' +
+      '.signatures { display: flex; justify-content: space-between; margin-top: 60px; padding: 0 20px; }' +
+      '.signature-box { text-align: center; flex: 1; }' +
+      '.signature-title { font-size: 0.9rem; font-weight: 600; margin-bottom: 60px; }' +
+      '.signature-line { border-top: 1px solid #000; margin: 0 auto 5px auto; width: 200px; }' +
+      '.signature-label { font-size: 0.85rem; color: #555; font-style: italic; }' +
+      '.footer-note { text-align: center; font-size: 0.8rem; color: #888; margin-top: 20px; padding-top: 10px; border-top: 1px solid #ddd; }' +
+      '@media print { body { padding: 10px; } @page { size: A4 landscape; margin: 15mm; } }' +
+      '</style></head><body>' +
+      '<div class="header">' +
+      '<h1>ບໍລິສັດ ເງິນກູ້ຈຸນລະ ລາວ ຈຳກັດ</h1>' +
+      '<h2>LAO MICROFINANCE COMPANY LIMITED</h2>' +
+      '<div class="report-title">ລາຍງານໃບດຸ່ນດຽງ (Main Trial Balance)</div>' +
+      '<div class="report-info">' +
+      '<span>Market Segment: ' + selectedMSegment.value + '</span>' +
+      '<span> | </span>' +
+      '<span>Currency: ' + selectedCurrency.value + '</span>' +
+      '<span> | </span>' +
+      '<span>Year: ' + selectedFinYear.value + '</span>' +
+      '<span> | </span>' +
+      '<span>Period: ' + formatPeriodDisplay(selectedPeriodCode.value) + '</span>' +
+      '</div>' +
+      '<div class="print-date">ວັນທີພິມ: ' + getCurrentDate() + '</div>' +
+      '</div>' +
+      '<table>' +
+      '<thead>' +
+      '<tr class="main-header">' +
+      '<th rowspan="2" style="width: 10%;">GL Code</th>' +
+      '<th rowspan="2" style="width: 25%;">ລາຍລະອຽດ</th>' +
+      '<th colspan="2" style="width: 15%;">ຍອດຍົກ (Opening)</th>' +
+      '<th colspan="2" style="width: 15%;">ຍອດເຄື່ອນ (Movement)</th>' +
+      '<th colspan="2" style="width: 15%;">ຍອດເຫຼືອ (Closing)</th>' +
+      '<th rowspan="2" style="width: 8%;">Currency</th>' +
+      '<th rowspan="2" style="width: 12%;">Segment</th>' +
+      '</tr>' +
+      '<tr class="sub-header">' +
+      '<th>Dr</th><th>Cr</th>' +
+      '<th>Dr</th><th>Cr</th>' +
+      '<th>Dr</th><th>Cr</th>' +
+      '</tr>' +
+      '</thead>' +
+      '<tbody>' + tableRows + '</tbody>' +
+      '</table>' +
+      '<div class="signatures">' +
+      '<div class="signature-box">' +
+      '<div class="signature-title">ຜູ້ອຳນວຍການໃຫຍ່</div>' +
+      '<div class="signature-line"></div>' +
+      '<div class="signature-label">CEO</div>' +
+      '</div>' +
+      '<div class="signature-box">' +
+      '<div class="signature-title">ຫົວໜ້າພະແນກຄຸ້ມຄອງຊັບພະຍາກອນມະນຸດ</div>' +
+      '<div class="signature-line"></div>' +
+      '<div class="signature-label">Human Resource Manager</div>' +
+      '</div>' +
+      '<div class="signature-box">' +
+      '<div class="signature-title">ຫົວໜ້າພະແນກບັນຊີ</div>' +
+      '<div class="signature-line"></div>' +
+      '<div class="signature-label">Chief Accountant</div>' +
+      '</div>' +
+      '</div>' +
+      '<div class="footer-note">' +
+      'ເອກະສານນີ້ຖືກສ້າງໂດຍລະບົບອັດຕະໂນມັດ - This document is system generated<br>' +
+      'ຈຳນວນລາຍການທັງໝົດ: ' + filteredData.value.length + ' ລາຍການ' +
+      '</div>' +
+      '<script>window.onload = function() { window.print(); };<\/script>' +
+      '</body></html>'
+
+    printWindow.document.write(printContent)
+    printWindow.document.close()
+    
+    showSnackbar('✅ ເປີດໜ້າຕ່າງພິມສຳເລັດ', 'success', 'mdi-printer')
+    
+  } catch (error) {
+    console.error('Print error:', error)
+    showSnackbar('❌ ມີຂໍ້ຜິດພາດໃນການພິມ', 'error', 'mdi-alert-circle')
+  }
+}
+
 // Reactive state
 const loading = ref(false)
 const searchText = ref('')
-const selectedMSegment = ref('') // Start empty to force user selection
+const selectedMSegment = ref('')
 const selectedCurrency = ref('')
-const selectedFinYear = ref(new Date().getFullYear().toString()) // Default current year
-const selectedPeriodCode = ref('') // User must enter
+const selectedFinYear = ref(new Date().getFullYear().toString())
+const selectedPeriodCode = ref('')
 const trialBalanceData = ref<TrialBalanceItem[]>([])
 const lastUsedParams = ref<any>(null)
 
@@ -507,7 +661,6 @@ const filteredData = computed(() => {
 // Event handlers
 const onMSegmentChange = (newValue: string) => {
   console.log(`🔄 MSegment changed to: ${newValue}`)
-  // Reset currency when MSegment changes
   selectedCurrency.value = ''
   trialBalanceData.value = []
   lastUsedParams.value = null
@@ -516,7 +669,6 @@ const onMSegmentChange = (newValue: string) => {
 // Watch for currency changes to auto-set as first available if needed
 watch([selectedMSegment], () => {
   if (selectedMSegment.value && availableCurrencyOptions.value.length > 0) {
-    // Auto-select first currency if none selected
     if (!selectedCurrency.value) {
       selectedCurrency.value = availableCurrencyOptions.value[0].value
     }
@@ -566,7 +718,6 @@ const fetchTrialBalanceData = async () => {
     let errorMessage = 'ເກີດຂໍ້ຜິດພາດໃນການດຶງຂໍ້ມູນ Trial Balance'
     let errorIcon = 'mdi-alert-circle'
     
-    // Handle specific errors
     if (error?.response?.status === 401) {
       errorMessage = '🔐 ໂທເຄນໝົດອາຍຸ ກະລຸນາເຂົ້າສູ່ລະບົບໃໝ່'
       errorIcon = 'mdi-account-alert'
@@ -638,7 +789,6 @@ const exportToExcel = () => {
       return
     }
 
-    // Prepare export data
     const exportData = trialBalanceData.value.map(item => ({
       'GL Code': item.gl_code,
       'Description': item.Desc,
@@ -652,24 +802,21 @@ const exportToExcel = () => {
       'Market Segment': item.MSegment
     }))
 
-    // Create and save Excel file
     const wb = XLSX.utils.book_new()
     const ws = XLSX.utils.json_to_sheet(exportData)
     
-    // Set column widths
     const colWidths = [
-      { wch: 12 }, // GL Code
-      { wch: 30 }, // Description
-      { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, // Amount columns
-      { wch: 12 }, { wch: 12 }, // Amount columns
-      { wch: 10 }, // Currency
-      { wch: 15 }  // Market Segment
+      { wch: 12 },
+      { wch: 30 },
+      { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
+      { wch: 12 }, { wch: 12 },
+      { wch: 10 },
+      { wch: 15 }
     ]
     ws['!cols'] = colWidths
 
     XLSX.utils.book_append_sheet(wb, ws, 'Main Trial Balance')
 
-    // Generate secure filename
     const filename = `Trial_Balance_${selectedMSegment.value}_${selectedCurrency.value}_${selectedFinYear.value}_${selectedPeriodCode.value}.xlsx`
 
     XLSX.writeFile(wb, filename)
@@ -691,19 +838,16 @@ const getCurrentPeriodCodeId = async (): Promise<string> => {
   try {
     const axiosInstance = (await import('@/helpers/axios')).default
     const res = await axiosInstance.get('/api/end-of-day-journal/check/')
-    const targetDate = res.data?.target_date // e.g. "2024-12-31"
+    const targetDate = res.data?.target_date
     if (targetDate && /^\d{4}-\d{2}-\d{2}$/.test(targetDate)) {
-      // Format to YYYYMM
       return targetDate.slice(0, 4) + targetDate.slice(5, 7)
     }
   } catch (e) {
-    // fallback to local date if API fails
     const now = new Date()
     const year = now.getFullYear()
     const month = String(now.getMonth() + 1).padStart(2, '0')
     return `${year}${month}`
   }
-  // fallback if no target_date
   const now = new Date()
   const year = now.getFullYear()
   const month = String(now.getMonth() + 1).padStart(2, '0')
@@ -716,14 +860,11 @@ onMounted(async () => {
     const token = localStorage.getItem("token")
     if (token) {
       console.log('🚀 Component mounted')
-      // Set default period code to current period from API
       const periodCode = await getCurrentPeriodCodeId()
       selectedPeriodCode.value = periodCode
-      // Set selectedFinYear from periodCode if possible
       if (periodCode && periodCode.length === 6) {
         selectedFinYear.value = periodCode.substring(0, 4)
       }
-      // Don't auto-fetch data - wait for user to complete form
       showSnackbar('📋 ກະລຸນາເລືອກຂໍ້ມູນໃນແບບຟອມແລ້ວກົດດຶງຂໍ້ມູນ', 'info', 'mdi-information')
     } else {
       showSnackbar('🔑 ກະລຸນາເຂົ້າສູ່ລະບົບເພື່ອເຂົ້າເຖິງຂໍ້ມູນ', 'warning', 'mdi-account-alert')
@@ -735,6 +876,7 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* Keep all your existing styles exactly as they are */
 /* Custom Table Container */
 .custom-table-container {
   width: 100%;
@@ -746,7 +888,6 @@ onMounted(async () => {
   position: relative;
 }
 
-/* Custom Table */
 .custom-trial-balance-table {
   width: 100%;
   border-collapse: separate;
@@ -755,7 +896,6 @@ onMounted(async () => {
   min-width: 1200px;
 }
 
-/* Header Rows */
 .main-header-row {
   background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
 }
@@ -764,7 +904,6 @@ onMounted(async () => {
   background: #fafafa;
 }
 
-/* Header Cells */
 .header-cell {
   padding: 12px 8px;
   font-weight: 600;
@@ -775,7 +914,6 @@ onMounted(async () => {
   white-space: nowrap;
 }
 
-/* GL Code Header - Optimized Width */
 .account-code-header {
   width: 150px;
   min-width: 150px;
@@ -790,7 +928,6 @@ onMounted(async () => {
   height: 100%;
 }
 
-/* Description Header - Fixed for no-wrap */
 .description-header {
   width: 400px;
   min-width: 400px;
@@ -826,7 +963,6 @@ onMounted(async () => {
   color: #546e7a;
 }
 
-/* Extra columns for Currency and Segment */
 .extra-column-header {
   width: 120px;
   min-width: 120px;
@@ -834,7 +970,6 @@ onMounted(async () => {
   background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
 }
 
-/* Sticky Column */
 .sticky-column {
   position: sticky;
   left: 0;
@@ -848,7 +983,6 @@ onMounted(async () => {
   background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
 }
 
-/* Data Rows */
 .data-row {
   transition: background-color 0.2s;
   background: white;
@@ -862,14 +996,12 @@ onMounted(async () => {
   background-color: #fafafa;
 }
 
-/* Data Cells */
 .data-cell {
   padding: 10px 8px;
   border: 1px solid #f0f0f0;
   vertical-align: middle;
 }
 
-/* GL Code Cell - Optimized */
 .account-code-cell {
   width: 150px;
   min-width: 150px;
@@ -891,7 +1023,6 @@ onMounted(async () => {
   background-color: #f8f9fa;
 }
 
-/* Description Cell - No Wrap with Ellipsis */
 .description-cell {
   width: 400px;
   min-width: 400px;
@@ -912,7 +1043,6 @@ onMounted(async () => {
   cursor: help;
 }
 
-/* Amount Cells */
 .amount-cell {
   width: 140px;
   min-width: 140px;
@@ -942,7 +1072,6 @@ onMounted(async () => {
   background: rgba(244, 67, 54, 0.08);
 }
 
-/* Extra Column Cells for Currency and Segment */
 .extra-column-cell {
   width: 120px;
   min-width: 120px;
@@ -951,7 +1080,6 @@ onMounted(async () => {
   padding: 8px;
 }
 
-/* Scrollbar Styling */
 .custom-table-container::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -975,7 +1103,6 @@ onMounted(async () => {
   background: #f1f1f1;
 }
 
-/* Responsive adjustments */
 @media (max-width: 1400px) {
   .description-header,
   .description-cell {
@@ -1138,7 +1265,6 @@ onMounted(async () => {
   }
 }
 
-/* Print styles */
 @media print {
   .custom-table-container {
     max-height: none;
