@@ -1,21 +1,54 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick, onUnmounted } from "vue";
 import { useMentenance } from "@/stores/mantenaces";
+const userStore = userStoreList();
 const masterStore = useMasterStore();
+const userString = localStorage.getItem("user");
+const userID = ref(userString ? JSON.parse(userString) : null);
+const mantanances = useMentenance();
 
+watch(
+  userID,
+  (newValue) => {
+    if (newValue && newValue.user_id) {
+      mantanances.form_creat_mantenance.auditor_name = newValue.user_id;
+    }
+  },
+  { immediate: true }
+);
 const validate = ref();
 const form = ref();
 const isFormValid = ref(false);
 const faAssetStoreInstance = faAssetStore();
-const mantanances = useMentenance();
+
 const Dapremen = UseCategoryStore();
 const employee = useEmployeeStore();
 const searchBarcode = ref("");
 const isSearching = ref(false);
-
+const locationsStore = locationStore();
 const showScanner = ref(false);
 const statusMessage = ref("");
 const statusType = ref<"success" | "error" | "warning" | "info">("info");
+const userData = computed(()=>{
+  const data = userStore.responst_username_list;
+  if(Array.isArray(data)){
+    return data
+  }
+  if(data && typeof data){
+    return [data]
+  }
+  return []
+})
+const locationData = computed(() => {
+  const data = locationsStore.response_location_list;
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (data && typeof data === "object") {
+    return [data];
+  }
+  return [];
+});
 const taimasData = computed(() => {
   const data = masterStore.respons_data_status_taimast;
   if (Array.isArray(data)) {
@@ -133,7 +166,6 @@ const yesNoOptions = [
   { value: "N", text: "ບໍ່" },
 ];
 
-// Number formatting functions
 const formatNumberInput = (value: string): string => {
   if (!value || value === "undefined" || value === "null") return "";
 
@@ -201,18 +233,15 @@ const updateEstimatedValue = (newValue: string) => {
   formattedEstimatedValue.value = formatNumberInput(newValue);
 };
 
-// Scanner Methods
 const initializeScanner = async () => {
   try {
     isLoading.value = true;
     error.value = "";
 
-    // Import ZXing library
     const { BrowserMultiFormatReader: Reader } = await import("@zxing/library");
     BrowserMultiFormatReader = Reader;
     codeReader = new BrowserMultiFormatReader();
 
-    // Get available cameras
     await loadAvailableCameras();
 
     isReady.value = true;
@@ -256,11 +285,9 @@ const startScanning = async () => {
       throw new Error("ບໍ່ພົບກ້ອງຖ່າຍຮູບ");
     }
 
-    // Use selected camera device
     const selectedCamera = availableCameras.value[currentCameraIndex.value];
     console.log("Using camera:", selectedCamera.label);
 
-    // Start continuous decoding
     await codeReader.decodeFromVideoDevice(
       selectedCamera.deviceId,
       videoRef.value,
@@ -304,7 +331,6 @@ const switchCamera = async () => {
   currentCameraIndex.value =
     (currentCameraIndex.value + 1) % availableCameras.value.length;
 
-  // Wait a bit before starting with new camera
   setTimeout(async () => {
     await startScanning();
   }, 500);
@@ -330,7 +356,6 @@ const clearError = () => {
   error.value = "";
 };
 
-// Status management
 const showStatus = (
   message: string,
   type: "success" | "error" | "warning" | "info" = "info"
@@ -342,14 +367,13 @@ const showStatus = (
   }, 3000);
 };
 
-// QR Scanner methods
 const openScanner = async () => {
   showScanner.value = true;
-  // Initialize and auto-start scanner when dialog opens
+
   if (!isReady.value) {
     await initializeScanner();
   }
-  // Auto start scanning
+
   setTimeout(async () => {
     await startScanning();
   }, 500);
@@ -638,11 +662,13 @@ onUnmounted(() => {
 });
 
 onMounted(() => {
+  userStore.getUserData()
   masterStore.getTaimast();
   masterStore.getMonthly();
   masterStore.getTMN();
   Dapremen.GetListData();
   employee.GetEmployee();
+  locationsStore.GetLocationList();
   const today = new Date().toISOString().split("T")[0];
 
   mantanances.form_creat_mantenance.audit_year = new Date()
@@ -667,7 +693,7 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
 <template>
   <div class="pa-4">
     <GlobalTextTitleLine :title="title" />
-    <!-- <pre>{{ monthlyData }}</pre> -->
+    <!-- <pre>{{ userData }}</pre> -->
 
     <v-row class="mb-4">
       <v-col cols="12" md="4">
@@ -1004,7 +1030,7 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
             >
               <!-- <pre>{{ tmn }}</pre> -->
               <v-text-field
-              v-model="mantanances.form_creat_mantenance.quarter"
+                v-model="mantanances.form_creat_mantenance.quarter"
                 label="ປີທີ່ຈະກວດສອບ *"
                 variant="outlined"
                 density="compact"
@@ -1020,7 +1046,7 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
             >
               <!-- <pre>{{ tmn }}</pre> -->
               <v-autocomplete
-              v-model="mantanances.form_creat_mantenance.quarter"
+                v-model="mantanances.form_creat_mantenance.quarter"
                 :items="taimasData"
                 item-title="MC_name_la"
                 item-value="MC_code"
@@ -1039,7 +1065,7 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
             >
               <!-- <pre>{{ tmn }}</pre> -->
               <v-autocomplete
-              v-model="mantanances.form_creat_mantenance.quarter"
+                v-model="mantanances.form_creat_mantenance.quarter"
                 :items="monthlyData"
                 item-title="MC_name_la"
                 item-value="MC_code"
@@ -1062,12 +1088,13 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
             <v-col cols="6" md="2">
               <v-autocomplete
                 v-model="mantanances.form_creat_mantenance.auditor_name"
-                :items="employees"
-                item-title="employee_name_la"
-                item-value="employee_id"
+                :items="userData"
+                item-title="user_name"
+                item-value="user_id"
                 label="ຊື່ຜູ້ກວດສອບ *"
                 variant="outlined"
                 density="compact"
+                readonly
                 :rules="[rules.required]"
               ></v-autocomplete>
             </v-col>
@@ -1110,12 +1137,15 @@ const title = "ບຳລູງຮັກສາຊັບສຶນ";
               ></v-select>
             </v-col>
             <v-col cols="6" md="3">
-              <v-text-field
+              <v-autocomplete
+                :items="locationData"
+                item-title="location_name_la"
+                item-value="location_id"
                 v-model="mantanances.form_creat_mantenance.actual_location"
                 label="ສະຖານທີ່ຕົວຈິງ"
                 variant="outlined"
                 density="compact"
-              ></v-text-field>
+              ></v-autocomplete>
             </v-col>
             <v-col cols="6" md="3">
               <v-select
