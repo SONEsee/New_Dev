@@ -1610,6 +1610,7 @@ const refreshAutoSelection = async () => {
   }
 }
 
+// UPDATED submitJournal function - Replace your existing one
 const submitJournal = async () => { 
   if (!isFormValid.value) {
     Swal.fire({
@@ -1625,6 +1626,7 @@ const submitJournal = async () => {
     loading.submit = true
     const selectedCurrency = currencies.value.find(c => c.ccy_code === journalData.Ccy_cd)
     const altCcyCode = selectedCurrency?.ALT_Ccy_Code || ''
+    
     const batchPayload = {
       Reference_No: journalData.Reference_No,
       Ccy_cd: journalData.Ccy_cd,
@@ -1646,23 +1648,21 @@ const submitJournal = async () => {
                         accounts.value.find(a => a.glsub_id === accountId)
         return account ? account.glsub_code : ''
       }
+      
       const amount = parseFloat(entry.Fcy_Amount) || 0
       if (amount <= 0) return
 
       const buildAccountNo = (accountId) => {
         let code = getAccountCode(accountId)
-        if (altCcyCode) {
-          code = `${altCcyCode}.${code}`
-        }
+        if (altCcyCode) code = `${altCcyCode}.${code}`
         return code
       }
+      
       const buildRelativeAccountNo = (accountId) => {
         let code = getAccountCode(accountId)
-        if (altCcyCode) {
-          code = `${altCcyCode}.${code}`
-        }
-          return code
-        }
+        if (altCcyCode) code = `${altCcyCode}.${code}`
+        return code
+      }
 
       if (entry.DebitAccount) {
         batchPayload.entries.push({
@@ -1697,12 +1697,8 @@ const submitJournal = async () => {
       return
     }
 
-    const totalDebit = batchPayload.entries
-      .filter(e => e.Dr_cr === 'D')
-      .reduce((sum, e) => sum + e.Amount, 0)
-    const totalCredit = batchPayload.entries
-      .filter(e => e.Dr_cr === 'C')
-      .reduce((sum, e) => sum + e.Amount, 0)
+    const totalDebit = batchPayload.entries.filter(e => e.Dr_cr === 'D').reduce((sum, e) => sum + e.Amount, 0)
+    const totalCredit = batchPayload.entries.filter(e => e.Dr_cr === 'C').reduce((sum, e) => sum + e.Amount, 0)
 
     if (Math.abs(totalDebit - totalCredit) > 0.01) {
       Swal.fire({
@@ -1721,32 +1717,21 @@ const submitJournal = async () => {
       return
     }
 
-    const response = await axios.post('/api/journal-entries/batch_create/', batchPayload, getAuthHeaders())
+const response = await axios.post('/api/journal-entries/batch_create/', batchPayload, getAuthHeaders())
 
+    // Enhanced success dialog with print options
     const result = await Swal.fire({
       icon: 'success',
-      title: 'ສຳເລັດ!',
+      title: 'ບັນທຶກສຳເລັດ!',
       html: `
-        <div style="
-          text-align: left; 
-          font-family: 'Roboto', sans-serif;
-          color: #424242;
-          line-height: 1.5;
-          margin: 8px 0;
-        ">
-          <div style="
-            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-            border-radius: 8px;
-            padding: 16px;
-            border-left: 4px solid #4CAF50;
-            margin-bottom: 12px;
-          ">
+        <div style="text-align: left; font-family: 'Roboto', sans-serif; color: #424242; line-height: 1.5; margin: 8px 0;">
+          <div style="background: linear-gradient(135deg, #e8f5e9 0%, #ffffff 100%); border-radius: 8px; padding: 16px; border-left: 4px solid #4CAF50; margin-bottom: 16px;">
             <p style="margin: 6px 0; font-size: 14px;">
               <span style="color: #666; font-weight: 500;">ເລກອ້າງອີງ:</span> 
               <span style="color: #1976d2; font-weight: 600;">${response.data.reference_no || journalData.Reference_No}</span>
             </p>
             <p style="margin: 6px 0; font-size: 14px;">
-              <span style="color: #666; font-weight: 500;">ຈຳນວນລາຍການທີ່ສ້າງ:</span> 
+              <span style="color: #666; font-weight: 500;">ຈຳນວນລາຍການ:</span> 
               <span style="color: #2e7d32; font-weight: 600;">${response.data.entries?.length || batchPayload.entries.length}</span>
             </p>
             <p style="margin: 6px 0; font-size: 14px;">
@@ -1755,12 +1740,7 @@ const submitJournal = async () => {
             </p>
           </div>
           
-          <div style="
-            background: linear-gradient(135deg, #fff3e0 0%, #ffffff 100%);
-            border-radius: 8px;
-            padding: 16px;
-            border-left: 4px solid #FF9800;
-          ">
+          <div style="background: linear-gradient(135deg, #fff3e0 0%, #ffffff 100%); border-radius: 8px; padding: 16px; border-left: 4px solid #FF9800;">
             <p style="margin: 6px 0; font-size: 14px;">
               <span style="color: #666; font-weight: 500;">ເດບິດລວມ:</span> 
               <span style="color: #f57c00; font-weight: 600;">${formatNumber(totalDebit)} ${journalData.Ccy_cd}</span>
@@ -1769,31 +1749,38 @@ const submitJournal = async () => {
               <span style="color: #666; font-weight: 500;">ເຄຣດິດລວມ:</span> 
               <span style="color: #f57c00; font-weight: 600;">${formatNumber(totalCredit)} ${journalData.Ccy_cd}</span>
             </p>
-            <p style="margin: 6px 0; font-size: 14px;">
-              <span style="color: #666; font-weight: 500;">ລາຍການທີ່ມີລາຍລະອຽດ:</span> 
-              <span style="color: #1976d2; font-weight: 600;">${entriesWithDescription.value}/${journalEntries.value.length}</span>
-            </p>
           </div>
         </div>
       `,
-      confirmButtonText: `<i class="mdi mdi-eye" style="margin-right: 6px;"></i>ເບິ່ງລາຍການ`,
-      confirmButtonColor: '#E8F5E8',
-      width: '520px',
+      showDenyButton: true,
+      showCancelButton: true,
+      confirmButtonText: '<i class="mdi mdi-printer" style="margin-right: 6px;"></i>ພິມ / Print',
+      denyButtonText: '<i class="mdi mdi-eye" style="margin-right: 6px;"></i>ເບິ່ງລາຍການ',
+      cancelButtonText: '<i class="mdi mdi-close" style="margin-right: 6px;"></i>ປິດ',
+      confirmButtonColor: '#1976d2',
+      denyButtonColor: '#7b1fa2',
+      cancelButtonColor: '#616161',
+      width: '560px',
       padding: '20px',  
-      timer: 10000,
+      timer: 15000,
       timerProgressBar: true,
       allowOutsideClick: false,
       allowEscapeKey: true,
-      backdrop: 'rgba(0,0,0,0.4)'
+      backdrop: 'rgba(0,0,0,0.4)',
+      customClass: {
+        confirmButton: 'btn-print',
+        denyButton: 'btn-view',
+        cancelButton: 'btn-close'
+      }
     })
 
-    // Handle different button clicks
+    // Handle button actions
     if (result.isConfirmed) {
-      // Navigate to view journals or journal list
+      // Print button clicked
+      await printJournal(response.data.reference_no || journalData.Reference_No)
+    } else if (result.isDenied) {
+      // View list button clicked
       await navigateToJournalList()
-    } else {
-      // Timer expired or other dismissal - go back to capture
-      await navigateToCapture()
     }
 
     // Generate new reference if in auto mode
@@ -1804,33 +1791,24 @@ const submitJournal = async () => {
     }
 
     resetForm()
+    
   } catch (error) {
     console.error('Error submitting journal:', error)
     let errorMessage = 'ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກ'
     let errorDetails = ''
+    
     if (error.response?.data) {
       const errorData = error.response.data
       if (errorData.entries) {
         errorMessage = 'ຂໍ້ຜິດພາດໃນລາຍການບັນທຶກ'
-        errorDetails = Array.isArray(errorData.entries)
-          ? errorData.entries.join(', ')
-          : JSON.stringify(errorData.entries)
+        errorDetails = Array.isArray(errorData.entries) ? errorData.entries.join(', ') : JSON.stringify(errorData.entries)
       } else if (errorData.error) {
         errorMessage = errorData.error
       } else if (errorData.detail) {
         errorMessage = errorData.detail
-      } else if (typeof errorData === 'object') {
-        const fieldErrors = []
-        Object.keys(errorData).forEach(field => {
-          if (Array.isArray(errorData[field])) {
-            fieldErrors.push(`${field}: ${errorData[field].join(', ')}`)
-          }
-        })
-        if (fieldErrors.length > 0) {
-          errorDetails = fieldErrors.join('\n')
-        }
       }
     }
+    
     Swal.fire({
       icon: 'error',
       title: 'ຂໍ້ຜິດພາດ',
@@ -2008,6 +1986,411 @@ watch(isAvailable, (newValue, oldValue) => {
     }
   }
 })
+
+
+// Format date helper
+const formatDate = (dateString) => {
+  if (!dateString) return '-'
+  const date = new Date(dateString)
+  return date.toLocaleDateString('lo-LA')
+}
+
+// Get module name helper
+const getModuleName = (moduleId) => {
+  const module = modules.value.find(m => m.module_Id === moduleId)
+  return module?.module_name_la || module?.module_name || '-'
+}
+
+// Get status text helper
+const getStatusText = (status) => {
+  const statusMap = {
+    'A': 'ອະນຸມັດແລ້ວ',
+    'U': 'ລໍຖ້າອະນຸມັດ',
+    'R': 'ປະຕິເສດ',
+    'P': 'ລໍຖ້າດຳເນີນການ'
+  }
+  return statusMap[status] || status
+}
+
+// Print Journal Function - Add this to your component
+const printJournal = async (referenceNo, journalMasterData = null, journalDetailsData = null) => {
+  try {
+    // If data not provided, fetch from API
+    let masterData = journalMasterData
+    let detailsData = journalDetailsData
+
+    if (!masterData || !detailsData) {
+      const [masterResponse, detailsResponse] = await Promise.all([
+        axios.get(`/api/journal-log-master/?Reference_No=${referenceNo}`, getAuthHeaders()),
+        axios.get(`/api/journal-entries/?Reference_No=${referenceNo}`, getAuthHeaders())
+      ])
+
+      masterData = masterResponse.data.results?.[0] || masterResponse.data?.[0] || {}
+      detailsData = detailsResponse.data || []
+    }
+
+    if (!masterData || !masterData.Reference_No) {
+      throw new Error('Journal data not found')
+    }
+
+    // Calculate totals
+    const totalFcyDebit = detailsData.reduce((sum, d) => sum + (parseFloat(d.fcy_dr) || 0), 0)
+    const totalFcyCredit = detailsData.reduce((sum, d) => sum + (parseFloat(d.fcy_cr) || 0), 0)
+    const isBalanced = Math.abs(totalFcyDebit - totalFcyCredit) < 0.01
+
+    // Helper functions
+    const getMakerDisplay = () => {
+      return masterData.maker_name || masterData.Maker_Id || '-'
+    }
+
+    const getModuleDisplay = () => {
+      const moduleName = getModuleName(masterData.module_id)
+      return moduleName !== '-' ? moduleName : masterData.module_id || '-'
+    }
+
+    // Generate table rows
+    const tableRows = detailsData
+      .map((detail, index) => {
+        const debitAmount = detail.Dr_cr === 'D' ? formatNumber(detail.Fcy_Amount) : ''
+        const creditAmount = detail.Dr_cr === 'C' ? formatNumber(detail.Fcy_Amount) : ''
+        
+        return `<tr>
+          <td class="text-center">${index + 1}</td>
+          <td class="text-left">${detail.Reference_sub_No || '-'}</td>
+          <td class="text-left">${detail.Addl_sub_text || detail.Addl_text || '-'}</td>
+          <td class="text-left">
+            <div style="font-weight: 600;">${detail.Account_no || '-'}</div>
+            <div style="font-size: 0.75rem; color: #666;">${detail.account_name || ''}</div>
+          </td>
+          <td class="text-right">${debitAmount}</td>
+          <td class="text-right">${creditAmount}</td>
+          <td class="text-center">
+            <span class="status-${detail.Auth_Status}">${getStatusText(detail.Auth_Status)}</span>
+          </td>
+        </tr>`
+      })
+      .join('')
+
+    // Generate print content
+    const printContent = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>ບົດລາຍງານບັນທຶກບັນຊີ - ${masterData.Reference_No}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@300;400;600;700&display=swap');
+    
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body { 
+      font-family: "Noto Sans Lao", "Phetsarath OT", sans-serif; 
+      padding: 20px; 
+      line-height: 1.6;
+      color: #333;
+    }
+    
+    .header { 
+      text-align: center; 
+      margin-bottom: 25px; 
+      border-bottom: 3px solid #000; 
+      padding-bottom: 15px; 
+    }
+    
+    .header h1 { 
+      margin: 0 0 8px 0; 
+      font-size: 1.8rem; 
+      font-weight: 700; 
+      color: #1a1a1a;
+    }
+    
+    .header h2 { 
+      margin: 5px 0; 
+      font-size: 1.3rem; 
+      font-weight: 600;
+      color: #333;
+    }
+    
+    .header p { 
+      margin: 3px 0; 
+      font-size: 0.95rem; 
+      font-style: italic; 
+      color: #666;
+    }
+    
+    .info-section { 
+      margin-bottom: 20px; 
+      padding: 16px; 
+      background: linear-gradient(135deg, #f9f9f9 0%, #ffffff 100%); 
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+    }
+    
+    .info-row { 
+      display: flex; 
+      justify-content: space-between; 
+      padding: 6px 0; 
+      font-size: 0.95rem; 
+      border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .info-row:last-child {
+      border-bottom: none;
+    }
+    
+    .info-label { 
+      font-weight: 600; 
+      min-width: 180px; 
+      color: #555;
+    }
+    
+    .info-value { 
+      flex: 1; 
+      color: #1976d2;
+      font-weight: 500;
+    }
+    
+    table { 
+      width: 100%; 
+      border-collapse: collapse; 
+      margin-top: 15px; 
+      font-size: 0.9rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    th, td { 
+      border: 1px solid #ddd; 
+      padding: 10px 8px; 
+    }
+    
+    th { 
+      background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); 
+      font-weight: 600; 
+      text-align: center; 
+      color: #1565c0;
+    }
+    
+    .text-right { text-align: right; }
+    .text-center { text-align: center; }
+    .text-left { text-align: left; }
+    
+    .totals-row { 
+      font-weight: 700; 
+      background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); 
+      border-top: 3px solid #f57c00;
+    }
+    
+    .balance-row { 
+      font-weight: 700; 
+      background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+    }
+    
+    .status-A { color: #2e7d32; font-weight: 600; }
+    .status-U { color: #f57c00; font-weight: 600; }
+    .status-R { color: #d32f2f; font-weight: 600; }
+    .status-P { color: #1976d2; font-weight: 600; }
+    
+    .summary-box { 
+      margin-top: 25px; 
+      width: 50%; 
+      margin-left: auto; 
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    
+    .summary-row { 
+      display: flex; 
+      border-bottom: 1px solid #e0e0e0; 
+    }
+    
+    .summary-row:last-child { 
+      border-bottom: none; 
+    }
+    
+    .summary-label { 
+      font-weight: 600; 
+      width: 50%; 
+      background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%); 
+      padding: 10px 12px;
+      color: #555;
+    }
+    
+    .summary-value { 
+      width: 50%; 
+      text-align: right; 
+      padding: 10px 12px; 
+      font-family: "Courier New", monospace;
+      font-weight: 600;
+      background: white;
+      color: #1976d2;
+    }
+    
+    .signatures { 
+      margin-top: 70px; 
+      display: flex; 
+      justify-content: space-between; 
+      padding: 0 50px; 
+    }
+    
+    .signature-box { 
+      text-align: center; 
+      width: 40%; 
+    }
+    
+    .signature-title { 
+      font-size: 1.05rem; 
+      font-weight: 600; 
+      margin-bottom: 70px;
+      color: #333;
+    }
+    
+    .signature-line { 
+      border-bottom: 2px solid #333; 
+      margin: 0 20px 12px 20px; 
+    }
+    
+    .footer { 
+      margin-top: 40px; 
+      text-align: center; 
+      font-size: 0.9rem; 
+      color: #666; 
+      border-top: 2px solid #e0e0e0; 
+      padding-top: 15px; 
+    }
+    
+    @media print {
+      body { 
+        padding: 10px; 
+      }
+      @page { 
+        size: A4; 
+        margin: 15mm; 
+      }
+      .no-print {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>ບໍລິສັດລັດ ບໍລິຫານໜີ້ ແລະ ຊັບສິນ ຈຳກັດຜູ່ດຽວ</h1>
+    <h2>ບົດລາຍງານບັນທຶກບັນຊີ</h2>
+    <p>Journal Entry Report</p>
+  </div>
+  
+  <div class="info-section">
+    <div class="info-row">
+      <span><span class="info-label">ເລກອ້າງອີງ / Reference No:</span> <span class="info-value">${masterData.Reference_No}</span></span>
+      <span><span class="info-label">ວັນທີ່ພິມ / Print Date:</span> <span class="info-value">${new Date().toLocaleDateString('lo-LA')}</span></span>
+    </div>
+    <div class="info-row">
+      <span><span class="info-label">ໂມດູນ / Module:</span> <span class="info-value">${getModuleDisplay()} - ${masterData.Txn_code || ''}</span></span>
+      <span><span class="info-label">ວັນທີ່ / Date:</span> <span class="info-value">${formatDate(masterData.Value_date)}</span></span>
+    </div>
+    <div class="info-row">
+      <span><span class="info-label">ຜູ້ສ້າງ / Created By:</span> <span class="info-value">${getMakerDisplay()}</span></span>
+      <span><span class="info-label">ສະກຸນເງິນ / Currency:</span> <span class="info-value">${masterData.Ccy_cd || ''}</span></span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">ເນື້ອໃນ / Description:</span>
+      <span class="info-value">${masterData.Addl_text || '-'}</span>
+    </div>
+  </div>
+  
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 5%;">ລຳດັບ<br>No.</th>
+        <th style="width: 12%;">ເລກອ້າງອີງຄູ່<br>Ref. Sub No</th>
+        <th style="width: 25%;">ເນື້ອໃນ<br>Description</th>
+        <th style="width: 20%;">ບັນຊີ<br>Account</th>
+        <th style="width: 14%;">Debit (FCY)</th>
+        <th style="width: 14%;">Credit (FCY)</th>
+        <th style="width: 10%;">ສະຖານະ<br>Status</th>
+      </tr>
+    </thead>
+    <tbody>${tableRows}</tbody>
+    <tfoot>
+      <tr class="totals-row">
+        <td colspan="4" class="text-right"><strong>ລວມທັງໝົດ / Total:</strong></td>
+        <td class="text-right"><strong>${formatNumber(totalFcyDebit)}</strong></td>
+        <td class="text-right"><strong>${formatNumber(totalFcyCredit)}</strong></td>
+        <td class="text-center"></td>
+      </tr>
+      <tr class="balance-row">
+        <td colspan="4" class="text-right"><strong>ສະຖານະຍອດ / Balance Status:</strong></td>
+        <td colspan="3" class="text-center" style="color: ${isBalanced ? '#2e7d32' : '#d32f2f'};">
+          <strong>${isBalanced ? '✓ ສົມດຸນ / Balanced' : '✗ ບໍ່ສົມດຸນ / Unbalanced'}</strong>
+        </td>
+      </tr>
+    </tfoot>
+  </table>
+  
+  <div class="summary-box">
+    <div class="summary-row">
+      <div class="summary-label">FCY Amount:</div>
+      <div class="summary-value">${formatNumber(masterData.Fcy_Amount)} ${masterData.Ccy_cd}</div>
+    </div>
+    <div class="summary-row">
+      <div class="summary-label">LCY Amount:</div>
+      <div class="summary-value">${formatNumber(masterData.Lcy_Amount)} LAK</div>
+    </div>
+    <div class="summary-row">
+      <div class="summary-label">Exchange Rate:</div>
+      <div class="summary-value">${formatNumber(masterData.Exch_rate, 6)}</div>
+    </div>
+  </div>
+  
+  <div class="signatures">
+    <div class="signature-box">
+      <div class="signature-title">ຜູ້ກວດສອບ</div>
+      <div class="signature-line"></div>
+      <div>Reviewer</div>
+    </div>
+    <div class="signature-box">
+      <div class="signature-title">ນັກບັນທຶກ</div>
+      <div class="signature-line"></div>
+      <div>Accountant</div>
+    </div>
+  </div>
+  
+  <div class="footer">
+    <p>ລະບົບບັນຊີ ບໍລິສັດລັດ ບໍລິຫານໜີ້ ແລະ ຊັບສິນ ຈຳກັດຜູ່ດຽວ</p>
+    <p style="font-size: 0.85rem; color: #999; margin-top: 8px;">Printed on ${new Date().toLocaleString('lo-LA')}</p>
+  </div>
+  
+  <script>
+    window.onload = function() { 
+      window.print();
+    }
+  <\/script>
+</body>
+</html>`
+
+    // Open print window
+    const printWindow = window.open('', '_blank', 'width=900,height=800')
+    if (!printWindow) {
+      throw new Error('Could not open print window. Please allow popups.')
+    }
+
+    printWindow.document.write(printContent)
+    printWindow.document.close()
+
+    return true
+
+  } catch (error) {
+    console.error('Print error:', error)
+    Swal.fire({
+      icon: 'error',
+      title: 'ຜິດພາດ',
+      text: 'ມີຂໍ້ຜິດພາດໃນການພິມ: ' + (error.message || 'Unknown error'),
+      confirmButtonText: 'ຕົກລົງ'
+    })
+    return false
+  }
+}
+
 
 // Watch for bypass info changes
 watch(bypassInfo, (newValue) => {
