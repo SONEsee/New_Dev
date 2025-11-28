@@ -273,7 +273,7 @@ export const useGlStore = defineStore("gl", {
           icon: "success",
         });
         setTimeout(() => {
-          goPath("/gl/glsub/");
+         goBack();
         }, 1500);
 
         return res.data;
@@ -370,7 +370,7 @@ export const useGlStore = defineStore("gl", {
             icon: "success",
           });
           setTimeout(() => {
-            goPath("/gl");
+            goBack();
           }, 1500);
 
           this.resetCreateForm();

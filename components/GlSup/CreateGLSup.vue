@@ -154,9 +154,9 @@ const submitTransaction = async () => {
 };
 
 
-const goBack = () => {
-  router.push("/gl/glsub/");
-};
+// const goBack = () => {
+//   router.push("/gl/glsub/");
+// };
 
 
 const title = computed(() => {

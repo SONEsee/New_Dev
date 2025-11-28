@@ -2,15 +2,28 @@
 import dayjs from "dayjs";
 const mainStore = useFassetLidtDescription();
 const assetStores = faAssetStore();
-
+const proppertyStore = propertyStore();
 const eodStore = useDateStore();
 const selectedItems = ref<any>([]);
 const journalStore = usejournalStore();
 
 const selectedAssetType = ref(null);
+const selectedMainType = ref(null)
 const selectedJournalStatus = ref(null);
 
 const mainTypeStore = assetStore();
+
+const dataMainType = computed(()=>{
+  const data = proppertyStore.respons_data_property_category;
+    
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (data && typeof data === "object") {
+    return [data];
+  }
+  return [];
+})
 const mainType = computed(() => {
   const data = mainTypeStore.response_asset_types;
   if (Array.isArray(data)) {
@@ -301,6 +314,11 @@ const filteredMappedData = computed(() => {
       (item) => item.asset_type_id === selectedAssetType.value
     );
   }
+  if (selectedMainType.value) {
+    filtered = filtered.filter(
+      (item) => item.matched_asset.asset_id_detail.asset_type_detail.type_code === selectedMainType.value
+    );
+  }
 
   if (selectedJournalStatus.value) {
     filtered = filtered.filter(
@@ -347,8 +365,7 @@ const processBulkItems = async () => {
 
   mainStore.total_caculate.target_date = targetDate;
 
-  console.log("Bulk process data:", mainStore.total_caculate);
-  console.log("Using EOD start_date:", targetDate);
+ 
 
   await mainStore.postArreat();
 
@@ -374,7 +391,7 @@ const title = "ຫັກຄ່າຫຼູຍຫ້ຽນຍອ້ນຫຼັ�
 onMounted(() => {
   mainTypeStore.GetAssetTypes();
   assetStores.GetFaAssetList();
-
+proppertyStore.GetPropertyCategoryById();
   mainStore.getArrears();
   eodStore.GetEOD();
   journalStore.getData();
@@ -383,8 +400,42 @@ onMounted(() => {
 
 <template>
   <v-row>
+     <v-col cols="12" md="3">
+    <!-- <pre>{{ dataMainType }}</pre>  -->
+       
+      <v-autocomplete
+        v-model="selectedMainType"
+        :items="dataMainType"
+        item-title="type_name_la"
+        item-value="type_code"
+        label="ເລືອກປະເພດຊັບສິນໄຫຍ່"
+        variant="outlined"
+        density="compact"
+        clearable
+        prepend-inner-icon="mdi-format-list-bulleted-type"
+      >
+        <template v-slot:item="{ props, item }">
+          <v-list-item
+            v-bind="props"
+            :title="`${item.raw.type_name_la}-${item.raw.type_code}`"
+          >
+            <template v-slot:prepend>
+              <v-avatar size="small" flat color="primary">
+                <v-icon
+                  icon="mdi-format-list-bulleted-type"
+                  size="small"
+                  color="white"
+                />
+              </v-avatar>
+            </template>
+          </v-list-item>
+        </template>
+      </v-autocomplete>
+    </v-col>
+    <!-- <pre>{{ dataMainType }}</pre> -->
     <v-col cols="12" md="3">
-     
+     <!-- {{ dataMainType }} -->
+       
       <v-autocomplete
         v-model="selectedAssetType"
         :items="mainType"
@@ -604,7 +655,7 @@ onMounted(() => {
     </span>
     <span v-else style="color: #f44336">ບໍ່ມີຂໍ້ມູນ EOD</span>
   </div>
-
+<!-- <pre>{{ filteredMappedData }}</pre> -->
   <v-data-table
     class="text-no-wrap"
     v-model="selectedItems"

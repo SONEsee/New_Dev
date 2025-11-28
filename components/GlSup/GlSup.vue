@@ -67,19 +67,19 @@ const updateAdproveStatus = async (id: string) => {
           showConfirmButton: false,
         });
 
-        // *** ແກ້ໄຂຫຼັກ: ຕ້ອງ refresh ຂໍ້ມູນທັງ main data ແລະ sub data ***
+       
         
-        // 1. Refresh main GL data
+      
         await glStore.getGlsup();
         
-        // 2. ຫາ parent GL code ຂອງ item ທີ່ຖືກອະນຸມັດ
+    
         const approvedItem = flatTableData.value.find(item => 
           item.type === 'sub' && 
           (item.rawData.glsub_id === id || item.rawData.id === id)
         );
         
         if (approvedItem && approvedItem.parent_gl_code) {
-          // 3. Reload sub data ສໍາລັບ parent GL
+       
           const parentGL = rawData.value.find(gl => gl.gl_code === approvedItem.parent_gl_code);
           if (parentGL) {
             console.log('Reloading sub data for GL:', approvedItem.parent_gl_code);
@@ -289,22 +289,7 @@ const flatTableData = computed(() => {
   return result;
 });
 const deleteSubItem = async (subItem: any, glCode: string) => {
-  // const result = await Swal.fire({
-  //   title: 'ຢືນຢັນການລຶບ',
-  //   html: `
-  //     <div>ທ່ານຕ້ອງການລຶບຂໍ້ມູນນີ້ບໍ?</div>
-  //     <div class="mt-2">
-  //       <strong>ລະຫັດ:</strong> ${subItem.glsub_code || subItem.code}<br>
-  //       <strong>ຊື່:</strong> ${subItem.glsub_Desc_la || subItem.name_la}
-  //     </div>
-  //   `,
-  //   icon: 'warning',
-  //   showCancelButton: true,
-  //   confirmButtonColor: '#d33',
-  //   cancelButtonColor: '#3085d6',
-  //   confirmButtonText: 'ລຶບ',
-  //   cancelButtonText: 'ຍົກເລີກ'
-  // });
+
 
   try {
     await glStore.deleteGlsub(subItem.glsub_id || subItem.id);
@@ -312,12 +297,7 @@ const deleteSubItem = async (subItem: any, glCode: string) => {
       return;
     }
 
-    // Swal.fire({
-    //   title: 'ລຶບສຳເລັດ!',
-    //   text: `${subItem.glsub_code || subItem.code} ຖືກລຶບແລ້ວ`,
-    //   icon: 'success',
-    //   timer: 2000
-    // });
+    
 
     const parentGL = rawData.value.find((gl) => gl.gl_code === glCode);
     if (parentGL) {

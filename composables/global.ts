@@ -23,7 +23,11 @@ export const goPath = (path: string | null) => {
     window.location.href = path;
   }
 };
-
+export const goBack = () => {
+  if (process.client) {
+    window.history.back();
+  }
+};
 export const DefaultSwalError = (err: any) => {
   const errors = err as AxiosError;
   const response_data = errors?.response

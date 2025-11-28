@@ -354,7 +354,7 @@ const title = computed(() => {
           color="error"
           class="d-flex justify-center"
           text="ຍົກເລີກ"
-          @click="goPath('/glmaster')"
+          @click="goBack()"
         />
       </v-col>
     </v-form>
