@@ -550,9 +550,7 @@ proppertyStore.GetPropertyCategoryById();
 
   <div v-if="selectedItems.length > 0" class="mb-2">
     <GlobalTextTitleLine :title="title" />
-    <!-- <small style="color: #666">
-      Selected mapping_ids: {{ selectedItems }}
-    </small> -->
+  
     <br />
     <small style="color: #2196f3">
       📅 ວັນທີ່ກຳນົດສຳລັບການຫັກ:

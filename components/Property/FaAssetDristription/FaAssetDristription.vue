@@ -139,38 +139,7 @@ const handleNotificationClick = () => {
 <template>
   <v-container fluid class="modern-container">
     <div class="">
-      <!-- <v-row align="center" class="mb-4">
-        <v-col>
-          <h1 class="main-title">
-            <v-icon class="mr-3" color="primary" size="large"
-              >mdi-calculator</v-icon
-            >
-            ລະບົບຫັກຄ່າຫຼູ້ຍຫຽ້ນ
-          </h1>
-          <p class="subtitle">ຈັດການແລະຕິດຕາມການຫັກຄ່າຫຼູ້ຍຫຽ້ນຂອງຊັບສົມບັດ</p>
-        </v-col>
-        <v-col cols="auto">
-          <div class="notification-wrapper">
-            <v-btn
-              @click="handleNotificationClick"
-              icon
-              variant="elevated"
-              class="notification-btn"
-              color="warning"
-            >
-              <v-icon>mdi-bell</v-icon>
-              <v-badge
-                v-if="notificationCount > 0"
-                :content="
-                  notificationCount > 99 ? '99+' : notificationCount.toString()
-                "
-                color="error"
-                floating
-              />
-            </v-btn>
-          </div>
-        </v-col>
-      </v-row> -->
+  
     </div>
 
     
@@ -221,69 +190,7 @@ const handleNotificationClick = () => {
           
           <v-tabs-window-item value="one" class="pa-0">
             <div class="monthly-section">
-              <!-- Summary Cards -->
-              <!-- <v-row class="summary-cards mb-6">
-                <v-col cols="12" md="3">
-                  <v-card class="summary-card blue-card" elevation="0">
-                    <v-card-text class="pa-6">
-                      <div class="summary-icon">
-                        <v-icon size="40" color="white"
-                          >mdi-calendar-clock</v-icon
-                        >
-                      </div>
-                      <h3 class="summary-title">ງວດທີ່ຫັກ</h3>
-                      <div class="summary-value">
-                        {{ dataDate[0]?.month }}/{{ dataDate[0]?.year }}
-                      </div>
-                      <p class="summary-subtitle">
-                        {{ responseData.data.target_period.month_name_la }}
-                      </p>
-                    </v-card-text>
-                  </v-card>
-                </v-col>
-
-                <v-col cols="12" md="3">
-                  <v-card class="summary-card green-card" elevation="0">
-                    <v-card-text class="pa-6">
-                      <div class="summary-icon">
-                        <v-icon size="40" color="white"
-                          >mdi-format-list-numbered</v-icon
-                        >
-                      </div>
-                      <h3 class="summary-title">ລາຍການທັງໝົດ</h3>
-                      <div class="summary-value">
-                        {{
-                          formatNumber(
-                            dataShow[0]?.total_items_need_depreciation || 0
-                          )
-                        }}
-                      </div>
-                      <p class="summary-subtitle">ລາຍການ</p>
-                    </v-card-text>
-                  </v-card>
-                </v-col>
-
-                <v-col cols="12" md="6">
-                  <v-card class="summary-card orange-card" elevation="0">
-                    <v-card-text class="pa-6">
-                      <div class="summary-icon">
-                        <v-icon size="40" color="white"
-                          >mdi-cash-multiple</v-icon
-                        >
-                      </div>
-                      <h3 class="summary-title">ມູນຄ່າທີ່ຕ້ອງຫັກ</h3>
-                      <div class="summary-value-large">
-                        {{
-                          formatCurrency(
-                            dataShow[0]?.total_depreciation_amount || 0
-                          )
-                        }}
-                      </div>
-                      <p class="summary-subtitle">ມູນຄ່າລວມທັງໝົດ</p>
-                    </v-card-text>
-                  </v-card>
-                </v-col>
-              </v-row> -->
+              
               <v-card class="modern-card table-card" elevation="0">
                 <v-card-title class="table-title">
                   <v-icon class="mr-2">mdi-table</v-icon>
@@ -351,113 +258,120 @@ const handleNotificationClick = () => {
       </v-card>
 
 
-      <v-card class="modern-card history-card" elevation="0">
-        <v-card-title class="history-title">
-          <div class="d-flex align-center">
-            <v-icon class="mr-3" color="primary">mdi-history</v-icon>
-            <div>
-              <h3>ປະຫວັດການຫັກຄ່າຫຼູ້ຍຫຽ້ນ</h3>
-              <p class="history-subtitle">ຕິດຕາມການດຳເນີນງານທັງໝົດ</p>
-            </div>
-          </div>
-          <v-spacer />
-          <v-chip
-            color="primary"
-            variant="elevated"
-            prepend-icon="mdi-database"
-          >
-            ທັງໝົດ: {{ history?.length }} ລາຍການ
-          </v-chip>
-        </v-card-title>
+      <v-card class="history-card" elevation="0" outlined>
+  <v-card-title class="history-title pa-6">
+    <div class="d-flex align-center flex-wrap ga-4 w-100">
+      <div class="d-flex align-center flex-grow-1">
+        <div class="icon-wrapper mr-4">
+          <v-icon size="28" color="primary">mdi-history</v-icon>
+        </div>
+        <div>
+          <h3 style="color: black;">ປະຫວັດການຫັກຄ່າຫຼູ້ຍຫ້ຽນ</h3>
+          <p class="history-subtitle mb-0">
+            ຕິດຕາມການດຳເນີນງານທັງໝົດ
+          </p>
+        </div>
+      </div>
+      
+      <div class="total-badge">
+        <v-icon size="18" class="mr-2" color="primary">mdi-database</v-icon>
+        <span class="text-body-2">ທັງໝົດ: <strong>{{ history?.length || 0 }}</strong> ລາຍການ</span>
+      </div>
+    </div>
+  </v-card-title>
 
-        <v-divider />
+  <v-divider />
 
-        <v-data-table
-          :items="history"
-          :headers="header"
-          class="modern-table history-table"
-          :items-per-page="15"
-          
+  <v-data-table
+    :items="history"
+    :headers="header"
+    class="clean-table"
+    :items-per-page="15"
+    hover
+  >
+    <template v-slot:header="{ columns }">
+      <tr class="table-header">
+        <th
+          v-for="column in columns"
+          :key="column.key"
+          class="clean-th text-body-2"
         >
-          <template v-slot:header="{ props }">
-            <tr class="table-header">
-              <th
-                v-for="header in props.headers"
-                :key="header.key"
-                class="modern-th"
-              >
-                <div class="header-content">
-                  <span class="header-text">{{ header.title }}</span>
-                </div>
-              </th>
-            </tr>
-          </template>
+          {{ column.title }}
+        </th>
+      </tr>
+    </template>
 
-          <template v-slot:item.aldim_id="{ item }">
-            <v-chip size="small" color="primary" variant="tonal">
-              #{{ item.aldim_id }}
-            </v-chip>
-          </template>
+    <template v-slot:item.aldim_id="{ item }">
+      <div class="id-badge">
+        #{{ item.aldim_id }}
+      </div>
+    </template>
 
-          <template v-slot:item.dpca_month="{ item }">
-            <v-chip size="small" color="info" variant="outlined">
-              {{ item.dpca_month }}
-            </v-chip>
-          </template>
+    <template v-slot:item.dpca_month="{ item }">
+      <div class="month-badge">
+        <v-icon size="16" class="mr-1">mdi-calendar-month</v-icon>
+        {{ item.dpca_month }}
+      </div>
+    </template>
 
-          <template v-slot:item.Maker_DT_Stamp="{ item }">
-            <div class="date-cell">
-              <v-icon size="small" class="mr-1">mdi-calendar</v-icon>
-              {{ dayjs(item.Maker_DT_Stamp).format("DD/MM/YYYY") }}
-            </div>
-          </template>
+    <template v-slot:item.Maker_DT_Stamp="{ item }">
+      <div class="date-cell">
+        <v-icon size="16" class="mr-1">mdi-calendar-clock</v-icon>
+        {{ dayjs(item.Maker_DT_Stamp).format("DD/MM/YYYY HH:mm") }}
+      </div>
+    </template>
 
-          <template v-slot:item.C_dpca="{ item }">
-            <div class="text-center">
-              <v-chip color="purple" variant="tonal" size="small">
-                {{ item.C_dpca }}
-              </v-chip>
-            </div>
-          </template>
+    <template v-slot:item.C_dpca="{ item }">
+      <div class="count-badge">
+        {{ item.C_dpca }}
+      </div>
+    </template>
 
-          <template v-slot:item.dpca_status="{ item }">
-            <v-chip
-              :color="item.dpca_status === 'SUCCESS' ? 'success' : 'error'"
-              variant="elevated"
-              size="small"
-              :prepend-icon="
-                item.dpca_status === 'SUCCESS'
-                  ? 'mdi-check-circle'
-                  : 'mdi-alert-circle'
-              "
-            >
-              {{ item.dpca_status === "SUCCESS" ? "ສຳເລັດ" : "ບໍ່ສຳເລັດ" }}
-            </v-chip>
-          </template>
+    <template v-slot:item.dpca_status="{ item }">
+      <div 
+        class="status-badge"
+        :class="item.dpca_status === 'SUCCESS' ? 'status-success' : 'status-error'"
+      >
+        <v-icon size="16" class="mr-1">
+          {{ item.dpca_status === 'SUCCESS' ? 'mdi-check-circle' : 'mdi-alert-circle' }}
+        </v-icon>
+        {{ item.dpca_status === "SUCCESS" ? "ສຳເລັດ" : "ບໍ່ສຳເລັດ" }}
+      </div>
+    </template>
 
-          <template v-slot:item.dpca_value="{ item }">
-            <div class="amount-cell">
-              <strong>{{ formatCurrency(Number(item.dpca_value)) }}</strong>
-            </div>
-          </template>
+    <template v-slot:item.dpca_value="{ item }">
+      <div class="amount-cell">
+        {{ formatCurrency(Number(item.dpca_value)) }}
+      </div>
+    </template>
 
-          <template v-slot:item.actions="{ item }">
-            <v-btn
-              variant="outlined"
-              color="primary"
-              size="small"
-              prepend-icon="mdi-eye-outline"
-              @click="
-                goPath(
-                  `/property/faassetdetription/list?deptription_id=${item.aldim_id}`
-                )
-              "
-            >
-              ລາຍລະອຽດ
-            </v-btn>
-          </template>
-        </v-data-table>
-      </v-card>
+    <template v-slot:item.actions="{ item }">
+      <v-btn
+        variant="text"
+        color="primary"
+        size="small"
+        class="text-none action-btn"
+        @click="
+          goPath(
+            `/property/faassetdetription/list?deptription_id=${item.aldim_id}`
+          )
+        "
+      >
+        <v-icon size="18" class="mr-1">mdi-eye</v-icon>
+        ລາຍລະອຽດ
+      </v-btn>
+    </template>
+
+    <template v-slot:no-data>
+      <div class="text-center py-12">
+        <v-icon size="48" color="grey-lighten-1" class="mb-3">
+          mdi-inbox
+        </v-icon>
+        <p class="text-body-1 text-grey">ບໍ່ມີຂໍ້ມູນ</p>
+      </div>
+    </template>
+  </v-data-table>
+</v-card>
     </div>
   </v-container>
 </template>
@@ -792,5 +706,169 @@ const handleNotificationClick = () => {
   .header-section {
     border-radius: 12px;
   }
+}
+
+/* Card Styling */
+.history-card {
+  border: 1px solid #e0e0e0 !important;
+  border-radius: 8px !important;
+  background: #ffffff !important;
+}
+
+.history-title {
+  background: #fafafa;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.history-subtitle {
+  font-size: 0.875rem;
+  color: #5f6368;
+  font-weight: 400;
+}
+
+/* Icon Wrapper */
+.icon-wrapper {
+  width: 40px;
+  height: 40px;
+  background: #e8f0fe;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Total Badge */
+.total-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 16px;
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 16px;
+  color: #3c4043;
+}
+
+/* Table Styling */
+.clean-table {
+  background: transparent !important;
+}
+
+.table-header {
+  background: #fafafa !important;
+  border-bottom: 1px solid #e0e0e0 !important;
+}
+
+.clean-th {
+  color: #5f6368 !important;
+  font-weight: 500 !important;
+  text-transform: none !important;
+  letter-spacing: 0.25px !important;
+  padding: 12px 16px !important;
+}
+
+.clean-table :deep(.v-data-table__td) {
+  padding: 12px 16px !important;
+  border-bottom: 1px solid #f0f0f0 !important;
+  color: #3c4043;
+}
+
+.clean-table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+.clean-table tbody tr:hover {
+  background-color: #f8f9fa !important;
+}
+
+/* Badge Styles */
+.id-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  background: #e8f0fe;
+  border: 1px solid #d2e3fc;
+  border-radius: 12px;
+  color: #1967d2;
+  font-size: 0.813rem;
+  font-weight: 500;
+}
+
+.month-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  background: #e6f4ea;
+  border: 1px solid #c6e1c6;
+  border-radius: 12px;
+  color: #137333;
+  font-size: 0.813rem;
+  font-weight: 500;
+}
+
+.count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 12px;
+  background: #f3e8fd;
+  border: 1px solid #e9d2fd;
+  border-radius: 12px;
+  color: #7627bb;
+  font-size: 0.813rem;
+  font-weight: 500;
+}
+
+/* Status Badge */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.813rem;
+  font-weight: 500;
+}
+
+.status-success {
+  background: #e6f4ea;
+  border: 1px solid #c6e1c6;
+  color: #137333;
+}
+
+.status-error {
+  background: #fce8e6;
+  border: 1px solid #f9c8c3;
+  color: #c5221f;
+}
+
+/* Date Cell */
+.date-cell {
+  display: flex;
+  align-items: center;
+  color: #5f6368;
+  font-size: 0.875rem;
+}
+
+/* Amount Cell */
+.amount-cell {
+  text-align: right;
+  font-weight: 500;
+  color: #1967d2;
+  font-size: 0.938rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Action Button */
+.action-btn {
+  border: 1px solid #dadce0 !important;
+  border-radius: 4px !important;
+  padding: 0 12px !important;
+  height: 32px !important;
+  text-transform: none !important;
+  letter-spacing: 0.25px !important;
+}
+
+.action-btn:hover {
+  background: #f8f9fa !important;
+  border-color: #1967d2 !important;
 }
 </style>
