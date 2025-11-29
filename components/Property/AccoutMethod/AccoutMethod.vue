@@ -482,7 +482,7 @@ onMounted(async () => {
   accountMethodStoreInstance.GetAccountMethodList();
   mainTypeStore.GetAssetTypes();
   initializeRole();
-  roleStore.GetRoleDetail();
+  await roleStore.GetRoleDetail();
   assetListStore.GetFaAssetList();
   loading.value = true;
   await new Promise((resolve) => setTimeout(resolve, 500));
