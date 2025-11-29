@@ -157,7 +157,8 @@ const updatRecodeStatusof = async (div_id: string) => {
 };
 
 const categories = UseCategoryStore();
-
+const route = useRoute();
+const sub_menu_id = route.query.sub_menu_id as string;
 const response_data = computed(() => {
   const data = categories.categories || null;
   if (!data) return [];
@@ -166,7 +167,7 @@ const response_data = computed(() => {
 });
 
 onMounted(async () => {
-  initializeRole();
+  initializeRole(sub_menu_id);
   roleStore.GetRoleDetail();
   await categories.GetListData();
 });

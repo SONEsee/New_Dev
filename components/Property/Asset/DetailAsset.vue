@@ -58,11 +58,12 @@ const deleteAsset = async () => {
   }
 };
 
+const sub_menu_id = route.query.sub_menu_id as string;
 onMounted(() => {
   if (asset_code) {
     loadAssetDetail();
   }
-  initializeRole();
+  initializeRole(sub_menu_id);
 });
 
 const loadAssetDetail = async () => {

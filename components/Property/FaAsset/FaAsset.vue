@@ -506,6 +506,7 @@ const formatNumber = (value:any) => {
   }
 };
 
+const sub_menu_id = route.query.sub_menu_id as string;
 onMounted(async () => {
   loading.value = true;
   try {

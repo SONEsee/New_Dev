@@ -271,6 +271,7 @@ const getEodDates = () => {
 const submitForm = async () => {
   const isValid = await form.value.validate();
 
+
   if (!isValid) {
     await CallSwal({
       icon: "error",
@@ -449,6 +450,7 @@ faAssetStoreInstance.creat_form_jornal = {
       };
       await faAssetStoreInstance.CreateFaAsset();
       await faAssetStoreInstance.CreateJournal();
+      await faAssetStoreInstance.GetFaAssetList()
 
       CallSwal({
         title: "ສຳເລັດ",

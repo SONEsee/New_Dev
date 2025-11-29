@@ -214,12 +214,13 @@ const confirmDelete = async (item: any) => {
     console.error("Error confirming delete:", error);
   }
 };
-
+const route = useRoute();
+const sub_menu_id = route.query.sub_menu_id as string;
 onMounted(async () => {
   masterStore.getSetASP();
   loading.value = true;
   try {
-    initializeRole();
+    initializeRole(sub_menu_id);
     roleStore.GetRoleDetail();
     await new Promise((resolve) => setTimeout(resolve, 500));
   } catch (error) {

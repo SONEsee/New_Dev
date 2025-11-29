@@ -135,10 +135,11 @@ const response_data = computed(() => {
   if (Array.isArray(data)) return data;
   return [data];
 });
-
+const route = useRoute();
+const sub_menu_id = route.query.sub_menu_id as string;
 onMounted(async () => {
   initializeRole();
-  roleStore.GetRoleDetail();
+  roleStore.GetRoleDetail(sub_menu_id);
   supplierStoreInstance.GetSupplierList();
 });
 

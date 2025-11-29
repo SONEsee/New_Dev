@@ -1537,12 +1537,13 @@ const rejectItem = async () => {
 // Reject function
 
 
+const sub_menu_id = route.query.sub_menu_id as string;
 onMounted(async () => {
   console.log("Detail page mounted with query:", route.query);
   console.log("Reference_No:", referenceNo.value);
 
   derpicationStore.getDataTotal();
-  await initializeRole();
+  await initializeRole(sub_menu_id);
 
   await Promise.all([loadModules(), loadAccounts(), loadCurrencies()]);
 

@@ -441,13 +441,14 @@ watch(selectedAssetType, (newValue) => {
 watch(search, (newValue) => {
   console.log("🔍 Search changed to:", newValue);
 });
-
+const route = useRoute();
+const sub_menu_id = route.query.sub_menu_id as string;
 onMounted(async () => {
   console.log("🚀 Component mounted, initializing...");
   loading.value = true;
 
   try {
-    initializeRole();
+    initializeRole(sub_menu_id);
 
     await Promise.all([
       proppertyStore.GetPropertyCategoryById(),

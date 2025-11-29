@@ -25,12 +25,13 @@ const goBack = () => {
   router.go(-1);
 };
 
+const sub_menu_id = route.query.sub_menu_id as string;
 onMounted(() => {
   supplierStoreInstance.GetSupplierDetail(supplier_id);
   if (supplier_id) {
     loadSupplierDetail();
   }
-  initializeRole();
+  initializeRole(sub_menu_id);
 });
 
 const loadSupplierDetail = async () => {

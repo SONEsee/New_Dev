@@ -164,9 +164,10 @@ const res = computed(() => {
   if (Array.isArray(data)) return data;
   return [data];
 });
-
+const route = useRoute();
+const sub_menu_id = route.query.sub_menu_id as string;
 onMounted(async () => {
-  initializeRole();
+  initializeRole(sub_menu_id);
   roleStore.GetRoleDetail();
   await moduleStore.getModule();
 });

@@ -182,10 +182,12 @@ const nameTypeDisplay = (item:any)=>{
   }
   return `${item.asset_name_la}-${item.coa_id}`
 }
+const route = useRoute();
+const sub_menu_id = route.query.sub_menu_id as string;
 onMounted(() => {
   assetTypeStore.GetAssetList();
   fassetStore.GetFaAssetList2();
-  initializeRole();
+  initializeRole(sub_menu_id);
   roleStore.GetRoleDetail();
 });
 </script>

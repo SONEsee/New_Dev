@@ -861,6 +861,7 @@ const saveCalculation = async () => {
         };
 
         await assetStore.CreateJournalto(false);
+        await assetStore.GetFaAssetList()
 
         CallSwal({
           icon: "success",

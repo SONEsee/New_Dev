@@ -34,11 +34,12 @@ const editTransactionType = () => {
 };
 
 
+const sub_menu_id = route.query.sub_menu_id as string;
 onMounted(() => {
   if (tranID) {
     loadTransactionTypeDetail();
   }
-  initializeRole();
+  initializeRole(sub_menu_id);
 });
 
 

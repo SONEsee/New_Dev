@@ -250,11 +250,12 @@ const confirmDelete = async (item: any) => {
 const clearFilters = async () => {
   search.value = "";
 };
-
+const route = useRoute();
+const sub_menu_id = route.query.sub_menu_id as string;
 onMounted(async () => {
   loading.value = true;
   try {
-    initializeRole();
+    initializeRole(sub_menu_id);
     roleStore.GetRoleDetail();
     
     await new Promise((resolve) => setTimeout(resolve, 500));

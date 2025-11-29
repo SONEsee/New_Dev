@@ -29,6 +29,7 @@ const goBack = () => {
 };
 
 
+const sub_menu_id = route.query.sub_menu_id as string;
 const editAccount = () => {
   router.push(`/account/edit/?account_id=${account_id}`);
 };
@@ -38,7 +39,7 @@ onMounted(() => {
   if (account_id) {
     loadAccountDetail();
   }
-  initializeRole();
+   initializeRole(sub_menu_id);
 });
 
 

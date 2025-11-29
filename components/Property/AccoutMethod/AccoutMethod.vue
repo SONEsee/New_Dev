@@ -479,11 +479,13 @@ const selecColId = computed(() => {
   return selecItem ? selecItem.coa_id : null;
 });
 onMounted(async () => {
-  accountMethodStoreInstance.GetAccountMethodList();
-  mainTypeStore.GetAssetTypes();
-  initializeRole();
+  await initializeRole(sub_menu_id);
   await roleStore.GetRoleDetail();
-  assetListStore.GetFaAssetList();
+  await accountMethodStoreInstance.GetAccountMethodList();
+ await mainTypeStore.GetAssetTypes();
+ 
+  
+ await assetListStore.GetFaAssetList();
   loading.value = true;
   await new Promise((resolve) => setTimeout(resolve, 500));
   try {

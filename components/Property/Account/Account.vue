@@ -379,7 +379,8 @@ const authorizeAccount = async (item: any) => {
     console.error("Error authorizing account:", error);
   }
 };
-
+const route = useRoute();
+const sub_menu_id = route.query.sub_menu_id as string;
 const clearFilters = async () => {
   selectedAccountType.value = "all";
   search.value = "";
@@ -388,7 +389,7 @@ const clearFilters = async () => {
 onMounted(async () => {
   loading.value = true;
   try {
-    initializeRole();
+    initializeRole(sub_menu_id);
     roleStore.GetRoleDetail();
 
     await new Promise((resolve) => setTimeout(resolve, 500));

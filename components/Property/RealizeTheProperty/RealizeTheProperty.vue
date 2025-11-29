@@ -157,9 +157,10 @@ const loadDataAndApplyFilter = async () => {
     console.error("Failed to load initial data:", error);
   }
 };
-
+const route = useRoute();
+const sub_menu_id = route.query.sub_menu_id as string;
 onMounted(async () => {
-  initializeRole();
+  initializeRole(sub_menu_id);
   roleStore.GetRoleDetail();
   await loadDataAndApplyFilter();
 });

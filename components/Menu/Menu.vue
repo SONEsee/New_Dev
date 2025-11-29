@@ -219,10 +219,13 @@ const loadDataAndApplyFilter = async () => {
     console.error("Failed to load initial data:", error);
   }
 };
-
+const route = useRoute()
+const router = useRouter();
+const menuStore = useMenuStore();
+const sub_menu_id = route.query.sub_menu_id as string;
 onMounted(async () => {
-  initializeRole();
-  roleStore.GetRoleDetail();
+  await initializeRole(sub_menu_id);
+  await roleStore.GetRoleDetail();
   await loadDataAndApplyFilter();
 });
 
@@ -234,8 +237,7 @@ const module = computed(() => {
   return moduleStore.response_data_module || [];
 });
 
-const router = useRouter();
-const menuStore = useMenuStore();
+
 
 const menuItems = computed(() => {
   const data = menuStore.respone_main_menu_data || null;

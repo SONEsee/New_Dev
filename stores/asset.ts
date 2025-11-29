@@ -133,8 +133,10 @@ export const assetStore = defineStore("asset", {
             showCancelButton: false,
             showConfirmButton: false,
           });
+          
           setTimeout(() => {
             goPath("/property/asset");
+           
           }, 1500);
 
           this.form_create_asset = {
