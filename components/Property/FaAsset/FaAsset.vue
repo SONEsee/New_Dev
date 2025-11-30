@@ -508,21 +508,24 @@ const formatNumber = (value:any) => {
 
 const sub_menu_id = route.query.sub_menu_id as string;
 onMounted(async () => {
+
+await initializeRole(sub_menu_id);
+   await roleStore.GetRoleDetail();
+
   loading.value = true;
   try {
     const subMenu = route.query.sub_menu_id as string | undefined;
     console.log("subMenu:", subMenu);
-    loadFiltersFromStorage();
-    assetStores.GetAssetList();
-    masterStore.getStatus();
-    typeAssetStore.GetPropertyCategoryById();
+  await  loadFiltersFromStorage();
+   await assetStores.GetAssetList();
+    await masterStore.getStatus();
+   await typeAssetStore.GetPropertyCategoryById();
     
-    typeAssetStore.GetPropertyCategoryById();
-    faAssetStoreInstance.GetFaAssetList1();
-    masterStore.getPuamsue();
+  await  typeAssetStore.GetPropertyCategoryById();
+  await  faAssetStoreInstance.GetFaAssetList1();
+  await  masterStore.getPuamsue();
 
-    initializeRole(subMenu);
-    roleStore.GetRoleDetail();
+   
 
     await new Promise((resolve) => setTimeout(resolve, 500));
   } catch (error) {
