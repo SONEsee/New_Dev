@@ -8,14 +8,14 @@ const selectedItems = ref<any>([]);
 const journalStore = usejournalStore();
 
 const selectedAssetType = ref(null);
-const selectedMainType = ref(null)
+const selectedMainType = ref(null);
 const selectedJournalStatus = ref(null);
 
 const mainTypeStore = assetStore();
 
-const dataMainType = computed(()=>{
+const dataMainType = computed(() => {
   const data = proppertyStore.respons_data_property_category;
-    
+
   if (Array.isArray(data)) {
     return data;
   }
@@ -23,7 +23,7 @@ const dataMainType = computed(()=>{
     return [data];
   }
   return [];
-})
+});
 const mainType = computed(() => {
   const data = mainTypeStore.response_asset_types;
   if (Array.isArray(data)) {
@@ -316,7 +316,9 @@ const filteredMappedData = computed(() => {
   }
   if (selectedMainType.value) {
     filtered = filtered.filter(
-      (item) => item.matched_asset.asset_id_detail.asset_type_detail.type_code === selectedMainType.value
+      (item) =>
+        item.matched_asset.asset_id_detail.asset_type_detail.type_code ===
+        selectedMainType.value
     );
   }
 
@@ -365,10 +367,14 @@ const processBulkItems = async () => {
 
   mainStore.total_caculate.target_date = targetDate;
 
- 
-
   await mainStore.postArreat();
-
+  await mainStore.getArrears();
+  await mainTypeStore.GetAssetTypes();
+  await assetStores.GetFaAssetList();
+  await proppertyStore.GetPropertyCategoryById();
+  await mainStore.getArrears();
+  await eodStore.GetEOD();
+  await journalStore.getData();
   selectedItems.value = [];
 };
 
@@ -391,7 +397,7 @@ const title = "ຫັກຄ່າຫຼູຍຫ້ຽນຍອ້ນຫຼັ�
 onMounted(() => {
   mainTypeStore.GetAssetTypes();
   assetStores.GetFaAssetList();
-proppertyStore.GetPropertyCategoryById();
+  proppertyStore.GetPropertyCategoryById();
   mainStore.getArrears();
   eodStore.GetEOD();
   journalStore.getData();
@@ -400,9 +406,9 @@ proppertyStore.GetPropertyCategoryById();
 
 <template>
   <v-row>
-     <v-col cols="12" md="3">
-    <!-- <pre>{{ dataMainType }}</pre>  -->
-       
+    <v-col cols="12" md="3">
+      <!-- <pre>{{ dataMainType }}</pre>  -->
+
       <v-autocomplete
         v-model="selectedMainType"
         :items="dataMainType"
@@ -434,8 +440,8 @@ proppertyStore.GetPropertyCategoryById();
     </v-col>
     <!-- <pre>{{ dataMainType }}</pre> -->
     <v-col cols="12" md="3">
-     <!-- {{ dataMainType }} -->
-       
+      <!-- {{ dataMainType }} -->
+
       <v-autocomplete
         v-model="selectedAssetType"
         :items="mainType"
@@ -550,7 +556,7 @@ proppertyStore.GetPropertyCategoryById();
 
   <div v-if="selectedItems.length > 0" class="mb-2">
     <GlobalTextTitleLine :title="title" />
-  
+
     <br />
     <small style="color: #2196f3">
       📅 ວັນທີ່ກຳນົດສຳລັບການຫັກ:
@@ -653,7 +659,7 @@ proppertyStore.GetPropertyCategoryById();
     </span>
     <span v-else style="color: #f44336">ບໍ່ມີຂໍ້ມູນ EOD</span>
   </div>
-<!-- <pre>{{ filteredMappedData }}</pre> -->
+  <!-- <pre>{{ filteredMappedData }}</pre> -->
   <v-data-table
     class="text-no-wrap"
     v-model="selectedItems"

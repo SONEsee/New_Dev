@@ -1482,6 +1482,9 @@ const approveItem = async () => {
     mainStore.approve_disposal.asset_list_ids = aldmIds;
     
     await mainStore.approveDisposal();
+    ;setTimeout(() => {
+            goBack()
+          }, 1000);
     
     console.log("Confirm form mark:", mainStore.approve_disposal);
 
@@ -1517,6 +1520,9 @@ const rejectItem = async () => {
     
     
     await mainStore.RejectDisposal();
+    ;setTimeout(() => {
+            goBack()
+          }, 1000);;
     
     console.log("✅ Reject successful");
     

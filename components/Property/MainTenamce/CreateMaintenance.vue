@@ -444,6 +444,96 @@ const formatCurrency = (value: any): string => {
   }).format(Number(value)) + " ກີບ";
 };
 
+// const SubmitDataMentenance = async () => {
+//   if (!form.value) {
+//     showStatus('❌ ຟອມບໍ່ພ້ອມ', 'error');
+//     return;
+//   }
+
+//   const validation = await form.value.validate();
+  
+//   if (!mantanances.form_creat_mantenance.asset_list_id) {
+//     showStatus('⚠️ ກະລຸນາເລືອກຊັບສິນກ່ອນບັນທຶກ (ສະແກນ Barcode)', 'warning');
+//     return;
+//   }
+  
+//   if (validation.valid) {
+//     const cleanedData: any = {
+//       ...mantanances.form_creat_mantenance,
+//       asset_list_id: mantanances.form_creat_mantenance.asset_list_id,
+     
+//       department_id: mantanances.form_creat_mantenance.department_id && 
+//         mantanances.form_creat_mantenance.department_id !== '' &&
+//         !isNaN(parseInt(mantanances.form_creat_mantenance.department_id)) ? 
+//         parseInt(mantanances.form_creat_mantenance.department_id) : null,
+//       audit_year: mantanances.form_creat_mantenance.audit_year ? 
+//         parseInt(mantanances.form_creat_mantenance.audit_year) : null,
+//       book_value: mantanances.form_creat_mantenance.book_value ? 
+//         parseFloat(parseFormattedNumber(mantanances.form_creat_mantenance.book_value)) : null,
+//       estimated_value: mantanances.form_creat_mantenance.estimated_value ? 
+//         parseFloat(parseFormattedNumber(mantanances.form_creat_mantenance.estimated_value)) : null,
+//       depreciation_rate: mantanances.form_creat_mantenance.depreciation_rate ? 
+//         parseFloat(mantanances.form_creat_mantenance.depreciation_rate) : null,
+//       accumulated_depreciation: mantanances.form_creat_mantenance.accumulated_depreciation ? 
+//         parseFloat(parseFormattedNumber(mantanances.form_creat_mantenance.accumulated_depreciation)) : null,
+//       remaining_useful_life: mantanances.form_creat_mantenance.remaining_useful_life ? 
+//         parseInt(mantanances.form_creat_mantenance.remaining_useful_life) : null,
+//       audit_date: mantanances.form_creat_mantenance.audit_date || null,
+//       follow_up_date: mantanances.form_creat_mantenance.follow_up_date || null,
+//       review_date: mantanances.form_creat_mantenance.review_date || null,
+//       approval_date: mantanances.form_creat_mantenance.approval_date || null,
+//       actual_location: mantanances.form_creat_mantenance.actual_location || null,
+//       audit_findings: mantanances.form_creat_mantenance.audit_findings || null,
+//       recommendations: mantanances.form_creat_mantenance.recommendations || null,
+//       remarks: mantanances.form_creat_mantenance.remarks || null,
+//       reviewer_name: mantanances.form_creat_mantenance.reviewer_name || null,
+//       approver_name: mantanances.form_creat_mantenance.approver_name || null,
+//     };
+    
+  
+//     Object.keys(cleanedData).forEach(key => {
+//       if (cleanedData[key] === '' || cleanedData[key] === 'NaN' || 
+//           (typeof cleanedData[key] === 'number' && isNaN(cleanedData[key]))) {
+//         cleanedData[key] = null;
+//       }
+//     });
+  
+
+//     if (cleanedData.photos_attached === 'N' || cleanedData.photos_attached === 'Y') {
+//       delete cleanedData.photos_attached;
+//     }
+    
+
+//     if (!cleanedData.asset_list_id || cleanedData.asset_list_id === 'NaN' || cleanedData.asset_list_id === null) {
+//       showStatus('❌ ລະຫັດຊັບສິນບໍ່ຖືກຕ້ອງ', 'error');
+//       return;
+//     }
+    
+//     if (!cleanedData.auditor_name) {
+//       showStatus('❌ ກະລຸນາເລືອກຜູ້ກວດສອບ', 'error');
+//       return;
+//     }
+    
+//     if (!cleanedData.physical_status) {
+//       showStatus('❌ ກະລຸນາເລືອກສະຖານະກາຍະພາບ', 'error');
+//       return;
+//     }
+    
+//     console.log('Cleaned data before sending:', cleanedData);
+    
+//     try {
+//       showStatus('💾 ກຳລັງບັນທຶກ...', 'info');
+//       await mantanances.createMantenance(cleanedData);
+     
+//       showStatus('✅ ບັນທຶກສຳເລັດ!', 'success');
+//     } catch (error) {
+//       console.error('Submit error:', error);
+//       showStatus('❌ ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກ', 'error');
+//     }
+//   } else {
+//     showStatus('❌ ກະລຸນາຕື່ມຂໍ້ມູນໃຫ້ຄົບຖ້ວນ', 'error');
+//   }
+// };
 const SubmitDataMentenance = async () => {
   if (!form.value) {
     showStatus('❌ ຟອມບໍ່ພ້ອມ', 'error');
@@ -490,19 +580,16 @@ const SubmitDataMentenance = async () => {
       approver_name: mantanances.form_creat_mantenance.approver_name || null,
     };
     
-  
     Object.keys(cleanedData).forEach(key => {
       if (cleanedData[key] === '' || cleanedData[key] === 'NaN' || 
           (typeof cleanedData[key] === 'number' && isNaN(cleanedData[key]))) {
         cleanedData[key] = null;
       }
     });
-  
 
     if (cleanedData.photos_attached === 'N' || cleanedData.photos_attached === 'Y') {
       delete cleanedData.photos_attached;
     }
-    
 
     if (!cleanedData.asset_list_id || cleanedData.asset_list_id === 'NaN' || cleanedData.asset_list_id === null) {
       showStatus('❌ ລະຫັດຊັບສິນບໍ່ຖືກຕ້ອງ', 'error');
@@ -525,6 +612,12 @@ const SubmitDataMentenance = async () => {
       showStatus('💾 ກຳລັງບັນທຶກ...', 'info');
       await mantanances.createMantenance(cleanedData);
       showStatus('✅ ບັນທຶກສຳເລັດ!', 'success');
+      
+      // ← ເພີ່ມນີ້: Refresh ໜ້າຈໍຫຼັງບັນທຶກສຳເລັດ
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500); // ລໍຖ້າ 1.5 ວິນາທີ ໃຫ້ເຫັນຂໍ້ຄວາມສຳເລັດກ່ອນ
+      
     } catch (error) {
       console.error('Submit error:', error);
       showStatus('❌ ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກ', 'error');
@@ -533,7 +626,6 @@ const SubmitDataMentenance = async () => {
     showStatus('❌ ກະລຸນາຕື່ມຂໍ້ມູນໃຫ້ຄົບຖ້ວນ', 'error');
   }
 };
-
 const resetForm = () => {
   mantanances.$reset();
   searchBarcode.value = '';

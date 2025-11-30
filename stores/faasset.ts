@@ -1,3 +1,4 @@
+import { goBack } from './../composables/global';
 import axios from "@/helpers/axios";
 import { FaAssetModel } from "~/models";
 import { CallSwal, goPath } from "#build/imports";
@@ -344,6 +345,7 @@ export const faAssetStore = defineStore("faAsset", {
 
           this.resetJournalForm();
           return res.data;
+          goBack()
         }
       } catch (error: any) {
         console.error("Error creating journal:", error);
@@ -441,6 +443,7 @@ export const faAssetStore = defineStore("faAsset", {
               showCancelButton: false,
               showConfirmButton: false,
             });
+            goBack()
           }
           return res.data;
         }

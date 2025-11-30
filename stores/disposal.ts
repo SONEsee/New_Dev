@@ -69,6 +69,10 @@ export const useDispoalStore = defineStore("disposal", {
             showCancelButton: false,
             showConfirmButton: false,
           });
+          setTimeout(() => {
+            goBack()
+          }, 1500);
+          
         }
       } catch (error: any) {
         CallSwal({
@@ -136,9 +140,7 @@ export const useDispoalStore = defineStore("disposal", {
             timer: 1500,
             showCancelButton: false,
             showConfirmButton: false,
-          });setTimeout(() => {
-            goPath("/property/dispalso/approve")
-          }, 1000);;
+          });
         }
         }
         
@@ -173,6 +175,7 @@ export const useDispoalStore = defineStore("disposal", {
             showCancelButton: false,
             showConfirmButton: false,
           });
+          
         }
       } catch (error) {
         CallSwal({

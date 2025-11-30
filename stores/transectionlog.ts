@@ -107,7 +107,7 @@ export const useTransactionLogStore = defineStore("transactionLog", {
           });
           
           setTimeout(() => {
-            goPath("/property/transfer_log/");
+            goBack();
           }, 1500);
         }
       } catch (error: any) {

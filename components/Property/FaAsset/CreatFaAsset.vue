@@ -461,7 +461,7 @@ faAssetStoreInstance.creat_form_jornal = {
       });
 
       setTimeout(() => {
-        goPath("/property/faasset");
+        goBack();
       }, 2000);
     } catch (error) {
       console.error("Error in submit process:", error);

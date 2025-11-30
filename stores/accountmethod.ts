@@ -153,7 +153,7 @@ export const accountMethodStore = defineStore("accountMethod", {
             showConfirmButton: false,
           });
           setTimeout(() => {
-            goPath("/property/accountmethod/");
+            goBack();
           }, 1500);
 
           this.resetCreateForm();
