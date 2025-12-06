@@ -152,7 +152,7 @@ const defaultMenuId = computed(() => {
           </v-col>
           <v-col cols="12" class="d-flex justify-center">
             <v-btn type="submit" color="primary" class="mr-2"> ບັນທຶກ </v-btn>
-            <v-btn color="error" @click="$router.push('/menu')">
+            <v-btn color="error" @click="goBack()">
               ຍົກເລີກ
             </v-btn>
           </v-col>

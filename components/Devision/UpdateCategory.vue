@@ -164,7 +164,7 @@ const title = ref("ອັບເດດຂໍ້ມູນພະແນກ / Update 
                 v-model="response_data.record_Status"
                 label="ສະຖານະ / Status"
                 :items="[
-                  // { title: 'ເປີດໃຊ້ງານ (A)', value: 'A' },
+                  
                   { title: 'ປິດໃຊ້ງານ (C)', value: 'C' },
                   { title: 'ເປີດໃຊ້ງານ (O)', value: 'O' }
                 ]"
@@ -180,7 +180,7 @@ const title = ref("ອັບເດດຂໍ້ມູນພະແນກ / Update 
       </v-col>
       <div class="d-flex justify-center align-center">
         <v-btn type="submit" color="primary" text="ບັນທຶກ"/>
-        <v-btn type="button" color="error" text="ຍົກເລີກ" class="ml-6" @click="onCancel" />
+        <v-btn type="button" color="error" text="ຍົກເລີກ" class="ml-6" @click="goBack()" />
       </div>
     </v-form>
   </v-container>

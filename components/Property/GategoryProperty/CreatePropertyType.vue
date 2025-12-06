@@ -128,7 +128,7 @@ const rules = {
           </v-btn>
           <v-btn
             color="error"
-            @click="goPath(`/property/propertytype`)"
+            @click="goBack()"
             class="ml-3"
             :disabled="loading"
           >

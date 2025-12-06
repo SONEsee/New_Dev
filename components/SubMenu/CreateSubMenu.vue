@@ -42,8 +42,7 @@ watch(response, (newResponse) => {
     // Auto-populate sub_menu_order with count_menu + 1
     menuStore.create_form_submenu.sub_menu_order = nextId;
   } else if (menu_id) {
-    // ຖ້າບໍ່ມີ response ແຕ່ມີ menu_id ຈາກ URL parameter
-    // ໃຊ້ຄ່າເລີ່ມຕົ້ນ 001
+    
     menuStore.create_form_submenu.sub_menu_id = `${menu_id}-001`;
     menuStore.create_form_submenu.sub_menu_order = 1;
   }
@@ -182,7 +181,7 @@ const cancelSubmit = () => {
 
       <v-col cols="12" class="d-flex justify-center">
         <v-btn type="submit" color="primary" class="mr-2"> ບັນທຶກ </v-btn>
-        <v-btn color="error" @click="cancelSubmit"> ຍົກເລີກ </v-btn>
+        <v-btn color="error" @click="goBack()"> ຍົກເລີກ </v-btn>
       </v-col>
     </v-form>
   </v-container>

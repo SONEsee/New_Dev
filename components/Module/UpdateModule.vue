@@ -107,22 +107,7 @@ const cancelUpdate = () => {
               required
             />
           </v-col>
-          <!-- <v-col cols="12" md="6">
-            <v-autocomplete
-              :items="[
-                { title: 'ເປີດໃຊ້ງານ', value: 'Y' },
-                { title: 'ປິດໃຊ້ງານ', value: 'N' },
-              ]"
-              item-title="title"
-              item-value="value"
-              density="compact"
-              v-model="moduleStore.update_form_module.is_active"
-              :rules="[(v) => !!v || 'ກະລຸນາເລືອກສະຖານະ']"
-              label="ສະຖານະໃຊ້ງານ"
-              variant="outlined"
-              required
-            />
-          </v-col> -->
+          
         </v-row>
 
         <v-col cols="12" class="d-flex justify-center">
@@ -136,7 +121,7 @@ const cancelUpdate = () => {
           <v-btn
             color="error"
             class="d-flex justify-center"
-            @click="cancelUpdate"
+            @click="goBack()"
           >
             ຍົກເລີກ
           </v-btn>

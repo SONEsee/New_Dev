@@ -647,6 +647,7 @@ const StatusData = [
         <v-col cols="12" md="2">
           <div class="d-flex">
             <v-btn
+            :disabled="selectedassetCode==='null' || selectedassetCode ===''"
               color="primary"
               @click="
                 goPath(

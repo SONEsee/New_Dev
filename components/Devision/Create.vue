@@ -117,7 +117,7 @@ const onSubmit = async () => {
                 class="mt-4 mr-3"
                 text="ບັນທຶກ"
               />
-              <v-btn @click="goPath('/devision')" color="error" class="mt-4">
+              <v-btn @click="goBack()" color="error" class="mt-4">
                 ຍົກເລີກ
               </v-btn>
             </v-col>

@@ -17,9 +17,20 @@ const title = "ແກ້ໄຂຂໍ້ມູນເມນູຍ່ອຍ";
 const errorMessage = ref("");
 
 
-const menuItems = computed(() => {
-  return menuStore.respone_main_menu_data || [];
-});
+// const menuItems = computed(() => {
+//   return menuStore.respone_main_menu_data || [];
+// });
+
+const menuItems = computed(()=>{
+  const data  = menuStore.respone_main_menu_data;
+  if(Array.isArray(data)){
+    return data
+  }
+  if(data && typeof data ==="object"){
+    return [data]
+  }
+  return []
+})
 
 
 const request = computed({
@@ -53,7 +64,7 @@ onMounted(async () => {
   }
 });
 
-// ຟັງຊັ່ນອັບເດດເມນູຍ່ອຍ
+
 const updateSubMenu = async () => {
   try {
     const { valid: isValid } = await form.value.validate();
@@ -72,11 +83,11 @@ const updateSubMenu = async () => {
         sub_menu_urls: request.value.sub_menu_urls,
       };
 
-      // ເອີ້ນໃຊ້ຟັງຊັ່ນອັບເດດຈາກ Store
+      
       const result = await menuStore.UpdateSubMenu(id.value, dataToUpdate);
 
       if (result) {
-        // ນຳທາງໄປຫາລາຍການເມນູຍ່ອຍ
+       
         router.push("/submenu");
       }
     }
@@ -86,7 +97,7 @@ const updateSubMenu = async () => {
   }
 };
 
-// ຟັງຊັ່ນຍົກເລີກ
+
 const cancelUpdate = () => {
   router.push("/submenu");
 };
@@ -168,27 +179,14 @@ const cancelUpdate = () => {
             :rules="[(v) => !!v || 'URL ຕ້ອງບໍ່ຫວ່າງ']"
             required
           />
-          <!-- <v-autocomplete
-            :items="[
-              { title: 'ເປີດໃຊ້ງານ', value: 'Y' },
-              { title: 'ປິດໃຊ້ງານ', value: 'N' },
-            ]"
-            item-title="title"
-            item-value="value"
-            density="compact"
-            v-model="request.is_active"
-            :rules="[(v) => !!v || 'ກະລຸນາເລືອກສະຖານະ']"
-            label="ເລືອກສະຖານະໃຊ້ງານ"
-            variant="outlined"
-            required
-          /> -->
+         
         </v-col>
       </v-row>
 
-      <!-- ປຸ່ມດຳເນີນການ -->
+    
       <v-col cols="12" class="d-flex justify-center">
         <v-btn type="submit" color="primary" class="mr-2"> ບັນທຶກ </v-btn>
-        <v-btn color="error" @click="cancelUpdate"> ຍົກເລີກ </v-btn>
+        <v-btn color="error" @click="goBack()"> ຍົກເລີກ </v-btn>
       </v-col>
     </v-form>
   </v-container>

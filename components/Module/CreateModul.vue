@@ -118,7 +118,7 @@ const Create = async () => {
             color="error"
             class="d-flex justify-center"
             text="ຍົກເລີກ"
-            @click="goPath('/module')"
+            @click="goBack()"
           />
         </v-col>
       </v-col>

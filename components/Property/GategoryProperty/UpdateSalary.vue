@@ -182,7 +182,7 @@ onMounted(() => {
             color="error"
             flat
             class="ml-3"
-            @click="$router.go(-1)"
+            @click="goBack()"
             :disabled="loading"
           >
             ຍົກເລີກ

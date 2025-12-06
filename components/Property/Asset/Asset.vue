@@ -478,14 +478,32 @@ onMounted(async () => {
     <v-row>
       <v-col cols="12" md="2">
         <div class="d-flex">
-          <v-btn
+          <!-- <v-btn
+          :disabled="selectedAssetType==='all' || selectedAssetType===''"
             color="primary"
             @click="goToCreateAssetWithType()"
             v-if="canAdd"
             :loading="loading"
           >
             <v-icon icon="mdi-plus"></v-icon> ເພີ່ມຊັບສິນໃໝ່
-          </v-btn>
+          </v-btn> -->
+          <v-btn
+  :disabled="selectedAssetType==='all' || selectedAssetType===''"
+  color="primary"
+  @click="goToCreateAssetWithType()"
+  v-if="canAdd"
+  :loading="loading"
+>
+  <v-icon icon="mdi-plus"></v-icon> ເພີ່ມຊັບສິນໃໝ່
+  
+  <v-tooltip 
+    activator="parent" 
+    location="top"
+    :disabled="!(selectedAssetType==='all' || selectedAssetType==='')"
+  >
+    ກະລຸນາເລືອກປະເພດຊັບສິນກ່ອນ
+  </v-tooltip>
+</v-btn>
         </div>
       </v-col>
 
